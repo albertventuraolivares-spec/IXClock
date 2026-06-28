@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello World</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 6rem);
+      color: #ffffff;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 40px rgba(100, 200, 255, 0.4);
+    }
+
+    .globe {
+      font-size: clamp(3rem, 10vw, 7rem);
+      display: block;
+      margin-top: 1rem;
+      animation: spin 6s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hello World</h1>
+    <span class="globe">🌍</span>
+  </div>
+</body>
+</html>
