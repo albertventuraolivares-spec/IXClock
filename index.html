@@ -3499,6 +3499,17 @@
 					/>
 					<div style="display:flex;align-items:center;gap:0.5rem;">
 						<input
+							id="login-password"
+							type="password"
+							placeholder="Contraseña (opcional)"
+							autocomplete="off"
+							style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
+							oninput="loginClearError()"
+							onkeydown="if(event.key==='Enter')loginSubmit()"
+						/>
+					</div>
+					<div style="display:flex;align-items:center;gap:0.5rem;">
+						<input
 							id="login-email"
 							type="email"
 							placeholder="Correo electrónico (opcional)"
@@ -3506,10 +3517,6 @@
 							style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
 							onkeydown="if(event.key==='Enter')loginSubmit()"
 						/>
-						<span
-							style="font-size:0.62rem;color:rgba(255,255,255,0.35);white-space:nowrap;"
-							>opcional</span
-						>
 					</div>
 				</div>
 				<div
@@ -3525,8 +3532,8 @@
 				<p
 					style="font-size:0.68rem;color:rgba(255,255,255,0.3);text-align:center;line-height:1.5;"
 				>
-					Tu nombre se guarda solo en este
-					dispositivo.<br />Nadie más lo puede ver.
+					Tu nombre y contraseña se guardan solo en este
+					dispositivo.<br />Nadie más los puede ver.
 				</p>
 			</div>
 		</div>
@@ -6356,19 +6363,30 @@
 			  window.loginSubmit = function(){
 			    try{
 			      const usernameEl = document.getElementById('login-username');
+			      const passwordEl = document.getElementById('login-password');
 			      const emailEl    = document.getElementById('login-email');
 			      const errEl      = document.getElementById('login-error');
 
 			      const username = (usernameEl ? usernameEl.value : '').trim() || 'Invitado';
+			      const password = passwordEl ? passwordEl.value : '';
 			      const email    = (emailEl ? emailEl.value : '').trim();
 
 			      const users = getUsers();
 
 			      if(users[username]){
+			        // La contraseña es opcional: solo se exige si la cuenta ya tiene una guardada.
+			        if(users[username].password){
+			          if(password && users[username].password !== btoa(password)){
+			            if(errEl){ errEl.innerText='Contraseña incorrecta.'; errEl.style.display='block'; }
+			            return;
+			          }
+			        } else if(password){
+			          users[username].password = btoa(password);
+			        }
 			        if(email) users[username].email = email;
 			        saveUsers(users);
 			      } else {
-			        users[username] = { email: email, created: Date.now() };
+			        users[username] = { password: password ? btoa(password) : '', email: email, created: Date.now() };
 			        saveUsers(users);
 			      }
 
@@ -6432,6 +6450,7 @@
 			    updateProfileBtn();
 			    document.getElementById('login-overlay').style.display='flex';
 			    document.getElementById('login-username').value='';
+			    document.getElementById('login-password').value='';
 			    document.getElementById('login-email').value='';
 			    loginClearError();
 			  };
