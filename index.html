@@ -2909,6 +2909,12 @@
 				>
 					🔍 Ver canales
 				</button>
+				<button
+					onclick="searchTVSports()"
+					style="padding:10px;border-radius:12px;background:rgba(48,209,88,.18);border:1px solid rgba(48,209,88,.4);color:#30d158;font-weight:700;font-size:12px;cursor:pointer;"
+				>
+					⚽ Deportes y Mundiales
+				</button>
 			</div>
 			<div
 				id="tv-results"
@@ -3642,6 +3648,20 @@
 					/>
 					<span style="font-size:11px;opacity:.4;">🔊</span>
 				</div>
+				<!-- Archivo local (MP3/MP4) -->
+				<input
+					id="local-media-input"
+					type="file"
+					accept="audio/*,video/*,.mp3,.mp4"
+					style="display:none;"
+					onchange="handleLocalMediaFile(event)"
+				/>
+				<button
+					onclick="document.getElementById('local-media-input').click()"
+					style="width:100%;margin-top:10px;padding:7px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:10px;font-weight:700;cursor:pointer;"
+				>
+					📁 Subir MP3 / MP4
+				</button>
 			</div>
 			<!-- Clickwheel visual -->
 			<div
@@ -5576,6 +5596,7 @@
 			}
 			const streamPlayer = document.getElementById('stream-audio-player');
 			function playAudio(){
+			  _localAudioActive = false;
 			  const st = STATIONS.find(s=>s.id===currentStation);
 			  if(st && st.type==='stream'){
 			    const btn = document.getElementById('station-'+st.id);
@@ -5632,6 +5653,29 @@
 			  isPlaying=false;
 			  document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>';
 			  document.getElementById('global-play').classList.remove('animate-pulse');
+			}
+			// Pausa/reanuda sin perder el src: necesario para archivos locales (stopAudio limpia el src).
+			function togglePlayPause(){
+			  if(isPlaying){
+			    if(_localAudioActive){
+			      streamPlayer.pause();
+			      isPlaying = false;
+			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>';
+			      document.getElementById('global-play').classList.remove('animate-pulse');
+			    } else {
+			      stopAudio();
+			    }
+			  } else if(_localAudioActive && streamPlayer.src){
+			    streamPlayer.play().then(()=>{
+			      isPlaying = true;
+			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			      document.getElementById('global-play').classList.add('animate-pulse');
+			    }).catch(()=>{});
+			  } else if(currentStation){
+			    playAudio();
+			  } else {
+			    setStation(STATIONS[0]?.id);
+			  }
 			}
 			streamPlayer.addEventListener('error', ()=>{
 			  if(!currentStation) return;
@@ -5717,14 +5761,66 @@
 			  if(playBtn) playBtn.textContent = '⏸';
 			}
 			function toggleIpodPlay(){
-			  if(isPlaying) stopAudio(); else { if(currentStation) playAudio(); else setStation(STATIONS[0]?.id); }
+			  togglePlayPause();
 			  const btn = document.getElementById('ipod-play-btn');
 			  if(btn) btn.textContent = isPlaying ? '⏸' : '▶';
+			}
+
+			/* ===================== ARCHIVO LOCAL MP3/MP4 ===================== */
+			let _localAudioActive = false;
+			let _localAudioObjectUrl = null;
+			let _localVideoObjectUrl = null;
+
+			function handleLocalMediaFile(event){
+			  const file = event.target.files && event.target.files[0];
+			  event.target.value = '';
+			  if(!file) return;
+			  const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(file.name);
+			  if(isVideo) playLocalVideoFile(file); else playLocalAudioFile(file);
+			}
+
+			function playLocalAudioFile(file){
+			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  const tvPlayer = document.getElementById('tv-player');
+			  if(tvPlayer) tvPlayer.style.display = 'none';
+			  if(isPlaying) stopAudio();
+			  currentStation = null;
+			  document.querySelectorAll('.station-btn').forEach(b=>b.classList.remove('station-active'));
+			  if(_localAudioObjectUrl) URL.revokeObjectURL(_localAudioObjectUrl);
+			  _localAudioObjectUrl = URL.createObjectURL(file);
+			  streamPlayer.loop = true;
+			  streamPlayer.src = _localAudioObjectUrl;
+			  streamPlayer.volume = 0.7;
+			  streamPlayer.load();
+			  streamPlayer.play().then(()=>{
+			    isPlaying = true;
+			    _localAudioActive = true;
+			    document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			    document.getElementById('global-play').classList.add('animate-pulse');
+			    updateIpodUI({ title: file.name.replace(/\.[^.]+$/, ''), sub: 'Archivo local', flag: '🎵' });
+			  }).catch(()=>{});
+			}
+
+			function playLocalVideoFile(file){
+			  const video = document.getElementById('tv-video');
+			  const player = document.getElementById('tv-player');
+			  const titleEl = document.getElementById('tv-player-title');
+			  if(!video || !player) return;
+			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  if(_localVideoObjectUrl) URL.revokeObjectURL(_localVideoObjectUrl);
+			  _localVideoObjectUrl = URL.createObjectURL(file);
+			  player.style.display = 'flex';
+			  if(titleEl) titleEl.textContent = file.name;
+			  video.src = _localVideoObjectUrl;
+			  video.play().catch(()=>{});
+			  tvSetStatus('', false);
 			}
 			// Update iPod clock every second
 			setInterval(()=>{
 			  const el = document.getElementById('ipod-clock');
 			  if(el){ const n=new Date(); const h=n.getHours(), mi=n.getMinutes(); el.textContent = _romanMode ? (toRoman(h)+':'+( mi===0?'·':toRoman(mi))) : (h.toString().padStart(2,'0')+':'+mi.toString().padStart(2,'0')); }
+			  const playBtn = document.getElementById('ipod-play-btn');
+			  if(playBtn) playBtn.textContent = isPlaying ? '⏸' : '▶';
 			}, 1000);
 
 			// Siri text toggle
@@ -6056,6 +6152,39 @@
 			    renderTVResults(channels);
 			  }catch(e){
 			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo cargar la lista de canales de este país. Prueba con otro o intenta de nuevo más tarde.</div>';
+			  }
+			}
+
+			// Cadenas deportivas más reconocidas para los partidos de Mundiales: se priorizan
+			// primero en los resultados (las que suelen transmitir los goles "Messi, Messi… GOL GOL GOL").
+			const TOP_SPORTS_NETWORKS = ['espn','fox sports','tyc sports','dsports','directv sports','bein sports','tudn','telemundo deportes','univision deportes','sporttv','eurosport','dazn','gol tv','fanatiz','fifa+','fifa'];
+
+			async function searchTVSports(){
+			  const results = document.getElementById('tv-results');
+			  if(!results) return;
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales de deportes y Mundiales…</div>';
+			  try{
+			    const res = await fetch('https://iptv-org.github.io/iptv/categories/sports.m3u');
+			    if(!res.ok) throw new Error('not ok');
+			    const text = await res.text();
+			    let channels = parseM3U(text);
+			    if(location.protocol === 'https:'){
+			      channels = channels.filter(c=>c.url && c.url.startsWith('https://'));
+			    }
+			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
+			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
+			    channels.sort((a,b)=>{
+			      const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
+			      const ai = TOP_SPORTS_NETWORKS.findIndex(n=>an.includes(n));
+			      const bi = TOP_SPORTS_NETWORKS.findIndex(n=>bn.includes(n));
+			      const arank = ai === -1 ? 999 : ai;
+			      const brank = bi === -1 ? 999 : bi;
+			      if(arank !== brank) return arank - brank;
+			      return a.name.localeCompare(b.name);
+			    });
+			    renderTVResults(channels);
+			  }catch(e){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo cargar la lista de canales de deportes. Intenta de nuevo más tarde.</div>';
 			  }
 			}
 
@@ -6835,7 +6964,7 @@
 
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  const gp = document.getElementById('global-play');
-			  if(gp) gp.onclick = ()=> isPlaying ? stopAudio() : (currentStation ? playAudio() : setStation(STATIONS[0]?.id));
+			  if(gp) gp.onclick = togglePlayPause;
 			  const vs = document.getElementById('volume-slider');
 			  if(vs) vs.oninput = e=>{ const mg=getMasterGain(); if(mg) mg.gain.value = e.target.value/100; if(streamPlayer) streamPlayer.volume = e.target.value/100; };
 			});
