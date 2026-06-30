@@ -2973,6 +2973,11 @@
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-external-grid"></div>
 					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren en una pestaña nueva</div>
 				</div>
+				<div>
+					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🎮 Nintendo · PlayStation · Xbox</div>
+					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-console-grid"></div>
+					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Catálogos oficiales: clásicos y novedades · Se abren en una pestaña nueva</div>
+				</div>
 			</div>
 		</div>
 
@@ -6070,6 +6075,17 @@
 			  {icon:'🐍', name:'Slither.io', url:'https://slither.io'},
 			  {icon:'🌐', name:'Itch.io', url:'https://itch.io/games/free/platform-web'}
 			];
+			const CONSOLE_GAMES = [
+			  {icon:'🍄', name:'Nintendo eShop', url:'https://www.nintendo.com/store/'},
+			  {icon:'👾', name:'Switch Online (NES/SNES/N64)', url:'https://www.nintendo.com/switch/online-service/'},
+			  {icon:'🎮', name:'Catálogo Nintendo', url:'https://www.nintendo.com/games/'},
+			  {icon:'🎯', name:'PlayStation Store', url:'https://store.playstation.com/'},
+			  {icon:'📀', name:'PS Plus Classics', url:'https://www.playstation.com/en-us/ps-plus/games/'},
+			  {icon:'🕹️', name:'Catálogo PlayStation', url:'https://www.playstation.com/en-us/games/'},
+			  {icon:'❎', name:'Xbox Store', url:'https://www.xbox.com/games/store'},
+			  {icon:'🔄', name:'Xbox Retrocompatibles', url:'https://www.xbox.com/en-us/games/backward-compatibility'},
+			  {icon:'🟩', name:'Xbox Game Pass', url:'https://www.xbox.com/en-US/xbox-game-pass'}
+			];
 
 			let _gamesRendered = false;
 			function toggleGamesPanel(){
@@ -6095,6 +6111,15 @@
 			  const ext = document.getElementById('games-external-grid');
 			  if(ext){
 			    ext.innerHTML = EXTERNAL_GAMES.map(g=>
+			      `<div class="game-tile" onclick="window.open('${g.url}','_blank','noopener')">
+			        <div class="game-tile-icon">${g.icon}</div>
+			        <div class="game-tile-label">${escapeHtml(g.name)}</div>
+			      </div>`
+			    ).join('');
+			  }
+			  const consoles = document.getElementById('games-console-grid');
+			  if(consoles){
+			    consoles.innerHTML = CONSOLE_GAMES.map(g=>
 			      `<div class="game-tile" onclick="window.open('${g.url}','_blank','noopener')">
 			        <div class="game-tile-icon">${g.icon}</div>
 			        <div class="game-tile-label">${escapeHtml(g.name)}</div>
