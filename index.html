@@ -1725,6 +1725,38 @@
 							</button>
 						</div>
 					</div>
+					<div class="p-3.5 glass rounded-2xl space-y-2" id="clocktime-card">
+						<div
+							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+						>
+							🕐 Hora del Reloj
+						</div>
+						<div style="display:flex;gap:6px;">
+							<button id="clockmode-auto-btn" onclick="setClockMode('auto')" class="btn-option flex-1 active" style="font-size:10px;">📍 Mi hora</button>
+							<button id="clockmode-tz-btn" onclick="setClockMode('tz')" class="btn-option flex-1" style="font-size:10px;">🌍 Otro país</button>
+							<button id="clockmode-manual-btn" onclick="setClockMode('manual')" class="btn-option flex-1" style="font-size:10px;">✋ Manual</button>
+						</div>
+						<div id="clockmode-tz-controls" style="display:none;">
+							<select
+								id="clock-tz-select"
+								class="w-full bg-black/30 border border-white/10 rounded-xl py-2 px-3 text-xs"
+								onchange="applyClockTimezone(this.value)"
+							>
+								<option value="">Elige un país…</option>
+							</select>
+						</div>
+						<div id="clockmode-manual-controls" style="display:none;">
+							<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+								<input id="manual-h" type="number" min="0" max="23" value="12" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<span style="opacity:.5;">:</span>
+								<input id="manual-m" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<span style="opacity:.5;">:</span>
+								<input id="manual-s" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<button class="btn-option" onclick="applyManualClockTime()" style="font-size:10px;padding:6px 10px;">✔ Aplicar</button>
+							</div>
+						</div>
+						<div id="clockmode-status" style="font-size:9px;opacity:.4;">Mostrando tu hora local automáticamente.</div>
+					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
 							class="flex justify-between text-xs font-medium mb-1"
@@ -1871,6 +1903,7 @@
 							💬 Mi Opinión
 						</div>
 						<div id="opinion-view-mode">
+							<div id="opinion-stars-display" style="font-size:18px;letter-spacing:2px;margin-bottom:6px;"></div>
 							<div id="opinion-empty" class="text-xs opacity-40 py-1">
 								Aún no has escrito tu opinión.
 							</div>
@@ -1888,6 +1921,8 @@
 							</div>
 						</div>
 						<div id="opinion-edit-mode" class="hidden space-y-2">
+							<div style="font-size:10px;opacity:.5;">¿Cuántas estrellas le pondrías?</div>
+							<div id="opinion-stars-input" style="font-size:24px;letter-spacing:4px;cursor:pointer;"></div>
 							<textarea id="opinion-textarea" rows="4" placeholder="Escribe aquí tu opinión..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2 text-xs outline-none resize-none"></textarea>
 							<div class="flex gap-2">
 								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar</button>
@@ -4594,8 +4629,87 @@
 			  }
 			})();
 
+			/* ===================== HORA PERSONALIZADA DEL RELOJ ===================== */
+			let _clockMode = 'auto'; // 'auto' | 'tz' | 'manual'
+			let _clockTz = null;
+			let _clockManualOffsetMs = 0;
+			function getClockDisplayDate(realNow){
+			  if(_clockMode === 'manual'){
+			    return new Date(realNow.getTime() + _clockManualOffsetMs);
+			  }
+			  if(_clockMode === 'tz' && _clockTz){
+			    try{
+			      const parts = new Intl.DateTimeFormat('en-US', {
+			        timeZone: _clockTz, hour:'2-digit', minute:'2-digit', second:'2-digit',
+			        year:'numeric', month:'2-digit', day:'2-digit', hour12:false
+			      }).formatToParts(realNow);
+			      const get = t => parseInt(parts.find(p=>p.type===t)?.value || '0', 10);
+			      let hh = get('hour'); if(hh===24) hh = 0;
+			      return new Date(get('year'), get('month')-1, get('day'), hh, get('minute'), get('second'));
+			    }catch(e){ return realNow; }
+			  }
+			  return realNow;
+			}
+			function setClockMode(mode){
+			  _clockMode = mode;
+			  const autoBtn = document.getElementById('clockmode-auto-btn');
+			  const tzBtn = document.getElementById('clockmode-tz-btn');
+			  const manBtn = document.getElementById('clockmode-manual-btn');
+			  if(autoBtn) autoBtn.classList.toggle('active', mode==='auto');
+			  if(tzBtn) tzBtn.classList.toggle('active', mode==='tz');
+			  if(manBtn) manBtn.classList.toggle('active', mode==='manual');
+			  const tzCtrl = document.getElementById('clockmode-tz-controls');
+			  const manCtrl = document.getElementById('clockmode-manual-controls');
+			  if(tzCtrl) tzCtrl.style.display = mode==='tz' ? 'block' : 'none';
+			  if(manCtrl) manCtrl.style.display = mode==='manual' ? 'block' : 'none';
+			  const status = document.getElementById('clockmode-status');
+			  if(mode==='auto'){
+			    _clockTz = null; _clockManualOffsetMs = 0;
+			    if(status) status.textContent = 'Mostrando tu hora local automáticamente.';
+			    localStorage.removeItem('clock_display_mode');
+			  } else if(mode==='tz'){
+			    if(status) status.textContent = _clockTz ? 'Mostrando la hora seleccionada.' : 'Elige un país arriba.';
+			    if(_clockTz) localStorage.setItem('clock_display_mode', JSON.stringify({mode:'tz', tz:_clockTz}));
+			  } else if(mode==='manual'){
+			    if(status) status.textContent = 'Define la hora exacta que quieras ver y pulsa Aplicar.';
+			  }
+			  updateClockAndDate();
+			}
+			function applyClockTimezone(tz){
+			  if(!tz) return;
+			  _clockMode = 'tz';
+			  _clockTz = tz;
+			  const sel = document.getElementById('clock-tz-select');
+			  const label = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : tz;
+			  const status = document.getElementById('clockmode-status');
+			  if(status) status.textContent = `Mostrando la hora de ${label}`;
+			  localStorage.setItem('clock_display_mode', JSON.stringify({mode:'tz', tz:_clockTz}));
+			  updateClockAndDate();
+			}
+			function applyManualClockTime(){
+			  const hEl = document.getElementById('manual-h'), mEl = document.getElementById('manual-m'), sEl = document.getElementById('manual-s');
+			  if(!hEl || !mEl || !sEl) return;
+			  const hh = Math.min(23, Math.max(0, parseInt(hEl.value,10) || 0));
+			  const mm = Math.min(59, Math.max(0, parseInt(mEl.value,10) || 0));
+			  const ss = Math.min(59, Math.max(0, parseInt(sEl.value,10) || 0));
+			  const realNow = new Date();
+			  const target = new Date(realNow);
+			  target.setHours(hh, mm, ss, 0);
+			  _clockManualOffsetMs = target.getTime() - realNow.getTime();
+			  const status = document.getElementById('clockmode-status');
+			  if(status) status.textContent = `Hora personalizada activa: ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+			  updateClockAndDate();
+			}
+			function populateClockTzSelect(){
+			  const sel = document.getElementById('clock-tz-select');
+			  if(!sel || sel.options.length > 1) return;
+			  sel.innerHTML = '<option value="">Elige un país…</option>' +
+			    WORLD_CITIES.map(c=>`<option value="${c.tz}">${c.flag} ${escapeHtml(c.name)}</option>`).join('');
+			}
+
 			function updateClockAndDate(){
-			  const now = new Date();
+			  const realNow = new Date();
+			  const now = getClockDisplayDate(realNow);
 			  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
 			  const ampm = h>=12 ? 'PM':'AM';
 			  let displayH = currentTimeFormat==='12h' ? (h%12 || 12) : h;
@@ -4654,11 +4768,11 @@
 			  if(cbS) cbS.textContent=`Siglo ${sigloDisp}`;
 			  if(cbA) cbA.textContent=`Año ${yCentDisp} del Siglo ${sigloDisp}`;
 
-			  if(isDynamicBgEnabled && m===0 && s===0) applyDynamicBackground();
-			  if(m===0 && s===0) reproducirCampanada();
+			  if(isDynamicBgEnabled && realNow.getMinutes()===0 && realNow.getSeconds()===0) applyDynamicBackground();
+			  if(realNow.getMinutes()===0 && realNow.getSeconds()===0) reproducirCampanada();
 			  updateAnalogHands(now);
 			  updateFlipClock(now);
-			  checkAlarms(now);
+			  checkAlarms(realNow);
 			}
 
 			/* ===================== HOLIDAYS (algorithmic, RD + US) ===================== */
@@ -7338,21 +7452,44 @@
 
 			/* ===================== MI OPINIÓN ===================== */
 			let userOpinion = '';
+			let userRating = 0;
+			let _opinionEditRating = 0;
 			async function loadOpinion(){
 			  try{
 			    const res = await window.storage.get('user_opinion', false);
 			    if(res && res.value) userOpinion = res.value;
 			  }catch(e){ userOpinion = ''; }
+			  try{
+			    const res2 = await window.storage.get('user_rating', false);
+			    if(res2 && res2.value) userRating = parseInt(res2.value, 10) || 0;
+			  }catch(e){ userRating = 0; }
 			  renderOpinion();
 			}
 			async function saveOpinionStorage(){
 			  try{ await window.storage.set('user_opinion', userOpinion, false); }catch(e){}
+			  try{ await window.storage.set('user_rating', String(userRating), false); }catch(e){}
+			}
+			function renderStars(containerId, rating, interactive){
+			  const el = document.getElementById(containerId);
+			  if(!el) return;
+			  el.innerHTML = '';
+			  for(let i=1;i<=5;i++){
+			    const star = document.createElement('span');
+			    star.textContent = i <= rating ? '⭐' : '☆';
+			    star.style.opacity = i <= rating ? '1' : '.35';
+			    if(interactive){
+			      star.style.cursor = 'pointer';
+			      star.onclick = ()=>{ _opinionEditRating = i; renderStars('opinion-stars-input', _opinionEditRating, true); };
+			    }
+			    el.appendChild(star);
+			  }
 			}
 			function renderOpinion(){
 			  const empty = document.getElementById('opinion-empty');
 			  const display = document.getElementById('opinion-display');
 			  const deleteBtn = document.getElementById('opinion-delete-btn');
 			  const editBtn = document.getElementById('opinion-edit-btn');
+			  renderStars('opinion-stars-display', userRating, false);
 			  if(userOpinion && userOpinion.trim()){
 			    empty.classList.add('hidden');
 			    display.classList.remove('hidden');
@@ -7372,6 +7509,8 @@
 			  const ta = document.getElementById('opinion-textarea');
 			  ta.value = userOpinion;
 			  ta.focus();
+			  _opinionEditRating = userRating;
+			  renderStars('opinion-stars-input', _opinionEditRating, true);
 			}
 			function opinionCancelEdit(){
 			  document.getElementById('opinion-edit-mode').classList.add('hidden');
@@ -7380,12 +7519,14 @@
 			function opinionSave(){
 			  const ta = document.getElementById('opinion-textarea');
 			  userOpinion = ta.value.trim();
+			  userRating = _opinionEditRating;
 			  saveOpinionStorage();
 			  renderOpinion();
 			  opinionCancelEdit();
 			}
 			function opinionDelete(){
 			  userOpinion = '';
+			  userRating = 0;
 			  saveOpinionStorage();
 			  renderOpinion();
 			}
@@ -8288,6 +8429,18 @@
 			  {name:'Sídney',        tz:'Australia/Sydney',       flag:'🇦🇺'},
 			];
 			let _worldClockTimer = null;
+			populateClockTzSelect();
+			(function restoreClockMode(){
+			  try{
+			    const saved = JSON.parse(localStorage.getItem('clock_display_mode') || 'null');
+			    if(saved && saved.mode==='tz' && saved.tz){
+			      _clockTz = saved.tz;
+			      const sel = document.getElementById('clock-tz-select');
+			      if(sel) sel.value = saved.tz;
+			      setClockMode('tz');
+			    }
+			  }catch(e){}
+			})();
 
 			function renderWorldClocks(){
 			  const cont = document.getElementById('world-clocks-list');
