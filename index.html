@@ -7694,7 +7694,7 @@
 			          <input id="browser-home-search" type="text" placeholder="Buscar en Google o escribir una URL" autocomplete="off" style="flex:1;border:none;outline:none;font-size:14px;color:#222;background:transparent;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
 			          <button onclick="browserNavigate(document.getElementById('browser-home-search').value)" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
 			        </div>
-			        <div style="font-size:12px;opacity:.55;max-width:320px;">Google se abre en una pestaña nueva (no permite mostrarse dentro de otra página). El resto de sitios se muestran aquí mismo cuando es posible.</div>
+			        <div style="font-size:12px;opacity:.55;max-width:320px;">Google y algunos sitios grandes (Amazon, redes sociales…) se abren en una pestaña nueva por seguridad. El resto de sitios se muestran aquí mismo cuando es posible.</div>
 			      </div>
 			      <iframe id="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;" referrerpolicy="no-referrer"></iframe>
 			      <div id="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
@@ -7724,8 +7724,25 @@
 			  _browserHistoryIndex=_browserHistory.length-1;
 			  browserLoadUrl(url);
 			}
+			const BROWSER_BYPASS_HOST_PATTERNS=[
+			  /(^|\.)google\.[a-z.]{2,}$/i,
+			  /(^|\.)amazon\.[a-z.]{2,}$/i,
+			  /(^|\.)facebook\.com$/i,
+			  /(^|\.)instagram\.com$/i,
+			  /(^|\.)twitter\.com$/i,
+			  /(^|\.)x\.com$/i,
+			  /(^|\.)linkedin\.com$/i,
+			  /(^|\.)netflix\.com$/i,
+			  /(^|\.)youtube\.com$/i
+			];
 			function browserIsGoogleHost(url){
 			  try{ return /(^|\.)google\.[a-z.]{2,}$/i.test(new URL(url).hostname); }catch(e){ return false; }
+			}
+			function browserShouldBypassIframe(url){
+			  try{
+			    const host=new URL(url).hostname;
+			    return BROWSER_BYPASS_HOST_PATTERNS.some(re=>re.test(host));
+			  }catch(e){ return false; }
 			}
 			function browserLoadUrl(url){
 			  const home=document.getElementById('browser-home');
@@ -7738,9 +7755,10 @@
 			  clearTimeout(_browserLoadTimer);
 			  iframe.onload=null;
 			  iframe.onerror=null;
-			  // Google bloquea su inclusión en iframes (X-Frame-Options/CSP) en todas sus propiedades,
-			  // así que intentar mostrarlo aquí dentro siempre deja un recuadro en blanco: se abre en pestaña nueva directamente.
-			  if(browserIsGoogleHost(url)){
+			  // Sitios como Google, Amazon, Facebook, etc. bloquean su inclusión en iframes (X-Frame-Options/CSP)
+			  // o fallan dentro de un iframe por sus sistemas anti-bot (cookies de terceros bloqueadas, p.ej. el
+			  // "challenge" de Amazon nunca persiste y entra en bucle); para esos se abre directo en pestaña nueva.
+			  if(browserShouldBypassIframe(url)){
 			    iframe.style.display='none';
 			    window.open(url,'_blank','noopener,noreferrer');
 			    browserShowBlocked(url,true);
@@ -7754,7 +7772,7 @@
 			  iframe.onerror=()=>{ clearTimeout(_browserLoadTimer); browserShowBlocked(url); };
 			  iframe.src=url;
 			}
-			function browserShowBlocked(url,isGoogle){
+			function browserShowBlocked(url,bypassed){
 			  const iframe=document.getElementById('browser-iframe');
 			  const blocked=document.getElementById('browser-blocked');
 			  const blockedTitle=document.getElementById('browser-blocked-title');
@@ -7762,7 +7780,7 @@
 			  const openNew=document.getElementById('browser-open-new');
 			  if(iframe) iframe.style.display='none';
 			  if(blocked) blocked.style.display='flex';
-			  if(blockedTitle) blockedTitle.textContent = isGoogle ? 'Google se abrió en una pestaña nueva' : 'Este sitio no permite mostrarse aquí dentro';
+			  if(blockedTitle) blockedTitle.textContent = bypassed ? 'Este sitio se abrió en una pestaña nueva' : 'Este sitio no permite mostrarse aquí dentro';
 			  if(blockedText) blockedText.textContent=url;
 			  if(openNew) openNew.href=url;
 			}
