@@ -9515,7 +9515,12 @@
 			/* ═══════════════════════════════════════════
 			   NAVEGADOR (mini browser embebido)
 			═══════════════════════════════════════════ */
-			let _browserHistory=[],_browserHistoryIndex=-1,_browserLoadTimer=null;
+			let _browserTabs=[], _activeTabId=null, _browserTabSeq=0, _browserToolbarHidden=false;
+			let _browserFavorites=(()=>{ try{ const v=JSON.parse(localStorage.getItem('ix_browser_favorites')); return Array.isArray(v)?v:[]; }catch(e){ return []; } })();
+			const BROWSER_ZOOM_LEVELS=[0.8,1,1.15,1.3,1.5];
+			let _browserZoomIdx=1;
+			function saveBrowserFavorites(){ try{ localStorage.setItem('ix_browser_favorites', JSON.stringify(_browserFavorites)); }catch(e){} }
+			function getActiveTab(){ return _browserTabs.find(t=>t.id===_activeTabId) || null; }
 			function openBrowser(){
 			  let modal=document.getElementById('browser-modal');
 			  if(modal){modal.style.display='flex';return;}
@@ -9523,39 +9528,144 @@
 			  modal.id='browser-modal';
 			  modal.style.cssText='position:fixed;inset:0;z-index:5000;background:#000;display:flex;flex-direction:column;';
 			  modal.innerHTML=`
-			    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(28,28,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;z-index:10;flex-wrap:wrap;">
+			    <div id="browser-toolbar" style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(28,28,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;z-index:10;flex-wrap:wrap;">
 			      <span style="font-size:1.3rem;">🌐</span>
-			      <button onclick="browserGoBack()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Atrás">◀</button>
-			      <button onclick="browserGoForward()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Adelante">▶</button>
+			      <button id="browser-back-btn" onclick="browserGoBack()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Atrás">◀</button>
+			      <button id="browser-fwd-btn" onclick="browserGoForward()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Adelante">▶</button>
 			      <button onclick="browserReload()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Recargar">⟳</button>
 			      <input id="browser-url" type="text" placeholder="Buscar o escribir una dirección web…" autocomplete="off" style="flex:1;min-width:140px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;color:#fff;font-size:13px;padding:7px 14px;outline:none;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
 			      <button onclick="browserNavigate(document.getElementById('browser-url').value)" style="background:#0a84ff;border:none;color:#fff;padding:7px 14px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;">Ir</button>
-			      <button onclick="browserOpenInNewTab()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Abrir en pestaña nueva">↗</button>
+			      <button onclick="browserShare()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Compartir">⤴</button>
+			      <button id="browser-zoom-btn" onclick="browserCycleZoom()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:11px;font-weight:800;" title="Tamaño de texto">Aa</button>
+			      <button id="browser-fav-btn" onclick="browserToggleFavorite()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Añadir a favoritos">☆</button>
+			      <button onclick="browserToggleOptionsMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Más opciones">⋯</button>
+			      <button onclick="browserOpenInNewTab()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Abrir en pestaña del sistema">↗</button>
 			      <button onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			    </div>
-			    <div id="browser-container" style="flex:1;position:relative;background:#111;">
-			      <div id="browser-home" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;text-align:center;padding:20px;">
-			        <div style="font-size:2.6rem;font-weight:700;letter-spacing:-1px;font-family:Arial,sans-serif;">
-			          <span style="color:#4285F4;">G</span><span style="color:#EA4335;">o</span><span style="color:#FBBC05;">o</span><span style="color:#4285F4;">g</span><span style="color:#34A853;">l</span><span style="color:#EA4335;">e</span>
-			        </div>
-			        <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:24px;padding:10px 16px;width:100%;max-width:420px;box-shadow:0 2px 10px rgba(0,0,0,.3);">
-			          <span style="font-size:1rem;">🔍</span>
-			          <input id="browser-home-search" type="text" placeholder="Buscar en Google o escribir una URL" autocomplete="off" style="flex:1;border:none;outline:none;font-size:14px;color:#222;background:transparent;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
-			          <button onclick="browserNavigate(document.getElementById('browser-home-search').value)" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
-			        </div>
-			        <div style="font-size:12px;opacity:.55;max-width:320px;">Google y algunos sitios grandes (Amazon, redes sociales…) se abren en una pestaña nueva por seguridad. El resto de sitios se muestran aquí mismo cuando es posible.</div>
-			      </div>
-			      <iframe id="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;" referrerpolicy="no-referrer"></iframe>
-			      <div id="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
-			        <div style="font-size:3rem;">🚫</div>
-			        <div id="browser-blocked-title" style="font-size:14px;font-weight:700;">Este sitio no permite mostrarse aquí dentro</div>
-			        <div id="browser-blocked-text" style="font-size:12px;opacity:.6;word-break:break-all;max-width:320px;"></div>
-			        <a id="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en pestaña nueva ↗</a>
-			      </div>
-			    </div>
+			    <div id="browser-tabbar" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(20,20,22,.95);overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
+			    <div id="browser-favbar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:rgba(20,20,22,.85);overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
+			    <div id="browser-options-menu" style="display:none;position:absolute;top:54px;right:12px;background:rgba(40,40,44,.98);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:6px;z-index:30;min-width:230px;box-shadow:0 8px 30px rgba(0,0,0,.5);"></div>
+			    <div id="browser-container" style="flex:1;position:relative;background:#111;overflow:hidden;"></div>
 			  `;
 			  document.body.appendChild(modal);
+			  modal.addEventListener('click', (e)=>{
+			    const menu=document.getElementById('browser-options-menu');
+			    if(menu && menu.style.display==='block' && !menu.contains(e.target) && !e.target.closest('[onclick="browserToggleOptionsMenu()"]')) menu.style.display='none';
+			  });
+			  browserNewTab();
+			  renderBrowserFavBar();
 			  setTimeout(()=>document.getElementById('browser-url')?.focus(),150);
+			}
+			function browserCreateTabPane(tab){
+			  const container=document.getElementById('browser-container');
+			  if(!container) return null;
+			  const pane=document.createElement('div');
+			  pane.id='browser-pane-'+tab.id;
+			  pane.style.cssText='position:absolute;inset:0;display:none;';
+			  pane.innerHTML=`
+			    <div class="browser-home" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;text-align:center;padding:20px;">
+			      <div style="font-size:2.6rem;font-weight:700;letter-spacing:-1px;font-family:Arial,sans-serif;">
+			        <span style="color:#4285F4;">G</span><span style="color:#EA4335;">o</span><span style="color:#FBBC05;">o</span><span style="color:#4285F4;">g</span><span style="color:#34A853;">l</span><span style="color:#EA4335;">e</span>
+			      </div>
+			      <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:24px;padding:10px 16px;width:100%;max-width:420px;box-shadow:0 2px 10px rgba(0,0,0,.3);">
+			        <span style="font-size:1rem;">🔍</span>
+			        <input class="browser-home-search" type="text" placeholder="Buscar en Google o escribir una URL" autocomplete="off" style="flex:1;border:none;outline:none;font-size:14px;color:#222;background:transparent;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
+			        <button class="browser-home-go" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
+			      </div>
+			      <div style="font-size:12px;opacity:.55;max-width:320px;">Google y algunos sitios grandes (Amazon, redes sociales…) se abren en una pestaña nueva por seguridad. El resto de sitios se muestran aquí mismo cuando es posible.</div>
+			    </div>
+			    <div class="browser-viewport" style="position:absolute;inset:0;overflow:hidden;">
+			      <iframe class="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;" referrerpolicy="no-referrer"></iframe>
+			    </div>
+			    <div class="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
+			      <div style="font-size:3rem;">🚫</div>
+			      <div class="browser-blocked-title" style="font-size:14px;font-weight:700;">Este sitio no permite mostrarse aquí dentro</div>
+			      <div class="browser-blocked-text" style="font-size:12px;opacity:.6;word-break:break-all;max-width:320px;"></div>
+			      <a class="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en pestaña nueva ↗</a>
+			    </div>
+			  `;
+			  const goBtn=pane.querySelector('.browser-home-go');
+			  const searchInput=pane.querySelector('.browser-home-search');
+			  if(goBtn && searchInput) goBtn.onclick = ()=> browserNavigate(searchInput.value);
+			  container.appendChild(pane);
+			  return pane;
+			}
+			function browserNewTab(url){
+			  const id=++_browserTabSeq;
+			  const tab={ id, url:'', title:'Nueva pestaña', history:[], historyIndex:-1, pinned:false, desktopMode:false, _loadTimer:null };
+			  _browserTabs.push(tab);
+			  _activeTabId=id;
+			  renderBrowserTabBar();
+			  browserShowActiveTabPane();
+			  updateBrowserToolbarState();
+			  const menu=document.getElementById('browser-options-menu');
+			  if(menu) menu.style.display='none';
+			  if(url) browserNavigate(url);
+			}
+			function browserCloseTab(id, evt){
+			  if(evt) evt.stopPropagation();
+			  const idx=_browserTabs.findIndex(t=>t.id===id);
+			  if(idx===-1) return;
+			  const pane=document.getElementById('browser-pane-'+id);
+			  if(pane) pane.remove();
+			  _browserTabs.splice(idx,1);
+			  if(_browserTabs.length===0){ browserNewTab(); return; }
+			  if(_activeTabId===id){ _activeTabId=_browserTabs[Math.max(0,idx-1)].id; }
+			  renderBrowserTabBar();
+			  browserShowActiveTabPane();
+			  updateBrowserToolbarState();
+			}
+			function browserSwitchTab(id){
+			  _activeTabId=id;
+			  renderBrowserTabBar();
+			  browserShowActiveTabPane();
+			  updateBrowserToolbarState();
+			}
+			function browserTogglePinActiveTab(){
+			  const tab=getActiveTab(); if(!tab) return;
+			  tab.pinned=!tab.pinned;
+			  renderBrowserTabBar();
+			}
+			function renderBrowserTabBar(){
+			  const bar=document.getElementById('browser-tabbar');
+			  if(!bar) return;
+			  bar.innerHTML='';
+			  _browserTabs.forEach(t=>{
+			    const active=t.id===_activeTabId;
+			    const item=document.createElement('div');
+			    item.style.cssText=`display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;flex-shrink:0;background:${active?'rgba(255,255,255,.16)':'rgba(255,255,255,.05)'};`;
+			    const labelSpan=document.createElement('span');
+			    labelSpan.textContent=(t.pinned?'📌 ':'')+(t.title||'Nueva pestaña').slice(0,18);
+			    item.appendChild(labelSpan);
+			    item.addEventListener('click', ()=> browserSwitchTab(t.id));
+			    if(!t.pinned || _browserTabs.length>1){
+			      const closeBtn=document.createElement('button');
+			      closeBtn.textContent='✕';
+			      closeBtn.style.cssText='background:none;border:none;color:rgba(255,255,255,.5);font-size:11px;cursor:pointer;padding:0;width:14px;height:14px;';
+			      closeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); browserCloseTab(t.id, e); });
+			      item.appendChild(closeBtn);
+			    }
+			    bar.appendChild(item);
+			  });
+			  const addBtn=document.createElement('button');
+			  addBtn.textContent='+';
+			  addBtn.title='Nueva pestaña';
+			  addBtn.style.cssText='background:rgba(255,255,255,.08);border:none;color:#fff;width:24px;height:24px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;';
+			  addBtn.addEventListener('click', ()=> browserNewTab());
+			  bar.appendChild(addBtn);
+			}
+			function browserShowActiveTabPane(){
+			  document.querySelectorAll('#browser-container > div').forEach(p=> p.style.display='none');
+			  const tab=getActiveTab();
+			  if(!tab) return;
+			  let pane=document.getElementById('browser-pane-'+tab.id);
+			  if(!pane) pane=browserCreateTabPane(tab);
+			  pane.style.display='block';
+			  const urlInput=document.getElementById('browser-url');
+			  if(urlInput) urlInput.value=tab.url||'';
+			  browserApplyZoom();
+			  browserApplyDesktopMode(tab);
+			  browserUpdateFavButton();
 			}
 			function browserNormalizeUrl(input){
 			  const v=(input||'').trim();
@@ -9565,12 +9675,18 @@
 			  if(looksLikeDomain) return 'https://'+v;
 			  return 'https://www.google.com/search?q='+encodeURIComponent(v);
 			}
+			function browserUpdateTabTitle(tab, url){
+			  try{ tab.title=new URL(url).hostname.replace(/^www\./,''); }catch(e){ tab.title=url; }
+			  renderBrowserTabBar();
+			}
 			function browserNavigate(input){
 			  const url=browserNormalizeUrl(input);
 			  if(!url) return;
-			  _browserHistory=_browserHistory.slice(0,_browserHistoryIndex+1);
-			  _browserHistory.push(url);
-			  _browserHistoryIndex=_browserHistory.length-1;
+			  const tab=getActiveTab();
+			  if(!tab) return;
+			  tab.history=tab.history.slice(0,tab.historyIndex+1);
+			  tab.history.push(url);
+			  tab.historyIndex=tab.history.length-1;
 			  browserLoadUrl(url);
 			}
 			const BROWSER_BYPASS_HOST_PATTERNS=[
@@ -9594,16 +9710,22 @@
 			  }catch(e){ return false; }
 			}
 			function browserLoadUrl(url){
-			  const home=document.getElementById('browser-home');
-			  const blocked=document.getElementById('browser-blocked');
-			  const iframe=document.getElementById('browser-iframe');
+			  const tab=getActiveTab();
+			  if(!tab) return;
+			  tab.url=url;
+			  let pane=document.getElementById('browser-pane-'+tab.id);
+			  if(!pane) pane=browserCreateTabPane(tab);
+			  const home=pane.querySelector('.browser-home');
+			  const blocked=pane.querySelector('.browser-blocked');
+			  const iframe=pane.querySelector('.browser-iframe');
 			  const urlInput=document.getElementById('browser-url');
 			  if(!iframe) return;
 			  if(home) home.style.display='none';
 			  if(urlInput) urlInput.value=url;
-			  clearTimeout(_browserLoadTimer);
+			  clearTimeout(tab._loadTimer);
 			  iframe.onload=null;
 			  iframe.onerror=null;
+			  browserUpdateTabTitle(tab, url);
 			  // Sitios como Google, Amazon, Facebook, etc. bloquean su inclusión en iframes (X-Frame-Options/CSP)
 			  // o fallan dentro de un iframe por sus sistemas anti-bot (cookies de terceros bloqueadas, p.ej. el
 			  // "challenge" de Amazon nunca persiste y entra en bucle); para esos se abre directo en pestaña nueva.
@@ -9611,22 +9733,35 @@
 			    iframe.style.display='none';
 			    window.open(url,'_blank','noopener,noreferrer');
 			    browserShowBlocked(url,true);
+			    updateBrowserToolbarState();
 			    return;
 			  }
 			  if(blocked) blocked.style.display='none';
 			  iframe.style.display='block';
 			  let loaded=false;
-			  _browserLoadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(url); },7000);
-			  iframe.onload=()=>{ loaded=true; clearTimeout(_browserLoadTimer); };
-			  iframe.onerror=()=>{ clearTimeout(_browserLoadTimer); browserShowBlocked(url); };
+			  tab._loadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(url); },7000);
+			  iframe.onload=()=>{
+			    loaded=true; clearTimeout(tab._loadTimer);
+			    try{ const t=iframe.contentDocument && iframe.contentDocument.title; if(t){ tab.title=t; renderBrowserTabBar(); } }catch(e){}
+			    browserApplyDesktopMode(tab);
+			  };
+			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(url); };
 			  iframe.src=url;
+			  browserApplyZoom();
+			  browserApplyDesktopMode(tab);
+			  browserUpdateFavButton();
+			  updateBrowserToolbarState();
 			}
 			function browserShowBlocked(url,bypassed){
-			  const iframe=document.getElementById('browser-iframe');
-			  const blocked=document.getElementById('browser-blocked');
-			  const blockedTitle=document.getElementById('browser-blocked-title');
-			  const blockedText=document.getElementById('browser-blocked-text');
-			  const openNew=document.getElementById('browser-open-new');
+			  const tab=getActiveTab();
+			  if(!tab) return;
+			  const pane=document.getElementById('browser-pane-'+tab.id);
+			  if(!pane) return;
+			  const iframe=pane.querySelector('.browser-iframe');
+			  const blocked=pane.querySelector('.browser-blocked');
+			  const blockedTitle=pane.querySelector('.browser-blocked-title');
+			  const blockedText=pane.querySelector('.browser-blocked-text');
+			  const openNew=pane.querySelector('.browser-open-new');
 			  if(iframe) iframe.style.display='none';
 			  if(blocked) blocked.style.display='flex';
 			  if(blockedTitle) blockedTitle.textContent = bypassed ? 'Este sitio se abrió en una pestaña nueva' : 'Este sitio no permite mostrarse aquí dentro';
@@ -9634,18 +9769,179 @@
 			  if(openNew) openNew.href=url;
 			}
 			function browserOpenInNewTab(){
-			  const url=_browserHistoryIndex>=0 ? _browserHistory[_browserHistoryIndex] : (document.getElementById('browser-url')?.value||'');
+			  const tab=getActiveTab();
+			  const url=tab && tab.historyIndex>=0 ? tab.history[tab.historyIndex] : (document.getElementById('browser-url')?.value||'');
 			  const normalized=browserNormalizeUrl(url);
 			  if(normalized) window.open(normalized,'_blank','noopener,noreferrer');
 			}
 			function browserGoBack(){
-			  if(_browserHistoryIndex>0){ _browserHistoryIndex--; browserLoadUrl(_browserHistory[_browserHistoryIndex]); }
+			  const tab=getActiveTab(); if(!tab) return;
+			  if(tab.historyIndex>0){ tab.historyIndex--; browserLoadUrl(tab.history[tab.historyIndex]); }
 			}
 			function browserGoForward(){
-			  if(_browserHistoryIndex<_browserHistory.length-1){ _browserHistoryIndex++; browserLoadUrl(_browserHistory[_browserHistoryIndex]); }
+			  const tab=getActiveTab(); if(!tab) return;
+			  if(tab.historyIndex<tab.history.length-1){ tab.historyIndex++; browserLoadUrl(tab.history[tab.historyIndex]); }
 			}
 			function browserReload(){
-			  if(_browserHistoryIndex>=0) browserLoadUrl(_browserHistory[_browserHistoryIndex]);
+			  const tab=getActiveTab(); if(!tab) return;
+			  if(tab.historyIndex>=0) browserLoadUrl(tab.history[tab.historyIndex]);
+			}
+			function updateBrowserToolbarState(){
+			  const tab=getActiveTab();
+			  const backBtn=document.getElementById('browser-back-btn');
+			  const fwdBtn=document.getElementById('browser-fwd-btn');
+			  if(backBtn) backBtn.style.opacity = (tab && tab.historyIndex>0) ? '1' : '.4';
+			  if(fwdBtn) fwdBtn.style.opacity = (tab && tab.historyIndex<tab.history.length-1) ? '1' : '.4';
+			  browserUpdateFavButton();
+			}
+			function browserApplyZoom(){
+			  const tab=getActiveTab(); if(!tab) return;
+			  const pane=document.getElementById('browser-pane-'+tab.id); if(!pane) return;
+			  const iframe=pane.querySelector('.browser-iframe');
+			  if(iframe) iframe.style.zoom = BROWSER_ZOOM_LEVELS[_browserZoomIdx];
+			}
+			function browserCycleZoom(){
+			  _browserZoomIdx = (_browserZoomIdx+1) % BROWSER_ZOOM_LEVELS.length;
+			  browserApplyZoom();
+			  browserShowToast('Tamaño de texto: '+Math.round(BROWSER_ZOOM_LEVELS[_browserZoomIdx]*100)+'%');
+			}
+			function browserApplyDesktopMode(tab){
+			  const t=tab || getActiveTab(); if(!t) return;
+			  const pane=document.getElementById('browser-pane-'+t.id); if(!pane) return;
+			  const viewport=pane.querySelector('.browser-viewport');
+			  const iframe=pane.querySelector('.browser-iframe');
+			  if(!viewport || !iframe) return;
+			  if(t.desktopMode){ iframe.style.width='1280px'; viewport.style.overflow='auto'; }
+			  else { iframe.style.width='100%'; viewport.style.overflow='hidden'; }
+			}
+			function browserToggleDesktopSite(){
+			  const tab=getActiveTab(); if(!tab) return;
+			  tab.desktopMode=!tab.desktopMode;
+			  browserApplyDesktopMode(tab);
+			  browserShowToast(tab.desktopMode ? 'Sitio de escritorio (aproximado)' : 'Sitio para celular');
+			}
+			function browserToggleFavorite(){
+			  const tab=getActiveTab(); if(!tab || !tab.url) return;
+			  const idx=_browserFavorites.findIndex(f=>f.url===tab.url);
+			  if(idx>=0){ _browserFavorites.splice(idx,1); browserShowToast('Quitado de favoritos'); }
+			  else { _browserFavorites.push({ title: tab.title || tab.url, url: tab.url }); browserShowToast('Añadido a favoritos ⭐'); }
+			  saveBrowserFavorites();
+			  renderBrowserFavBar();
+			  browserUpdateFavButton();
+			}
+			function browserUpdateFavButton(){
+			  const tab=getActiveTab();
+			  const btn=document.getElementById('browser-fav-btn');
+			  if(!btn) return;
+			  btn.textContent = (tab && _browserFavorites.some(f=>f.url===tab.url)) ? '★' : '☆';
+			}
+			function renderBrowserFavBar(){
+			  const bar=document.getElementById('browser-favbar');
+			  if(!bar) return;
+			  if(!_browserFavorites.length){ bar.style.display='none'; bar.innerHTML=''; return; }
+			  bar.style.display='flex';
+			  bar.innerHTML='';
+			  _browserFavorites.forEach((f,i)=>{
+			    const item=document.createElement('div');
+			    item.style.cssText='display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border-radius:8px;padding:4px 8px;cursor:pointer;flex-shrink:0;';
+			    const label=document.createElement('span');
+			    label.textContent=f.title;
+			    label.style.cssText='font-size:10px;color:#fff;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;display:inline-block;';
+			    item.appendChild(label);
+			    const removeBtn=document.createElement('button');
+			    removeBtn.textContent='✕';
+			    removeBtn.style.cssText='background:none;border:none;color:rgba(255,255,255,.4);font-size:10px;cursor:pointer;padding:0;';
+			    removeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); browserRemoveFavorite(i); });
+			    item.appendChild(removeBtn);
+			    item.addEventListener('click', ()=> browserNavigate(f.url));
+			    bar.appendChild(item);
+			  });
+			}
+			function browserRemoveFavorite(i){
+			  _browserFavorites.splice(i,1);
+			  saveBrowserFavorites();
+			  renderBrowserFavBar();
+			  browserUpdateFavButton();
+			}
+			function browserToggleToolbar(){
+			  _browserToolbarHidden=!_browserToolbarHidden;
+			  const toolbar=document.getElementById('browser-toolbar');
+			  const tabbar=document.getElementById('browser-tabbar');
+			  if(toolbar) toolbar.style.display=_browserToolbarHidden?'none':'flex';
+			  if(tabbar) tabbar.style.display=_browserToolbarHidden?'none':'flex';
+			  if(!_browserToolbarHidden) renderBrowserFavBar();
+			  else { const fb=document.getElementById('browser-favbar'); if(fb) fb.style.display='none'; }
+			  let reveal=document.getElementById('browser-reveal-btn');
+			  if(_browserToolbarHidden){
+			    if(!reveal){
+			      reveal=document.createElement('button');
+			      reveal.id='browser-reveal-btn';
+			      reveal.textContent='⌄';
+			      reveal.style.cssText='position:absolute;top:6px;right:6px;z-index:20;background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;';
+			      reveal.onclick=browserToggleToolbar;
+			      document.getElementById('browser-modal').appendChild(reveal);
+			    }
+			  } else if(reveal){ reveal.remove(); }
+			}
+			function browserShare(){
+			  const tab=getActiveTab(); if(!tab || !tab.url) return;
+			  if(navigator.share){ navigator.share({ title: tab.title||tab.url, url: tab.url }).catch(()=>{}); }
+			  else if(navigator.clipboard && navigator.clipboard.writeText){
+			    navigator.clipboard.writeText(tab.url).then(()=> browserShowToast('Enlace copiado 📋')).catch(()=>{});
+			  }
+			}
+			function browserPrint(){
+			  const tab=getActiveTab(); if(!tab) return;
+			  const pane=document.getElementById('browser-pane-'+tab.id); if(!pane) return;
+			  const iframe=pane.querySelector('.browser-iframe');
+			  try{ if(iframe && iframe.contentWindow){ iframe.contentWindow.focus(); iframe.contentWindow.print(); } }
+			  catch(e){ browserShowToast('Este sitio no permite imprimir desde aquí'); }
+			}
+			function browserShowToast(msg){
+			  const modal=document.getElementById('browser-modal'); if(!modal) return;
+			  let toast=document.getElementById('browser-toast');
+			  if(!toast){
+			    toast=document.createElement('div');
+			    toast.id='browser-toast';
+			    toast.style.cssText='position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(20,20,22,.95);color:#fff;padding:10px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:40;pointer-events:none;transition:opacity .2s;';
+			    modal.appendChild(toast);
+			  }
+			  toast.textContent=msg;
+			  toast.style.opacity='1';
+			  clearTimeout(toast._timer);
+			  toast._timer=setTimeout(()=>{ toast.style.opacity='0'; }, 1800);
+			}
+			function browserToggleOptionsMenu(){
+			  const menu=document.getElementById('browser-options-menu');
+			  if(!menu) return;
+			  if(menu.style.display==='block'){ menu.style.display='none'; return; }
+			  renderBrowserOptionsMenu();
+			  menu.style.display='block';
+			}
+			function renderBrowserOptionsMenu(){
+			  const menu=document.getElementById('browser-options-menu');
+			  if(!menu) return;
+			  const tab=getActiveTab();
+			  const isFav = tab && _browserFavorites.some(f=>f.url===tab.url);
+			  const items=[
+			    { label: _browserToolbarHidden ? '👁️ Mostrar barra de herramientas' : '🙈 Ocultar barra de herramientas', action:'browserToggleToolbar' },
+			    { label: (tab && tab.desktopMode) ? '📱 Solicitar sitio para celular' : '🖥️ Solicitar sitio de escritorio', action:'browserToggleDesktopSite' },
+			    { label: isFav ? '⭐ Quitar de favoritos' : '☆ Añadir a favoritos', action:'browserToggleFavorite' },
+			    { label: (tab && tab.pinned) ? '📌 Dejar de fijar pestaña' : '📌 Fijar pestaña', action:'browserTogglePinActiveTab' },
+			    { label: '📤 Compartir', action:'browserShare' },
+			    { label: '🖨️ Imprimir', action:'browserPrint' },
+			    { label: '🆕 Nueva pestaña', action:'browserNewTab' }
+			  ];
+			  menu.innerHTML='';
+			  items.forEach(it=>{
+			    const btn=document.createElement('button');
+			    btn.textContent=it.label;
+			    btn.style.cssText='display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-size:13px;padding:10px 12px;border-radius:8px;cursor:pointer;';
+			    btn.addEventListener('mouseenter', ()=> btn.style.background='rgba(255,255,255,.08)');
+			    btn.addEventListener('mouseleave', ()=> btn.style.background='none');
+			    btn.addEventListener('click', ()=>{ menu.style.display='none'; const fn=window[it.action]; if(typeof fn==='function') fn(); });
+			    menu.appendChild(btn);
+			  });
 			}
 
 			/* ═══════════════════════════════════════════
