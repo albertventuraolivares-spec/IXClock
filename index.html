@@ -1617,6 +1617,37 @@
 							</div>
 						</div>
 					</div>
+					<div class="p-3.5 glass rounded-2xl space-y-2" id="opinion-card">
+						<div
+							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+						>
+							💬 Mi Opinión
+						</div>
+						<div id="opinion-view-mode">
+							<div id="opinion-empty" class="text-xs opacity-40 py-1">
+								Aún no has escrito tu opinión.
+							</div>
+							<div
+								id="opinion-display"
+								class="hidden text-xs leading-relaxed whitespace-pre-wrap opacity-90 mb-2"
+							></div>
+							<div class="flex gap-2">
+								<button class="btn-option flex-1" id="opinion-edit-btn" onclick="opinionEdit()">
+									✏️ Escribir
+								</button>
+								<button class="btn-option flex-1 hidden" id="opinion-delete-btn" onclick="opinionDelete()" style="color:#f87171;">
+									🗑️ Eliminar
+								</button>
+							</div>
+						</div>
+						<div id="opinion-edit-mode" class="hidden space-y-2">
+							<textarea id="opinion-textarea" rows="4" placeholder="Escribe aquí tu opinión..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2 text-xs outline-none resize-none"></textarea>
+							<div class="flex gap-2">
+								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar</button>
+								<button class="btn-option flex-1" onclick="opinionCancelEdit()">Cancelar</button>
+							</div>
+						</div>
+					</div>
 				</div>
 				<!-- TAB: MANUAL / AYUDA -->
 				<div
@@ -5953,6 +5984,60 @@
 			  notesShowList();
 			}
 
+			/* ===================== MI OPINIÓN ===================== */
+			let userOpinion = '';
+			async function loadOpinion(){
+			  try{
+			    const res = await window.storage.get('user_opinion', false);
+			    if(res && res.value) userOpinion = res.value;
+			  }catch(e){ userOpinion = ''; }
+			  renderOpinion();
+			}
+			async function saveOpinionStorage(){
+			  try{ await window.storage.set('user_opinion', userOpinion, false); }catch(e){}
+			}
+			function renderOpinion(){
+			  const empty = document.getElementById('opinion-empty');
+			  const display = document.getElementById('opinion-display');
+			  const deleteBtn = document.getElementById('opinion-delete-btn');
+			  const editBtn = document.getElementById('opinion-edit-btn');
+			  if(userOpinion && userOpinion.trim()){
+			    empty.classList.add('hidden');
+			    display.classList.remove('hidden');
+			    display.textContent = userOpinion;
+			    deleteBtn.classList.remove('hidden');
+			    editBtn.innerHTML = '✏️ Editar';
+			  }else{
+			    empty.classList.remove('hidden');
+			    display.classList.add('hidden');
+			    deleteBtn.classList.add('hidden');
+			    editBtn.innerHTML = '✏️ Escribir';
+			  }
+			}
+			function opinionEdit(){
+			  document.getElementById('opinion-view-mode').classList.add('hidden');
+			  document.getElementById('opinion-edit-mode').classList.remove('hidden');
+			  const ta = document.getElementById('opinion-textarea');
+			  ta.value = userOpinion;
+			  ta.focus();
+			}
+			function opinionCancelEdit(){
+			  document.getElementById('opinion-edit-mode').classList.add('hidden');
+			  document.getElementById('opinion-view-mode').classList.remove('hidden');
+			}
+			function opinionSave(){
+			  const ta = document.getElementById('opinion-textarea');
+			  userOpinion = ta.value.trim();
+			  saveOpinionStorage();
+			  renderOpinion();
+			  opinionCancelEdit();
+			}
+			function opinionDelete(){
+			  userOpinion = '';
+			  saveOpinionStorage();
+			  renderOpinion();
+			}
+
 			/* ===================== LOGIN / PROFILE SYSTEM ===================== */
 			(function(){
 			  // --- helpers ---
@@ -6824,6 +6909,7 @@
 			updateMoonPhase();
 			loadAlarms();
 			loadNotes();
+			loadOpinion();
 			setInterval(renderizarFeriados, 3600000);
 			setInterval(updateMoonPhase, 3600000);
 			document.getElementById('brightness-slider').oninput = e=>{
