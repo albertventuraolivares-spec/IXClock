@@ -9578,15 +9578,17 @@
 			      <iframe class="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;"></iframe>
 			      <div class="browser-stuck-banner" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:8px 10px 8px 14px;align-items:center;gap:10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:90%;">
 			        <span class="browser-stuck-msg">¿Tenés problemas con esta página? Podés abrirla en el navegador real:</span>
-			        <a class="browser-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;">Abrir en pestaña nueva ↗</a>
+			        <button class="browser-stuck-proxy" onclick="browserRetryViaProxy()" style="background:#34c759;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;font-size:12px;cursor:pointer;">Intentar con proxy ↺</button>
+			        <a class="browser-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;">Abrir en Safari ↗</a>
 			        <button class="browser-stuck-dismiss" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 2px;">✕</button>
 			      </div>
 			    </div>
 			    <div class="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
 			      <div style="font-size:3rem;">🚫</div>
-			      <div class="browser-blocked-title" style="font-size:14px;font-weight:700;">Este sitio no permite mostrarse aquí dentro</div>
+			      <div class="browser-blocked-title" style="font-size:14px;font-weight:700;">Este sitio no se cargó</div>
 			      <div class="browser-blocked-text" style="font-size:12px;opacity:.6;word-break:break-all;max-width:320px;"></div>
-			      <a class="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en pestaña nueva ↗</a>
+			      <button onclick="browserRetryViaProxy()" style="background:#34c759;color:#fff;border:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Intentar con proxy ↺</button>
+			      <a class="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en Safari ↗</a>
 			    </div>
 			  `;
 			  const goBtn=pane.querySelector('.browser-home-go');
@@ -9697,7 +9699,12 @@
 			function browserLoadUrl(url){
 			  const tab=getActiveTab();
 			  if(!tab) return;
-			  tab.url=url;
+			  // Detect proxy URLs and use the real URL for display / history
+			  const PROXY_PFX='/.netlify/functions/proxy?url=';
+			  const isProxy=url.startsWith(PROXY_PFX);
+			  const realUrl=isProxy ? (()=>{ try{ return decodeURIComponent(url.slice(PROXY_PFX.length)); }catch(e){ return url; } })() : url;
+			  tab.url=realUrl;
+			  tab._proxyMode=isProxy;
 			  let pane=document.getElementById('browser-pane-'+tab.id);
 			  if(!pane) pane=browserCreateTabPane(tab);
 			  const home=pane.querySelector('.browser-home');
@@ -9707,17 +9714,17 @@
 			  const urlInput=document.getElementById('browser-url');
 			  if(!iframe) return;
 			  if(home) home.style.display='none';
-			  if(urlInput) urlInput.value=url;
+			  if(urlInput) urlInput.value=realUrl;
 			  clearTimeout(tab._loadTimer);
 			  clearTimeout(tab._stuckTimer);
 			  if(stuckBanner) stuckBanner.style.display='none';
 			  iframe.onload=null;
 			  iframe.onerror=null;
-			  browserUpdateTabTitle(tab, url);
+			  browserUpdateTabTitle(tab, realUrl);
 			  if(blocked) blocked.style.display='none';
 			  iframe.style.display='block';
 			  let loaded=false;
-			  tab._loadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(url); },7000);
+			  tab._loadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(realUrl); },7000);
 			  iframe.onload=()=>{
 			    loaded=true; clearTimeout(tab._loadTimer);
 			    let botBlocked=false;
@@ -9727,25 +9734,45 @@
 			        const t=doc.title; if(t){ tab.title=t; renderBrowserTabBar(); }
 			        const bodyText=doc.body && doc.body.innerText;
 			        if(bodyText && /challenge|verify you are human|attempts exceeded|access denied|robot check|unusual traffic|captcha|security check|pardon our interruption/i.test(bodyText)) botBlocked=true;
+			        // Proxy navigation: update URL bar with real URL from new proxy location
+			        if(tab._proxyMode){
+			          try{
+			            const loc=iframe.contentWindow.location.href;
+			            if(loc.includes(PROXY_PFX)){
+			              const r=decodeURIComponent(loc.split(PROXY_PFX)[1].split('&')[0]);
+			              if(urlInput) urlInput.value=r; tab.url=r;
+			            }
+			          }catch(x){}
+			        }
 			      }
 			    }catch(e){}
 			    browserApplyDesktopMode(tab);
 			    clearTimeout(tab._stuckTimer);
 			    tab._stuckTimer=setTimeout(()=>{
-			      if(getActiveTab()===tab && stuckBanner && tab.history[tab.historyIndex]===url){
+			      if(getActiveTab()===tab && stuckBanner){
+			        // In proxy mode: only show banner when bot-blocked (not generically)
+			        if(tab._proxyMode && !botBlocked) return;
+			        const histMatch=tab._proxyMode ? true : tab.history[tab.historyIndex]===realUrl;
+			        if(!histMatch) return;
 			        const msgEl=stuckBanner.querySelector('.browser-stuck-msg');
+			        const proxyBtn=stuckBanner.querySelector('.browser-stuck-proxy');
 			        if(msgEl) msgEl.textContent=botBlocked
-			          ? 'Este sitio usa protección anti-bots que no funciona en navegadores embebidos — no es un error de la app.'
+			          ? (tab._proxyMode
+			              ? 'Este sitio usa protección anti-bots que no puede superarse incluso con proxy.'
+			              : 'Este sitio usa protección anti-bots que no funciona en navegadores embebidos — no es un error de la app.')
 			          : '¿Tenés problemas con esta página? Podés abrirla en el navegador real:';
+			        if(proxyBtn) proxyBtn.style.display=tab._proxyMode ? 'none' : '';
+			        const openLink=stuckBanner.querySelector('.browser-stuck-open');
+			        if(openLink) openLink.href=realUrl;
 			        stuckBanner.style.display='flex';
 			      }
 			    },2500);
 			  };
-			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(url); };
+			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(realUrl); };
 			  if(stuckBanner){
 			    const openLink=stuckBanner.querySelector('.browser-stuck-open');
 			    const dismissBtn=stuckBanner.querySelector('.browser-stuck-dismiss');
-			    if(openLink) openLink.href=url;
+			    if(openLink) openLink.href=realUrl;
 			    if(dismissBtn) dismissBtn.onclick=()=>{ stuckBanner.style.display='none'; };
 			  }
 			  iframe.src=url;
@@ -9753,6 +9780,18 @@
 			  browserApplyDesktopMode(tab);
 			  browserUpdateFavButton();
 			  updateBrowserToolbarState();
+			}
+			function browserRetryViaProxy(){
+			  const tab=getActiveTab();
+			  if(!tab || tab.historyIndex<0) return;
+			  const realUrl=tab.url || tab.history[tab.historyIndex];
+			  if(!realUrl) return;
+			  const PROXY_PFX='/.netlify/functions/proxy?url=';
+			  if(realUrl.startsWith(PROXY_PFX)) return; // already proxied
+			  const proxyUrl=PROXY_PFX+encodeURIComponent(realUrl);
+			  // Update history entry to proxy URL so back/forward also proxies
+			  if(tab.historyIndex>=0) tab.history[tab.historyIndex]=proxyUrl;
+			  browserLoadUrl(proxyUrl);
 			}
 			function browserShowBlocked(url){
 			  const tab=getActiveTab();
