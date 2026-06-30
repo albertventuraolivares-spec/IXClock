@@ -9689,26 +9689,6 @@
 			  tab.historyIndex=tab.history.length-1;
 			  browserLoadUrl(url);
 			}
-			const BROWSER_BYPASS_HOST_PATTERNS=[
-			  /(^|\.)google\.[a-z.]{2,}$/i,
-			  /(^|\.)amazon\.[a-z.]{2,}$/i,
-			  /(^|\.)facebook\.com$/i,
-			  /(^|\.)instagram\.com$/i,
-			  /(^|\.)twitter\.com$/i,
-			  /(^|\.)x\.com$/i,
-			  /(^|\.)linkedin\.com$/i,
-			  /(^|\.)netflix\.com$/i,
-			  /(^|\.)youtube\.com$/i
-			];
-			function browserIsGoogleHost(url){
-			  try{ return /(^|\.)google\.[a-z.]{2,}$/i.test(new URL(url).hostname); }catch(e){ return false; }
-			}
-			function browserShouldBypassIframe(url){
-			  try{
-			    const host=new URL(url).hostname;
-			    return BROWSER_BYPASS_HOST_PATTERNS.some(re=>re.test(host));
-			  }catch(e){ return false; }
-			}
 			function browserLoadUrl(url){
 			  const tab=getActiveTab();
 			  if(!tab) return;
@@ -9726,16 +9706,6 @@
 			  iframe.onload=null;
 			  iframe.onerror=null;
 			  browserUpdateTabTitle(tab, url);
-			  // Sitios como Google, Amazon, Facebook, etc. bloquean su inclusión en iframes (X-Frame-Options/CSP)
-			  // o fallan dentro de un iframe por sus sistemas anti-bot (cookies de terceros bloqueadas, p.ej. el
-			  // "challenge" de Amazon nunca persiste y entra en bucle); para esos se abre directo en pestaña nueva.
-			  if(browserShouldBypassIframe(url)){
-			    iframe.style.display='none';
-			    window.open(url,'_blank','noopener,noreferrer');
-			    browserShowBlocked(url,true);
-			    updateBrowserToolbarState();
-			    return;
-			  }
 			  if(blocked) blocked.style.display='none';
 			  iframe.style.display='block';
 			  let loaded=false;
@@ -9752,7 +9722,7 @@
 			  browserUpdateFavButton();
 			  updateBrowserToolbarState();
 			}
-			function browserShowBlocked(url,bypassed){
+			function browserShowBlocked(url){
 			  const tab=getActiveTab();
 			  if(!tab) return;
 			  const pane=document.getElementById('browser-pane-'+tab.id);
@@ -9764,7 +9734,7 @@
 			  const openNew=pane.querySelector('.browser-open-new');
 			  if(iframe) iframe.style.display='none';
 			  if(blocked) blocked.style.display='flex';
-			  if(blockedTitle) blockedTitle.textContent = bypassed ? 'Este sitio se abrió en una pestaña nueva' : 'Este sitio no permite mostrarse aquí dentro';
+			  if(blockedTitle) blockedTitle.textContent = 'Este sitio no pudo cargarse aquí';
 			  if(blockedText) blockedText.textContent=url;
 			  if(openNew) openNew.href=url;
 			}
