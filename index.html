@@ -2932,12 +2932,21 @@
 					style="color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
 					>—</span
 				>
-				<button
-					onclick="closeTVPlayer()"
-					style="background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;"
-				>
-					✕
-				</button>
+				<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+					<button
+						onclick="toggleTVFullscreen()"
+						title="Pantalla completa"
+						style="background:none;border:none;color:rgba(255,255,255,.6);font-size:15px;cursor:pointer;padding:0;"
+					>
+						⛶
+					</button>
+					<button
+						onclick="closeTVPlayer()"
+						style="background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0;"
+					>
+						✕
+					</button>
+				</div>
 			</div>
 			<video
 				id="tv-video"
@@ -6024,6 +6033,20 @@
 			  if(video){ video.pause(); video.removeAttribute('src'); video.load(); }
 			  if(player) player.style.display = 'none';
 			  tvSetStatus('', false);
+			}
+
+			function toggleTVFullscreen(){
+			  const video = document.getElementById('tv-video');
+			  if(!video) return;
+			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+			  if(!isFull){
+			    if(video.requestFullscreen) video.requestFullscreen().catch(()=>{});
+			    else if(video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+			    else if(video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+			  } else {
+			    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+			    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+			  }
 			}
 
 			/* ===================== PANTALLA COMPLETA ===================== */
