@@ -287,6 +287,21 @@
 			.game-tile:hover{background:rgba(255,255,255,.12);transform:translateY(-2px);}
 			.game-tile .game-tile-icon{font-size:26px;}
 			.game-tile .game-tile-label{font-size:10px;font-weight:700;color:#fff;}
+			.player-chip{
+			  display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+			  border-radius:20px;padding:5px 6px 5px 12px;font-size:11px;font-weight:600;color:#fff;
+			}
+			.player-chip button{
+			  width:16px;height:16px;border-radius:50%;border:none;background:rgba(255,69,58,.25);color:#ff453a;
+			  font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+			}
+			.gp-cursor{outline:3px solid #0a84ff !important;outline-offset:2px;}
+			.game-mode-btn{
+			  width:100%;max-width:240px;padding:14px;border-radius:14px;background:rgba(255,255,255,.06);
+			  border:1px solid rgba(255,255,255,.14);color:#fff;font-weight:700;font-size:13px;cursor:pointer;
+			  display:flex;align-items:center;gap:10px;transition:background .15s ease;
+			}
+			.game-mode-btn:hover{background:rgba(255,255,255,.14);}
 			#game-stage-modal{
 			  position:fixed;inset:0;z-index:9400;display:none;align-items:center;justify-content:center;
 			  background:rgba(0,0,0,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -2980,18 +2995,25 @@
 			</div>
 			<div style="overflow-y:auto;padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px;">
 				<div>
+					<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+						<div style="font-size:10px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.08em;">👥 Jugadores</div>
+						<div id="gamepad-status" style="font-size:9px;opacity:.5;">🎮 Sin mando</div>
+					</div>
+					<div id="players-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+					<div style="display:flex;gap:6px;">
+						<input id="new-player-input" placeholder="Nombre de jugador…" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12px;" onkeydown="if(event.key==='Enter') addPlayerFromInput()" />
+						<button onclick="addPlayerFromInput()" style="padding:8px 12px;border-radius:10px;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">+ Añadir</button>
+					</div>
+					<div style="font-size:9px;opacity:.4;margin-top:6px;">Regístrense del 1 al que quieran: se usan para jugar contra un amigo y en el modo torneo (pase y juegue).</div>
+				</div>
+				<div>
 					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Jugar ahora</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-grid"></div>
 				</div>
 				<div>
 					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🌐 Más juegos en línea</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-external-grid"></div>
-					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren en una pestaña nueva</div>
-				</div>
-				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🎮 Nintendo · PlayStation · Xbox</div>
-					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-console-grid"></div>
-					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Catálogos oficiales: clásicos y novedades · Se abren en una pestaña nueva</div>
+					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
 				</div>
 			</div>
 		</div>
@@ -6370,17 +6392,33 @@
 			  {icon:'🐍', name:'Slither.io', url:'https://slither.io'},
 			  {icon:'🌐', name:'Itch.io', url:'https://itch.io/games/free/platform-web'}
 			];
-			const CONSOLE_GAMES = [
-			  {icon:'🍄', name:'Nintendo eShop', url:'https://www.nintendo.com/store/'},
-			  {icon:'👾', name:'Switch Online (NES/SNES/N64)', url:'https://www.nintendo.com/switch/online-service/'},
-			  {icon:'🎮', name:'Catálogo Nintendo', url:'https://www.nintendo.com/games/'},
-			  {icon:'🎯', name:'PlayStation Store', url:'https://store.playstation.com/'},
-			  {icon:'📀', name:'PS Plus Classics', url:'https://www.playstation.com/en-us/ps-plus/games/'},
-			  {icon:'🕹️', name:'Catálogo PlayStation', url:'https://www.playstation.com/en-us/games/'},
-			  {icon:'❎', name:'Xbox Store', url:'https://www.xbox.com/games/store'},
-			  {icon:'🔄', name:'Xbox Retrocompatibles', url:'https://www.xbox.com/en-us/games/backward-compatibility'},
-			  {icon:'🟩', name:'Xbox Game Pass', url:'https://www.xbox.com/en-US/xbox-game-pass'}
-			];
+
+			/* ===================== JUGADORES (1 a muchísimos) ===================== */
+			let PLAYERS = (()=>{ try{ const v=JSON.parse(localStorage.getItem('ix_players')); return Array.isArray(v)&&v.length?v:['Jugador 1']; }catch(e){ return ['Jugador 1']; } })();
+			function savePlayers(){ try{ localStorage.setItem('ix_players', JSON.stringify(PLAYERS)); }catch(e){} }
+			function renderPlayersList(){
+			  const el = document.getElementById('players-list');
+			  if(!el) return;
+			  el.innerHTML = PLAYERS.map((name,i)=>
+			    `<div class="player-chip">${escapeHtml(name)}${PLAYERS.length>1?`<button onclick="removePlayer(${i})" title="Quitar">✕</button>`:''}</div>`
+			  ).join('');
+			}
+			function addPlayerFromInput(){
+			  const input = document.getElementById('new-player-input');
+			  if(!input) return;
+			  const name = input.value.trim();
+			  if(!name) return;
+			  PLAYERS.push(name);
+			  savePlayers();
+			  input.value = '';
+			  renderPlayersList();
+			}
+			function removePlayer(i){
+			  if(PLAYERS.length<=1) return;
+			  PLAYERS.splice(i,1);
+			  savePlayers();
+			  renderPlayersList();
+			}
 
 			let _gamesRendered = false;
 			function toggleGamesPanel(){
@@ -6391,6 +6429,7 @@
 			  if(opening){
 			    panel.classList.add('open');
 			    if(!_gamesRendered){ renderGamesGrids(); _gamesRendered = true; }
+			    renderPlayersList();
 			  }
 			}
 			function renderGamesGrids(){
@@ -6406,16 +6445,7 @@
 			  const ext = document.getElementById('games-external-grid');
 			  if(ext){
 			    ext.innerHTML = EXTERNAL_GAMES.map(g=>
-			      `<div class="game-tile" onclick="window.open('${g.url}','_blank','noopener')">
-			        <div class="game-tile-icon">${g.icon}</div>
-			        <div class="game-tile-label">${escapeHtml(g.name)}</div>
-			      </div>`
-			    ).join('');
-			  }
-			  const consoles = document.getElementById('games-console-grid');
-			  if(consoles){
-			    consoles.innerHTML = CONSOLE_GAMES.map(g=>
-			      `<div class="game-tile" onclick="window.open('${g.url}','_blank','noopener')">
+			      `<div class="game-tile" onclick="openBrowser();browserNavigate('${g.url}')">
 			        <div class="game-tile-icon">${g.icon}</div>
 			        <div class="game-tile-label">${escapeHtml(g.name)}</div>
 			      </div>`
@@ -6427,9 +6457,30 @@
 			let _activeGameCleanup = null;
 			const GAME_TITLES = Object.fromEntries(NATIVE_GAMES.map(g=>[g.id, g.icon+' '+g.name]));
 
+			/* Juegos de duelo: máquina o amigo (mismo dispositivo) */
+			const DUEL_GAMES = new Set(['ttt','pong','rps']);
+			/* Juegos de torneo: pase y juegue, de 1 a muchísimos jugadores */
+			const TOURNAMENT_GAMES = new Set(['snake','2048','memory','flappy','whack','simon','puzzle15']);
+			const TOURNAMENT_SCORE_INFO = {
+			  snake:{el:'snake-score', better:'high'},
+			  '2048':{el:'g2048-score', better:'high'},
+			  memory:{el:'mem-moves', better:'low'},
+			  flappy:{el:'flappy-score', better:'high'},
+			  whack:{el:'whack-score', better:'high'},
+			  simon:{el:'simon-level', better:'high'},
+			  puzzle15:{el:'p15-moves', better:'low'}
+			};
+
+			let _activeDuelMode = null;
+			let _activeDuelNames = null;
+			let _tourneyState = null;
+
 			function openGame(id){
 			  if(_activeGameCleanup){ try{ _activeGameCleanup(); }catch(e){} _activeGameCleanup = null; }
 			  _activeGameId = id;
+			  _activeDuelMode = null;
+			  _activeDuelNames = null;
+			  _tourneyState = null;
 			  const modal = document.getElementById('game-stage-modal');
 			  const content = document.getElementById('game-stage-content');
 			  const title = document.getElementById('game-stage-title');
@@ -6437,18 +6488,246 @@
 			  if(title) title.textContent = GAME_TITLES[id] || 'Juego';
 			  content.innerHTML = '';
 			  modal.style.display = 'flex';
-			  const initFn = GAME_INITS[id];
-			  if(initFn) _activeGameCleanup = initFn(content) || null;
+			  if(DUEL_GAMES.has(id)){
+			    showDuelModeChooser(id, content);
+			  } else if(TOURNAMENT_GAMES.has(id)){
+			    showTournamentSetup(id, content);
+			  } else {
+			    const initFn = GAME_INITS[id];
+			    if(initFn) _activeGameCleanup = initFn(content) || null;
+			  }
 			}
 			function restartCurrentGame(){
-			  if(_activeGameId) openGame(_activeGameId);
+			  if(!_activeGameId) return;
+			  if(_activeDuelMode){ startDuelGame(_activeGameId, _activeDuelMode); }
+			  else if(_tourneyState){ playTournamentRound(); }
+			  else { openGame(_activeGameId); }
 			}
 			function closeGameStage(){
 			  if(_activeGameCleanup){ try{ _activeGameCleanup(); }catch(e){} _activeGameCleanup = null; }
+			  clearGamepadGrid();
 			  _activeGameId = null;
+			  _activeDuelMode = null;
+			  _activeDuelNames = null;
+			  _tourneyState = null;
 			  const modal = document.getElementById('game-stage-modal');
 			  if(modal) modal.style.display = 'none';
 			}
+
+			/* ---------- Selector de modo: máquina o amigo ---------- */
+			function showDuelModeChooser(id, content){
+			  content.innerHTML = `
+			    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:18px 0;">
+			      <div style="font-size:12px;opacity:.6;">¿Cómo quieres jugar ${escapeHtml(GAME_TITLES[id]||'')}?</div>
+			      <button class="game-mode-btn" onclick="startDuelGame('${id}','cpu')">🤖 Contra la máquina</button>
+			      <button class="game-mode-btn" onclick="startDuelGame('${id}','friend')">👥 Contra un amigo (pasen el dispositivo)</button>
+			    </div>
+			  `;
+			}
+			function startDuelGame(id, mode){
+			  const content = document.getElementById('game-stage-content');
+			  if(!content) return;
+			  if(_activeGameCleanup){ try{ _activeGameCleanup(); }catch(e){} _activeGameCleanup = null; }
+			  clearGamepadGrid();
+			  _activeDuelMode = mode;
+			  _activeDuelNames = mode==='friend' ? [PLAYERS[0]||'Jugador 1', PLAYERS[1]||'Jugador 2'] : [PLAYERS[0]||'Jugador 1', 'Máquina'];
+			  content.innerHTML = '';
+			  const initFn = GAME_INITS[id];
+			  if(initFn) _activeGameCleanup = initFn(content, {mode, names:_activeDuelNames}) || null;
+			}
+
+			/* ---------- Modo torneo: pase y juegue, 1 a muchísimos jugadores ---------- */
+			function showTournamentSetup(id, content){
+			  content.innerHTML = `
+			    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:260px;margin:0 auto;">
+			      <div style="font-size:12px;opacity:.6;text-align:center;">Modo torneo: cada jugador juega su turno por turnos en este dispositivo</div>
+			      <div id="tourney-players-list" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"></div>
+			      <div style="display:flex;gap:6px;">
+			        <input id="tourney-new-player" placeholder="Nombre…" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12px;" onkeydown="if(event.key==='Enter') tourneyAddPlayer()" />
+			        <button onclick="tourneyAddPlayer()" style="padding:8px 12px;border-radius:10px;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;">+ Añadir</button>
+			      </div>
+			      <button class="game-mode-btn" style="justify-content:center;background:rgba(48,209,88,.18);border-color:rgba(48,209,88,.4);color:#30d158;" onclick="startTournament('${id}')">▶️ Empezar</button>
+			    </div>
+			  `;
+			  renderTourneyPlayersList();
+			}
+			function renderTourneyPlayersList(){
+			  const el = document.getElementById('tourney-players-list');
+			  if(!el) return;
+			  el.innerHTML = PLAYERS.map((name,i)=>
+			    `<div class="player-chip">${escapeHtml(name)}${PLAYERS.length>1?`<button onclick="tourneyRemovePlayer(${i})" title="Quitar">✕</button>`:''}</div>`
+			  ).join('');
+			}
+			function tourneyAddPlayer(){
+			  const input = document.getElementById('tourney-new-player');
+			  if(!input) return;
+			  const name = input.value.trim();
+			  if(!name) return;
+			  PLAYERS.push(name);
+			  savePlayers();
+			  input.value = '';
+			  renderTourneyPlayersList();
+			  renderPlayersList();
+			}
+			function tourneyRemovePlayer(i){
+			  if(PLAYERS.length<=1) return;
+			  PLAYERS.splice(i,1);
+			  savePlayers();
+			  renderTourneyPlayersList();
+			  renderPlayersList();
+			}
+			function startTournament(id){
+			  if(!PLAYERS.length) return;
+			  _tourneyState = { id, players: PLAYERS.slice(), idx:0, results:[] };
+			  playTournamentRound();
+			}
+			function playTournamentRound(){
+			  const st = _tourneyState;
+			  if(!st) return;
+			  if(_activeGameCleanup){ try{ _activeGameCleanup(); }catch(e){} _activeGameCleanup = null; }
+			  clearGamepadGrid();
+			  const content = document.getElementById('game-stage-content');
+			  if(!content) return;
+			  const name = st.players[st.idx];
+			  content.innerHTML = `
+			    <div style="font-size:12px;font-weight:700;color:#0a84ff;margin-bottom:8px;text-align:center;">🎮 Turno de: ${escapeHtml(name)} (${st.idx+1}/${st.players.length})</div>
+			    <div id="tourney-game-host" style="display:flex;flex-direction:column;align-items:center;gap:8px;"></div>
+			    <button onclick="finishTourneyTurn()" style="margin-top:12px;width:100%;max-width:260px;padding:10px;border-radius:12px;background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.4);color:#ff453a;font-weight:700;font-size:12px;cursor:pointer;">✅ Terminar mi turno</button>
+			  `;
+			  const host = document.getElementById('tourney-game-host');
+			  const initFn = GAME_INITS[st.id];
+			  if(initFn) _activeGameCleanup = initFn(host) || null;
+			}
+			function finishTourneyTurn(){
+			  const st = _tourneyState;
+			  if(!st) return;
+			  const info = TOURNAMENT_SCORE_INFO[st.id];
+			  let scoreVal = 0;
+			  if(info){ const el = document.getElementById(info.el); scoreVal = el ? (parseInt(el.textContent,10)||0) : 0; }
+			  st.results.push({ name: st.players[st.idx], score: scoreVal });
+			  if(_activeGameCleanup){ try{ _activeGameCleanup(); }catch(e){} _activeGameCleanup = null; }
+			  clearGamepadGrid();
+			  st.idx++;
+			  if(st.idx < st.players.length){ playTournamentRound(); } else { showTournamentResults(); }
+			}
+			function showTournamentResults(){
+			  const st = _tourneyState;
+			  if(!st) return;
+			  const info = TOURNAMENT_SCORE_INFO[st.id];
+			  const sorted = st.results.slice().sort((a,b)=> info && info.better==='low' ? a.score-b.score : b.score-a.score);
+			  const content = document.getElementById('game-stage-content');
+			  if(!content) return;
+			  const medals = ['🥇','🥈','🥉'];
+			  content.innerHTML = `
+			    <div style="font-size:14px;font-weight:800;margin-bottom:10px;text-align:center;">🏆 Resultados</div>
+			    <div style="width:100%;max-width:260px;margin:0 auto;">
+			      ${sorted.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:10px;background:${i===0?'rgba(255,214,10,.15)':'rgba(255,255,255,.05)'};margin-bottom:6px;"><span>${medals[i]||(i+1)+'.'} ${escapeHtml(r.name)}</span><span style="font-weight:700;">${r.score}</span></div>`).join('')}
+			      <button class="game-mode-btn" style="justify-content:center;margin-top:8px;" onclick="openGame('${st.id}')">🔁 Jugar otra vez</button>
+			    </div>
+			  `;
+			  _tourneyState = null;
+			}
+
+			/* ===================== SOPORTE DE MANDO / GAMEPAD ===================== */
+			let _activeGamepadGridNav = null; // {container, selector, cols}
+			let _gamepadCursorIndex = 0;
+			function registerGamepadGrid(container, selector, cols){
+			  _activeGamepadGridNav = { container, selector, cols };
+			  _gamepadCursorIndex = 0;
+			  highlightGamepadCursor();
+			}
+			function clearGamepadGrid(){
+			  if(_activeGamepadGridNav){
+			    try{ _activeGamepadGridNav.container.querySelectorAll(_activeGamepadGridNav.selector).forEach(el=> el.classList.remove('gp-cursor')); }catch(e){}
+			  }
+			  _activeGamepadGridNav = null;
+			}
+			function highlightGamepadCursor(){
+			  if(!_activeGamepadGridNav) return;
+			  const els = _activeGamepadGridNav.container.querySelectorAll(_activeGamepadGridNav.selector);
+			  els.forEach((el,i)=> el.classList.toggle('gp-cursor', i===_gamepadCursorIndex));
+			}
+			function moveGamepadCursor(dx, dy){
+			  if(!_activeGamepadGridNav) return;
+			  const { container, selector, cols } = _activeGamepadGridNav;
+			  const els = container.querySelectorAll(selector);
+			  const n = els.length;
+			  if(!n) return;
+			  let row = Math.floor(_gamepadCursorIndex / cols), col = _gamepadCursorIndex % cols;
+			  const rows = Math.ceil(n/cols);
+			  col = (col + dx + cols) % cols;
+			  row = (row + dy + rows) % rows;
+			  let idx = row*cols + col;
+			  if(idx >= n) idx = n-1;
+			  _gamepadCursorIndex = idx;
+			  highlightGamepadCursor();
+			}
+			function clickGamepadCursor(){
+			  if(!_activeGamepadGridNav) return;
+			  const els = _activeGamepadGridNav.container.querySelectorAll(_activeGamepadGridNav.selector);
+			  const el = els[_gamepadCursorIndex];
+			  if(el) el.click();
+			}
+			const _GP_DIR_KEY = {up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight'};
+			function _gpPressDir(dir){
+			  if(_activeGamepadGridNav){
+			    if(dir==='up') moveGamepadCursor(0,-1);
+			    else if(dir==='down') moveGamepadCursor(0,1);
+			    else if(dir==='left') moveGamepadCursor(-1,0);
+			    else if(dir==='right') moveGamepadCursor(1,0);
+			    return;
+			  }
+			  const key = _GP_DIR_KEY[dir];
+			  document.dispatchEvent(new KeyboardEvent('keydown', { key, code:key, bubbles:true }));
+			}
+			function _gpReleaseDir(dir){
+			  if(_activeGamepadGridNav) return;
+			  const key = _GP_DIR_KEY[dir];
+			  document.dispatchEvent(new KeyboardEvent('keyup', { key, code:key, bubbles:true }));
+			}
+			function _gpAction(){
+			  if(_activeGamepadGridNav){ clickGamepadCursor(); return; }
+			  document.dispatchEvent(new KeyboardEvent('keydown', { key:' ', code:'Space', bubbles:true }));
+			  setTimeout(()=> document.dispatchEvent(new KeyboardEvent('keyup', { key:' ', code:'Space', bubbles:true })), 60);
+			  const canvas = document.querySelector('#game-stage-content canvas');
+			  if(canvas) canvas.click();
+			}
+			const _gpState = {};
+			function _updateGamepadStatus(connected){
+			  const el = document.getElementById('gamepad-status');
+			  if(el) el.textContent = connected ? '🎮 Mando conectado' : '🎮 Sin mando';
+			}
+			function _pollGamepads(){
+			  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+			  let any = false;
+			  for(let i=0;i<pads.length;i++){
+			    const gp = pads[i];
+			    if(!gp) continue;
+			    any = true;
+			    const st = _gpState[i] || (_gpState[i] = { dir:null, btn0:false });
+			    const ax = gp.axes[0]||0, ay = gp.axes[1]||0;
+			    const dpadUp = gp.buttons[12] && gp.buttons[12].pressed;
+			    const dpadDown = gp.buttons[13] && gp.buttons[13].pressed;
+			    const dpadLeft = gp.buttons[14] && gp.buttons[14].pressed;
+			    const dpadRight = gp.buttons[15] && gp.buttons[15].pressed;
+			    let dir = null;
+			    if(dpadUp || ay < -0.5) dir = 'up';
+			    else if(dpadDown || ay > 0.5) dir = 'down';
+			    else if(dpadLeft || ax < -0.5) dir = 'left';
+			    else if(dpadRight || ax > 0.5) dir = 'right';
+			    if(dir !== st.dir){
+			      if(st.dir) _gpReleaseDir(st.dir);
+			      if(dir) _gpPressDir(dir);
+			      st.dir = dir;
+			    }
+			    const btn0 = !!(gp.buttons[0] && gp.buttons[0].pressed);
+			    if(btn0 && !st.btn0) _gpAction();
+			    st.btn0 = btn0;
+			  }
+			  _updateGamepadStatus(any);
+			  requestAnimationFrame(_pollGamepads);
+			}
+			requestAnimationFrame(_pollGamepads);
 
 			/* ---------- Snake ---------- */
 			function initSnakeGame(container){
@@ -6593,6 +6872,7 @@
 			    gridEl.querySelectorAll('.mem-card').forEach(el=>{
 			      el.onclick = ()=> flipCard(parseInt(el.dataset.i,10));
 			    });
+			    registerGamepadGrid(gridEl, '.mem-card', 4);
 			  }
 			  function flipCard(i){
 			    if(lock || flipped.includes(i) || matched.has(i)) return;
@@ -6611,15 +6891,18 @@
 			    }
 			  }
 			  render();
-			  return null;
+			  return ()=> clearGamepadGrid();
 			}
 
 			/* ---------- Tres en raya (vs CPU) ---------- */
-			function initTTTGame(container){
+			function initTTTGame(container, opts){
+			  const mode = (opts && opts.mode) || 'cpu';
+			  const names = (opts && opts.names) || [PLAYERS[0]||'Jugador 1', 'Máquina'];
 			  let board = Array(9).fill('');
 			  let over = false;
+			  let turn = 0; // 0 = names[0] (❌), 1 = names[1] (⭕)
 			  container.innerHTML = `
-			    <div style="font-size:11px;opacity:.6;" id="ttt-status">Tu turno (❌)</div>
+			    <div style="font-size:11px;opacity:.6;" id="ttt-status">Turno de ${escapeHtml(names[0])} (❌)</div>
 			    <div id="ttt-grid" style="display:grid;grid-template-columns:repeat(3,72px);grid-template-rows:repeat(3,72px);gap:6px;"></div>
 			  `;
 			  const gridEl = container.querySelector('#ttt-grid');
@@ -6633,6 +6916,7 @@
 			  function render(){
 			    gridEl.innerHTML = board.map((v,i)=>`<div data-i="${i}" style="width:72px;height:72px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;cursor:pointer;color:${v==='❌'?'#0a84ff':'#ff453a'};">${v}</div>`).join('');
 			    gridEl.querySelectorAll('div').forEach(el=> el.onclick = ()=> play(parseInt(el.dataset.i,10)));
+			    registerGamepadGrid(gridEl, '[data-i]', 3);
 			  }
 			  function aiMove(){
 			    const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
@@ -6642,28 +6926,40 @@
 			    if(board[4]===''){ board[4]='⭕'; return; }
 			    board[empties[Math.floor(Math.random()*empties.length)]] = '⭕';
 			  }
+			  function endStatus(w){
+			    over = true;
+			    if(w==='draw'){ statusEl.textContent = '¡Empate!'; return; }
+			    if(mode==='cpu'){ statusEl.textContent = w==='❌' ? `¡Ganó ${escapeHtml(names[0])}! 🎉` : 'Ganó la máquina 🤖'; }
+			    else { statusEl.textContent = `¡Ganó ${escapeHtml(w==='❌'?names[0]:names[1])}! 🎉`; }
+			  }
 			  function play(i){
 			    if(over || board[i]) return;
-			    board[i] = '❌';
-			    let w = checkWinner(board);
-			    if(!w){ aiMove(); w = checkWinner(board); }
-			    render();
-			    if(w){
-			      over = true;
-			      statusEl.textContent = w==='draw' ? '¡Empate!' : (w==='❌' ? '¡Ganaste! 🎉' : 'Ganó la máquina 🤖');
+			    if(mode==='cpu'){
+			      board[i] = '❌';
+			      let w = checkWinner(board);
+			      if(!w){ aiMove(); w = checkWinner(board); }
+			      render();
+			      if(w){ endStatus(w); } else { statusEl.textContent = `Turno de ${escapeHtml(names[0])} (❌)`; }
 			    } else {
-			      statusEl.textContent = 'Tu turno (❌)';
+			      board[i] = turn===0 ? '❌' : '⭕';
+			      const w = checkWinner(board);
+			      render();
+			      if(w){ endStatus(w); }
+			      else { turn = turn===0?1:0; statusEl.textContent = `Turno de ${escapeHtml(names[turn])} (${turn===0?'❌':'⭕'})`; }
 			    }
 			  }
 			  render();
-			  return null;
+			  return ()=> clearGamepadGrid();
 			}
 
 			/* ---------- Pong (vs CPU) ---------- */
-			function initPongGame(container){
+			function initPongGame(container, opts){
+			  const mode = (opts && opts.mode) || 'cpu';
+			  const names = (opts && opts.names) || [PLAYERS[0]||'Jugador 1', 'CPU'];
+			  const hint = mode==='friend' ? `${escapeHtml(names[0])}: ratón/W·S · ${escapeHtml(names[1])}: flechas ↑↓` : 'Mueve el mouse, W/S o las flechas';
 			  container.innerHTML = `
-			    <div style="font-size:11px;opacity:.6;">Mueve el mouse o desliza · Tú: <span id="pong-p1">0</span> — CPU: <span id="pong-p2">0</span></div>
-			    <canvas id="pong-canvas" width="320" height="220" style="background:#0a0a0c;border-radius:12px;"></canvas>
+			    <div style="font-size:11px;opacity:.6;">${hint} · ${escapeHtml(names[0])}: <span id="pong-p1">0</span> — ${escapeHtml(names[1])}: <span id="pong-p2">0</span></div>
+			    <canvas id="pong-canvas" width="320" height="220" style="background:#0a0a0c;border-radius:12px;" tabindex="0"></canvas>
 			  `;
 			  const canvas = container.querySelector('#pong-canvas');
 			  const ctx = canvas.getContext('2d');
@@ -6672,6 +6968,7 @@
 			  const paddleH = 40, paddleW = 8;
 			  let ball;
 			  let s1=0, s2=0, running = true;
+			  const keys = {};
 			  function resetBall(dir){ ball = {x:W/2,y:H/2,vx:3*dir,vy:(Math.random()*4-2)}; }
 			  resetBall(1);
 			  function onMove(e){
@@ -6681,13 +6978,26 @@
 			  }
 			  canvas.addEventListener('mousemove', onMove);
 			  canvas.addEventListener('touchmove', onMove);
+			  function onKeyDown(e){ keys[e.key] = true; }
+			  function onKeyUp(e){ keys[e.key] = false; }
+			  document.addEventListener('keydown', onKeyDown);
+			  document.addEventListener('keyup', onKeyUp);
 			  function step(){
 			    if(!running) return;
+			    if(keys['w']||keys['W']) p1y = Math.max(0, p1y - 5);
+			    if(keys['s']||keys['S']) p1y = Math.min(H-paddleH, p1y + 5);
+			    if(mode==='friend'){
+			      if(keys['ArrowUp']) p2y = Math.max(0, p2y - 5);
+			      if(keys['ArrowDown']) p2y = Math.min(H-paddleH, p2y + 5);
+			    } else {
+			      if(keys['ArrowUp']) p1y = Math.max(0, p1y - 5);
+			      if(keys['ArrowDown']) p1y = Math.min(H-paddleH, p1y + 5);
+			      const target = ball.y - paddleH/2;
+			      p2y += (target - p2y) * 0.08;
+			      p2y = Math.min(H-paddleH, Math.max(0, p2y));
+			    }
 			    ball.x += ball.vx; ball.y += ball.vy;
 			    if(ball.y<0||ball.y>H) ball.vy *= -1;
-			    const target = ball.y - paddleH/2;
-			    p2y += (target - p2y) * 0.08;
-			    p2y = Math.min(H-paddleH, Math.max(0, p2y));
 			    if(ball.x<=paddleW+4 && ball.y>=p1y && ball.y<=p1y+paddleH){ ball.vx = Math.abs(ball.vx); }
 			    if(ball.x>=W-paddleW-4 && ball.y>=p2y && ball.y<=p2y+paddleH){ ball.vx = -Math.abs(ball.vx); }
 			    if(ball.x<0){ s2++; const e2=document.getElementById('pong-p2'); if(e2) e2.textContent=s2; resetBall(1); }
@@ -6703,7 +7013,7 @@
 			  }
 			  draw();
 			  const timer = setInterval(step, 1000/60);
-			  return ()=>{ running=false; clearInterval(timer); canvas.removeEventListener('mousemove', onMove); canvas.removeEventListener('touchmove', onMove); };
+			  return ()=>{ running=false; clearInterval(timer); canvas.removeEventListener('mousemove', onMove); canvas.removeEventListener('touchmove', onMove); document.removeEventListener('keydown', onKeyDown); document.removeEventListener('keyup', onKeyUp); };
 			}
 
 			/* ---------- Flappy ---------- */
@@ -6782,11 +7092,13 @@
 			  let score=0, timeLeft=30, activeIdx=-1, over=false;
 			  const holes = Array.from({length:9},(_,i)=>{
 			    const d=document.createElement('div');
+			    d.className = 'whack-hole';
 			    d.style.cssText='width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;';
 			    d.onclick = ()=>{ if(over) return; if(i===activeIdx){ score++; scoreEl.textContent=score; activeIdx=-1; render(); } };
 			    gridEl.appendChild(d);
 			    return d;
 			  });
+			  registerGamepadGrid(gridEl, '.whack-hole', 3);
 			  function render(){ holes.forEach((h,i)=> h.textContent = i===activeIdx ? '🐹' : ''); }
 			  function popRandom(){
 			    if(over) return;
@@ -6803,26 +7115,29 @@
 			    }
 			  }, 1000);
 			  render();
-			  return ()=>{ clearInterval(popTimer); clearInterval(countdown); };
+			  return ()=>{ clearInterval(popTimer); clearInterval(countdown); clearGamepadGrid(); };
 			}
 
 			/* ---------- Simon ---------- */
 			function initSimonGame(container){
 			  container.innerHTML = `
-			    <div style="font-size:11px;opacity:.6;" id="simon-status">Mira la secuencia…</div>
+			    <div style="font-size:11px;opacity:.6;" id="simon-status">Mira la secuencia… · Nivel: <span id="simon-level">0</span></div>
 			    <div id="simon-grid" style="display:grid;grid-template-columns:repeat(2,80px);grid-template-rows:repeat(2,80px);gap:8px;"></div>
 			  `;
 			  const colors = ['#ff453a','#30d158','#0a84ff','#ffd60a'];
 			  const gridEl = container.querySelector('#simon-grid');
 			  const statusEl = container.querySelector('#simon-status');
+			  const levelEl = container.querySelector('#simon-level');
 			  let seq=[], userSeq=[], level=0, accepting=false, over=false, destroyed=false;
 			  const pads = colors.map((c,i)=>{
 			    const d=document.createElement('div');
+			    d.className = 'simon-pad';
 			    d.style.cssText=`width:80px;height:80px;border-radius:14px;background:${c};opacity:.4;cursor:pointer;transition:opacity .1s;`;
 			    d.onclick = ()=> handleClick(i);
 			    gridEl.appendChild(d);
 			    return d;
 			  });
+			  registerGamepadGrid(gridEl, '.simon-pad', 2);
 			  function flash(i, dur=400){
 			    return new Promise(res=>{
 			      pads[i].style.opacity = '1';
@@ -6841,6 +7156,7 @@
 			  }
 			  function nextLevel(){
 			    level++;
+			    levelEl.textContent = level;
 			    seq.push(Math.floor(Math.random()*4));
 			    playSeq();
 			  }
@@ -6860,41 +7176,111 @@
 			    }
 			  }
 			  nextLevel();
-			  return ()=>{ destroyed = true; };
+			  return ()=>{ destroyed = true; clearGamepadGrid(); };
 			}
 
 			/* ---------- Piedra, papel o tijera ---------- */
-			function initRPSGame(container){
-			  container.innerHTML = `
-			    <div style="font-size:13px;font-weight:700;" id="rps-status">Elige tu jugada</div>
-			    <div style="display:flex;gap:14px;">
-			      <button class="rps-btn" data-v="✊">✊</button>
-			      <button class="rps-btn" data-v="✋">✋</button>
-			      <button class="rps-btn" data-v="✌️">✌️</button>
-			    </div>
-			    <div style="font-size:11px;opacity:.6;" id="rps-score">Tú 0 — CPU 0</div>
-			  `;
-			  container.querySelectorAll('.rps-btn').forEach(b=>{
-			    b.style.cssText='font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;';
-			  });
-			  const statusEl = container.querySelector('#rps-status');
-			  const scoreEl = container.querySelector('#rps-score');
-			  let myScore=0, cpuScore=0;
+			function initRPSGame(container, opts){
+			  const mode = (opts && opts.mode) || 'cpu';
+			  const names = (opts && opts.names) || [PLAYERS[0]||'Jugador 1', 'Máquina'];
+			  const choices = ['✊','✋','✌️'];
 			  const beats = {'✊':'✌️','✋':'✊','✌️':'✋'};
-			  container.querySelectorAll('.rps-btn').forEach(b=>{
-			    b.onclick = ()=>{
-			      const mine = b.dataset.v;
-			      const opts = ['✊','✋','✌️'];
-			      const cpu = opts[Math.floor(Math.random()*3)];
-			      let result;
-			      if(mine===cpu) result='Empate';
-			      else if(beats[mine]===cpu){ result='¡Ganaste!'; myScore++; }
-			      else { result='Perdiste'; cpuScore++; }
-			      statusEl.textContent = `Tú: ${mine}  vs  CPU: ${cpu} → ${result}`;
-			      scoreEl.textContent = `Tú ${myScore} — CPU ${cpuScore}`;
-			    };
-			  });
-			  return null;
+			  let score = [0,0];
+			  let p1Choice = null;
+			  function btnHtml(){
+			    return `<div style="display:flex;gap:14px;">
+			      <button class="rps-btn" data-v="✊" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✊</button>
+			      <button class="rps-btn" data-v="✋" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✋</button>
+			      <button class="rps-btn" data-v="✌️" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✌️</button>
+			    </div>`;
+			  }
+			  function scoreLabel(){
+			    return `${escapeHtml(names[0])} ${score[0]} — ${escapeHtml(names[1])} ${score[1]}`;
+			  }
+			  function resolveRound(a, b){
+			    if(a===b) return 0;
+			    return beats[a]===b ? 1 : 2;
+			  }
+			  function renderCpuChoice(){
+			    clearGamepadGrid();
+			    container.innerHTML = `
+			      <div style="font-size:13px;font-weight:700;" id="rps-status">${escapeHtml(names[0])}, elige tu jugada</div>
+			      ${btnHtml()}
+			      <div style="font-size:11px;opacity:.6;" id="rps-score">${scoreLabel()}</div>
+			    `;
+			    const statusEl = container.querySelector('#rps-status');
+			    const scoreEl = container.querySelector('#rps-score');
+			    const gridEl = container.querySelector('.rps-btn').parentElement;
+			    registerGamepadGrid(gridEl, '.rps-btn', 3);
+			    container.querySelectorAll('.rps-btn').forEach(b=>{
+			      b.onclick = ()=>{
+			        const mine = b.dataset.v;
+			        const cpu = choices[Math.floor(Math.random()*3)];
+			        const winner = resolveRound(mine, cpu);
+			        let result;
+			        if(winner===0) result='Empate';
+			        else if(winner===1){ result=`¡Ganó ${escapeHtml(names[0])}!`; score[0]++; }
+			        else { result=`Ganó ${escapeHtml(names[1])}`; score[1]++; }
+			        statusEl.textContent = `${escapeHtml(names[0])}: ${mine}  vs  ${escapeHtml(names[1])}: ${cpu} → ${result}`;
+			        scoreEl.textContent = scoreLabel();
+			        clearGamepadGrid();
+			      };
+			    });
+			  }
+			  function renderFriendStep1(){
+			    clearGamepadGrid();
+			    container.innerHTML = `
+			      <div style="font-size:13px;font-weight:700;" id="rps-status">${escapeHtml(names[0])}, elige en privado</div>
+			      ${btnHtml()}
+			      <div style="font-size:11px;opacity:.6;" id="rps-score">${scoreLabel()}</div>
+			    `;
+			    const gridEl = container.querySelector('.rps-btn').parentElement;
+			    registerGamepadGrid(gridEl, '.rps-btn', 3);
+			    container.querySelectorAll('.rps-btn').forEach(b=>{
+			      b.onclick = ()=>{ p1Choice = b.dataset.v; renderPassPrompt(); };
+			    });
+			  }
+			  function renderPassPrompt(){
+			    clearGamepadGrid();
+			    container.innerHTML = `
+			      <div style="font-size:13px;font-weight:700;text-align:center;">Pasa el dispositivo a ${escapeHtml(names[1])}</div>
+			      <button id="rps-ready-btn" style="margin-top:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.1);border:none;border-radius:14px;padding:12px 20px;cursor:pointer;color:#fff;">Listo ▶️</button>
+			      <div style="font-size:11px;opacity:.6;margin-top:8px;" id="rps-score">${scoreLabel()}</div>
+			    `;
+			    container.querySelector('#rps-ready-btn').onclick = renderFriendStep2;
+			  }
+			  function renderFriendStep2(){
+			    clearGamepadGrid();
+			    container.innerHTML = `
+			      <div style="font-size:13px;font-weight:700;" id="rps-status">${escapeHtml(names[1])}, elige tu jugada</div>
+			      ${btnHtml()}
+			      <div style="font-size:11px;opacity:.6;" id="rps-score">${scoreLabel()}</div>
+			    `;
+			    const gridEl = container.querySelector('.rps-btn').parentElement;
+			    registerGamepadGrid(gridEl, '.rps-btn', 3);
+			    container.querySelectorAll('.rps-btn').forEach(b=>{
+			      b.onclick = ()=>{
+			        const p2Choice = b.dataset.v;
+			        const winner = resolveRound(p1Choice, p2Choice);
+			        let result;
+			        if(winner===0) result='Empate';
+			        else if(winner===1){ result=`¡Ganó ${escapeHtml(names[0])}!`; score[0]++; }
+			        else { result=`¡Ganó ${escapeHtml(names[1])}!`; score[1]++; }
+			        renderFriendResult(p1Choice, p2Choice, result);
+			      };
+			    });
+			  }
+			  function renderFriendResult(c1, c2, result){
+			    clearGamepadGrid();
+			    container.innerHTML = `
+			      <div style="font-size:13px;font-weight:700;text-align:center;">${escapeHtml(names[0])}: ${c1}  vs  ${escapeHtml(names[1])}: ${c2}<br>${result}</div>
+			      <button id="rps-again-btn" style="margin-top:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.1);border:none;border-radius:14px;padding:12px 20px;cursor:pointer;color:#fff;">🔁 Otra ronda</button>
+			      <div style="font-size:11px;opacity:.6;margin-top:8px;" id="rps-score">${scoreLabel()}</div>
+			    `;
+			    container.querySelector('#rps-again-btn').onclick = ()=>{ p1Choice = null; renderFriendStep1(); };
+			  }
+			  if(mode==='friend'){ renderFriendStep1(); } else { renderCpuChoice(); }
+			  return ()=> clearGamepadGrid();
 			}
 
 			/* ---------- Puzzle 15 ---------- */
@@ -6925,12 +7311,14 @@
 			    gridEl.innerHTML='';
 			    tiles.forEach((v,i)=>{
 			      const d=document.createElement('div');
+			      d.className = 'p15-tile';
 			      d.style.cssText=`width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;cursor:pointer;background:${v?'#0a84ff':'transparent'};color:#fff;`;
 			      d.textContent = v||'';
 			      d.onclick = ()=> tryMove(i);
 			      gridEl.appendChild(d);
 			    });
 			    movesEl.textContent = moves;
+			    registerGamepadGrid(gridEl, '.p15-tile', 4);
 			  }
 			  function tryMove(i){
 			    const blank = tiles.indexOf(0);
@@ -6946,7 +7334,7 @@
 			  }
 			  tiles = shuffledSolvable();
 			  render();
-			  return null;
+			  return ()=> clearGamepadGrid();
 			}
 
 			const GAME_INITS = {
