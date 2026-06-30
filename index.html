@@ -9577,7 +9577,7 @@
 			    <div class="browser-viewport" style="position:absolute;inset:0;overflow:hidden;">
 			      <iframe class="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;"></iframe>
 			      <div class="browser-stuck-banner" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:8px 10px 8px 14px;align-items:center;gap:10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:90%;">
-			        <span>¿No carga bien esta página?</span>
+			        <span class="browser-stuck-msg">¿Tenés problemas con esta página? Podés abrirla en el navegador real:</span>
 			        <a class="browser-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;">Abrir en pestaña nueva ↗</a>
 			        <button class="browser-stuck-dismiss" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 2px;">✕</button>
 			      </div>
@@ -9720,11 +9720,25 @@
 			  tab._loadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(url); },7000);
 			  iframe.onload=()=>{
 			    loaded=true; clearTimeout(tab._loadTimer);
-			    try{ const t=iframe.contentDocument && iframe.contentDocument.title; if(t){ tab.title=t; renderBrowserTabBar(); } }catch(e){}
+			    let botBlocked=false;
+			    try{
+			      const doc=iframe.contentDocument;
+			      if(doc){
+			        const t=doc.title; if(t){ tab.title=t; renderBrowserTabBar(); }
+			        const bodyText=doc.body && doc.body.innerText;
+			        if(bodyText && /challenge|verify you are human|attempts exceeded|access denied|robot check|unusual traffic|captcha|security check|pardon our interruption/i.test(bodyText)) botBlocked=true;
+			      }
+			    }catch(e){}
 			    browserApplyDesktopMode(tab);
 			    clearTimeout(tab._stuckTimer);
 			    tab._stuckTimer=setTimeout(()=>{
-			      if(getActiveTab()===tab && stuckBanner && tab.history[tab.historyIndex]===url) stuckBanner.style.display='flex';
+			      if(getActiveTab()===tab && stuckBanner && tab.history[tab.historyIndex]===url){
+			        const msgEl=stuckBanner.querySelector('.browser-stuck-msg');
+			        if(msgEl) msgEl.textContent=botBlocked
+			          ? 'Este sitio usa protección anti-bots que no funciona en navegadores embebidos — no es un error de la app.'
+			          : '¿Tenés problemas con esta página? Podés abrirla en el navegador real:';
+			        stuckBanner.style.display='flex';
+			      }
 			    },2500);
 			  };
 			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(url); };
