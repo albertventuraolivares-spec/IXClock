@@ -1091,6 +1091,43 @@
 				<circle cx="29" cy="18" r="1.2" fill="#30d158" />
 			</svg>
 		</button>
+		<!-- Pantalla completa -->
+		<button
+			class="dock-btn"
+			id="fullscreen-dock-btn"
+			onclick="toggleFullscreen()"
+			title="Pantalla completa"
+			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 14px rgba(94,92,230,.4);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="url(#fsGrad)" />
+				<defs>
+					<linearGradient
+						id="fsGrad"
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="100%"
+					>
+						<stop offset="0%" stop-color="#5e5ce6" />
+						<stop offset="100%" stop-color="#0a84ff" />
+					</linearGradient>
+				</defs>
+				<g
+					id="fullscreen-dock-icon"
+					fill="none"
+					stroke="#fff"
+					stroke-width="2.2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M13 9 H9 V13" />
+					<path d="M27 9 H31 V13" />
+					<path d="M13 31 H9 V27" />
+					<path d="M27 31 H31 V27" />
+				</g>
+			</svg>
+		</button>
 	</div>
 
 	<body class="antialiased relative">
@@ -5759,6 +5796,31 @@
 			  if(player) player.style.display = 'none';
 			  tvSetStatus('', false);
 			}
+
+			/* ===================== PANTALLA COMPLETA ===================== */
+			function toggleFullscreen(){
+			  const el = document.documentElement;
+			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+			  if(!isFull){
+			    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+			    if(req) req.call(el).catch(()=>{});
+			  } else {
+			    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+			    if(exit) exit.call(document).catch?.(()=>{});
+			  }
+			}
+			function updateFullscreenIcon(){
+			  const icon = document.getElementById('fullscreen-dock-icon');
+			  const btn = document.getElementById('fullscreen-dock-btn');
+			  if(!icon) return;
+			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+			  if(btn) btn.title = isFull ? 'Salir de pantalla completa' : 'Pantalla completa';
+			  icon.innerHTML = isFull
+			    ? '<path d="M9 13 H13 V9" /><path d="M31 13 H27 V9" /><path d="M9 27 H13 V31" /><path d="M31 27 H27 V31" />'
+			    : '<path d="M13 9 H9 V13" /><path d="M27 9 H31 V13" /><path d="M13 31 H9 V27" /><path d="M27 31 H31 V27" />';
+			}
+			document.addEventListener('fullscreenchange', updateFullscreenIcon);
+			document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
 
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  const gp = document.getElementById('global-play');
