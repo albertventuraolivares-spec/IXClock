@@ -9725,7 +9725,7 @@
 			    clearTimeout(tab._stuckTimer);
 			    tab._stuckTimer=setTimeout(()=>{
 			      if(getActiveTab()===tab && stuckBanner && tab.history[tab.historyIndex]===url) stuckBanner.style.display='flex';
-			    },5000);
+			    },2500);
 			  };
 			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(url); };
 			  if(stuckBanner){
