@@ -1078,6 +1078,21 @@
 				/>
 			</svg>
 		</button>
+		<!-- Ventanas flotantes -->
+		<button
+			class="dock-btn"
+			onclick="openBrowserWindow('')"
+			title="Ventana flotante"
+			style="background:linear-gradient(135deg,#5e5ce6,#2c2c6e);box-shadow:0 3px 14px rgba(94,92,230,.4);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="#5e5ce6"/>
+				<rect x="6" y="9" width="26" height="20" rx="3" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+				<rect x="6" y="9" width="26" height="5" rx="3" fill="#fff" opacity=".3"/>
+				<rect x="14" y="16" width="16" height="11" rx="2.5" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
+				<rect x="14" y="16" width="16" height="4" rx="2.5" fill="#fff" opacity=".3"/>
+			</svg>
+		</button>
 		<!-- TV Mundial -->
 		<button
 			class="dock-btn"
@@ -9540,6 +9555,7 @@
 			      <button id="browser-fav-btn" onclick="browserToggleFavorite()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Añadir a favoritos">☆</button>
 			      <button onclick="browserToggleOptionsMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Más opciones">⋯</button>
 			      <button onclick="browserOpenInNewTab()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Abrir en pestaña del sistema">↗</button>
+			      <button onclick="openBrowserWindow(getActiveTab()&&getActiveTab().url||'')" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Abrir en ventana flotante">⊞</button>
 			      <button onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			    </div>
 			    <div id="browser-tabbar" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(20,20,22,.95);overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
@@ -9983,6 +9999,281 @@
 			    btn.addEventListener('click', ()=>{ menu.style.display='none'; const fn=window[it.action]; if(typeof fn==='function') fn(); });
 			    menu.appendChild(btn);
 			  });
+			}
+
+			/* ═══════════════════════════════════════════
+			   VENTANAS FLOTANTES DEL NAVEGADOR
+			═══════════════════════════════════════════ */
+			let _bwins=[], _bwinSeq=0, _bwinZTop=5500;
+			function _bwinGet(id){ return _bwins.find(w=>w.id===id)||null; }
+			function _bwinEl(id){ return document.getElementById('bwin-'+id); }
+			function _bwinFocus(id){ _bwinZTop++; const el=_bwinEl(id); if(el) el.style.zIndex=_bwinZTop; }
+			function openBrowserWindow(url){
+			  const id=++_bwinSeq;
+			  const win={ id, url:'', title:'Nueva ventana', history:[], historyIndex:-1, _proxyMode:false, _loadTimer:null, _stuckTimer:null, minimized:false, expanded:false, savedPos:null, savedH:null };
+			  _bwins.push(win);
+			  const el=_bwinCreateEl(win);
+			  const off=((_bwinSeq-1)%6)*28;
+			  el.style.left=(40+off)+'px'; el.style.top=(70+off)+'px';
+			  el.style.width='340px'; el.style.height='480px';
+			  document.body.appendChild(el);
+			  _bwinFocus(id);
+			  const modal=document.getElementById('browser-modal');
+			  if(modal) modal.style.display='none';
+			  if(url) _bwinLoadNav(id, url);
+			  return id;
+			}
+			function _bwinCreateEl(win){
+			  const id=win.id;
+			  const el=document.createElement('div');
+			  el.id='bwin-'+id;
+			  el.style.cssText='position:fixed;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.8);background:#1c1c2e;min-width:260px;min-height:180px;touch-action:none;';
+			  el.innerHTML=`
+			    <div class="bwin-titlebar" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(28,28,30,.98);cursor:grab;user-select:none;flex-shrink:0;-webkit-user-select:none;">
+			      <button class="bwin-close" onclick="browserWinClose(${id})" style="width:14px;height:14px;border-radius:50%;background:#ff5f57;border:none;cursor:pointer;flex-shrink:0;padding:0;" title="Cerrar"></button>
+			      <button class="bwin-minimize" onclick="browserWinMinimize(${id})" style="width:14px;height:14px;border-radius:50%;background:#febc2e;border:none;cursor:pointer;flex-shrink:0;padding:0;" title="Minimizar/Restaurar"></button>
+			      <button class="bwin-expand" onclick="browserWinExpand(${id})" style="width:14px;height:14px;border-radius:50%;background:#28c840;border:none;cursor:pointer;flex-shrink:0;padding:0;" title="Pantalla completa"></button>
+			      <span class="bwin-title" style="flex:1;font-size:11px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;pointer-events:none;">Nueva ventana</span>
+			    </div>
+			    <div class="bwin-toolbar" style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(20,20,22,.95);flex-shrink:0;">
+			      <button class="bwin-back" onclick="_bwinGoBack(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.4;" title="Atrás">◀</button>
+			      <button class="bwin-fwd" onclick="_bwinGoFwd(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.4;" title="Adelante">▶</button>
+			      <button onclick="_bwinReload(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;" title="Recargar">⟳</button>
+			      <input class="bwin-url" type="text" placeholder="Dirección…" autocomplete="off" style="flex:1;min-width:60px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:16px;color:#fff;font-size:11px;padding:5px 10px;outline:none;" onkeydown="if(event.key==='Enter')_bwinLoadNav(${id},this.value)">
+			      <button onclick="_bwinLoadNav(${id},document.getElementById('bwin-${id}').querySelector('.bwin-url').value)" style="background:#0a84ff;border:none;color:#fff;padding:5px 10px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">Ir</button>
+			      <button onclick="_bwinRetryProxy(${id})" style="background:#34c759;border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;" title="Intentar con proxy">↺</button>
+			    </div>
+			    <div class="bwin-content" style="flex:1;position:relative;overflow:hidden;min-height:0;">
+			      <iframe class="bwin-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;"></iframe>
+			      <div class="bwin-home" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;padding:16px;text-align:center;">
+			        <div style="font-size:2rem;">🌐</div>
+			        <input class="bwin-home-input" type="text" placeholder="Buscar o escribir una URL" autocomplete="off" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:16px;color:#fff;font-size:12px;padding:8px 12px;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter')_bwinLoadNav(${id},this.value)">
+			        <div style="font-size:10px;opacity:.45;">Casi todos los sitios funcionan aquí. Para los que no, usá el botón ↺ proxy.</div>
+			      </div>
+			      <div class="bwin-stuck" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:6px 8px 6px 12px;align-items:center;gap:8px;font-size:11px;box-shadow:0 4px 14px rgba(0,0,0,.4);max-width:92%;">
+			        <span class="bwin-stuck-msg" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">¿Tenés problemas?</span>
+			        <button class="bwin-stuck-proxy" onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">↺ Proxy</button>
+			        <a class="bwin-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:4px 8px;border-radius:6px;font-weight:700;font-size:11px;white-space:nowrap;">↗ Safari</a>
+			        <button onclick="this.closest('.bwin-stuck').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;">✕</button>
+			      </div>
+			      <div class="bwin-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#1c1c2e;color:#fff;text-align:center;padding:16px;">
+			        <div style="font-size:2.5rem;">🚫</div>
+			        <div style="font-size:13px;font-weight:700;">No se pudo cargar</div>
+			        <div class="bwin-blocked-url" style="font-size:10px;opacity:.45;word-break:break-all;max-width:260px;"></div>
+			        <button onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">↺ Intentar con proxy</button>
+			        <a class="bwin-blocked-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;">↗ Abrir en Safari</a>
+			      </div>
+			    </div>
+			    <div class="bwin-resize-handle" style="position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:se-resize;touch-action:none;z-index:2;background:linear-gradient(135deg,transparent 50%,rgba(255,255,255,.12) 50%);border-bottom-right-radius:14px;"></div>
+			  `;
+			  el.addEventListener('pointerdown', ()=> _bwinFocus(id));
+			  const titlebar=el.querySelector('.bwin-titlebar');
+			  _bwinSetupDrag(el, titlebar);
+			  const handle=el.querySelector('.bwin-resize-handle');
+			  _bwinSetupResize(el, handle);
+			  return el;
+			}
+			function _bwinSetupDrag(el, titlebar){
+			  let ax=0, ay=0, ox=0, oy=0;
+			  titlebar.addEventListener('pointerdown', e=>{
+			    if(e.target.tagName==='BUTTON') return;
+			    titlebar.setPointerCapture(e.pointerId);
+			    ax=e.clientX; ay=e.clientY;
+			    ox=parseInt(el.style.left)||0; oy=parseInt(el.style.top)||0;
+			    titlebar.style.cursor='grabbing';
+			  });
+			  titlebar.addEventListener('pointermove', e=>{
+			    if(!titlebar.hasPointerCapture(e.pointerId)) return;
+			    el.style.left=Math.max(0, ox+e.clientX-ax)+'px';
+			    el.style.top=Math.max(0, oy+e.clientY-ay)+'px';
+			  });
+			  titlebar.addEventListener('pointerup', e=>{
+			    if(titlebar.hasPointerCapture(e.pointerId)) titlebar.releasePointerCapture(e.pointerId);
+			    titlebar.style.cursor='grab';
+			  });
+			  titlebar.addEventListener('pointercancel', e=>{
+			    if(titlebar.hasPointerCapture(e.pointerId)) titlebar.releasePointerCapture(e.pointerId);
+			    titlebar.style.cursor='grab';
+			  });
+			}
+			function _bwinSetupResize(el, handle){
+			  let ax=0, ay=0, ow=0, oh=0;
+			  handle.addEventListener('pointerdown', e=>{
+			    e.stopPropagation();
+			    handle.setPointerCapture(e.pointerId);
+			    ax=e.clientX; ay=e.clientY;
+			    ow=el.offsetWidth; oh=el.offsetHeight;
+			  });
+			  handle.addEventListener('pointermove', e=>{
+			    if(!handle.hasPointerCapture(e.pointerId)) return;
+			    el.style.width=Math.max(260, ow+e.clientX-ax)+'px';
+			    el.style.height=Math.max(180, oh+e.clientY-ay)+'px';
+			  });
+			  handle.addEventListener('pointerup', e=>{
+			    if(handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+			  });
+			  handle.addEventListener('pointercancel', e=>{
+			    if(handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+			  });
+			}
+			function browserWinClose(id){
+			  const win=_bwinGet(id);
+			  if(win){ clearTimeout(win._loadTimer); clearTimeout(win._stuckTimer); }
+			  _bwins=_bwins.filter(w=>w.id!==id);
+			  const el=_bwinEl(id); if(el) el.remove();
+			}
+			function browserWinMinimize(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  const el=_bwinEl(id); if(!el) return;
+			  win.minimized=!win.minimized;
+			  const content=el.querySelector('.bwin-content');
+			  const toolbar=el.querySelector('.bwin-toolbar');
+			  const handle=el.querySelector('.bwin-resize-handle');
+			  if(win.minimized){
+			    win.savedH=el.offsetHeight;
+			    if(content) content.style.display='none';
+			    if(toolbar) toolbar.style.display='none';
+			    if(handle) handle.style.display='none';
+			    el.style.height='auto';
+			  } else {
+			    if(content) content.style.display='';
+			    if(toolbar) toolbar.style.display='';
+			    if(handle) handle.style.display='';
+			    if(win.savedH) el.style.height=win.savedH+'px';
+			  }
+			}
+			function browserWinExpand(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  const el=_bwinEl(id); if(!el) return;
+			  win.expanded=!win.expanded;
+			  if(win.expanded){
+			    win.savedPos={ left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height };
+			    el.style.left='0'; el.style.top='0';
+			    el.style.width='100vw'; el.style.height='100vh';
+			    el.style.borderRadius='0';
+			  } else {
+			    const s=win.savedPos||{};
+			    el.style.left=s.left||'40px'; el.style.top=s.top||'70px';
+			    el.style.width=s.width||'340px'; el.style.height=s.height||'480px';
+			    el.style.borderRadius='14px';
+			  }
+			}
+			function _bwinLoadNav(id, input){
+			  const url=browserNormalizeUrl(input);
+			  if(!url) return;
+			  const win=_bwinGet(id); if(!win) return;
+			  win.history=win.history.slice(0,win.historyIndex+1);
+			  win.history.push(url);
+			  win.historyIndex=win.history.length-1;
+			  _bwinLoad(id, url);
+			}
+			function _bwinLoad(id, url){
+			  const win=_bwinGet(id); if(!win) return;
+			  const el=_bwinEl(id); if(!el) return;
+			  const PROXY_PFX='/.netlify/functions/proxy?url=';
+			  const isProxy=url.startsWith(PROXY_PFX);
+			  const realUrl=isProxy ? (()=>{ try{ return decodeURIComponent(url.slice(PROXY_PFX.length)); }catch(e){ return url; } })() : url;
+			  win.url=realUrl; win._proxyMode=isProxy;
+			  const iframe=el.querySelector('.bwin-iframe');
+			  const homeDiv=el.querySelector('.bwin-home');
+			  const blocked=el.querySelector('.bwin-blocked');
+			  const stuck=el.querySelector('.bwin-stuck');
+			  const urlInput=el.querySelector('.bwin-url');
+			  const titleSpan=el.querySelector('.bwin-title');
+			  if(!iframe) return;
+			  if(homeDiv) homeDiv.style.display='none';
+			  if(blocked) blocked.style.display='none';
+			  if(stuck) stuck.style.display='none';
+			  if(urlInput) urlInput.value=realUrl;
+			  iframe.style.display='block';
+			  clearTimeout(win._loadTimer); clearTimeout(win._stuckTimer);
+			  try{ win.title=new URL(realUrl).hostname.replace(/^www\./,''); }catch(e){ win.title=realUrl; }
+			  if(titleSpan) titleSpan.textContent=win.title.slice(0,40);
+			  _bwinUpdateNav(id);
+			  let loaded=false;
+			  win._loadTimer=setTimeout(()=>{ if(!loaded) _bwinShowBlocked(id, realUrl); }, 7000);
+			  iframe.onload=null; iframe.onerror=null;
+			  iframe.onload=()=>{
+			    loaded=true; clearTimeout(win._loadTimer);
+			    let botBlocked=false;
+			    try{
+			      const doc=iframe.contentDocument;
+			      if(doc){
+			        const t=doc.title; if(t){ win.title=t; if(titleSpan) titleSpan.textContent=t.slice(0,40); }
+			        const bodyText=doc.body && doc.body.innerText;
+			        if(bodyText && /challenge|verify you are human|attempts exceeded|access denied|robot check|unusual traffic|captcha|security check|pardon our interruption/i.test(bodyText)) botBlocked=true;
+			        if(win._proxyMode){
+			          try{
+			            const loc=iframe.contentWindow.location.href;
+			            if(loc.includes(PROXY_PFX)){
+			              const r=decodeURIComponent(loc.split(PROXY_PFX)[1].split('&')[0]);
+			              if(urlInput) urlInput.value=r; win.url=r;
+			            }
+			          }catch(x){}
+			        }
+			      }
+			    }catch(e){}
+			    clearTimeout(win._stuckTimer);
+			    win._stuckTimer=setTimeout(()=>{
+			      if(!el.isConnected) return;
+			      if(win._proxyMode && !botBlocked) return;
+			      if(stuck){
+			        const msgEl=stuck.querySelector('.bwin-stuck-msg');
+			        const proxyBtn=stuck.querySelector('.bwin-stuck-proxy');
+			        const openLink=stuck.querySelector('.bwin-stuck-open');
+			        if(msgEl) msgEl.textContent=botBlocked
+			          ? (win._proxyMode ? 'Protección anti-bots activa incluso con proxy.' : 'Este sitio usa anti-bots — no es un error de la app.')
+			          : '¿Tenés problemas con esta página?';
+			        if(proxyBtn) proxyBtn.style.display=win._proxyMode?'none':'';
+			        if(openLink) openLink.href=realUrl;
+			        stuck.style.display='flex'; stuck.style.alignItems='center';
+			      }
+			    }, 2500);
+			  };
+			  iframe.onerror=()=>{ clearTimeout(win._loadTimer); _bwinShowBlocked(id, realUrl); };
+			  if(stuck){ const ol=stuck.querySelector('.bwin-stuck-open'); if(ol) ol.href=realUrl; }
+			  iframe.src=url;
+			}
+			function _bwinRetryProxy(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  const realUrl=win.url||(win.history[win.historyIndex]||'');
+			  if(!realUrl) return;
+			  const PROXY_PFX='/.netlify/functions/proxy?url=';
+			  if(realUrl.startsWith(PROXY_PFX)) return;
+			  const proxyUrl=PROXY_PFX+encodeURIComponent(realUrl);
+			  if(win.historyIndex>=0) win.history[win.historyIndex]=proxyUrl;
+			  _bwinLoad(id, proxyUrl);
+			}
+			function _bwinShowBlocked(id, url){
+			  const el=_bwinEl(id); if(!el) return;
+			  const iframe=el.querySelector('.bwin-iframe');
+			  const blocked=el.querySelector('.bwin-blocked');
+			  const blockedUrl=el.querySelector('.bwin-blocked-url');
+			  const blockedOpen=el.querySelector('.bwin-blocked-open');
+			  if(iframe) iframe.style.display='none';
+			  if(blockedUrl) blockedUrl.textContent=url;
+			  if(blockedOpen) blockedOpen.href=url;
+			  if(blocked) blocked.style.display='flex';
+			}
+			function _bwinGoBack(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  if(win.historyIndex>0){ win.historyIndex--; _bwinLoad(id, win.history[win.historyIndex]); }
+			}
+			function _bwinGoFwd(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  if(win.historyIndex<win.history.length-1){ win.historyIndex++; _bwinLoad(id, win.history[win.historyIndex]); }
+			}
+			function _bwinReload(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  if(win.historyIndex>=0) _bwinLoad(id, win.history[win.historyIndex]);
+			}
+			function _bwinUpdateNav(id){
+			  const win=_bwinGet(id); if(!win) return;
+			  const el=_bwinEl(id); if(!el) return;
+			  const back=el.querySelector('.bwin-back');
+			  const fwd=el.querySelector('.bwin-fwd');
+			  if(back) back.style.opacity=(win.historyIndex>0)?'1':'.4';
+			  if(fwd) fwd.style.opacity=(win.historyIndex<win.history.length-1)?'1':'.4';
 			}
 
 			/* ═══════════════════════════════════════════
