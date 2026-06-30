@@ -12,6 +12,7 @@
 		<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 		<meta name="theme-color" content="#9333ea" />
 		<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+		<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
 		<link
 			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
 			rel="stylesheet"
@@ -253,6 +254,22 @@
 			.trans-textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#fff;font-size:13px;font-family:var(--sf-pro);padding:10px 12px;outline:none;resize:none;box-sizing:border-box;line-height:1.5;}
 			.trans-textarea::placeholder{color:rgba(255,255,255,.3);}
 			.trans-textarea:focus{border-color:rgba(10,132,255,.6);}
+
+			/* TV Mundial panel */
+			#tv-panel{
+			  position:fixed;bottom:166px;right:26px;z-index:71;width:380px;max-height:70vh;
+			  display:flex;flex-direction:column;overflow:hidden;
+			  opacity:0;pointer-events:none;transform:translateY(16px) scale(.97);
+			  transition:opacity .25s ease,transform .25s ease;
+			}
+			#tv-panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);}
+			#tv-country-select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:10px;padding:9px 12px;font-size:12px;outline:none;cursor:pointer;width:100%;}
+			#tv-country-select option{background:#1c1c1e;color:#fff;}
+			#tv-player{
+			  position:fixed;bottom:96px;right:26px;z-index:69;width:300px;
+			  background:#000;border-radius:20px;overflow:hidden;display:none;flex-direction:column;
+			  border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 40px rgba(0,0,0,.7);
+			}
 
 			/* Alarm/Timer button – iOS Clock icon style */
 			#alarm-btn{
@@ -1014,6 +1031,64 @@
 					stroke-width="1"
 					opacity=".5"
 				/>
+			</svg>
+		</button>
+		<!-- TV Mundial -->
+		<button
+			class="dock-btn"
+			onclick="toggleTVPanel()"
+			title="TV Mundial"
+			style="background:linear-gradient(135deg,#ff453a,#ff9500);box-shadow:0 3px 14px rgba(255,69,58,.4);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="url(#tvGrad)" />
+				<defs>
+					<linearGradient
+						id="tvGrad"
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="100%"
+					>
+						<stop offset="0%" stop-color="#ff9500" />
+						<stop offset="100%" stop-color="#ff453a" />
+					</linearGradient>
+				</defs>
+				<rect
+					x="6"
+					y="13"
+					width="28"
+					height="19"
+					rx="3"
+					fill="#1c1c1e"
+				/>
+				<rect
+					x="9"
+					y="16"
+					width="22"
+					height="13"
+					rx="1.5"
+					fill="rgba(255,255,255,.18)"
+				/>
+				<line
+					x1="14"
+					y1="8"
+					x2="20"
+					y2="13"
+					stroke="#fff"
+					stroke-width="1.6"
+					stroke-linecap="round"
+				/>
+				<line
+					x1="26"
+					y1="8"
+					x2="20"
+					y2="13"
+					stroke="#fff"
+					stroke-width="1.6"
+					stroke-linecap="round"
+				/>
+				<circle cx="29" cy="18" r="1.2" fill="#30d158" />
 			</svg>
 		</button>
 	</div>
@@ -2649,6 +2724,86 @@
 			</div>
 		</div>
 
+		<!-- ================= TV MUNDIAL ================= -->
+		<div id="tv-panel" class="glass">
+			<div
+				class="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0"
+			>
+				<div>
+					<div class="text-sm font-bold">📺 TV Mundial</div>
+					<div
+						class="text-[9px] opacity-50 uppercase tracking-widest"
+					>
+						iptv-org · Canales en vivo, gratis
+					</div>
+				</div>
+				<button
+					class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
+					onclick="toggleTVPanel()"
+				>
+					<span class="material-symbols-outlined text-base"
+						>close</span
+					>
+				</button>
+			</div>
+			<div
+				style="padding:12px 16px 0;display:flex;flex-direction:column;gap:8px;"
+			>
+				<input
+					id="tv-search"
+					type="text"
+					placeholder="Buscar canal (opcional)…"
+					onkeydown="if(event.key==='Enter')searchTVChannels()"
+					style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;"
+				/>
+				<select id="tv-country-select">
+					<option value="">🌍 Elige un país…</option>
+				</select>
+				<button
+					onclick="searchTVChannels()"
+					style="padding:10px;border-radius:12px;background:rgba(255,69,58,.2);border:1px solid rgba(255,69,58,.4);color:#ff6961;font-weight:700;font-size:12px;cursor:pointer;"
+				>
+					🔍 Ver canales
+				</button>
+			</div>
+			<div
+				id="tv-results"
+				style="overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;flex:1;"
+			>
+				<div
+					style="text-align:center;padding:24px 10px;opacity:.45;font-size:12px;"
+				>
+					Elige un país para ver sus canales de TV en vivo.
+				</div>
+			</div>
+		</div>
+
+		<!-- TV Mundial video player (floating) -->
+		<div id="tv-player">
+			<div
+				style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#1c1c1e;"
+			>
+				<span
+					id="tv-player-title"
+					style="color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+					>—</span
+				>
+				<button
+					onclick="closeTVPlayer()"
+					style="background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;"
+				>
+					✕
+				</button>
+			</div>
+			<video
+				id="tv-video"
+				controls
+				autoplay
+				playsinline
+				style="width:100%;aspect-ratio:16/9;background:#000;display:block;"
+			></video>
+		</div>
+
 		<!-- ================= ALARMA / TIMER WIDGET (estilo Reloj de Apple) ================= -->
 		<button
 			id="alarm-btn"
@@ -3207,123 +3362,6 @@
 		<!-- Siri Voice orb (glowing sphere like iOS 27) -->
 
 		<!-- siri-text-btn removed: search bar always visible -->
-
-		<!-- iPod Radio Player (floating, bottom-left area) -->
-		<div
-			id="ipod-player"
-			style="position:fixed;bottom:96px;right:26px;z-index:69;width:220px;background:#1c1c1e;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.7);overflow:hidden;display:none;flex-direction:column;border:1px solid rgba(255,255,255,.1);"
-		>
-			<!-- iPod screen -->
-			<div
-				style="background:#0a1628;padding:12px;border-radius:0;border-bottom:1px solid rgba(255,255,255,.08);"
-			>
-				<div
-					style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"
-				>
-					<button
-						onclick="document.getElementById('ipod-player').style.display='none'"
-						style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;padding:0;"
-					>
-						‹
-					</button>
-					<span
-						id="ipod-clock"
-						style="color:#fff;font-size:13px;font-weight:600;font-family:-apple-system,sans-serif;"
-					></span>
-					<div style="width:20px;"></div>
-				</div>
-				<!-- Album art -->
-				<div
-					id="ipod-art"
-					style="width:80px;height:80px;margin:0 auto 8px;border-radius:10px;background:linear-gradient(135deg,#1e3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 4px 16px rgba(0,0,0,.5);"
-				>
-					📻
-				</div>
-				<div
-					id="ipod-title"
-					style="color:#fff;font-size:13px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:-apple-system,sans-serif;"
-				>
-					Selecciona una emisora
-				</div>
-				<div
-					id="ipod-subtitle"
-					style="color:rgba(255,255,255,.5);font-size:11px;text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:-apple-system,sans-serif;"
-				>
-					—
-				</div>
-				<!-- Controls -->
-				<div
-					style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:12px;"
-				>
-					<button
-						onclick="prevStation()"
-						style="background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0;"
-					>
-						⏮
-					</button>
-					<button
-						id="ipod-play-btn"
-						onclick="toggleIpodPlay()"
-						style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
-					>
-						▶
-					</button>
-					<button
-						onclick="nextStation()"
-						style="background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0;"
-					>
-						⏭
-					</button>
-				</div>
-				<!-- Volume -->
-				<div
-					style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:0 4px;"
-				>
-					<span style="font-size:11px;opacity:.4;">🔈</span>
-					<input
-						type="range"
-						min="0"
-						max="100"
-						value="70"
-						id="ipod-volume"
-						oninput="document.getElementById('stream-audio-player').volume=this.value/100"
-						style="flex:1;accent-color:#0a84ff;height:3px;"
-					/>
-					<span style="font-size:11px;opacity:.4;">🔊</span>
-				</div>
-			</div>
-			<!-- Clickwheel visual -->
-			<div
-				style="display:flex;justify-content:center;padding:14px 0 18px;"
-			>
-				<div
-					style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#3a3a3c,#2c2c2e);box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;position:relative;"
-				>
-					<!-- Center button -->
-					<div
-						onclick="toggleIpodPlay()"
-						style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#505050,#3a3a3c);cursor:pointer;box-shadow:inset 0 1px 3px rgba(0,0,0,.5);"
-					></div>
-					<!-- Wheel labels -->
-					<span
-						style="position:absolute;top:8px;font-size:7px;color:rgba(255,255,255,.4);left:50%;transform:translateX(-50%)"
-						>MENU</span
-					>
-					<span
-						style="position:absolute;bottom:8px;font-size:7px;color:rgba(255,255,255,.4);left:50%;transform:translateX(-50%)"
-						>▶▶|</span
-					>
-					<span
-						style="position:absolute;left:10px;font-size:7px;color:rgba(255,255,255,.4);top:50%;transform:translateY(-50%)"
-						>|◀◀</span
-					>
-					<span
-						style="position:absolute;right:10px;font-size:7px;color:rgba(255,255,255,.4);top:50%;transform:translateY(-50%)"
-						>▶▶</span
-					>
-				</div>
-			</div>
-		</div>
 
 		<style>
 			#siri-btn:hover{transform:scale(1.1);}
@@ -5233,13 +5271,12 @@
 			  // Build HTML directly — much more reliable than createElement loops
 			  let html = '';
 
-			  // Country picker + iPod buttons
+			  // Country picker button
 			  const label = enabledCountries.includes('Todos') ? 'Todo el mundo' :
 			    enabledCountries.slice(0,4).join(', ') + (enabledCountries.length>4?'…':'');
 			  html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
 			    <button onclick="openCountryPicker()" style="flex:1;padding:7px 10px;border-radius:10px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-size:11px;font-weight:700;cursor:pointer;text-align:left;">🌍 ${label}</button>
 			    <button onclick="openWorldRadioModal()" style="padding:7px 10px;border-radius:10px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#34c759;font-size:11px;font-weight:700;cursor:pointer;" title="Buscar cualquier emisora del mundo">🌎</button>
-			    <button onclick="const p=document.getElementById('ipod-player');p.style.display=p.style.display==='flex'?'none':'flex';" style="padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;cursor:pointer;" title="iPod">🎵</button>
 			  </div>`;
 
 			  // Group by country
@@ -5255,7 +5292,7 @@
 			    sts.forEach(s=>{
 			      const isLive = s.type==='stream';
 			      const liveBadge = isLive ? `<span style="font-size:8px;background:#ff453a;color:#fff;padding:1px 4px;border-radius:4px;margin-left:4px;">LIVE</span>` : '';
-			      html += `<button id="station-${s.id}" class="station-btn" data-title="${(s.tags||'')+' '+s.title}" onclick="setStation('${s.id}');updateIpodUI(STATIONS.find(x=>x.id==='${s.id}'))" style="width:100%;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:3px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
+			      html += `<button id="station-${s.id}" class="station-btn" data-title="${(s.tags||'')+' '+s.title}" onclick="setStation('${s.id}')" style="width:100%;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:3px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
 			        <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">${s.flag||'📻'}</div>
 			        <div style="text-align:left;flex:1;min-width:0;">
 			          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">${s.title}${liveBadge}</div>
@@ -5267,31 +5304,6 @@
 
 			  cont.innerHTML = html;
 			}
-
-			// Update iPod UI when station changes
-			function updateIpodUI(s){
-			  if(!s) return;
-			  const player = document.getElementById('ipod-player');
-			  if(player) player.style.display = 'flex';
-			  const titleEl = document.getElementById('ipod-title');
-			  const subtitleEl = document.getElementById('ipod-subtitle');
-			  const artEl = document.getElementById('ipod-art');
-			  const playBtn = document.getElementById('ipod-play-btn');
-			  if(titleEl) titleEl.textContent = s.title || '—';
-			  if(subtitleEl) subtitleEl.textContent = s.sub || s.country || '—';
-			  if(artEl) artEl.textContent = s.flag || '📻';
-			  if(playBtn) playBtn.textContent = '⏸';
-			}
-			function toggleIpodPlay(){
-			  if(isPlaying) stopAudio(); else { if(currentStation) playAudio(); else setStation(STATIONS[0]?.id); }
-			  const btn = document.getElementById('ipod-play-btn');
-			  if(btn) btn.textContent = isPlaying ? '⏸' : '▶';
-			}
-			// Update iPod clock every second
-			setInterval(()=>{
-			  const el = document.getElementById('ipod-clock');
-			  if(el){ const n=new Date(); const h=n.getHours(), mi=n.getMinutes(); el.textContent = _romanMode ? (toRoman(h)+':'+( mi===0?'·':toRoman(mi))) : (h.toString().padStart(2,'0')+':'+mi.toString().padStart(2,'0')); }
-			}, 1000);
 
 			// Siri text toggle
 			function toggleSiriText(){
@@ -5552,6 +5564,151 @@
 			  renderStations();
 			  setStation(id);
 			}
+
+			/* ===================== TV EN VIVO DEL MUNDO (iptv-org) ===================== */
+			// Directorio público y gratuito de canales de TV en vivo de todos los países (proyecto iptv-org).
+			let _tvCountriesCache = null;
+			let _tvHls = null;
+			let _lastTVResults = [];
+
+			function toggleTVPanel(){
+			  const panel = document.getElementById('tv-panel');
+			  if(!panel) return;
+			  const opening = !panel.classList.contains('open');
+			  closeAllFloatingPanels();
+			  if(opening){ panel.classList.add('open'); loadTVCountries(); }
+			}
+
+			async function loadTVCountries(){
+			  const sel = document.getElementById('tv-country-select');
+			  if(!sel || sel.options.length > 1) return;
+			  if(_tvCountriesCache){ populateTVCountrySelect(_tvCountriesCache); return; }
+			  try{
+			    const cached = JSON.parse(localStorage.getItem('tv_countries_cache') || 'null');
+			    if(cached && Date.now() - cached.ts < 86400000){
+			      _tvCountriesCache = cached.data;
+			      populateTVCountrySelect(cached.data);
+			      return;
+			    }
+			  }catch(e){}
+			  try{
+			    const res = await fetch('https://iptv-org.github.io/api/countries.json');
+			    const data = await res.json();
+			    const sorted = (data || []).filter(c=>c.name && c.code).sort((a,b)=>a.name.localeCompare(b.name));
+			    _tvCountriesCache = sorted;
+			    localStorage.setItem('tv_countries_cache', JSON.stringify({ts: Date.now(), data: sorted}));
+			    populateTVCountrySelect(sorted);
+			  }catch(e){
+			    // Sin lista de países no es bloqueante: el usuario puede reintentar abriendo el panel de nuevo.
+			  }
+			}
+			function populateTVCountrySelect(list){
+			  const sel = document.getElementById('tv-country-select');
+			  if(!sel) return;
+			  sel.innerHTML = '<option value="">🌍 Elige un país…</option>' +
+			    list.map(c=>`<option value="${escapeHtml(c.code)}">${c.flag||'🌍'} ${escapeHtml(c.name)}</option>`).join('');
+			}
+
+			async function searchTVChannels(){
+			  const code = (document.getElementById('tv-country-select')||{}).value || '';
+			  const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
+			  const results = document.getElementById('tv-results');
+			  if(!results) return;
+			  if(!code){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Elige primero un país de la lista.</div>';
+			    return;
+			  }
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales…</div>';
+			  try{
+			    const res = await fetch(`https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`);
+			    if(!res.ok) throw new Error('not ok');
+			    const text = await res.text();
+			    let channels = parseM3U(text);
+			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
+			    renderTVResults(channels);
+			  }catch(e){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo cargar la lista de canales de este país. Prueba con otro o intenta de nuevo más tarde.</div>';
+			  }
+			}
+
+			function parseM3U(text){
+			  const lines = text.split('\n');
+			  const channels = [];
+			  let current = null;
+			  for(let raw of lines){
+			    const line = raw.trim();
+			    if(line.startsWith('#EXTINF')){
+			      const nameMatch = line.match(/,(.*)$/);
+			      const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+			      const groupMatch = line.match(/group-title="([^"]*)"/);
+			      current = {
+			        name: nameMatch ? nameMatch[1].trim() : 'Canal',
+			        logo: logoMatch ? logoMatch[1] : '',
+			        group: groupMatch ? groupMatch[1] : ''
+			      };
+			    } else if(line && !line.startsWith('#') && current){
+			      current.url = line;
+			      channels.push(current);
+			      current = null;
+			    }
+			  }
+			  return channels;
+			}
+
+			function renderTVResults(channels){
+			  _lastTVResults = channels || [];
+			  const results = document.getElementById('tv-results');
+			  if(!results) return;
+			  if(!_lastTVResults.length){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Sin canales disponibles para esta búsqueda.</div>';
+			    return;
+			  }
+			  results.innerHTML = _lastTVResults.map((c,i)=>{
+			    const safeName = escapeHtml((c.name || 'Canal').trim().slice(0,60));
+			    const safeGroup = escapeHtml(c.group || '');
+			    const thumb = c.logo
+			      ? `<img src="${escapeHtml(c.logo)}" loading="lazy" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#222;" onerror="this.outerHTML='<div style=&quot;width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a5f,#ff453a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;&quot;>📺</div>'">`
+			      : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a5f,#ff453a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">📺</div>`;
+			    return `<button onclick="playTVChannel(${i})" style="width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:5px;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
+			        ${thumb}
+			        <div style="flex:1;min-width:0;">
+			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
+			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
+			        </div>
+			        <span style="font-size:8px;background:#ff453a;color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;">LIVE</span>
+			      </button>`;
+			  }).join('');
+			}
+
+			function playTVChannel(i){
+			  const c = _lastTVResults[i];
+			  if(!c || !c.url) return;
+			  const video = document.getElementById('tv-video');
+			  const player = document.getElementById('tv-player');
+			  const titleEl = document.getElementById('tv-player-title');
+			  if(!video || !player) return;
+			  player.style.display = 'flex';
+			  if(titleEl) titleEl.textContent = c.name || 'Canal en vivo';
+			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  if(window.Hls && window.Hls.isSupported()){
+			    _tvHls = new Hls();
+			    _tvHls.loadSource(c.url);
+			    _tvHls.attachMedia(video);
+			    _tvHls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play().catch(()=>{}));
+			  } else {
+			    video.src = c.url;
+			    video.play().catch(()=>{});
+			  }
+			}
+
+			function closeTVPlayer(){
+			  const video = document.getElementById('tv-video');
+			  const player = document.getElementById('tv-player');
+			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  if(video){ video.pause(); video.removeAttribute('src'); video.load(); }
+			  if(player) player.style.display = 'none';
+			}
+
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  const gp = document.getElementById('global-play');
 			  if(gp) gp.onclick = ()=> isPlaying ? stopAudio() : (currentStation ? playAudio() : setStation(STATIONS[0]?.id));
@@ -5660,7 +5817,7 @@
 
 			/* ===================== COORDINACIÓN DE PANELES FLOTANTES ===================== */
 			function closeAllFloatingPanels(){
-			  ['ai-chat-panel','alarm-panel','notes-panel','translator-panel'].forEach(id=>{
+			  ['ai-chat-panel','alarm-panel','notes-panel','translator-panel','tv-panel'].forEach(id=>{
 			    const el=document.getElementById(id); if(el) el.classList.remove('open');
 			  });
 			  const cp=document.getElementById('calc-panel');
