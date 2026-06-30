@@ -2360,7 +2360,13 @@
 						</div>
 					</div>
 				</div>
-				<div class="grid grid-cols-2 gap-2 text-[10px] font-bold mb-3">
+				<div class="grid grid-cols-3 gap-2 text-[10px] font-bold mb-3">
+					<div
+						class="p-2.5 bg-white/5 rounded-xl flex flex-col items-center"
+					>
+						<span class="opacity-50 mb-1">SENSACIÓN</span
+						><span id="curr-feelslike">—°</span>
+					</div>
 					<div
 						class="p-2.5 bg-white/5 rounded-xl flex flex-col items-center"
 					>
@@ -6706,22 +6712,6 @@
 			  });
 			}
 
-			/* ===================== GEOLOCATION (real GPS + reverse geocode) ===================== */
-			function detectarUbicacion(){
-			  if(!navigator.geolocation){ document.getElementById('txt-ubicacion').innerText='Santo Domingo, DN'; return; }
-			  navigator.geolocation.getCurrentPosition(async pos=>{
-			    const {latitude, longitude} = pos.coords;
-			    try{
-			      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`);
-			      const data = await resp.json();
-			      const addr = data.address || {};
-			      const ciudad = addr.city || addr.town || addr.village || addr.municipality || addr.county || 'Ubicación actual';
-			      const region = addr.state || addr.country || '';
-			      document.getElementById('txt-ubicacion').innerText = (region && region!==ciudad) ? `${ciudad}, ${region}` : ciudad;
-			    }catch(e){ document.getElementById('txt-ubicacion').innerText='Santo Domingo, DN'; }
-			  }, ()=>{ document.getElementById('txt-ubicacion').innerText='Santo Domingo, DN'; }, {enableHighAccuracy:false, timeout:8000});
-			}
-
 			/* ===================== MOON PHASE (simple approximation) ===================== */
 			function updateMoonPhase(){
 			  const synodic=29.53058867;
@@ -8291,10 +8281,10 @@
 			      document.getElementById('txt-ubicacion').textContent=city;
 			      await fetchWeatherData(lat,lon);
 			    }catch(e){document.getElementById('txt-ubicacion').textContent='Ubicación detectada';try{await fetchWeatherData(lat,lon);}catch(e2){}}
-			  },()=>{document.getElementById('txt-ubicacion').textContent='Sin permiso GPS';});
+			  },()=>{document.getElementById('txt-ubicacion').textContent='Sin permiso GPS';},{enableHighAccuracy:true,timeout:10000,maximumAge:300000});
 			}
 			async function fetchWeatherData(lat,lon){
-			  const url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m&hourly=temperature_2m,precipitation_probability,uv_index&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&timezone=auto&forecast_days=1';
+			  const url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,relativehumidity_2m,pressure_msl,cloud_cover&hourly=temperature_2m,precipitation_probability,uv_index&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&timezone=auto&forecast_days=1';
 			  const res=await fetch(url);const d=await res.json();
 			  const cur=d.current,daily=d.daily,hourly=d.hourly;
 			  const wDesc={0:'Cielo Despejado',1:'Casi Despejado',2:'Parcialmente Nublado',3:'Nublado',45:'Niebla',51:'Llovizna',61:'Lluvia Leve',63:'Lluvia',65:'Lluvia Fuerte',71:'Nevada',80:'Chubascos',81:'Chubascos',95:'Tormenta',99:'Tormenta Severa'};
@@ -8304,6 +8294,7 @@
 			  const iconEl=document.getElementById('curr-weather-icon');if(iconEl)iconEl.textContent=wEmoji[code]||'🌡️';
 			  const tempEl=document.getElementById('curr-temp');if(tempEl)tempEl.textContent=(_romanMode?toRoman(Math.round(cur.temperature_2m)):Math.round(cur.temperature_2m))+'°';
 			  const descEl=document.getElementById('curr-weather-desc');if(descEl)descEl.textContent=wDesc[code]||'Variable';
+			  const feelsEl=document.getElementById('curr-feelslike');if(feelsEl)feelsEl.textContent=(_romanMode?toRoman(Math.round(cur.apparent_temperature??cur.temperature_2m)):Math.round(cur.apparent_temperature??cur.temperature_2m))+'°';
 			  const humEl=document.getElementById('curr-humidity');if(humEl)humEl.textContent=(_romanMode?toRoman(cur.relativehumidity_2m||0):(cur.relativehumidity_2m||'—'))+'%';
 			  const windEl=document.getElementById('curr-wind');if(windEl)windEl.textContent=(_romanMode?toRoman(Math.round(cur.windspeed_10m||0)):Math.round(cur.windspeed_10m||0))+'km/h';
 			  const rainPct=daily.precipitation_probability_max?.[0]||0;
@@ -8344,6 +8335,8 @@
 			  const R=n=>_romanMode?toRoman(n):n;
 			  const tempEl=document.getElementById('curr-temp');
 			  if(tempEl)tempEl.textContent=R(Math.round(cur.temperature_2m))+'°';
+			  const feelsEl=document.getElementById('curr-feelslike');
+			  if(feelsEl)feelsEl.textContent=R(Math.round(cur.apparent_temperature??cur.temperature_2m))+'°';
 			  const humEl=document.getElementById('curr-humidity');
 			  if(humEl)humEl.textContent=R(cur.relativehumidity_2m||0)+'%';
 			  const windEl=document.getElementById('curr-wind');
