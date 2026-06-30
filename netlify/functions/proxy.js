@@ -148,17 +148,26 @@ exports.handler = async (event) => {
 
   const hdrs = cleanHeaders(upstream.headers);
 
+  // Netlify Functions require arrays in multiValueHeaders, not headers.
+  // Extract set-cookie (always potentially multi-valued) before spreading hdrs.
+  const rawCookies = hdrs['set-cookie'];
+  delete hdrs['set-cookie'];
+  function rewriteCookies(cks) {
+    if (!cks) return null;
+    const arr = Array.isArray(cks) ? cks : [cks];
+    return arr.map(c => c.replace(/;\s*domain=[^;,]*/gi, '').replace(/;\s*samesite=strict/gi, '; SameSite=Lax'));
+  }
+  const cookies = rewriteCookies(rawCookies);
+  const multiValueHeaders = cookies ? { 'set-cookie': cookies } : undefined;
+
   // Follow redirects through proxy
   if ([301,302,303,307,308].includes(upstream.status) && upstream.headers.location) {
     let loc;
     try { loc = new URL(upstream.headers.location, targetUrl).href; } catch(e) { loc = upstream.headers.location; }
     return {
       statusCode: 302,
-      headers: {
-        ...hdrs,
-        'Location': PROXY_BASE + encodeURIComponent(loc),
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: { ...hdrs, 'Location': PROXY_BASE + encodeURIComponent(loc), 'Access-Control-Allow-Origin': '*' },
+      ...(multiValueHeaders && { multiValueHeaders }),
       body: ''
     };
   }
@@ -166,14 +175,6 @@ exports.handler = async (event) => {
   const ct = ((hdrs['content-type'] || '').split(';')[0]).trim().toLowerCase();
 
   if (ct === 'text/html') {
-    // Rewrite cookies: strip Domain so they bind to the proxy origin
-    if (hdrs['set-cookie']) {
-      const cks = Array.isArray(hdrs['set-cookie']) ? hdrs['set-cookie'] : [hdrs['set-cookie']];
-      hdrs['set-cookie'] = cks.map(c =>
-        c.replace(/;\s*domain=[^;,]*/gi, '').replace(/;\s*samesite=strict/gi, '; SameSite=Lax')
-      );
-    }
-
     let html = upstream.body.toString('utf8');
 
     // Remove existing <base> tags (we'll add ours)
@@ -192,12 +193,8 @@ exports.handler = async (event) => {
 
     return {
       statusCode: upstream.status,
-      headers: {
-        ...hdrs,
-        'Content-Type': 'text/html; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'X-Proxy-For': targetUrl,
-      },
+      headers: { ...hdrs, 'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'X-Proxy-For': targetUrl },
+      ...(multiValueHeaders && { multiValueHeaders }),
       body: html,
     };
   }
@@ -206,11 +203,7 @@ exports.handler = async (event) => {
   // Passive resources load fine cross-origin; only HTML navigation needs proxying.
   return {
     statusCode: 307,
-    headers: {
-      'Location': targetUrl,
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*',
-    },
+    headers: { 'Location': targetUrl, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
     body: ''
   };
 };
