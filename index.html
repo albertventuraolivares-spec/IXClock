@@ -3491,16 +3491,7 @@
 					<input
 						id="login-username"
 						type="text"
-						placeholder="Usuario"
-						autocomplete="off"
-						style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:0.9rem;padding:0.75rem 1rem;color:#fff;font-size:0.85rem;outline:none;"
-						oninput="loginClearError()"
-						onkeydown="if(event.key==='Enter')loginSubmit()"
-					/>
-					<input
-						id="login-password"
-						type="password"
-						placeholder="Contraseña"
+						placeholder="Tu nombre (opcional)"
 						autocomplete="off"
 						style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:0.9rem;padding:0.75rem 1rem;color:#fff;font-size:0.85rem;outline:none;"
 						oninput="loginClearError()"
@@ -3534,8 +3525,8 @@
 				<p
 					style="font-size:0.68rem;color:rgba(255,255,255,0.3);text-align:center;line-height:1.5;"
 				>
-					Tu usuario y contraseña se guardan solo en este
-					dispositivo.<br />Nadie más los puede ver.
+					Tu nombre se guarda solo en este
+					dispositivo.<br />Nadie más lo puede ver.
 				</p>
 			</div>
 		</div>
@@ -6365,34 +6356,19 @@
 			  window.loginSubmit = function(){
 			    try{
 			      const usernameEl = document.getElementById('login-username');
-			      const passwordEl = document.getElementById('login-password');
 			      const emailEl    = document.getElementById('login-email');
 			      const errEl      = document.getElementById('login-error');
 
-			      const username = (usernameEl ? usernameEl.value : '').trim();
-			      const password = passwordEl ? passwordEl.value : '';
+			      const username = (usernameEl ? usernameEl.value : '').trim() || 'Invitado';
 			      const email    = (emailEl ? emailEl.value : '').trim();
-
-			      if(!username){
-			        if(errEl){ errEl.innerText='Por favor escribe un usuario.'; errEl.style.display='block'; }
-			        return;
-			      }
-			      if(!password){
-			        if(errEl){ errEl.innerText='Por favor escribe una contraseña.'; errEl.style.display='block'; }
-			        return;
-			      }
 
 			      const users = getUsers();
 
 			      if(users[username]){
-			        if(users[username].password !== btoa(password)){
-			          if(errEl){ errEl.innerText='Contraseña incorrecta.'; errEl.style.display='block'; }
-			          return;
-			        }
 			        if(email) users[username].email = email;
 			        saveUsers(users);
 			      } else {
-			        users[username] = { password: btoa(password), email: email, created: Date.now() };
+			        users[username] = { email: email, created: Date.now() };
 			        saveUsers(users);
 			      }
 
@@ -6456,7 +6432,6 @@
 			    updateProfileBtn();
 			    document.getElementById('login-overlay').style.display='flex';
 			    document.getElementById('login-username').value='';
-			    document.getElementById('login-password').value='';
 			    document.getElementById('login-email').value='';
 			    loginClearError();
 			  };
