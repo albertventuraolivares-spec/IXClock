@@ -14,6 +14,25 @@
 			rel="stylesheet"
 		/>
 		<style>
+			.material-symbols-outlined{
+			  font-family:'Material Symbols Outlined';
+			  font-weight:normal;
+			  font-style:normal;
+			  font-size:24px;
+			  line-height:1;
+			  letter-spacing:normal;
+			  text-transform:none;
+			  display:inline-block;
+			  white-space:nowrap;
+			  word-wrap:normal;
+			  direction:ltr;
+			  -webkit-font-feature-settings:'liga';
+			  font-feature-settings:'liga';
+			  -webkit-font-smoothing:antialiased;
+			  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+			}
+		</style>
+		<style>
 			:root{
 			  --sf-pro:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 			  --accent-color:#0a84ff;
@@ -3452,6 +3471,74 @@
 			  get: async (key) => ({ value: localStorage.getItem(key) }),
 			  set: async (key, value) => { localStorage.setItem(key, value); }
 			};
+		</script>
+		<script>
+			/* =====================================================================
+			   MATERIAL ICONS FALLBACK
+			   Some embedded browsers (in-app webviews, certain Safari versions)
+			   fail to apply ligature substitution on the Material Symbols Outlined
+			   variable font, leaving the icon name (e.g. "wb_sunny") visible as
+			   literal text instead of collapsing into a single glyph. Per-element
+			   width checks are unreliable (short names like "add" barely change
+			   width, and hidden panels report width 0), so instead we run ONE
+			   global test: render a known long icon name off-screen and see if it
+			   collapses. If it doesn't, ligatures are broken everywhere, so every
+			   matching icon (by name, not by width) gets swapped to an equivalent
+			   emoji -- including icons inside currently-hidden panels and ones
+			   created later (toggle lists, alarms, player controls, etc.) via
+			   MutationObserver.
+			   ===================================================================== */
+			(function(){
+			  const EMOJI_MAP = {
+			    account_balance:'🏛️', add:'➕', apps:'📱', bedtime:'🌙',
+			    bottom_panel_open:'⬇️', brightness_1:'⚫', brightness_3:'🌙',
+			    calendar_today:'📅', chevron_left:'◀️', close:'✕', cloud:'☁️',
+			    delete:'🗑️', edit_square:'✏️', error_outline:'⚠️', location_on:'📍',
+			    pause:'⏸️', person:'👤', play_arrow:'▶️', progress_activity:'⏳',
+			    satellite:'🛰️', schedule:'🕐', search:'🔍', send:'➤',
+			    skip_next:'⏭️', skip_previous:'⏮️', timer:'⏱️', today:'📆',
+			    view_sidebar:'🗂️', volume_down:'🔉', volume_up:'🔊', wb_sunny:'☀️',
+			    air:'💨', fireplace:'🔥', local_cafe:'☕', nights_stay:'🌙',
+			    park:'🌳', piano:'🎹', self_improvement:'🧘', thunderstorm:'⛈️',
+			    water_drop:'💧', waves:'🌊', blur_on:'🌫️'
+			  };
+			  function ligaturesBroken(){
+			    const test=document.createElement('span');
+			    test.className='material-symbols-outlined';
+			    test.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:-9999px;font-size:24px;white-space:nowrap;';
+			    test.textContent='calendar_today';
+			    document.body.appendChild(test);
+			    const w=test.offsetWidth;
+			    document.body.removeChild(test);
+			    return w > 24*1.7;
+			  }
+			  function swapAll(){
+			    document.querySelectorAll('.material-symbols-outlined:not([data-icon-swapped])').forEach(el=>{
+			      const name=(el.textContent||'').trim();
+			      const emoji=EMOJI_MAP[name];
+			      if(emoji){
+			        el.textContent=emoji;
+			        el.style.fontFamily='initial';
+			      }
+			      el.dataset.iconSwapped='1';
+			    });
+			  }
+			  function start(){
+			    if(!ligaturesBroken()) return;
+			    swapAll();
+			    new MutationObserver(swapAll).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+			    let tries=0;
+			    const interval=setInterval(()=>{ swapAll(); if(++tries>10) clearInterval(interval); }, 500);
+			  }
+			  /* Give the icon font a moment to finish loading before judging it broken,
+			     so a normal-but-slow load doesn't get swapped to emoji needlessly. */
+			  if('fonts' in document && document.fonts.ready){
+			    document.fonts.ready.then(start).catch(start);
+			  }else{
+			    setTimeout(start, 800);
+			  }
+			  setTimeout(start, 2500);
+			})();
 		</script>
 		<script>
 			/* =====================================================================
