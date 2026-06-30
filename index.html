@@ -947,6 +947,75 @@
 				<circle cx="20" cy="20" r="2" fill="#fff" />
 			</svg>
 		</button>
+		<!-- Navegador -->
+		<button
+			class="dock-btn"
+			onclick="openBrowser()"
+			title="Navegador"
+			style="background:linear-gradient(135deg,#0a84ff,#30d5c8);box-shadow:0 3px 14px rgba(10,132,255,.4);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="url(#browserGrad)" />
+				<defs>
+					<linearGradient
+						id="browserGrad"
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="100%"
+					>
+						<stop offset="0%" stop-color="#30d5c8" />
+						<stop offset="100%" stop-color="#0a84ff" />
+					</linearGradient>
+				</defs>
+				<circle
+					cx="20"
+					cy="20"
+					r="13"
+					fill="none"
+					stroke="#fff"
+					stroke-width="1.6"
+					opacity=".9"
+				/>
+				<ellipse
+					cx="20"
+					cy="20"
+					rx="6"
+					ry="13"
+					fill="none"
+					stroke="#fff"
+					stroke-width="1.2"
+					opacity=".7"
+				/>
+				<line
+					x1="7"
+					y1="20"
+					x2="33"
+					y2="20"
+					stroke="#fff"
+					stroke-width="1.2"
+					opacity=".7"
+				/>
+				<line
+					x1="9.5"
+					y1="13"
+					x2="30.5"
+					y2="13"
+					stroke="#fff"
+					stroke-width="1"
+					opacity=".5"
+				/>
+				<line
+					x1="9.5"
+					y1="27"
+					x2="30.5"
+					y2="27"
+					stroke="#fff"
+					stroke-width="1"
+					opacity=".5"
+				/>
+			</svg>
+		</button>
 	</div>
 
 	<body class="antialiased relative">
@@ -7592,6 +7661,103 @@
 			  if(t==='satellite'){_aplSatellite.addTo(_aplMap);if(div)div.style.filter='none';}
 			  else if(t==='transit'){_aplTransit.addTo(_aplMap);if(div)div.style.filter='sepia(0.3) hue-rotate(180deg) invert(1) hue-rotate(180deg)';}
 			  else{_aplStandard.addTo(_aplMap);if(div)div.style.filter='none';}
+			}
+
+			/* ═══════════════════════════════════════════
+			   NAVEGADOR (mini browser embebido)
+			═══════════════════════════════════════════ */
+			let _browserHistory=[],_browserHistoryIndex=-1,_browserLoadTimer=null;
+			function openBrowser(){
+			  let modal=document.getElementById('browser-modal');
+			  if(modal){modal.style.display='flex';return;}
+			  modal=document.createElement('div');
+			  modal.id='browser-modal';
+			  modal.style.cssText='position:fixed;inset:0;z-index:5000;background:#000;display:flex;flex-direction:column;';
+			  modal.innerHTML=`
+			    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(28,28,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;z-index:10;flex-wrap:wrap;">
+			      <span style="font-size:1.3rem;">🌐</span>
+			      <button onclick="browserGoBack()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Atrás">◀</button>
+			      <button onclick="browserGoForward()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Adelante">▶</button>
+			      <button onclick="browserReload()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Recargar">⟳</button>
+			      <input id="browser-url" type="text" placeholder="Buscar o escribir una dirección web…" autocomplete="off" style="flex:1;min-width:140px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;color:#fff;font-size:13px;padding:7px 14px;outline:none;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
+			      <button onclick="browserNavigate(document.getElementById('browser-url').value)" style="background:#0a84ff;border:none;color:#fff;padding:7px 14px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;">Ir</button>
+			      <button onclick="browserOpenInNewTab()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Abrir en pestaña nueva">↗</button>
+			      <button onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+			    </div>
+			    <div id="browser-container" style="flex:1;position:relative;background:#111;">
+			      <div id="browser-home" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;">
+			        <div style="font-size:3rem;">🌐</div>
+			        <div style="font-size:15px;font-weight:700;">Navegador</div>
+			        <div style="font-size:12px;opacity:.55;max-width:320px;">Escribe una dirección web arriba y pulsa Ir. Algunos sitios no se pueden mostrar aquí dentro por seguridad; en ese caso podrás abrirlos en una pestaña nueva.</div>
+			      </div>
+			      <iframe id="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;" referrerpolicy="no-referrer"></iframe>
+			      <div id="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
+			        <div style="font-size:3rem;">🚫</div>
+			        <div style="font-size:14px;font-weight:700;">Este sitio no permite mostrarse aquí dentro</div>
+			        <div id="browser-blocked-text" style="font-size:12px;opacity:.6;word-break:break-all;max-width:320px;"></div>
+			        <a id="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en pestaña nueva ↗</a>
+			      </div>
+			    </div>
+			  `;
+			  document.body.appendChild(modal);
+			  setTimeout(()=>document.getElementById('browser-url')?.focus(),150);
+			}
+			function browserNormalizeUrl(input){
+			  const v=(input||'').trim();
+			  if(!v) return '';
+			  if(/^https?:\/\//i.test(v)) return v;
+			  const looksLikeDomain=/^[a-z0-9-]+(\.[a-z0-9-]+)+([/?#].*)?$/i.test(v) && !v.includes(' ');
+			  if(looksLikeDomain) return 'https://'+v;
+			  return 'https://www.google.com/search?q='+encodeURIComponent(v);
+			}
+			function browserNavigate(input){
+			  const url=browserNormalizeUrl(input);
+			  if(!url) return;
+			  _browserHistory=_browserHistory.slice(0,_browserHistoryIndex+1);
+			  _browserHistory.push(url);
+			  _browserHistoryIndex=_browserHistory.length-1;
+			  browserLoadUrl(url);
+			}
+			function browserLoadUrl(url){
+			  const home=document.getElementById('browser-home');
+			  const blocked=document.getElementById('browser-blocked');
+			  const iframe=document.getElementById('browser-iframe');
+			  const urlInput=document.getElementById('browser-url');
+			  if(!iframe) return;
+			  if(home) home.style.display='none';
+			  if(blocked) blocked.style.display='none';
+			  if(urlInput) urlInput.value=url;
+			  iframe.style.display='block';
+			  clearTimeout(_browserLoadTimer);
+			  let loaded=false;
+			  _browserLoadTimer=setTimeout(()=>{ if(!loaded) browserShowBlocked(url); },7000);
+			  iframe.onload=()=>{ loaded=true; clearTimeout(_browserLoadTimer); };
+			  iframe.onerror=()=>{ clearTimeout(_browserLoadTimer); browserShowBlocked(url); };
+			  iframe.src=url;
+			}
+			function browserShowBlocked(url){
+			  const iframe=document.getElementById('browser-iframe');
+			  const blocked=document.getElementById('browser-blocked');
+			  const blockedText=document.getElementById('browser-blocked-text');
+			  const openNew=document.getElementById('browser-open-new');
+			  if(iframe) iframe.style.display='none';
+			  if(blocked) blocked.style.display='flex';
+			  if(blockedText) blockedText.textContent=url;
+			  if(openNew) openNew.href=url;
+			}
+			function browserOpenInNewTab(){
+			  const url=_browserHistoryIndex>=0 ? _browserHistory[_browserHistoryIndex] : (document.getElementById('browser-url')?.value||'');
+			  const normalized=browserNormalizeUrl(url);
+			  if(normalized) window.open(normalized,'_blank','noopener,noreferrer');
+			}
+			function browserGoBack(){
+			  if(_browserHistoryIndex>0){ _browserHistoryIndex--; browserLoadUrl(_browserHistory[_browserHistoryIndex]); }
+			}
+			function browserGoForward(){
+			  if(_browserHistoryIndex<_browserHistory.length-1){ _browserHistoryIndex++; browserLoadUrl(_browserHistory[_browserHistoryIndex]); }
+			}
+			function browserReload(){
+			  if(_browserHistoryIndex>=0) browserLoadUrl(_browserHistory[_browserHistoryIndex]);
 			}
 
 			/* ═══════════════════════════════════════════
