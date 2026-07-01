@@ -6597,16 +6597,21 @@
 			}
 
 			let _tvConnectTimer = null;
-			function playTVChannel(i){
+			let _tvRetryTimer = null;
+			let _tvRetryCount = 0;
+			const TV_MAX_RETRIES = 2;
+			function playTVChannel(i, isRetry){
 			  const c = _lastTVResults[i];
 			  if(!c || !c.url) return;
+			  if(_tvRetryTimer){ clearTimeout(_tvRetryTimer); _tvRetryTimer = null; }
+			  if(!isRetry) _tvRetryCount = 0;
 			  const video = document.getElementById('tv-video');
 			  const player = document.getElementById('tv-player');
 			  const titleEl = document.getElementById('tv-player-title');
 			  if(!video || !player) return;
 			  player.style.display = 'flex';
 			  if(titleEl) titleEl.textContent = c.name || 'Canal en vivo';
-			  tvSetStatus('⏳ Conectando…', false);
+			  tvSetStatus(isRetry ? `⏳ Reintentando… (${_tvRetryCount}/${TV_MAX_RETRIES})` : '⏳ Conectando…', false);
 			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
 			  if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			  video.removeAttribute('src');
@@ -6663,8 +6668,16 @@
 			    if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			    console.error('Error HLS:', data.type, data.details);
 			    if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
-			      tvSetStatus('⚠️ Este canal no responde (caído o bloqueado). Prueba otro.', true);
 			      _tvHls.destroy(); _tvHls = null;
+			      // Los re-streams no oficiales (IP directa, sin CDN detrás) suelen
+			      // fallar y recuperarse solos en pocos segundos: reintentamos antes
+			      // de darlo por caído.
+			      if(_tvRetryCount < TV_MAX_RETRIES){
+			        _tvRetryCount++;
+			        _tvRetryTimer = setTimeout(()=>{ _tvRetryTimer = null; playTVChannel(i, true); }, 2500);
+			      } else {
+			        tvSetStatus('⚠️ Este canal no responde (caído o bloqueado). Prueba otro.', true);
+			      }
 			    } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR){
 			      tvSetStatus('⏳ Reconectando…', false);
 			      _tvHls.recoverMediaError();
@@ -6680,6 +6693,7 @@
 			  const player = document.getElementById('tv-player');
 			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
 			  if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
+			  if(_tvRetryTimer){ clearTimeout(_tvRetryTimer); _tvRetryTimer = null; }
 			  if(video){ video.pause(); video.removeAttribute('src'); video.load(); }
 			  if(player) player.style.display = 'none';
 			  tvSetStatus('', false);
