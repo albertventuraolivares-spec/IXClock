@@ -49,6 +49,14 @@ function fetchBinary(rawUrl, redirects) {
   });
 }
 
+function diagResponse(report) {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify(report, null, 2),
+  };
+}
+
 function isPlaylist(url, contentType) {
   const ct = (contentType || '').toLowerCase();
   if (ct.includes('mpegurl')) return true;
@@ -73,7 +81,10 @@ function rewritePlaylist(text, baseUrl) {
 }
 
 exports.handler = async (event) => {
-  const targetUrl = (event.queryStringParameters || {}).url;
+  const params = event.queryStringParameters || {};
+  const targetUrl = params.url;
+  const isDiag = params.diag === '1';
+
   if (!targetUrl) {
     return { statusCode: 400, headers: { 'Content-Type': 'text/plain' }, body: 'Missing ?url=' };
   }
@@ -84,7 +95,35 @@ exports.handler = async (event) => {
     if (!['http:','https:'].includes(parsed.protocol)) throw new Error();
     if (PRIVATE.test(parsed.hostname)) throw new Error('blocked');
   } catch(e) {
-    return { statusCode: 400, headers: {'Content-Type':'text/plain'}, body: 'URL inválida o bloqueada' };
+    const msg = 'URL inválida o bloqueada';
+    if (isDiag) return diagResponse({ ok: false, targetUrl, error: msg });
+    return { statusCode: 400, headers: {'Content-Type':'text/plain'}, body: msg };
+  }
+
+  // Modo diagnóstico: en vez de servir el manifiesto/segmento, devuelve un
+  // reporte legible de qué pasó al intentar conectar (útil para revisar
+  // desde el propio navegador, sin herramientas de desarrollador).
+  if (isDiag) {
+    const startedAt = Date.now();
+    try {
+      const upstream = await fetchBinary(targetUrl);
+      return diagResponse({
+        ok: upstream.status >= 200 && upstream.status < 400,
+        targetUrl,
+        httpStatus: upstream.status,
+        elapsedMs: Date.now() - startedAt,
+        contentType: upstream.headers['content-type'] || null,
+        bodyBytes: upstream.body.length,
+        bodyPreview: upstream.body.toString('utf8').slice(0, 300),
+      });
+    } catch(e) {
+      return diagResponse({
+        ok: false,
+        targetUrl,
+        elapsedMs: Date.now() - startedAt,
+        error: e.message || 'error desconocido',
+      });
+    }
   }
 
   let upstream;
