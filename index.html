@@ -6369,32 +6369,58 @@
 			  sel.innerHTML = '<option value="">🌍 Todos los países</option>' +
 			    list.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.stationcount})</option>`).join('');
 			}
+			const WORLD_PAGE_SIZE = 800;
+			let _worldOffset = 0;         // cuántas emisoras crudas se han pedido ya
+			let _worldParams = '';        // filtros de la búsqueda actual (para paginar)
+			let _worldEndReached = false; // la API ya no devuelve más
 			async function searchWorldStations(){
 			  const q = (document.getElementById('world-radio-search')||{}).value?.trim() || '';
 			  const country = (document.getElementById('world-country-select')||{}).value || '';
 			  const genre = (document.getElementById('world-genre-select')||{}).value || '';
+			  let params = '';
+			  if(q) params += '&name=' + encodeURIComponent(q);
+			  if(country) params += '&country=' + encodeURIComponent(country);
+			  if(genre) params += '&tag=' + encodeURIComponent(genre);
+			  _worldParams = params;
+			  _worldOffset = 0;
+			  _worldEndReached = false;
+			  _lastWorldResults = [];
+			  await fetchWorldPage(false);
+			}
+			async function loadMoreWorldStations(){
+			  if(_worldEndReached) return;
+			  await fetchWorldPage(true);
+			}
+			async function fetchWorldPage(append){
 			  const results = document.getElementById('world-radio-results');
 			  if(!results) return;
 			  const token = ++_worldSearchToken;
-			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Buscando emisoras…</div>';
+			  if(!append){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Buscando emisoras…</div>';
+			  } else {
+			    const btn = document.getElementById('world-load-more');
+			    if(btn){ btn.textContent = '⏳ Cargando…'; btn.disabled = true; }
+			  }
 			  // hidebroken=true: solo emisoras verificadas como activas (no caídas).
-			  // limit alto para traer "todas las que se pueda" en una sola pasada.
-			  let path = '/json/stations/search?limit=800&hidebroken=true&order=clickcount&reverse=true';
-			  if(q) path += '&name=' + encodeURIComponent(q);
-			  if(country) path += '&country=' + encodeURIComponent(country);
-			  if(genre) path += '&tag=' + encodeURIComponent(genre);
+			  const path = `/json/stations/search?limit=${WORLD_PAGE_SIZE}&offset=${_worldOffset}&hidebroken=true&order=clickcount&reverse=true` + _worldParams;
 			  try{
 			    let data = await rbFetch(path);
 			    if(token !== _worldSearchToken) return;
+			    const rawCount = Array.isArray(data) ? data.length : 0;
+			    _worldOffset += rawCount;
+			    if(rawCount < WORLD_PAGE_SIZE) _worldEndReached = true;
 			    // "Seguras": en una página https, un stream http:// queda bloqueado por
 			    // contenido mixto y nunca suena. Nos quedamos solo con los reproducibles.
 			    if(location.protocol === 'https:' && Array.isArray(data)){
 			      data = data.filter(s=>{ const u = s.url_resolved || s.url || ''; return u.startsWith('https://'); });
 			    }
-			    renderWorldResults(data);
+			    _lastWorldResults = append ? _lastWorldResults.concat(data||[]) : (data||[]);
+			    renderWorldResults(_lastWorldResults);
 			  }catch(e){
 			    if(token !== _worldSearchToken) return;
-			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo conectar con el directorio mundial de radios. Revisa tu conexión e intenta de nuevo.</div>';
+			    if(!append){
+			      results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo conectar con el directorio mundial de radios. Revisa tu conexión e intenta de nuevo.</div>';
+			    }
 			  }
 			}
 			function renderWorldResults(stations){
@@ -6406,7 +6432,7 @@
 			    return;
 			  }
 			  const countNote = `<div style="text-align:center;padding:2px 0 8px;opacity:.4;font-size:10px;">✅ ${_lastWorldResults.length} emisoras seguras (verificadas activas)</div>`;
-			  results.innerHTML = countNote + _lastWorldResults.map((s,i)=>{
+			  const listHtml = _lastWorldResults.map((s,i)=>{
 			    const flag = countryCodeToFlag(s.countrycode);
 			    const safeName = escapeHtml((s.name || 'Emisora').trim().slice(0,60));
 			    const sub = escapeHtml([s.country, s.codec, s.bitrate ? s.bitrate+'kbps' : ''].filter(Boolean).join(' · '));
@@ -6419,6 +6445,9 @@
 			        <span style="font-size:16px;flex-shrink:0;">▶️</span>
 			      </button>`;
 			  }).join('');
+			  const moreBtn = _worldEndReached ? '' :
+			    `<button id="world-load-more" onclick="loadMoreWorldStations()" style="width:100%;padding:11px;margin-top:4px;border-radius:12px;background:rgba(10,132,255,.18);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;">⬇️ Cargar más emisoras</button>`;
+			  results.innerHTML = countNote + listHtml + moreBtn;
 			}
 			function playWorldStationFromResult(i){
 			  const s = _lastWorldResults[i];
