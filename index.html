@@ -448,12 +448,39 @@
 	</head>
 	<!-- ====== TOP APP DOCK ====== -->
 	<style>
-		#top-dock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(0,0,0,.42);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 8px 32px rgba(0,0,0,.55);}
-		.dock-btn{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;overflow:hidden;transition:transform .18s ease;flex-shrink:0;padding:0;}
+		#top-dock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(0,0,0,.42);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 8px 32px rgba(0,0,0,.55);max-width:94vw;overflow-x:auto;transition:gap .22s ease,padding .22s ease;}
+		.dock-btn{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;overflow:hidden;transition:transform .18s ease,width .22s ease,height .22s ease;flex-shrink:0;padding:0;}
 		.dock-btn:hover{transform:scale(1.1) translateY(-2px);}
 		.dock-btn:active{transform:scale(.94);}
+		.dock-btn svg{transition:width .22s ease,height .22s ease;}
+		/* Modo ampliado: mismos iconos, todo más grande y fácil de tocar */
+		#top-dock.expanded{gap:18px;padding:14px 24px;}
+		#top-dock.expanded .dock-btn{width:64px;height:64px;border-radius:16px;}
+		#top-dock.expanded .dock-btn svg{width:64px;height:64px;}
 	</style>
 	<div id="top-dock">
+		<!-- Ampliar/Reducir dock -->
+		<button
+			class="dock-btn"
+			id="dock-expand-btn"
+			onclick="toggleDockSize()"
+			title="Ampliar/Reducir iconos"
+			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 12px rgba(0,0,0,.4);"
+		>
+			<svg id="dock-expand-icon" width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="url(#dockExpGrad)" />
+				<defs>
+					<linearGradient id="dockExpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+						<stop offset="0%" stop-color="#5e5ce6" />
+						<stop offset="100%" stop-color="#0a84ff" />
+					</linearGradient>
+				</defs>
+				<g stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+					<path d="M12 20 H20 M12 20 L16 16 M12 20 L16 24" />
+					<path d="M28 20 H20 M28 20 L24 16 M28 20 L24 24" />
+				</g>
+			</svg>
+		</button>
 		<!-- Reloj -->
 		<button
 			class="dock-btn"
@@ -7070,6 +7097,31 @@
 			    else if(video.webkitExitFullscreen) video.webkitExitFullscreen();
 			  }
 			}
+
+			/* ===================== AMPLIAR/REDUCIR DOCK ===================== */
+			function updateDockExpandIcon(expanded){
+				const g = document.querySelector('#dock-expand-icon g');
+				if(!g) return;
+				// Flechas hacia afuera (ampliar) vs hacia adentro (reducir).
+				g.innerHTML = expanded
+					? '<path d="M16 20 H12 M16 20 L20 16 M16 20 L20 24"/><path d="M24 20 H28 M24 20 L20 16 M24 20 L20 24"/>'
+					: '<path d="M12 20 H20 M12 20 L16 16 M12 20 L16 24"/><path d="M28 20 H20 M28 20 L24 16 M28 20 L24 24"/>';
+			}
+			function toggleDockSize(){
+				const dock = document.getElementById('top-dock');
+				if(!dock) return;
+				const expanded = dock.classList.toggle('expanded');
+				updateDockExpandIcon(expanded);
+				try{ localStorage.setItem('dock_expanded', expanded ? '1' : '0'); }catch(e){}
+			}
+			document.addEventListener('DOMContentLoaded', ()=>{
+				try{
+					if(localStorage.getItem('dock_expanded') === '1'){
+						const dock = document.getElementById('top-dock');
+						if(dock){ dock.classList.add('expanded'); updateDockExpandIcon(true); }
+					}
+				}catch(e){}
+			});
 
 			/* ===================== PANTALLA COMPLETA ===================== */
 			function toggleFullscreen(){
