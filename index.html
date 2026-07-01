@@ -6000,6 +6000,7 @@
 			  html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
 			    <button onclick="openCountryPicker()" style="flex:1;padding:7px 10px;border-radius:10px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-size:11px;font-weight:700;cursor:pointer;text-align:left;">🌍 ${label}</button>
 			    <button onclick="openWorldRadioModal()" style="padding:7px 10px;border-radius:10px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#34c759;font-size:11px;font-weight:700;cursor:pointer;" title="Buscar cualquier emisora del mundo">🌎</button>
+			    <button onclick="openMusicAppsModal()" style="padding:7px 10px;border-radius:10px;background:rgba(255,45,146,.15);border:1px solid rgba(255,45,146,.4);color:#ff2d92;font-size:11px;font-weight:700;cursor:pointer;" title="Spotify, Apple Music, YouTube Music…">🎧</button>
 			    <button onclick="const p=document.getElementById('ipod-player');p.style.display=p.style.display==='flex'?'none':'flex';" style="padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;cursor:pointer;" title="iPod">🎵</button>
 			  </div>`;
 
@@ -6252,6 +6253,9 @@
 			          <select id="world-country-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;">
 			            <option value="">🌍 Todos los países</option>
 			          </select>
+			          <select id="world-genre-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;">
+			            <option value="">🎵 Todos los géneros</option>
+			          </select>
 			          <button onclick="searchWorldStations()" style="padding:10px;border-radius:12px;background:rgba(10,132,255,.25);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;">🔍 Buscar</button>
 			        </div>
 			        <div id="world-radio-results" style="overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;flex:1;max-height:42vh;">
@@ -6262,10 +6266,69 @@
 			  }
 			  modal.style.display = 'flex';
 			  loadWorldCountries();
+			  populateGenreSelect();
 			  searchWorldStations();
+			}
+			// Géneros comunes en el directorio Radio-Browser (tags reales de la
+			// base de datos): cubren música de todo el mundo sin depender de URLs
+			// individuales que puedan romperse.
+			const WORLD_GENRES = [
+			  'pop','rock','jazz','classical','electronic','house','techno','reggae',
+			  'reggaeton','salsa','merengue','bachata','latin','hip hop','rap','r&b',
+			  'kpop','country','blues','metal','indie','dance','oldies','folk',
+			  'news','talk','soul','funk','disco','world music'
+			];
+			function populateGenreSelect(){
+			  const sel = document.getElementById('world-genre-select');
+			  if(!sel || sel.options.length > 1) return;
+			  sel.innerHTML = '<option value="">🎵 Todos los géneros</option>' +
+			    WORLD_GENRES.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
 			}
 			function closeWorldRadioModal(){
 			  const modal = document.getElementById('world-radio-modal');
+			  if(modal) modal.style.display = 'none';
+			}
+
+			// Apps oficiales de música bajo demanda: se abren en ventana flotante
+			// con la cuenta propia del usuario. No se aloja ni redistribuye música.
+			const MUSIC_APPS = [
+			  {icon:'🟢', name:'Spotify', url:'https://open.spotify.com'},
+			  {icon:'🎵', name:'Apple Music', url:'https://music.apple.com'},
+			  {icon:'🔴', name:'YouTube Music', url:'https://music.youtube.com'},
+			  {icon:'🟠', name:'SoundCloud', url:'https://soundcloud.com'},
+			  {icon:'🔵', name:'Amazon Music', url:'https://music.amazon.com'},
+			  {icon:'⚫', name:'Tidal', url:'https://listen.tidal.com'},
+			  {icon:'🟣', name:'Deezer', url:'https://www.deezer.com'},
+			  {icon:'🟡', name:'iHeartRadio', url:'https://www.iheart.com'}
+			];
+			function openMusicAppsModal(){
+			  let modal = document.getElementById('music-apps-modal');
+			  if(!modal){
+			    modal = document.createElement('div');
+			    modal.id = 'music-apps-modal';
+			    modal.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);';
+			    modal.innerHTML = `
+			      <div style="width:340px;max-height:80vh;background:rgba(28,28,30,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
+			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
+			          <div>
+			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🎧 Música bajo demanda</div>
+			            <div style="font-size:11px;opacity:.45;">Con tu propia cuenta · Se abre en ventana flotante</div>
+			          </div>
+			          <button onclick="closeMusicAppsModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			        </div>
+			        <div style="padding:14px 16px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+			          ${MUSIC_APPS.map(a=>`<div class="game-tile" onclick="openBrowserWindow('${a.url}');closeMusicAppsModal()">
+			            <div class="game-tile-icon">${a.icon}</div>
+			            <div class="game-tile-label">${escapeHtml(a.name)}</div>
+			          </div>`).join('')}
+			        </div>
+			      </div>`;
+			    document.body.appendChild(modal);
+			  }
+			  modal.style.display = 'flex';
+			}
+			function closeMusicAppsModal(){
+			  const modal = document.getElementById('music-apps-modal');
 			  if(modal) modal.style.display = 'none';
 			}
 			async function loadWorldCountries(){
@@ -6299,6 +6362,7 @@
 			async function searchWorldStations(){
 			  const q = (document.getElementById('world-radio-search')||{}).value?.trim() || '';
 			  const country = (document.getElementById('world-country-select')||{}).value || '';
+			  const genre = (document.getElementById('world-genre-select')||{}).value || '';
 			  const results = document.getElementById('world-radio-results');
 			  if(!results) return;
 			  const token = ++_worldSearchToken;
@@ -6306,6 +6370,7 @@
 			  let path = '/json/stations/search?limit=150&hidebroken=true&order=clickcount&reverse=true';
 			  if(q) path += '&name=' + encodeURIComponent(q);
 			  if(country) path += '&country=' + encodeURIComponent(country);
+			  if(genre) path += '&tag=' + encodeURIComponent(genre);
 			  try{
 			    const data = await rbFetch(path);
 			    if(token !== _worldSearchToken) return;
