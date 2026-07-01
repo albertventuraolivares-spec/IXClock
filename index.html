@@ -6525,7 +6525,12 @@
 			};
 			function applyHttpOnlyFallback(channels){
 			  return (channels||[]).map(c=>{
-			    const key = (c.name||'').trim().toLowerCase();
+			    // Los nombres de iptv-org traen sufijos como "(720p)" o "[Not 24/7]"
+			    // pegados al nombre real: hay que quitarlos antes de comparar.
+			    const key = (c.name||'')
+			      .replace(/\([^)]*\)/g, '')
+			      .replace(/\[[^\]]*\]/g, '')
+			      .trim().toLowerCase();
 			    if(c.url && c.url.startsWith('http://') && TV_HTTP_FALLBACK[key]){
 			      return { ...c, officialUrl: TV_HTTP_FALLBACK[key] };
 			    }
