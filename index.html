@@ -6429,7 +6429,7 @@
 			    // fallback conocido) quedan bloqueados por "contenido mixto" y nunca
 			    // reproducen: se descartan de la lista.
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.officialUrl));
+			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.url.startsWith('/.netlify/')));
 			    }
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
 			    renderTVResults(channels);
@@ -6456,7 +6456,7 @@
 			    let channels = parseM3U(text);
 			    channels = applyHttpOnlyFallback(channels);
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.officialUrl));
+			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.url.startsWith('/.netlify/')));
 			    }
 			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
@@ -6515,14 +6515,14 @@
 			  }
 			}
 
-			// Canales cuyo único stream conocido en iptv-org es http:// (bloqueado por
-			// contenido mixto en HTTPS) pero que sí tienen una web oficial verificada
-			// con reproductor propio. En vez de inventar una URL de stream que no
-			// podemos comprobar, se abren en la ventana flotante del navegador.
-			const TV_HTTP_FALLBACK = {
-			  'cdn': 'https://cdn.com.do/envivo/',
-			  'cdn deportes': 'https://cdndeportes.com.do/streaming.html'
-			};
+			// Canales cuyo único stream conocido en iptv-org es http:// puro: los
+			// navegadores bloquean http:// dentro de una página https ("contenido
+			// mixto"), así que nunca reproducirían directo. En vez de eso, se
+			// enrutan por nuestra función hls-proxy, que trae el manifiesto/segmentos
+			// del lado del servidor y los re-sirve por https desde nuestro propio
+			// dominio, para que reproduzcan igual que cualquier otro canal.
+			const HLS_PROXY_PFX = '/.netlify/functions/hls-proxy?url=';
+			const TV_HTTP_ALLOWLIST = new Set(['cdn', 'cdn deportes']);
 			function applyHttpOnlyFallback(channels){
 			  return (channels||[]).map(c=>{
 			    // Los nombres de iptv-org traen sufijos como "(720p)" o "[Not 24/7]"
@@ -6531,8 +6531,8 @@
 			      .replace(/\([^)]*\)/g, '')
 			      .replace(/\[[^\]]*\]/g, '')
 			      .trim().toLowerCase();
-			    if(c.url && c.url.startsWith('http://') && TV_HTTP_FALLBACK[key]){
-			      return { ...c, officialUrl: TV_HTTP_FALLBACK[key] };
+			    if(c.url && c.url.startsWith('http://') && TV_HTTP_ALLOWLIST.has(key)){
+			      return { ...c, url: HLS_PROXY_PFX + encodeURIComponent(c.url) };
 			    }
 			    return c;
 			  });
@@ -6582,7 +6582,7 @@
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
 			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
 			        </div>
-			        <span style="font-size:8px;background:${c.officialUrl?'#af82ff':'#ff453a'};color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;white-space:nowrap;">${c.officialUrl?'WEB OFICIAL':'LIVE'}</span>
+			        <span style="font-size:8px;background:#ff453a;color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;">LIVE</span>
 			      </button>`;
 			  }).join('');
 			}
@@ -6600,10 +6600,6 @@
 			function playTVChannel(i){
 			  const c = _lastTVResults[i];
 			  if(!c || !c.url) return;
-			  if(c.officialUrl){
-			    openBrowserWindow(c.officialUrl);
-			    return;
-			  }
 			  const video = document.getElementById('tv-video');
 			  const player = document.getElementById('tv-player');
 			  const titleEl = document.getElementById('tv-player-title');
