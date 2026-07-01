@@ -6526,7 +6526,7 @@
 			    // fallback conocido) quedan bloqueados por "contenido mixto" y nunca
 			    // reproducen: se descartan de la lista.
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.url.startsWith('/.netlify/')));
+			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
 			    }
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
 			    renderTVResults(channels);
@@ -6553,7 +6553,7 @@
 			    let channels = parseM3U(text);
 			    channels = applyHttpOnlyFallback(channels);
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.url.startsWith('/.netlify/')));
+			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
 			    }
 			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
@@ -6612,14 +6612,17 @@
 			  }
 			}
 
-			// Canales cuyo único stream conocido en iptv-org es http:// puro: los
-			// navegadores bloquean http:// dentro de una página https ("contenido
-			// mixto"), así que nunca reproducirían directo. En vez de eso, se
-			// enrutan por nuestra función hls-proxy, que trae el manifiesto/segmentos
-			// del lado del servidor y los re-sirve por https desde nuestro propio
-			// dominio, para que reproduzcan igual que cualquier otro canal.
-			const HLS_PROXY_PFX = '/.netlify/functions/hls-proxy?url=';
-			const TV_HTTP_ALLOWLIST = new Set(['cdn', 'cdn deportes']);
+			// Canales cuyo único stream conocido en iptv-org es http:// puro (o cuya
+			// URL indexada quedó muerta/vencida): los navegadores bloquean http://
+			// dentro de una página https, y el relay a la IP cruda de CDN quedó
+			// confirmado muerto (404 en la ruta y en 24 vecinas probadas). La propia
+			// web oficial sí está en vivo ahora mismo (confirmado por el usuario), así
+			// que para estos dos se abre esa página real en la ventana flotante en
+			// vez de intentar reproducir un stream crudo que ya sabemos que no sirve.
+			const TV_OFFICIAL_FALLBACK = {
+			  'cdn': 'https://cdn.com.do/envivo/',
+			  'cdn deportes': 'https://cdndeportes.com.do/en-vivo/'
+			};
 			function applyHttpOnlyFallback(channels){
 			  return (channels||[]).map(c=>{
 			    // Los nombres de iptv-org traen sufijos como "(720p)" o "[Not 24/7]"
@@ -6628,8 +6631,8 @@
 			      .replace(/\([^)]*\)/g, '')
 			      .replace(/\[[^\]]*\]/g, '')
 			      .trim().toLowerCase();
-			    if(c.url && c.url.startsWith('http://') && TV_HTTP_ALLOWLIST.has(key)){
-			      return { ...c, url: HLS_PROXY_PFX + encodeURIComponent(c.url) };
+			    if(TV_OFFICIAL_FALLBACK[key]){
+			      return { ...c, officialUrl: TV_OFFICIAL_FALLBACK[key] };
 			    }
 			    return c;
 			  });
@@ -6735,7 +6738,7 @@
 			    }
 			    let channels = applyHttpOnlyFallback(result);
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.url.startsWith('/.netlify/')));
+			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
 			    }
 			    if(!channels.length){
 			      if(status) status.textContent = 'Sin canales que combinen esos filtros. Prueba con menos.';
@@ -6808,7 +6811,7 @@
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
 			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
 			        </div>
-			        <span style="font-size:8px;background:#ff453a;color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;">LIVE</span>
+			        <span style="font-size:8px;background:${c.officialUrl?'#af82ff':'#ff453a'};color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;white-space:nowrap;">${c.officialUrl?'WEB OFICIAL':'LIVE'}</span>
 			      </button>`;
 			  }).join('');
 			}
@@ -6829,6 +6832,7 @@
 			function playTVChannel(i, isRetry){
 			  const c = _lastTVResults[i];
 			  if(!c || !c.url) return;
+			  if(c.officialUrl){ openBrowserWindow(c.officialUrl); return; }
 			  if(_tvRetryTimer){ clearTimeout(_tvRetryTimer); _tvRetryTimer = null; }
 			  if(!isRetry) _tvRetryCount = 0;
 			  const video = document.getElementById('tv-video');
