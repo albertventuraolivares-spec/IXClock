@@ -2488,25 +2488,19 @@
 							class="text-white/70 hover:text-white"
 							onclick="prevStation()"
 						>
-							<span class="material-symbols-outlined text-xl"
-								>skip_previous</span
-							>
+							<span class="text-xl">⏮️</span>
 						</button>
 						<button
 							class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-[0_0_18px_rgba(59,130,246,.5)]"
 							id="global-play"
 						>
-							<span class="material-symbols-outlined text-2xl"
-								>play_arrow</span
-							>
+							<span class="text-2xl">▶️</span>
 						</button>
 						<button
 							class="text-white/70 hover:text-white"
 							onclick="nextStation()"
 						>
-							<span class="material-symbols-outlined text-xl"
-								>skip_next</span
-							>
+							<span class="text-xl">⏭️</span>
 						</button>
 					</div>
 
@@ -5926,20 +5920,20 @@
 			    streamPlayer.load();
 			    if(btn) btn.classList.add('station-loading');
 			    setupStreamFallback(streamPlayer, st);
-			    document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl animate-spin">progress_activity</span>';
+			    document.getElementById('global-play').innerHTML='<span class="text-2xl inline-block animate-spin">⏳</span>';
 			    streamPlayer.play().then(()=>{
 			      isPlaying=true;
 			      if(btn) btn.classList.remove('station-loading');
-			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			      document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			      document.getElementById('global-play').classList.add('animate-pulse');
 			    }).catch(e=>{
 			      console.error('Error reproduciendo stream:', e);
 			      isPlaying=false;
 			      if(btn) btn.classList.remove('station-loading');
 			      if(btn) btn.classList.add('station-error');
-			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">error_outline</span>';
+			      document.getElementById('global-play').innerHTML='<span class="text-2xl">⚠️</span>';
 			      document.getElementById('global-play').classList.remove('animate-pulse');
-			      setTimeout(()=>{ document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>'; }, 2200);
+			      setTimeout(()=>{ document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>'; }, 2200);
 			    });
 			    return;
 			  }
@@ -5962,7 +5956,7 @@
 			  else ambientSource=createRain();
 			  if(ambientSource){
 			    ambientSource.start(); isPlaying=true;
-			    document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			    document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			    document.getElementById('global-play').classList.add('animate-pulse');
 			  }
 			}
@@ -5971,7 +5965,7 @@
 			  if(streamPlayer && !streamPlayer.paused){ streamPlayer.pause(); streamPlayer.src=''; }
 			  document.querySelectorAll('.station-btn').forEach(b=>b.classList.remove('station-loading','station-error'));
 			  isPlaying=false;
-			  document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>';
+			  document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>';
 			  document.getElementById('global-play').classList.remove('animate-pulse');
 			}
 			// Pausa/reanuda sin perder el src: necesario para archivos locales (stopAudio limpia el src).
@@ -5980,7 +5974,7 @@
 			    if(_localAudioActive){
 			      streamPlayer.pause();
 			      isPlaying = false;
-			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>';
+			      document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>';
 			      document.getElementById('global-play').classList.remove('animate-pulse');
 			    } else {
 			      stopAudio();
@@ -5988,7 +5982,7 @@
 			  } else if(_localAudioActive && streamPlayer.src){
 			    streamPlayer.play().then(()=>{
 			      isPlaying = true;
-			      document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			      document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			      document.getElementById('global-play').classList.add('animate-pulse');
 			    }).catch(()=>{});
 			  } else if(currentStation){
@@ -6009,9 +6003,9 @@
 			    if(sub) sub.innerText = 'Error de red · enlace caído';
 			  }
 			  isPlaying=false;
-			  document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">error_outline</span>';
+			  document.getElementById('global-play').innerHTML='<span class="text-2xl">⚠️</span>';
 			  document.getElementById('global-play').classList.remove('animate-pulse');
-			  setTimeout(()=>{ if(!isPlaying) document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">play_arrow</span>'; }, 2200);
+			  setTimeout(()=>{ if(!isPlaying) document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>'; }, 2200);
 			});
 			function nextStation(){
 			  if(!currentStation){ setStation(STATIONS[0].id); return; }
@@ -6117,7 +6111,7 @@
 			  streamPlayer.play().then(()=>{
 			    isPlaying = true;
 			    _localAudioActive = true;
-			    document.getElementById('global-play').innerHTML='<span class="material-symbols-outlined text-2xl">pause</span>';
+			    document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			    document.getElementById('global-play').classList.add('animate-pulse');
 			    updateIpodUI({ title: file.name.replace(/\.[^.]+$/, ''), sub: 'Archivo local', flag: '🎵' });
 			  }).catch(()=>{});
