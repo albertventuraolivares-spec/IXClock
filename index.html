@@ -6377,13 +6377,20 @@
 			  if(!results) return;
 			  const token = ++_worldSearchToken;
 			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Buscando emisoras…</div>';
-			  let path = '/json/stations/search?limit=150&hidebroken=true&order=clickcount&reverse=true';
+			  // hidebroken=true: solo emisoras verificadas como activas (no caídas).
+			  // limit alto para traer "todas las que se pueda" en una sola pasada.
+			  let path = '/json/stations/search?limit=800&hidebroken=true&order=clickcount&reverse=true';
 			  if(q) path += '&name=' + encodeURIComponent(q);
 			  if(country) path += '&country=' + encodeURIComponent(country);
 			  if(genre) path += '&tag=' + encodeURIComponent(genre);
 			  try{
-			    const data = await rbFetch(path);
+			    let data = await rbFetch(path);
 			    if(token !== _worldSearchToken) return;
+			    // "Seguras": en una página https, un stream http:// queda bloqueado por
+			    // contenido mixto y nunca suena. Nos quedamos solo con los reproducibles.
+			    if(location.protocol === 'https:' && Array.isArray(data)){
+			      data = data.filter(s=>{ const u = s.url_resolved || s.url || ''; return u.startsWith('https://'); });
+			    }
 			    renderWorldResults(data);
 			  }catch(e){
 			    if(token !== _worldSearchToken) return;
@@ -6398,7 +6405,8 @@
 			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Sin resultados. Prueba otro término o país.</div>';
 			    return;
 			  }
-			  results.innerHTML = _lastWorldResults.map((s,i)=>{
+			  const countNote = `<div style="text-align:center;padding:2px 0 8px;opacity:.4;font-size:10px;">✅ ${_lastWorldResults.length} emisoras seguras (verificadas activas)</div>`;
+			  results.innerHTML = countNote + _lastWorldResults.map((s,i)=>{
 			    const flag = countryCodeToFlag(s.countrycode);
 			    const safeName = escapeHtml((s.name || 'Emisora').trim().slice(0,60));
 			    const sub = escapeHtml([s.country, s.codec, s.bitrate ? s.bitrate+'kbps' : ''].filter(Boolean).join(' · '));
