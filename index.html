@@ -5836,29 +5836,58 @@
 			// Stream error fallback: try url2 if url fails
 			function setupStreamFallback(audioEl, station){
 			  let tried = 0;
-			  audioEl.onerror = function(){
+			  audioEl.onerror = async function(){
 			    tried++;
 			    if(tried===1 && station.url2){
 			      console.warn('Stream failed, trying fallback:', station.url2);
 			      audioEl.src = station.url2;
 			      audioEl.load();
 			      audioEl.play().catch(()=>{});
-			      // Mark station button with error indicator then clear
 			      const b=document.getElementById('station-'+station.id);
 			      if(b) b.style.opacity='.6';
-			    } else {
-			      // Show error on button
-			      const b=document.getElementById('station-'+station.id);
-			      if(b){ b.style.opacity='.4'; b.title='⚠️ Stream no disponible'; }
-			      isPlaying=false;
-			      const gp=document.getElementById('global-play');
-			      if(gp){ const ic=gp.querySelector('.material-symbols-outlined'); if(ic) ic.textContent='play_arrow'; }
+			      return;
 			    }
+			    // Última carta antes de rendirse: las URLs fijas de este archivo
+			    // pueden quedar viejas/muertas con el tiempo (streaming.com cambia
+			    // rutas, mounts se renombran, etc). Buscamos en vivo en el
+			    // directorio Radio-Browser por el nombre exacto de la emisora y,
+			    // si hay algo, lo probamos antes de mostrar "no disponible".
+			    if(tried<=2 && !station._triedLiveLookup){
+			      station._triedLiveLookup = true;
+			      try{
+			        const results = await rbFetch('/json/stations/search?limit=1&hidebroken=true&order=clickcount&reverse=true&name=' + encodeURIComponent(station.title));
+			        const alt = results && results[0] && (results[0].url_resolved || results[0].url);
+			        if(alt && alt !== station.url && alt !== station.url2){
+			          console.warn('Stream fijo caído, usando resultado en vivo de Radio-Browser:', alt);
+			          audioEl.src = alt;
+			          audioEl.load();
+			          audioEl.play().catch(()=>{});
+			          const b=document.getElementById('station-'+station.id);
+			          if(b) b.style.opacity='.6';
+			          return;
+			        }
+			      }catch(e){ /* sin conexión al directorio: seguimos al mensaje de error */ }
+			    }
+			    // Show error on button
+			    const b=document.getElementById('station-'+station.id);
+			    if(b){ b.style.opacity='.4'; b.title='⚠️ Stream no disponible'; }
+			    isPlaying=false;
+			    const gp=document.getElementById('global-play');
+			    if(gp) gp.innerHTML='<span class="text-2xl">▶️</span>';
 			  };
 			}
 			const streamPlayer = document.getElementById('stream-audio-player');
-			/* ── iPod: volume boost (Web Audio GainNode) + drag ── */
-			let _ipodVolPct=70, _ipodGainNode=null, _ipodMediaSrc=null;
+			/* ── iPod: volume boost (Web Audio GainNode) + drag ──
+			   En Safari/WebKit, conectar un stream en vivo cross-origin a un
+			   GainNode a veces deja de responder a cambios de gain.value aunque
+			   el audio siga sonando (el control "se mueve pero no cambia nada").
+			   Para el rango normal (0-100%) se usa el volumen nativo del <audio>,
+			   que sí es 100% confiable. El GainNode solo se activa para el boost
+			   por encima de 100% (ahí no hay otra forma de superar el volumen
+			   nativo). Una vez activado, Web Audio desconecta la salida nativa
+			   del elemento para siempre, así que de ahí en más todo pasa por el
+			   GainNode, incluso si se vuelve a bajar de 100%. */
+			let _ipodVolPct=70, _ipodGainNode=null, _ipodMediaSrc=null, _ipodUsingGain=false;
 			function _ipodSetupGain(){
 			  const actx=getAudioCtx(); if(!actx||_ipodGainNode) return _ipodGainNode;
 			  try{
@@ -5868,13 +5897,18 @@
 			    _ipodGainNode.connect(actx.destination);
 			    _ipodMediaSrc=actx.createMediaElementSource(streamPlayer);
 			    _ipodMediaSrc.connect(_ipodGainNode);
-			  }catch(e){ _ipodGainNode=null; _ipodMediaSrc=null; }
+			    _ipodUsingGain=true;
+			  }catch(e){ _ipodGainNode=null; _ipodMediaSrc=null; _ipodUsingGain=false; }
 			  return _ipodGainNode;
 			}
 			function setIpodVolume(val){
 			  val=parseInt(val)||0; _ipodVolPct=val;
 			  const lbl=document.getElementById('ipod-vol-pct');
 			  if(lbl) lbl.textContent=val+'%';
+			  if(!_ipodUsingGain && val<=100){
+			    streamPlayer.volume = val/100;
+			    return;
+			  }
 			  const gn=_ipodSetupGain();
 			  if(gn){ gn.gain.value=val/100; streamPlayer.volume=1.0; }
 			  else streamPlayer.volume=Math.min(val/100,1.0);
@@ -5916,7 +5950,7 @@
 			    streamPlayer.loop = false; // all radio stations are live streams, no loop
 			    streamPlayer.src = st.url;
 			    _ipodSetupGain();
-			    streamPlayer.volume = _ipodGainNode ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
+			    streamPlayer.volume = _ipodUsingGain ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
 			    streamPlayer.load();
 			    if(btn) btn.classList.add('station-loading');
 			    setupStreamFallback(streamPlayer, st);
@@ -6106,7 +6140,7 @@
 			  streamPlayer.loop = true;
 			  streamPlayer.src = _localAudioObjectUrl;
 			  _ipodSetupGain();
-			  streamPlayer.volume = _ipodGainNode ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
+			  streamPlayer.volume = _ipodUsingGain ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
 			  streamPlayer.load();
 			  streamPlayer.play().then(()=>{
 			    isPlaying = true;
