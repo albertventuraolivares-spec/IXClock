@@ -6666,7 +6666,7 @@
 			  _tvHls.on(Hls.Events.ERROR, (event, data)=>{
 			    if(!data.fatal) return;
 			    if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
-			    console.error('Error HLS:', data.type, data.details);
+			    console.error('Error HLS:', data.type, data.details, data.response);
 			    if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
 			      _tvHls.destroy(); _tvHls = null;
 			      // Los re-streams no oficiales (IP directa, sin CDN detrás) suelen
@@ -6676,7 +6676,12 @@
 			        _tvRetryCount++;
 			        _tvRetryTimer = setTimeout(()=>{ _tvRetryTimer = null; playTVChannel(i, true); }, 2500);
 			      } else {
-			        tvSetStatus('⚠️ Este canal no responde (caído o bloqueado). Prueba otro.', true);
+			        // Mostramos el detalle real (código HTTP / motivo) para poder
+			        // diagnosticar sin herramientas de desarrollador: "caído" no es
+			        // lo mismo que "bloqueado por el origen" ni que "tardó demasiado".
+			        const code = data.response && data.response.code;
+			        const detail = code ? `HTTP ${code}` : (data.details || 'sin respuesta');
+			        tvSetStatus(`⚠️ Este canal no responde (${detail}). Prueba otro.`, true);
 			      }
 			    } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR){
 			      tvSetStatus('⏳ Reconectando…', false);
