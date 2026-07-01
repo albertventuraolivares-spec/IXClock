@@ -453,18 +453,18 @@
 		.dock-btn:hover{transform:scale(1.1) translateY(-2px);}
 		.dock-btn:active{transform:scale(.94);}
 		.dock-btn svg{transition:width .22s ease,height .22s ease;}
-		/* Modo ampliado: mismos iconos, todo más grande y fácil de tocar */
-		#top-dock.expanded{gap:18px;padding:14px 24px;}
-		#top-dock.expanded .dock-btn{width:64px;height:64px;border-radius:16px;}
-		#top-dock.expanded .dock-btn svg{width:64px;height:64px;}
+		/* Modo compacto: mismos iconos, todo más chiquito para que quepan mejor */
+		#top-dock.expanded{gap:5px;padding:5px 10px;}
+		#top-dock.expanded .dock-btn{width:30px;height:30px;border-radius:8px;}
+		#top-dock.expanded .dock-btn svg{width:30px;height:30px;}
 	</style>
 	<div id="top-dock">
-		<!-- Ampliar/Reducir dock -->
+		<!-- Achicar/Agrandar dock -->
 		<button
 			class="dock-btn"
 			id="dock-expand-btn"
 			onclick="toggleDockSize()"
-			title="Ampliar/Reducir iconos"
+			title="Achicar/Agrandar iconos"
 			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 12px rgba(0,0,0,.4);"
 		>
 			<svg id="dock-expand-icon" width="40" height="40" viewBox="0 0 40 40">
@@ -476,8 +476,8 @@
 					</linearGradient>
 				</defs>
 				<g stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
-					<path d="M12 20 H20 M12 20 L16 16 M12 20 L16 24" />
-					<path d="M28 20 H20 M28 20 L24 16 M28 20 L24 24" />
+					<path d="M16 20 H12 M16 20 L20 16 M16 20 L20 24" />
+					<path d="M24 20 H28 M24 20 L20 16 M24 20 L20 24" />
 				</g>
 			</svg>
 		</button>
