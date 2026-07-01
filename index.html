@@ -6724,12 +6724,14 @@
 			      if(status) status.textContent = '⚠️ No se pudo cargar ninguna lista. Intenta de nuevo.';
 			      return;
 			    }
-			    // Intersección por tvg-id: un canal debe aparecer en TODAS las listas
-			    // pedidas para calificar (ignora entradas sin tvg-id: no son comparables).
-			    let result = validLists[0].filter(c => c.tvgId);
+			    // Intersección por URL de stream (no por tvg-id: ese identificador no
+			    // es 100% consistente entre los distintos archivos generados y puede
+			    // hacer coincidir canales que no son. La URL del stream sí es exacta:
+			    // si coincide, es literalmente el mismo canal, sin ambigüedad).
+			    let result = validLists[0].filter(c => c.url);
 			    for(let i = 1; i < validLists.length; i++){
-			      const idsInList = new Set(validLists[i].filter(c => c.tvgId).map(c => c.tvgId));
-			      result = result.filter(c => idsInList.has(c.tvgId));
+			      const urlsInList = new Set(validLists[i].filter(c => c.url).map(c => c.url));
+			      result = result.filter(c => urlsInList.has(c.url));
 			    }
 			    let channels = applyHttpOnlyFallback(result);
 			    if(location.protocol === 'https:'){
@@ -6739,6 +6741,18 @@
 			      if(status) status.textContent = 'Sin canales que combinen esos filtros. Prueba con menos.';
 			      return;
 			    }
+			    // Sin esto, la lista sale en el orden alfabético del archivo fuente:
+			    // canales genéricos ("8NTV", "15TV"…) quedan antes que las cadenas
+			    // reconocidas (TUDN, Canal 5, ESPN…), que es justo lo que se busca.
+			    channels.sort((a,b)=>{
+			      const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
+			      const ai = TOP_SPORTS_NETWORKS.findIndex(n=>an.includes(n));
+			      const bi = TOP_SPORTS_NETWORKS.findIndex(n=>bn.includes(n));
+			      const arank = ai === -1 ? 999 : ai;
+			      const brank = bi === -1 ? 999 : bi;
+			      if(arank !== brank) return arank - brank;
+			      return a.name.localeCompare(b.name);
+			    });
 			    closeSmartFinderModal();
 			    const panel = document.getElementById('tv-panel');
 			    if(panel && !panel.classList.contains('open')) panel.classList.add('open');
