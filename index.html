@@ -6424,10 +6424,12 @@
 			    if(!res.ok) throw new Error('not ok');
 			    const text = await res.text();
 			    let channels = parseM3U(text);
-			    // En una página servida por HTTPS, los streams http:// quedan bloqueados
-			    // por "contenido mixto" y nunca reproducen: se descartan de la lista.
+			    channels = applyHttpOnlyFallback(channels);
+			    // En una página servida por HTTPS, los streams http:// puros (sin
+			    // fallback conocido) quedan bloqueados por "contenido mixto" y nunca
+			    // reproducen: se descartan de la lista.
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && c.url.startsWith('https://'));
+			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.officialUrl));
 			    }
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
 			    renderTVResults(channels);
@@ -6452,8 +6454,9 @@
 			    if(!res.ok) throw new Error('not ok');
 			    const text = await res.text();
 			    let channels = parseM3U(text);
+			    channels = applyHttpOnlyFallback(channels);
 			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.url && c.url.startsWith('https://'));
+			      channels = channels.filter(c=>c.url && (c.url.startsWith('https://') || c.officialUrl));
 			    }
 			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
@@ -6512,6 +6515,24 @@
 			  }
 			}
 
+			// Canales cuyo único stream conocido en iptv-org es http:// (bloqueado por
+			// contenido mixto en HTTPS) pero que sí tienen una web oficial verificada
+			// con reproductor propio. En vez de inventar una URL de stream que no
+			// podemos comprobar, se abren en la ventana flotante del navegador.
+			const TV_HTTP_FALLBACK = {
+			  'cdn': 'https://cdn.com.do/envivo/',
+			  'cdn deportes': 'https://cdndeportes.com.do/streaming.html'
+			};
+			function applyHttpOnlyFallback(channels){
+			  return (channels||[]).map(c=>{
+			    const key = (c.name||'').trim().toLowerCase();
+			    if(c.url && c.url.startsWith('http://') && TV_HTTP_FALLBACK[key]){
+			      return { ...c, officialUrl: TV_HTTP_FALLBACK[key] };
+			    }
+			    return c;
+			  });
+			}
+
 			function parseM3U(text){
 			  const lines = text.split('\n');
 			  const channels = [];
@@ -6556,7 +6577,7 @@
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
 			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
 			        </div>
-			        <span style="font-size:8px;background:#ff453a;color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;">LIVE</span>
+			        <span style="font-size:8px;background:${c.officialUrl?'#af82ff':'#ff453a'};color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;white-space:nowrap;">${c.officialUrl?'WEB OFICIAL':'LIVE'}</span>
 			      </button>`;
 			  }).join('');
 			}
@@ -6574,6 +6595,10 @@
 			function playTVChannel(i){
 			  const c = _lastTVResults[i];
 			  if(!c || !c.url) return;
+			  if(c.officialUrl){
+			    openBrowserWindow(c.officialUrl);
+			    return;
+			  }
 			  const video = document.getElementById('tv-video');
 			  const player = document.getElementById('tv-player');
 			  const titleEl = document.getElementById('tv-player-title');
