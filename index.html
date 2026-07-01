@@ -2930,6 +2930,12 @@
 				>
 					⚽ Deportes y Mundiales
 				</button>
+				<button
+					onclick="searchTV4K()"
+					style="padding:10px;border-radius:12px;background:rgba(175,130,255,.18);border:1px solid rgba(175,130,255,.4);color:#af82ff;font-weight:700;font-size:12px;cursor:pointer;"
+				>
+					✨ Canales 4K / UHD
+				</button>
 			</div>
 			<div
 				id="tv-results"
@@ -6460,6 +6466,43 @@
 			  }
 			}
 
+			async function searchTV4K(){
+			  const results = document.getElementById('tv-results');
+			  if(!results) return;
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales 4K / UHD…</div>';
+			  try{
+			    const res = await fetch('https://iptv-org.github.io/iptv/index.m3u');
+			    if(!res.ok) throw new Error('not ok');
+			    const text = await res.text();
+			    let channels = parseM3U(text);
+			    if(location.protocol === 'https:'){
+			      channels = channels.filter(c=>c.url && c.url.startsWith('https://'));
+			    }
+			    channels = channels.filter(c=>{
+			      const n = (c.name||'').toLowerCase();
+			      const g = (c.group||'').toLowerCase();
+			      return n.includes('4k') || n.includes('uhd') || n.includes('ultra hd') || n.includes('2160') || g.includes('4k') || g.includes('uhd');
+			    });
+			    if(!channels.length){
+			      const res2 = await fetch('https://iptv-org.github.io/iptv/categories/undefined.m3u').catch(()=>null);
+			      if(res2 && res2.ok){
+			        const text2 = await res2.text();
+			        let ch2 = parseM3U(text2);
+			        if(location.protocol === 'https:') ch2 = ch2.filter(c=>c.url && c.url.startsWith('https://'));
+			        channels = ch2.filter(c=>{
+			          const n = (c.name||'').toLowerCase();
+			          return n.includes('4k') || n.includes('uhd') || n.includes('ultra hd');
+			        });
+			      }
+			    }
+			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
+			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
+			    renderTVResults(channels);
+			  }catch(e){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo cargar los canales 4K. Intenta de nuevo más tarde.</div>';
+			  }
+			}
+
 			function parseM3U(text){
 			  const lines = text.split('\n');
 			  const channels = [];
@@ -7112,16 +7155,19 @@
 			/* ---------- 2048 ---------- */
 			function init2048Game(container){
 			  container.innerHTML = `
-			    <div style="font-size:11px;opacity:.6;">Usa las flechas para mover · Puntos: <span id="g2048-score">0</span></div>
-			    <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,64px);grid-template-rows:repeat(4,64px);gap:6px;background:#1c1c1e;padding:6px;border-radius:12px;"></div>
+			    <div style="font-size:11px;opacity:.6;">Desliza o usa flechas · Puntos: <span id="g2048-score">0</span></div>
+			    <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,64px);grid-template-rows:repeat(4,64px);gap:6px;background:#1c1c1e;padding:6px;border-radius:12px;touch-action:none;"></div>
+			    <div id="g2048-over" style="display:none;font-size:14px;font-weight:700;color:#ff453a;margin-top:6px;">Game Over · Toca para reiniciar</div>
 			  `;
-			  let grid, score;
+			  let grid, score, gameOver=false;
 			  const gridEl = container.querySelector('#g2048-grid');
 			  const scoreEl = container.querySelector('#g2048-score');
+			  const overEl = container.querySelector('#g2048-over');
 			  const colors = {2:'#3a3a3c',4:'#48484a',8:'#ff9f0a',16:'#ff9500',32:'#ff6961',64:'#ff453a',128:'#ffd60a',256:'#ffd60a',512:'#32d74b',1024:'#30d158',2048:'#0a84ff'};
 			  function newGame(){
 			    grid = Array.from({length:4},()=>Array(4).fill(0));
-			    score = 0;
+			    score = 0; gameOver=false;
+			    overEl.style.display='none';
 			    addTile(); addTile();
 			    render();
 			  }
@@ -7131,6 +7177,14 @@
 			    if(!empty.length) return;
 			    const [r,c] = empty[Math.floor(Math.random()*empty.length)];
 			    grid[r][c] = Math.random()<0.9 ? 2 : 4;
+			  }
+			  function canMove(){
+			    for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+			      if(!grid[r][c]) return true;
+			      if(c<3 && grid[r][c]===grid[r][c+1]) return true;
+			      if(r<3 && grid[r][c]===grid[r+1][c]) return true;
+			    }
+			    return false;
 			  }
 			  function render(){
 			    gridEl.innerHTML='';
@@ -7152,6 +7206,7 @@
 			    return arr;
 			  }
 			  function move(dirKey){
+			    if(gameOver){ newGame(); return; }
 			    const before = JSON.stringify(grid);
 			    if(dirKey==='ArrowLeft'){
 			      grid = grid.map(row=>slideRow(row));
@@ -7168,14 +7223,27 @@
 			        for(let r=0;r<4;r++) grid[r][c]=col[r];
 			      }
 			    } else return;
-			    if(JSON.stringify(grid) !== before){ addTile(); render(); }
+			    if(JSON.stringify(grid) !== before){
+			      addTile(); render();
+			      if(!canMove()){ gameOver=true; overEl.style.display='block'; }
+			    }
 			  }
 			  const onKey = (e)=>{
 			    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){ e.preventDefault(); move(e.key); }
 			  };
 			  document.addEventListener('keydown', onKey);
+			  let tx=0,ty=0;
+			  const onTS=(e)=>{e.preventDefault();const t=e.touches[0];tx=t.clientX;ty=t.clientY;};
+			  const onTE=(e)=>{
+			    const t=e.changedTouches[0];const ddx=t.clientX-tx,ddy=t.clientY-ty;
+			    if(Math.abs(ddx)<20&&Math.abs(ddy)<20)return;
+			    if(Math.abs(ddx)>Math.abs(ddy)) move(ddx>0?'ArrowRight':'ArrowLeft');
+			    else move(ddy>0?'ArrowDown':'ArrowUp');
+			  };
+			  gridEl.addEventListener('touchstart',onTS,{passive:false});
+			  gridEl.addEventListener('touchend',onTE);
 			  newGame();
-			  return ()=> document.removeEventListener('keydown', onKey);
+			  return ()=>{ document.removeEventListener('keydown',onKey); gridEl.removeEventListener('touchstart',onTS); gridEl.removeEventListener('touchend',onTE); };
 			}
 
 			/* ---------- Memorama ---------- */
@@ -7185,7 +7253,7 @@
 			  let flipped = [], matched = new Set(), lock = false, moves = 0;
 			  container.innerHTML = `
 			    <div style="font-size:11px;opacity:.6;">Movimientos: <span id="mem-moves">0</span></div>
-			    <div id="mem-grid" style="display:grid;grid-template-columns:repeat(4,60px);gap:8px;"></div>
+			    <div id="mem-grid" style="display:grid;grid-template-columns:repeat(4,60px);gap:8px;touch-action:manipulation;"></div>
 			  `;
 			  const gridEl = container.querySelector('#mem-grid');
 			  const movesEl = container.querySelector('#mem-moves');
@@ -7284,7 +7352,7 @@
 			  const hint = mode==='friend' ? `${escapeHtml(names[0])}: ratón/W·S · ${escapeHtml(names[1])}: flechas ↑↓` : 'Mueve el mouse, W/S o las flechas';
 			  container.innerHTML = `
 			    <div style="font-size:11px;opacity:.6;">${hint} · ${escapeHtml(names[0])}: <span id="pong-p1">0</span> — ${escapeHtml(names[1])}: <span id="pong-p2">0</span></div>
-			    <canvas id="pong-canvas" width="320" height="220" style="background:#0a0a0c;border-radius:12px;" tabindex="0"></canvas>
+			    <canvas id="pong-canvas" width="320" height="220" style="background:#0a0a0c;border-radius:12px;touch-action:none;" tabindex="0"></canvas>
 			  `;
 			  const canvas = container.querySelector('#pong-canvas');
 			  const ctx = canvas.getContext('2d');
@@ -7345,7 +7413,7 @@
 			function initFlappyGame(container){
 			  container.innerHTML = `
 			    <div style="font-size:11px;opacity:.6;">Click / Espacio para volar · Puntos: <span id="flappy-score">0</span></div>
-			    <canvas id="flappy-canvas" width="300" height="380" style="background:#0a0a0c;border-radius:12px;cursor:pointer;"></canvas>
+			    <canvas id="flappy-canvas" width="300" height="380" style="background:#0a0a0c;border-radius:12px;cursor:pointer;touch-action:none;"></canvas>
 			  `;
 			  const canvas = container.querySelector('#flappy-canvas');
 			  const ctx = canvas.getContext('2d');
@@ -7653,7 +7721,7 @@
 			      moves++;
 			      render();
 			      if(tiles.slice(0,15).every((v,idx)=>v===idx+1)){
-			        setTimeout(()=>alert('¡Resuelto! 🎉'), 100);
+			        setTimeout(()=>{const w=document.createElement('div');w.style.cssText='font-size:16px;font-weight:800;color:#30d158;text-align:center;margin-top:8px;';w.textContent='¡Resuelto! 🎉';container.appendChild(w);},100);
 			      }
 			    }
 			  }
