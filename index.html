@@ -2938,9 +2938,11 @@
 				</button>
 			</div>
 			<div style="padding:12px 16px 0;">
-				<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">📱 Apps oficiales con suscripción</div>
-				<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="tv-sub-apps-grid"></div>
-				<div style="font-size:9px;opacity:.4;margin-top:8px;">Se abren en ventana flotante, con tu propia cuenta/suscripción. No incluyen contenido pirata.</div>
+				<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🆓 Gratis, sin suscripción</div>
+				<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="tv-free-apps-grid"></div>
+				<div style="font-size:10px;font-weight:700;opacity:.5;margin:12px 0 8px;text-transform:uppercase;letter-spacing:.08em;">💳 Requieren suscripción/cable</div>
+				<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="tv-paid-apps-grid"></div>
+				<div style="font-size:9px;opacity:.4;margin-top:8px;">Se abren en ventana flotante, con tu propia cuenta. No incluyen contenido pirata.</div>
 			</div>
 			<div
 				id="tv-results"
@@ -6373,28 +6375,30 @@
 			let _tvHls = null;
 			let _lastTVResults = [];
 
-			// Apps oficiales con suscripción propia del usuario: se abren en la
-			// ventana flotante del navegador, no incluyen ni redistribuyen nada.
+			// Apps oficiales: se abren en la ventana flotante del navegador con la
+			// cuenta del propio usuario. No incluyen ni redistribuyen nada.
+			// "free" = acceso gratis sin suscripción (al menos parte del contenido en vivo);
+			// las demás requieren suscripción o autenticación de cable/TV de paga.
 			const TV_SUB_APPS = [
-			  {icon:'⚽', name:'ESPN App', url:'https://www.espn.com/watch/'},
-			  {icon:'📡', name:'DirecTV GO RD', url:'https://www.dgo.com.do'},
-			  {icon:'🇺🇸', name:'FIFA+ (gratis)', url:'https://plus.fifa.com'},
-			  {icon:'🟢', name:'ViX', url:'https://vix.com'},
-			  {icon:'🎙️', name:'TUDN', url:'https://www.tudn.com'},
-			  {icon:'🔵', name:'Fanatiz', url:'https://www.fanatiz.com'},
-			  {icon:'🟠', name:'Claro Sports', url:'https://www.clarosports.com'},
-			  {icon:'⚪', name:'beIN Connect', url:'https://www.beinsports.com'}
+			  {icon:'🇺🇸', name:'FIFA+', url:'https://plus.fifa.com', free:true},
+			  {icon:'🟢', name:'ViX (gratis)', url:'https://vix.com', free:true},
+			  {icon:'🟠', name:'Claro Sports', url:'https://www.clarosports.com', free:true},
+			  {icon:'⚽', name:'ESPN App', url:'https://www.espn.com/watch/', free:false},
+			  {icon:'📡', name:'DirecTV GO RD', url:'https://www.dgo.com.do', free:false},
+			  {icon:'🎙️', name:'TUDN', url:'https://www.tudn.com', free:false},
+			  {icon:'🔵', name:'Fanatiz', url:'https://www.fanatiz.com', free:false},
+			  {icon:'⚪', name:'beIN Connect', url:'https://www.beinsports.com', free:false}
 			];
 			let _tvSubAppsRendered = false;
 			function renderTVSubApps(){
-			  const grid = document.getElementById('tv-sub-apps-grid');
-			  if(!grid) return;
-			  grid.innerHTML = TV_SUB_APPS.map(a=>
-			    `<div class="game-tile" onclick="openBrowserWindow('${a.url}')">
+			  const freeGrid = document.getElementById('tv-free-apps-grid');
+			  const paidGrid = document.getElementById('tv-paid-apps-grid');
+			  const tile = a => `<div class="game-tile" onclick="openBrowserWindow('${a.url}')">
 			      <div class="game-tile-icon">${a.icon}</div>
 			      <div class="game-tile-label">${escapeHtml(a.name)}</div>
-			    </div>`
-			  ).join('');
+			    </div>`;
+			  if(freeGrid) freeGrid.innerHTML = TV_SUB_APPS.filter(a=>a.free).map(tile).join('');
+			  if(paidGrid) paidGrid.innerHTML = TV_SUB_APPS.filter(a=>!a.free).map(tile).join('');
 			}
 
 			function toggleTVPanel(){
