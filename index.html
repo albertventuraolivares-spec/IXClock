@@ -2482,22 +2482,7 @@
 							>
 						</button>
 					</div>
-					<div class="flex items-center gap-2 px-1 opacity-70">
-						<span class="material-symbols-outlined text-sm"
-							>volume_down</span
-						>
-						<input
-							class="w-full h-1 bg-white/20 rounded-full appearance-none"
-							id="volume-slider"
-							max="100"
-							min="0"
-							type="range"
-							value="50"
-						/>
-						<span class="material-symbols-outlined text-sm"
-							>volume_up</span
-						>
-					</div>
+
 					<div
 						id="stations-container"
 						style="overflow-y:auto;max-height:280px;"
@@ -3670,20 +3655,14 @@
 					</button>
 				</div>
 				<!-- Volume -->
-				<div
-					style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:0 4px;"
-				>
-					<span style="font-size:11px;opacity:.4;">🔈</span>
-					<input
-						type="range"
-						min="0"
-						max="100"
-						value="70"
-						id="ipod-volume"
-						oninput="document.getElementById('stream-audio-player').volume=this.value/100"
-						style="flex:1;accent-color:#0a84ff;height:3px;"
-					/>
-					<span style="font-size:11px;opacity:.4;">🔊</span>
+				<div style="margin-top:10px;padding:0 4px;">
+				  <div style="display:flex;align-items:center;gap:6px;">
+				    <span style="font-size:11px;opacity:.4;">🔈</span>
+				    <input type="range" min="0" max="200" value="70" id="ipod-volume" oninput="setIpodVolume(this.value)" style="flex:1;accent-color:#0a84ff;height:4px;cursor:pointer;"/>
+				    <span style="font-size:11px;opacity:.4;">🔊</span>
+				    <span id="ipod-vol-pct" style="font-size:10px;color:rgba(255,255,255,.5);min-width:28px;text-align:right;">70%</span>
+				  </div>
+				  <div style="font-size:9px;opacity:.28;text-align:center;margin-top:2px;">0 ──────── 100% normal ──────── 200% boost</div>
 				</div>
 				<!-- Archivo local (MP3/MP4) -->
 				<input
@@ -5325,7 +5304,7 @@
 			}
 			/* ===== WORLD RADIO STATIONS ===== */
 			// Countries enabled by user preference (localStorage: radio_countries)
-			const ALL_RADIO_COUNTRIES = ['Sonidos','RD','US','España','México','Colombia','Argentina','Brasil','Venezuela','Chile','Perú','Cuba','Puerto Rico','Francia','Alemania','Italia','UK','Portugal','Países Bajos','Suecia','Japón','India','Marruecos','Nigeria','Sudáfrica','Egipto','Mundo'];
+			const ALL_RADIO_COUNTRIES = ['Sonidos','RD','US','España','México','Colombia','Argentina','Brasil','Venezuela','Chile','Perú','Cuba','Puerto Rico','Uruguay','Panamá','Costa Rica','El Salvador','Guatemala','Francia','Alemania','Italia','UK','Portugal','Países Bajos','Suecia','Noruega','Dinamarca','Suiza','Japón','India','Australia','Marruecos','Nigeria','Sudáfrica','Egipto','Mundo'];
 
 			const ALL_RADIO_STATIONS = [
 			  /* ──── 🇩🇴 REPÚBLICA DOMINICANA ──── */
@@ -5395,7 +5374,209 @@
 			  {id:'ambient-world',title:'Ambient Chill',sub:'iLoveMusic',country:'Mundo',flag:'🌍',tags:'ambient chill relax world',type:'stream',url:'https://streams.ilovemusic.de/iloveradio17.mp3'},
 			  {id:'synthwave-world',title:'Synthwave 80s',sub:'Retro · iLoveMusic',country:'Mundo',flag:'🌍',tags:'synthwave retro 80s',type:'stream',url:'https://streams.ilovemusic.de/iloveradio16.mp3'},
 
-			  /* ──── 🎧 SONIDOS AMBIENTALES (Web Audio, sin internet) ──── */
+			  /* ──── 🇩🇴 REPÚBLICA DOMINICANA (más) ──── */
+  {id:'rd-super',title:'Super 88.1',sub:'Urbano · RD',country:'RD',flag:'🇩🇴',tags:'super urbano rd',type:'stream',url:'https://stream.zeno.fm/9gfbdq2t35zuv'},
+  {id:'rd-elite',title:'Elite FM',sub:'Pop · RD',country:'RD',flag:'🇩🇴',tags:'elite pop rd',type:'stream',url:'https://stream.zeno.fm/1b2m3n4o5zuv'},
+  {id:'rd-hits',title:'HitsFM 95.7',sub:'Pop · RD',country:'RD',flag:'🇩🇴',tags:'hits pop rd',type:'stream',url:'https://stream.zeno.fm/hitsfmrd'},
+  {id:'rd-tropical',title:'Tropical 101',sub:'Salsa · RD',country:'RD',flag:'🇩🇴',tags:'tropical salsa rd',type:'stream',url:'https://stream.zeno.fm/tropical101rd'},
+
+  /* ──── 🇵🇷 PUERTO RICO ──── */
+  {id:'pr-sanata',title:'Sanata 102.5',sub:'Urbano · PR',country:'Puerto Rico',flag:'🇵🇷',tags:'sanata urbano pr',type:'stream',url:'https://stream.zeno.fm/y8xmf6x0f8zuv'},
+  {id:'pr-mega',title:'Mega 106.9',sub:'Tropical · PR',country:'Puerto Rico',flag:'🇵🇷',tags:'mega tropical pr',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WMEGFMAAC.aac'},
+  {id:'pr-wapa',title:'WAPA Radio',sub:'Noticias · PR',country:'Puerto Rico',flag:'🇵🇷',tags:'wapa noticias pr',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WAPAAMFMAAC.aac'},
+  {id:'pr-hits',title:'Hits 95.7 PR',sub:'Pop · PR',country:'Puerto Rico',flag:'🇵🇷',tags:'hits pop pr',type:'stream',url:'https://stream.zeno.fm/hits957pr'},
+
+  /* ──── 🇻🇪 VENEZUELA ──── */
+  {id:'ve-hit94',title:'Hit 94.1',sub:'Pop · Venezuela',country:'Venezuela',flag:'🇻🇪',tags:'hit pop venezuela',type:'stream',url:'https://stream.zeno.fm/hit941ve'},
+  {id:'ve-bestfm',title:'Best FM',sub:'Pop · Venezuela',country:'Venezuela',flag:'🇻🇪',tags:'best fm pop venezuela',type:'stream',url:'https://stream.zeno.fm/bestfmve'},
+  {id:'ve-unional',title:'Unional',sub:'Noticias · Venezuela',country:'Venezuela',flag:'🇻🇪',tags:'unional noticias venezuela',type:'stream',url:'https://stream.zeno.fm/unionalve'},
+
+  /* ──── 🇨🇱 CHILE ──── */
+  {id:'cl-futuro',title:'Futuro FM',sub:'Alternativo · Chile',country:'Chile',flag:'🇨🇱',tags:'futuro alternativo chile',type:'stream',url:'https://stream.zeno.fm/futurofmcl'},
+  {id:'cl-sonar',title:'Sonar 97.1',sub:'Electrónica · Chile',country:'Chile',flag:'🇨🇱',tags:'sonar electronica chile',type:'stream',url:'https://stream.zeno.fm/sonar971cl'},
+  {id:'cl-play',title:'Play FM 91.7',sub:'Pop · Chile',country:'Chile',flag:'🇨🇱',tags:'play fm pop chile',type:'stream',url:'https://stream.zeno.fm/s7r5zktkkqzuv'},
+  {id:'cl-cooperativa',title:'Radio Cooperativa',sub:'Noticias · Chile',country:'Chile',flag:'🇨🇱',tags:'cooperativa noticias chile',type:'stream',url:'https://rcooperativa.cdn.cybercentro.net/rcooperativa/mp3'},
+
+  /* ──── 🇵🇪 PERÚ ──── */
+  {id:'pe-planeta',title:'Planeta',sub:'Pop · Perú',country:'Perú',flag:'🇵🇪',tags:'planeta pop peru',type:'stream',url:'https://stream.zeno.fm/planetape'},
+  {id:'pe-moda',title:'Moda FM',sub:'Tropical · Perú',country:'Perú',flag:'🇵🇪',tags:'moda fm tropical peru',type:'stream',url:'https://stream.zeno.fm/modafmpe'},
+  {id:'pe-studio92',title:'Studio 92',sub:'Pop · Perú',country:'Perú',flag:'🇵🇪',tags:'studio 92 pop peru',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/STUDIO92.mp3'},
+
+  /* ──── 🇨🇺 CUBA ──── */
+  {id:'cu-rebelde',title:'Radio Rebelde',sub:'Noticias · Cuba',country:'Cuba',flag:'🇨🇺',tags:'rebelde noticias cuba',type:'stream',url:'https://stream.radiorebelde.cu/radio-rebelde'},
+  {id:'cu-cmq',title:'Radio CMQ',sub:'Cubana · Cuba',country:'Cuba',flag:'🇨🇺',tags:'cmq cubana cuba',type:'stream',url:'https://stream.cmq.cu/cmq'},
+
+  /* ──── 🇺🇾 URUGUAY ──── */
+  {id:'uy-sarandifm',title:'Sarandí FM',sub:'Noticias · Uruguay',country:'Uruguay',flag:'🇺🇾',tags:'sarandi noticias uruguay',type:'stream',url:'https://stream.zeno.fm/sarandifmuy'},
+  {id:'uy-delsoluy',title:'Del Sol FM',sub:'Pop · Uruguay',country:'Uruguay',flag:'🇺🇾',tags:'del sol pop uruguay',type:'stream',url:'https://stream.zeno.fm/delsolfmuy'},
+
+  /* ──── 🇵🇦 PANAMÁ ──── */
+  {id:'pa-omega',title:'Omega Stereo',sub:'Salsa · Panamá',country:'Panamá',flag:'🇵🇦',tags:'omega salsa panama',type:'stream',url:'https://stream.zeno.fm/omegastereopanama'},
+  {id:'pa-exitopa',title:'Éxitos Pa',sub:'Tropical · Panamá',country:'Panamá',flag:'🇵🇦',tags:'exitos tropical panama',type:'stream',url:'https://stream.zeno.fm/exitospa'},
+
+  /* ──── 🇨🇷 COSTA RICA ──── */
+  {id:'cr-radio16',title:'Radio 16',sub:'Pop · Costa Rica',country:'Costa Rica',flag:'🇨🇷',tags:'radio 16 pop costa rica',type:'stream',url:'https://stream.zeno.fm/radio16cr'},
+  {id:'cr-monumental',title:'Monumental 93.5',sub:'Noticias · CR',country:'Costa Rica',flag:'🇨🇷',tags:'monumental noticias costa rica',type:'stream',url:'https://stream.zeno.fm/monumental935cr'},
+
+  /* ──── 🇸🇻 EL SALVADOR ──── */
+  {id:'sv-ysklfm',title:'YSKLF Stereo',sub:'Pop · El Salvador',country:'El Salvador',flag:'🇸🇻',tags:'ysklf pop el salvador',type:'stream',url:'https://stream.zeno.fm/ysklfsv'},
+
+  /* ──── 🇬🇹 GUATEMALA ──── */
+  {id:'gt-emisorasunidas',title:'Emisoras Unidas',sub:'Noticias · GT',country:'Guatemala',flag:'🇬🇹',tags:'emisoras unidas noticias guatemala',type:'stream',url:'https://stream.zeno.fm/emisorasunidas'},
+
+  /* ──── 🇲🇽 MÉXICO (más) ──── */
+  {id:'mx-nu936',title:'Nu 93.6 FM',sub:'Alternativo · CDMX',country:'México',flag:'🇲🇽',tags:'nu alternativo cdmx mexico',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHNU_FM.mp3'},
+  {id:'mx-mvs',title:'MVS Radio',sub:'Noticias · México',country:'México',flag:'🇲🇽',tags:'mvs noticias mexico',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/MVSFMAAC.aac'},
+  {id:'mx-formato21',title:'Formato 21',sub:'Pop · México',country:'México',flag:'🇲🇽',tags:'formato 21 pop mexico',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHKLFMAAC.aac'},
+  {id:'mx-digitalfm',title:'Digital 99.3',sub:'Electrónica · CDMX',country:'México',flag:'🇲🇽',tags:'digital electronica cdmx mexico',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHDG_FMAAC.aac'},
+  {id:'mx-radiomuseomx',title:'Reactor 105.7',sub:'Rock · México',country:'México',flag:'🇲🇽',tags:'reactor rock mexico',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XEREQ_FMAAC.aac'},
+
+  /* ──── 🇨🇴 COLOMBIA (más) ──── */
+  {id:'co-caracol',title:'Caracol Radio',sub:'Noticias · Colombia',country:'Colombia',flag:'🇨🇴',tags:'caracol noticias colombia',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/CARACOL.mp3'},
+  {id:'co-w',title:'W Radio Colombia',sub:'Noticias · Colombia',country:'Colombia',flag:'🇨🇴',tags:'w radio noticias colombia',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WRADIO_CO.mp3'},
+  {id:'co-olimpica',title:'Olímpica Stereo',sub:'Tropical · Colombia',country:'Colombia',flag:'🇨🇴',tags:'olimpica tropical colombia',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/OLIMPICA.mp3'},
+  {id:'co-la13',title:'La 13 Colombia',sub:'Pop · Colombia',country:'Colombia',flag:'🇨🇴',tags:'la 13 pop colombia',type:'stream',url:'https://stream.zeno.fm/la13colombia'},
+  {id:'co-lavallenata',title:'La Vallenata',sub:'Vallenato · Col',country:'Colombia',flag:'🇨🇴',tags:'vallenata colombia',type:'stream',url:'https://stream.zeno.fm/lavallenata'},
+
+  /* ──── 🇦🇷 ARGENTINA (más) ──── */
+  {id:'ar-la100',title:'La 100',sub:'Pop · Argentina',country:'Argentina',flag:'🇦🇷',tags:'la100 pop argentina',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LA100.mp3'},
+  {id:'ar-radio10',title:'Radio 10',sub:'Noticias · Argentina',country:'Argentina',flag:'🇦🇷',tags:'radio10 noticias argentina',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO10AM.mp3'},
+  {id:'ar-vorterix',title:'Vorterix',sub:'Rock · Argentina',country:'Argentina',flag:'🇦🇷',tags:'vorterix rock argentina',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/VORTERIX.mp3'},
+  {id:'ar-mega',title:'Mega 98.3',sub:'Pop · Argentina',country:'Argentina',flag:'🇦🇷',tags:'mega pop argentina',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA983.mp3'},
+  {id:'ar-mitre',title:'Radio Mitre',sub:'Noticias · Argentina',country:'Argentina',flag:'🇦🇷',tags:'mitre noticias argentina',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOMITRE.mp3'},
+
+  /* ──── 🇧🇷 BRASIL (más) ──── */
+  {id:'br-band',title:'Band FM',sub:'Pop · Brasil',country:'Brasil',flag:'🇧🇷',tags:'band fm pop brasil',type:'stream',url:'https://stream.zeno.fm/bandfmbrasil'},
+  {id:'br-antenna1',title:'Antena 1',sub:'Clásicos · Brasil',country:'Brasil',flag:'🇧🇷',tags:'antena1 clasicos brasil',type:'stream',url:'https://antena1.sbb.com.br/antena1_online'},
+  {id:'br-mix',title:'Mix FM Brasil',sub:'Pop · Brasil',country:'Brasil',flag:'🇧🇷',tags:'mix fm pop brasil',type:'stream',url:'https://stream.zeno.fm/mixfmbrasil'},
+  {id:'br-rdalbr',title:'Rádio Cidade',sub:'Axé/Samba · RJ',country:'Brasil',flag:'🇧🇷',tags:'cidade axe samba brasil',type:'stream',url:'https://stream.zeno.fm/rdacidade'},
+
+  /* ──── 🇺🇸 ESTADOS UNIDOS (más) ──── */
+  {id:'us-wnyc',title:'WNYC AM 820',sub:'Talk · New York',country:'US',flag:'🇺🇸',tags:'wnyc talk new york',type:'stream',url:'https://feeds.wnyc.org/wnycam820'},
+  {id:'us-kcrw',title:'KCRW 89.9',sub:'Indie · LA',country:'US',flag:'🇺🇸',tags:'kcrw indie la california',type:'stream',url:'https://kcrw.streamguys1.com/kcrw_music_128mp3'},
+  {id:'us-kdfc',title:'KDFC Classical',sub:'Classical · SF',country:'US',flag:'🇺🇸',tags:'kdfc classical san francisco',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/KDFCFMAAC.aac'},
+  {id:'us-kroq',title:'KROQ 106.7',sub:'Alternative · LA',country:'US',flag:'🇺🇸',tags:'kroq alternative la',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/KROQFMAAC.aac'},
+  {id:'us-kiis',title:'KIIS FM 102.7',sub:'Pop · LA',country:'US',flag:'🇺🇸',tags:'kiis fm pop la',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/KIISFMAAC.aac'},
+  {id:'us-power106',title:'Power 106',sub:'Hip-Hop · LA',country:'US',flag:'🇺🇸',tags:'power 106 hiphop la',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/KPWRFMAAC.aac'},
+  {id:'us-z100',title:'Z100 New York',sub:'Pop · NY',country:'US',flag:'🇺🇸',tags:'z100 pop new york',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WHTZFMAAC.aac'},
+  {id:'us-bbcr4',title:'BBC Radio 4',sub:'Cultura · UK/US',country:'US',flag:'🇺🇸',tags:'bbc radio4 culture uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_fourfm'},
+  {id:'us-smooth',title:'Smooth Jazz',sub:'Jazz · SomaFM',country:'US',flag:'🇺🇸',tags:'smooth jazz somafm',type:'stream',url:'https://ice6.somafm.com/sonicuniverse-128-mp3'},
+  {id:'us-underground80',title:'Underground 80s',sub:'Retro · SomaFM',country:'US',flag:'🇺🇸',tags:'underground 80s retro soma',type:'stream',url:'https://ice6.somafm.com/u80s-128-mp3'},
+  {id:'us-dronezone',title:'Drone Zone',sub:'Experimental · SomaFM',country:'US',flag:'🇺🇸',tags:'drone zone experimental soma',type:'stream',url:'https://ice6.somafm.com/dronezone-128-mp3'},
+  {id:'us-folkfwd',title:'Folk Forward',sub:'Folk · SomaFM',country:'US',flag:'🇺🇸',tags:'folk forward soma',type:'stream',url:'https://ice6.somafm.com/folkfwd-128-mp3'},
+  {id:'us-cliqhop',title:'Cliqhop IDM',sub:'Electronic · SomaFM',country:'US',flag:'🇺🇸',tags:'cliqhop idm electronic soma',type:'stream',url:'https://ice6.somafm.com/cliqhop-128-mp3'},
+  {id:'us-defcon',title:'DEF CON Radio',sub:'Electronic · SomaFM',country:'US',flag:'🇺🇸',tags:'defcon electronic soma',type:'stream',url:'https://ice6.somafm.com/defcon-128-mp3'},
+  {id:'us-poptron',title:'PopTron',sub:'Synth Pop · SomaFM',country:'US',flag:'🇺🇸',tags:'poptron synth soma',type:'stream',url:'https://ice6.somafm.com/poptron-128-mp3'},
+  {id:'us-thetrip',title:'The Trip',sub:'Psychedelic · SomaFM',country:'US',flag:'🇺🇸',tags:'the trip psychedelic soma',type:'stream',url:'https://ice6.somafm.com/thetrip-128-mp3'},
+  {id:'us-digitalis',title:'Digitalis',sub:'Dream Pop · SomaFM',country:'US',flag:'🇺🇸',tags:'digitalis dream pop soma',type:'stream',url:'https://ice6.somafm.com/digitalis-128-mp3'},
+  {id:'us-illstreet',title:'Illinois Street Lounge',sub:'Lounge · SomaFM',country:'US',flag:'🇺🇸',tags:'illinois lounge soma',type:'stream',url:'https://ice6.somafm.com/illstreet-128-mp3'},
+  {id:'us-gsclassic',title:'Groove Salad Classic',sub:'Classic Ambient · SomaFM',country:'US',flag:'🇺🇸',tags:'groove salad classic ambient soma',type:'stream',url:'https://ice6.somafm.com/gsclassic-128-mp3'},
+  {id:'us-electroswing',title:'Electro Swing',sub:'Swing · SomaFM',country:'US',flag:'🇺🇸',tags:'electro swing soma',type:'stream',url:'https://ice6.somafm.com/electroswing-128-mp3'},
+  {id:'us-bootliquor',title:'Boot Liquor',sub:'Americana · SomaFM',country:'US',flag:'🇺🇸',tags:'boot liquor americana soma',type:'stream',url:'https://ice6.somafm.com/bootliquor-128-mp3'},
+  {id:'us-suburbsgoa',title:'Suburbs of Goa',sub:'World · SomaFM',country:'US',flag:'🇺🇸',tags:'suburbs goa world soma',type:'stream',url:'https://ice6.somafm.com/suburbsofgoa-128-mp3'},
+  {id:'us-tikitime',title:'Tiki Time',sub:'Exotica · SomaFM',country:'US',flag:'🇺🇸',tags:'tiki time exotica soma',type:'stream',url:'https://ice6.somafm.com/tikitime-128-mp3'},
+  {id:'us-cbsjazz',title:'CBS Sports Radio',sub:'Deportes · USA',country:'US',flag:'🇺🇸',tags:'cbs sports radio usa',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WFANAMAAC.aac'},
+
+  /* ──── 🇬🇧 REINO UNIDO (más) ──── */
+  {id:'uk-bbc2',title:'BBC Radio 2',sub:'Pop/Soul · UK',country:'UK',flag:'🇬🇧',tags:'bbc radio2 pop uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_two'},
+  {id:'uk-bbc3',title:'BBC Radio 3',sub:'Classical · UK',country:'UK',flag:'🇬🇧',tags:'bbc radio3 classical uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_three'},
+  {id:'uk-bbc4',title:'BBC Radio 4',sub:'Cultura/Talk · UK',country:'UK',flag:'🇬🇧',tags:'bbc radio4 talk uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_fourfm'},
+  {id:'uk-bbc5',title:'BBC Radio 5 Live',sub:'Deportes · UK',country:'UK',flag:'🇬🇧',tags:'bbc radio5 sports uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_five_live'},
+  {id:'uk-bbcws',title:'BBC World Service',sub:'Internacional · UK',country:'UK',flag:'🇬🇧',tags:'bbc world service international',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service'},
+  {id:'uk-bbc1xtra',title:'BBC 1Xtra',sub:'Hip-Hop/R&B · UK',country:'UK',flag:'🇬🇧',tags:'bbc 1xtra hiphop uk',type:'stream',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_1xtra'},
+  {id:'uk-absolute',title:'Absolute Radio',sub:'Rock · UK',country:'UK',flag:'🇬🇧',tags:'absolute radio rock uk',type:'stream',url:'https://icy.absoluteradio.co.uk/absoluteradio.mp3'},
+  {id:'uk-talksport',title:'TalkSPORT',sub:'Deportes · UK',country:'UK',flag:'🇬🇧',tags:'talksport sports uk',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/TALKSPORT.mp3'},
+  {id:'uk-smooth',title:'Smooth Radio UK',sub:'Soul · UK',country:'UK',flag:'🇬🇧',tags:'smooth radio soul uk',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SMOOTHUK.mp3'},
+
+  /* ──── 🇪🇸 ESPAÑA (más) ──── */
+  {id:'es-rac1',title:'RAC 1',sub:'Talk · Cataluña',country:'España',flag:'🇪🇸',tags:'rac1 talk cataluna spain',type:'stream',url:'https://stream.rac1.cat/rac1.mp3'},
+  {id:'es-europa',title:'Europa FM',sub:'Pop · España',country:'España',flag:'🇪🇸',tags:'europa fm pop spain',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/EUROPAFM.mp3'},
+  {id:'es-maxima',title:'Máxima FM',sub:'Dance · España',country:'España',flag:'🇪🇸',tags:'maxima dance spain',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/MAXIMA.mp3'},
+  {id:'es-m80',title:'M80 Radio',sub:'Clásicos · España',country:'España',flag:'🇪🇸',tags:'m80 clasicos spain',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/M80.mp3'},
+  {id:'es-kiss',title:'Kiss FM España',sub:'Dance · España',country:'España',flag:'🇪🇸',tags:'kiss fm dance spain',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/KISSES.mp3'},
+  {id:'es-onda0',title:'Onda Cero',sub:'Talk · España',country:'España',flag:'🇪🇸',tags:'onda cero talk spain',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/ONDACERO.mp3'},
+
+  /* ──── 🇫🇷 FRANCIA (más) ──── */
+  {id:'fr-rfm',title:'RFM France',sub:'Pop · France',country:'Francia',flag:'🇫🇷',tags:'rfm pop france',type:'stream',url:'https://rfmfr.ice.infomaniak.ch/rfmfr-128.mp3'},
+  {id:'fr-rfi',title:'RFI Francés',sub:'Internacional · France',country:'Francia',flag:'🇫🇷',tags:'rfi internacional france',type:'stream',url:'https://rfifr.ice.infomaniak.ch/rfifr-128.mp3'},
+  {id:'fr-nova',title:'Radio Nova',sub:'World/Funk · France',country:'Francia',flag:'🇫🇷',tags:'radio nova world funk france',type:'stream',url:'https://novazz.ice.infomaniak.ch/novazz-128.mp3'},
+  {id:'fr-voltage',title:'Voltage FM',sub:'Dance · France',country:'Francia',flag:'🇫🇷',tags:'voltage dance france',type:'stream',url:'https://voltagefr.ice.infomaniak.ch/voltagefr-128.mp3'},
+  {id:'fr-cherie',title:'Chérie FM',sub:'Pop · France',country:'Francia',flag:'🇫🇷',tags:'cherie fm pop france',type:'stream',url:'https://cheriefr.ice.infomaniak.ch/cheriefr-128.mp3'},
+  {id:'fr-fip',title:'FIP Radio',sub:'Jazz/World · France',country:'Francia',flag:'🇫🇷',tags:'fip jazz world france',type:'stream',url:'https://stream.radiofrance.fr/fip/fip.mp3'},
+  {id:'fr-classique',title:'France Musique',sub:'Clásica · France',country:'Francia',flag:'🇫🇷',tags:'france musique classique france',type:'stream',url:'https://stream.radiofrance.fr/francemusique/francemusique.mp3'},
+
+  /* ──── 🇩🇪 ALEMANIA (más) ──── */
+  {id:'de-dlf',title:'Deutschlandfunk',sub:'Noticias · Alemania',country:'Alemania',flag:'🇩🇪',tags:'dlf noticias germany',type:'stream',url:'https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3'},
+  {id:'de-br3',title:'Bayern 3',sub:'Pop · Baviera',country:'Alemania',flag:'🇩🇪',tags:'bayern3 pop germany',type:'stream',url:'https://dispatcher.rndfnk.com/br/br3/live/mp3/low'},
+  {id:'de-swr3',title:'SWR3',sub:'Pop · SW Alemania',country:'Alemania',flag:'🇩🇪',tags:'swr3 pop germany',type:'stream',url:'https://liveradio.swr.de/sw282p3/swr3'},
+  {id:'de-ndr2',title:'NDR 2',sub:'Pop · Norte Alemania',country:'Alemania',flag:'🇩🇪',tags:'ndr2 pop north germany',type:'stream',url:'https://icecast.ndr.de/ndr/ndr2/hannover/mp3/128/stream.mp3'},
+  {id:'de-fritz',title:'Fritz (RBB)',sub:'Alternativo · Berlín',country:'Alemania',flag:'🇩🇪',tags:'fritz alternativo berlin germany',type:'stream',url:'https://rbb-fritz-live.cast.addradio.de/rbb/fritz/live/mp3/128/stream.mp3'},
+  {id:'de-planetradio',title:'Planet Radio',sub:'Dance · Alemania',country:'Alemania',flag:'🇩🇪',tags:'planet radio dance germany',type:'stream',url:'https://stream.planet.fm/planetradio'},
+
+  /* ──── 🇮🇹 ITALIA (más) ──── */
+  {id:'it-rai1',title:'Rai Radio 1',sub:'Noticias · Italia',country:'Italia',flag:'🇮🇹',tags:'rai radio1 noticias italy',type:'stream',url:'https://icestreaming.rai.it/1.mp3'},
+  {id:'it-rai2',title:'Rai Radio 2',sub:'Pop · Italia',country:'Italia',flag:'🇮🇹',tags:'rai radio2 pop italy',type:'stream',url:'https://icestreaming.rai.it/2.mp3'},
+  {id:'it-rai3',title:'Rai Radio 3',sub:'Cultural · Italia',country:'Italia',flag:'🇮🇹',tags:'rai radio3 cultura italy',type:'stream',url:'https://icestreaming.rai.it/3.mp3'},
+  {id:'it-radio105',title:'Radio 105',sub:'Pop · Italia',country:'Italia',flag:'🇮🇹',tags:'radio105 pop italy',type:'stream',url:'https://player.radio105.it/api/live.mp3'},
+  {id:'it-virgin',title:'Virgin Radio IT',sub:'Rock · Italia',country:'Italia',flag:'🇮🇹',tags:'virgin radio rock italy',type:'stream',url:'https://virginradioit.ice.infomaniak.ch/virginradioit-128.mp3'},
+
+  /* ──── 🇳🇱 PAÍSES BAJOS ──── */
+  {id:'nl-3fm',title:'NPO 3FM',sub:'Alternative · NL',country:'Países Bajos',flag:'🇳🇱',tags:'npo 3fm alternative nl',type:'stream',url:'https://icecast.omroep.nl/3fm-bb-mp3'},
+  {id:'nl-radio10',title:'Radio 10 NL',sub:'Dance · NL',country:'Países Bajos',flag:'🇳🇱',tags:'radio10 dance nl',type:'stream',url:'https://stream.radio10.nl/radio10'},
+  {id:'nl-slam',title:'SLAM! FM',sub:'Dance · NL',country:'Países Bajos',flag:'🇳🇱',tags:'slam fm dance nl',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SLAMFM.mp3'},
+
+  /* ──── 🇸🇪 SUECIA ──── */
+  {id:'se-p3',title:'Sveriges Radio P3',sub:'Pop · Suecia',country:'Suecia',flag:'🇸🇪',tags:'sr p3 pop sweden',type:'stream',url:'https://http-live.sr.se/srp3-mp3-192'},
+  {id:'se-p4',title:'Sveriges Radio P4',sub:'Noticias · Suecia',country:'Suecia',flag:'🇸🇪',tags:'sr p4 noticias sweden',type:'stream',url:'https://http-live.sr.se/srp4-mp3-192'},
+
+  /* ──── 🇳🇴 NORUEGA ──── */
+  {id:'no-nrk1',title:'NRK P1',sub:'Talk · Noruega',country:'Noruega',flag:'🇳🇴',tags:'nrk p1 talk norway',type:'stream',url:'https://lyd.nrk.no/nrk_radio_p1_oestlandssendingen_mp3_h'},
+  {id:'no-nrk3',title:'NRK P3',sub:'Pop · Noruega',country:'Noruega',flag:'🇳🇴',tags:'nrk p3 pop norway',type:'stream',url:'https://lyd.nrk.no/nrk_radio_p3_mp3_h'},
+
+  /* ──── 🇩🇰 DINAMARCA ──── */
+  {id:'dk-drp3',title:'DR P3',sub:'Pop · Dinamarca',country:'Dinamarca',flag:'🇩🇰',tags:'dr p3 pop denmark',type:'stream',url:'https://live-icy.dr.dk/A/A05H.mp3'},
+
+  /* ──── 🇵🇹 PORTUGAL (más) ──── */
+  {id:'pt-antena1',title:'Antena 1',sub:'Noticias · Portugal',country:'Portugal',flag:'🇵🇹',tags:'antena1 noticias portugal',type:'stream',url:'https://streaming.rtp.pt/live/a1/a1.aac'},
+  {id:'pt-mega',title:'Mega Hits PT',sub:'Pop · Portugal',country:'Portugal',flag:'🇵🇹',tags:'mega hits pop portugal',type:'stream',url:'https://megahits.cdn.pt/megahits.mp3'},
+  {id:'pt-radio94',title:'Rádio Renascença',sub:'Noticias · Portugal',country:'Portugal',flag:'🇵🇹',tags:'renascenca noticias portugal',type:'stream',url:'https://rr.cdn.pt/rr.mp3'},
+
+  /* ──── 🇨🇭 SUIZA ──── */
+  {id:'ch-srf1',title:'SRF 1',sub:'Talk · Suiza',country:'Suiza',flag:'🇨🇭',tags:'srf1 talk swiss',type:'stream',url:'https://stream.srg-ssr.ch/drs1/mp3_128.m3u'},
+
+  /* ──── 🇦🇺 AUSTRALIA ──── */
+  {id:'au-abc',title:'ABC Radio National',sub:'Noticias · Australia',country:'Australia',flag:'🇦🇺',tags:'abc radio national australia',type:'stream',url:'https://live-radio02.mediahubaustralia.com/RNW/mp3/'},
+  {id:'au-triplej',title:'Triple J',sub:'Alternative · AUS',country:'Australia',flag:'🇦🇺',tags:'triple j alternative australia',type:'stream',url:'https://live-radio02.mediahubaustralia.com/2JJW/mp3/'},
+
+  /* ──── 🇯🇵 JAPÓN ──── */
+  {id:'jp-nhkworld',title:'NHK World Radio',sub:'Internacional · Japón',country:'Japón',flag:'🇯🇵',tags:'nhk world japan internacional',type:'stream',url:'https://nhkwliveaudio.nhk.or.jp/liveen/playlist.m3u8'},
+
+  /* ──── 🇮🇳 INDIA ──── */
+  {id:'in-air',title:'All India Radio',sub:'Nacional · India',country:'India',flag:'🇮🇳',tags:'all india radio national india',type:'stream',url:'https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8'},
+
+  /* ──── 🇿🇦 SUDÁFRICA ──── */
+  {id:'za-5fm',title:'5FM South Africa',sub:'Pop · Sudáfrica',country:'Sudáfrica',flag:'🇿🇦',tags:'5fm pop south africa',type:'stream',url:'https://live.5fm.co.za/live5fm.mp3'},
+  {id:'za-metro',title:'Metro FM',sub:'R&B · Sudáfrica',country:'Sudáfrica',flag:'🇿🇦',tags:'metro fm rb south africa',type:'stream',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/METROFM.mp3'},
+
+  /* ──── 🇳🇬 NIGERIA ──── */
+  {id:'ng-coolfm',title:'Cool FM Nigeria',sub:'Pop · Nigeria',country:'Nigeria',flag:'🇳🇬',tags:'cool fm pop nigeria',type:'stream',url:'https://stream.zeno.fm/coolingng'},
+
+  /* ──── 🇪🇬 EGIPTO ──── */
+  {id:'eg-nile',title:'Nile FM',sub:'Pop · Egipto',country:'Egipto',flag:'🇪🇬',tags:'nile fm pop egypt',type:'stream',url:'https://stream.zeno.fm/nilefm'},
+
+  /* ──── 🌍 MUNDO (más) ──── */
+  {id:'dw-german',title:'Deutsche Welle',sub:'Internacional · Alemán',country:'Mundo',flag:'🌍',tags:'deutsche welle internacional world',type:'stream',url:'https://dwstream5-lh.akamaihd.net/i/dwstream5_live@124409/index_2_av-p.m3u8'},
+  {id:'voa-english',title:'Voice of America',sub:'Noticias · Inglés',country:'Mundo',flag:'🌍',tags:'voa voice america noticias english',type:'stream',url:'https://voanews.ic.llnwd.net/stream/voanews_english_mp3_lo'},
+  {id:'rfi-english',title:'RFI English',sub:'Noticias · Inglés',country:'Mundo',flag:'🌍',tags:'rfi english noticias international',type:'stream',url:'https://rfienglish.ice.infomaniak.ch/rfienglish-128.mp3'},
+  {id:'rfi-esp',title:'RFI Español',sub:'Noticias · Español',country:'Mundo',flag:'🌍',tags:'rfi espanol noticias international',type:'stream',url:'https://rfiesp.ice.infomaniak.ch/rfiesp-128.mp3'},
+  {id:'reggae-world',title:'Reggae Radio',sub:'Reggae · Mundo',country:'Mundo',flag:'🌍',tags:'reggae world jamaica',type:'stream',url:'https://stream.zeno.fm/reggaeradioworld'},
+  {id:'kpop-world',title:'K-Pop Station',sub:'K-Pop · Corea',country:'Mundo',flag:'🌍',tags:'kpop korea world',type:'stream',url:'https://stream.zeno.fm/kpopstation'},
+  {id:'dnb-world',title:'Drum & Bass',sub:'DnB · SomaFM',country:'Mundo',flag:'🌍',tags:'drum bass dnb soma',type:'stream',url:'https://ice6.somafm.com/fluid-128-mp3'},
+  {id:'hiphop-world',title:'Hip-Hop Radio',sub:'Hip-Hop · SomaFM',country:'Mundo',flag:'🌍',tags:'hiphop rap soma world',type:'stream',url:'https://ice6.somafm.com/bagel-128-mp3'},
+  {id:'country-world',title:'Country Radio',sub:'Country · USA',country:'Mundo',flag:'🌍',tags:'country usa soma world',type:'stream',url:'https://ice6.somafm.com/bootliquor-128-mp3'},
+  {id:'classical2-world',title:'Musopen Orchestra',sub:'Clásica · Musopen',country:'Mundo',flag:'🌍',tags:'classical orchestra musopen world',type:'stream',url:'https://live.musopen.org:8085/streamvbr0'},
+
+  /* ──── 🎧 SONIDOS AMBIENTALES (Web Audio, sin internet) ──── */
 			  {id:'rain',title:'Lluvia Suave',sub:'Relajante',country:'Sonidos',flag:'🌧️',icon:'water_drop',tags:'lluvia rain relax nature'},
 			  {id:'storm',title:'Tormenta',sub:'Intensa',country:'Sonidos',flag:'⛈️',icon:'thunderstorm',tags:'tormenta storm heavy'},
 			  {id:'ocean_sound',title:'Olas del Mar',sub:'Coastal',country:'Sonidos',flag:'🌊',icon:'waves',tags:'ocean waves coastal'},
@@ -5632,6 +5813,57 @@
 			  };
 			}
 			const streamPlayer = document.getElementById('stream-audio-player');
+			/* ── iPod: volume boost (Web Audio GainNode) + drag ── */
+			let _ipodVolPct=70, _ipodGainNode=null, _ipodMediaSrc=null;
+			function _ipodSetupGain(){
+			  const actx=getAudioCtx(); if(!actx||_ipodGainNode) return _ipodGainNode;
+			  try{
+			    if(actx.state==='suspended') actx.resume();
+			    _ipodGainNode=actx.createGain();
+			    _ipodGainNode.gain.value=_ipodVolPct/100;
+			    _ipodGainNode.connect(actx.destination);
+			    _ipodMediaSrc=actx.createMediaElementSource(streamPlayer);
+			    _ipodMediaSrc.connect(_ipodGainNode);
+			  }catch(e){ _ipodGainNode=null; _ipodMediaSrc=null; }
+			  return _ipodGainNode;
+			}
+			function setIpodVolume(val){
+			  val=parseInt(val)||0; _ipodVolPct=val;
+			  const lbl=document.getElementById('ipod-vol-pct');
+			  if(lbl) lbl.textContent=val+'%';
+			  const gn=_ipodSetupGain();
+			  if(gn){ gn.gain.value=val/100; streamPlayer.volume=1.0; }
+			  else streamPlayer.volume=Math.min(val/100,1.0);
+			}
+			function _ipodSetupDrag(){
+			  const el=document.getElementById('ipod-player');
+			  if(!el||el._dragReady) return; el._dragReady=true;
+			  const hdr=el.firstElementChild; if(!hdr) return;
+			  hdr.style.cursor='grab'; hdr.style.touchAction='none';
+			  let ax=0,ay=0,ox=0,oy=0;
+			  hdr.addEventListener('pointerdown',e=>{
+			    if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return;
+			    hdr.setPointerCapture(e.pointerId);
+			    const r=el.getBoundingClientRect();
+			    el.style.bottom=''; el.style.right='';
+			    el.style.top=r.top+'px'; el.style.left=r.left+'px';
+			    ax=e.clientX; ay=e.clientY; ox=r.left; oy=r.top;
+			    hdr.style.cursor='grabbing';
+			  });
+			  hdr.addEventListener('pointermove',e=>{
+			    if(!hdr.hasPointerCapture(e.pointerId)) return;
+			    el.style.left=Math.max(0,ox+e.clientX-ax)+'px';
+			    el.style.top=Math.max(0,oy+e.clientY-ay)+'px';
+			  });
+			  hdr.addEventListener('pointerup',e=>{
+			    if(hdr.hasPointerCapture(e.pointerId)) hdr.releasePointerCapture(e.pointerId);
+			    hdr.style.cursor='grab';
+			  });
+			  hdr.addEventListener('pointercancel',e=>{
+			    if(hdr.hasPointerCapture(e.pointerId)) hdr.releasePointerCapture(e.pointerId);
+			    hdr.style.cursor='grab';
+			  });
+			}
 			function playAudio(){
 			  _localAudioActive = false;
 			  const st = STATIONS.find(s=>s.id===currentStation);
@@ -5639,7 +5871,8 @@
 			    const btn = document.getElementById('station-'+st.id);
 			    streamPlayer.loop = false; // all radio stations are live streams, no loop
 			    streamPlayer.src = st.url;
-			    streamPlayer.volume = 0.7;
+			    _ipodSetupGain();
+			    streamPlayer.volume = _ipodGainNode ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
 			    streamPlayer.load();
 			    if(btn) btn.classList.add('station-loading');
 			    setupStreamFallback(streamPlayer, st);
@@ -5827,7 +6060,8 @@
 			  _localAudioObjectUrl = URL.createObjectURL(file);
 			  streamPlayer.loop = true;
 			  streamPlayer.src = _localAudioObjectUrl;
-			  streamPlayer.volume = 0.7;
+			  _ipodSetupGain();
+			  streamPlayer.volume = _ipodGainNode ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
 			  streamPlayer.load();
 			  streamPlayer.play().then(()=>{
 			    isPlaying = true;
@@ -5859,6 +6093,7 @@
 			  const playBtn = document.getElementById('ipod-play-btn');
 			  if(playBtn) playBtn.textContent = isPlaying ? '⏸' : '▶';
 			}, 1000);
+			_ipodSetupDrag();
 
 			// Siri text toggle
 			function toggleSiriText(){
@@ -7368,8 +7603,7 @@
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  const gp = document.getElementById('global-play');
 			  if(gp) gp.onclick = togglePlayPause;
-			  const vs = document.getElementById('volume-slider');
-			  if(vs) vs.oninput = e=>{ const mg=getMasterGain(); if(mg) mg.gain.value = e.target.value/100; if(streamPlayer) streamPlayer.volume = e.target.value/100; };
+			
 			});
 
 			/* ===================== Sonido cada Hora (campanada) ===================== */
