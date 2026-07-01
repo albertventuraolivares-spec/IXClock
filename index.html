@@ -6417,7 +6417,10 @@
 			  }
 			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales…</div>';
 			  try{
-			    const res = await fetch(`https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`);
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const res = await fetch(`https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`, {signal: ctrl.signal});
+			    clearTimeout(timer);
 			    if(!res.ok) throw new Error('not ok');
 			    const text = await res.text();
 			    let channels = parseM3U(text);
@@ -6442,7 +6445,10 @@
 			  if(!results) return;
 			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales de deportes y Mundiales…</div>';
 			  try{
-			    const res = await fetch('https://iptv-org.github.io/iptv/categories/sports.m3u');
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const res = await fetch('https://iptv-org.github.io/iptv/categories/sports.m3u', {signal: ctrl.signal});
+			    clearTimeout(timer);
 			    if(!res.ok) throw new Error('not ok');
 			    const text = await res.text();
 			    let channels = parseM3U(text);
@@ -6471,7 +6477,10 @@
 			  if(!results) return;
 			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales 4K / UHD…</div>';
 			  try{
-			    const res = await fetch('https://iptv-org.github.io/iptv/index.m3u');
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 12000);
+			    const res = await fetch('https://iptv-org.github.io/iptv/index.m3u', {signal: ctrl.signal});
+			    clearTimeout(timer);
 			    if(!res.ok) throw new Error('not ok');
 			    const text = await res.text();
 			    let channels = parseM3U(text);
@@ -6561,6 +6570,7 @@
 			  el.style.display = 'block';
 			}
 
+			let _tvConnectTimer = null;
 			function playTVChannel(i){
 			  const c = _lastTVResults[i];
 			  if(!c || !c.url) return;
@@ -6572,13 +6582,25 @@
 			  if(titleEl) titleEl.textContent = c.name || 'Canal en vivo';
 			  tvSetStatus('⏳ Conectando…', false);
 			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			  video.removeAttribute('src');
 			  video.load();
+
+			  // Los streams públicos de IPTV a veces no responden nunca: en vez de
+			  // dejar el spinner girando para siempre, avisamos a los 14s.
+			  _tvConnectTimer = setTimeout(()=>{
+			    tvSetStatus('⚠️ Este canal tarda demasiado en responder. Prueba otro.', true);
+			  }, 14000);
+			  function connected(){
+			    if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
+			    tvSetStatus('', false);
+			  }
 
 			  const useNative = video.canPlayType('application/vnd.apple.mpegurl');
 			  if(useNative && !(window.Hls && window.Hls.isSupported())){
 			    video.src = c.url;
-			    video.play().then(()=>tvSetStatus('', false)).catch(e=>{
+			    video.play().then(connected).catch(e=>{
+			      if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			      console.error('Error TV (nativo):', e);
 			      tvSetStatus('⚠️ No se pudo reproducir este canal. Prueba otro.', true);
 			    });
@@ -6586,19 +6608,33 @@
 			  }
 
 			  if(!window.Hls || !window.Hls.isSupported()){
+			    if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			    tvSetStatus('⚠️ Tu navegador no soporta la reproducción de este canal.', true);
 			    return;
 			  }
 
-			  _tvHls = new Hls();
+			  // Config ajustada para arrancar rápido en streams en vivo: buffer más
+			  // corto, se sincroniza cerca del borde en vivo y no reintenta de más.
+			  _tvHls = new Hls({
+			    maxBufferLength: 15,
+			    maxMaxBufferLength: 30,
+			    liveSyncDurationCount: 3,
+			    liveMaxLatencyDurationCount: 6,
+			    manifestLoadingTimeOut: 8000,
+			    manifestLoadingMaxRetry: 2,
+			    levelLoadingTimeOut: 8000,
+			    fragLoadingTimeOut: 12000,
+			    enableWorker: true
+			  });
 			  _tvHls.loadSource(c.url);
 			  _tvHls.attachMedia(video);
 			  _tvHls.on(Hls.Events.MANIFEST_PARSED, ()=>{
-			    tvSetStatus('', false);
+			    connected();
 			    video.play().catch(()=>{});
 			  });
 			  _tvHls.on(Hls.Events.ERROR, (event, data)=>{
 			    if(!data.fatal) return;
+			    if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			    console.error('Error HLS:', data.type, data.details);
 			    if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
 			      tvSetStatus('⚠️ Este canal no responde (caído o bloqueado). Prueba otro.', true);
@@ -6617,6 +6653,7 @@
 			  const video = document.getElementById('tv-video');
 			  const player = document.getElementById('tv-player');
 			  if(_tvHls){ _tvHls.destroy(); _tvHls = null; }
+			  if(_tvConnectTimer){ clearTimeout(_tvConnectTimer); _tvConnectTimer = null; }
 			  if(video){ video.pause(); video.removeAttribute('src'); video.load(); }
 			  if(player) player.style.display = 'none';
 			  tvSetStatus('', false);
@@ -6625,14 +6662,24 @@
 			function toggleTVFullscreen(){
 			  const video = document.getElementById('tv-video');
 			  if(!video) return;
-			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+			  const isFull = document.fullscreenElement || document.webkitFullscreenElement || video.webkitDisplayingFullscreen;
 			  if(!isFull){
-			    if(video.requestFullscreen) video.requestFullscreen().catch(()=>{});
-			    else if(video.webkitRequestFullscreen) video.webkitRequestFullscreen();
-			    else if(video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+			    // iOS Safari: video.requestFullscreen() exists but silently rejects for
+			    // <video> elements; only webkitEnterFullscreen actually works there.
+			    if(typeof video.webkitEnterFullscreen === 'function'){
+			      try{ video.webkitEnterFullscreen(); return; }catch(e){}
+			    }
+			    if(video.requestFullscreen){
+			      video.requestFullscreen().catch(()=>{
+			        if(video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+			      });
+			    } else if(video.webkitRequestFullscreen){
+			      video.webkitRequestFullscreen();
+			    }
 			  } else {
 			    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
 			    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+			    else if(video.webkitExitFullscreen) video.webkitExitFullscreen();
 			  }
 			}
 
