@@ -3165,11 +3165,6 @@
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
 					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS.</div>
 				</div>
-				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🎮 Consolas potentes (PS2/PS3/Switch/Xbox…)</div>
-					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-native-grid"></div>
-					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Estas consolas <b>no corren dentro de un navegador</b> — necesitan emuladores nativos en tu PC/consola. Estos accesos abren las <b>páginas oficiales</b> para instalarlos (o Batocera, un sistema completo listo para usar). Con ellos sí emulas PS2, PS3, Switch, Wii U, GameCube, Xbox y más, con tus propios juegos.</div>
-				</div>
 			</div>
 		</div>
 
@@ -7568,34 +7563,7 @@
 			      </div>`
 			    ).join('');
 			  }
-			  const emuN = document.getElementById('emu-native-grid');
-			  if(emuN){
-			    emuN.innerHTML = EMU_NATIVE.map(e=>
-			      `<div class="game-tile" onclick="openBrowserWindow('${e.url}')" title="${escapeHtml(e.desc)}">
-			        <div class="game-tile-icon">${e.icon}</div>
-			        <div class="game-tile-label">${escapeHtml(e.name)}</div>
-			      </div>`
-			    ).join('');
-			  }
 			}
-
-			// Emuladores NATIVOS (no corren en navegador): estos accesos abren sus
-			// páginas oficiales de descarga para instalarlos en PC/consola. Así el
-			// usuario sí puede emular las consolas potentes con sus propios juegos.
-			const EMU_NATIVE = [
-			  {name:'Batocera (todo)', icon:'🧩', url:'https://batocera.org', desc:'Sistema completo listo para emular casi todo. Se instala en USB/SD.'},
-			  {name:'RetroArch',       icon:'🎛️', url:'https://retroarch.com', desc:'Multi-emulador para PC, Android, iOS.'},
-			  {name:'EmuDeck',         icon:'🛠️', url:'https://www.emudeck.com', desc:'Instalador automático de emuladores (PC / Steam Deck).'},
-			  {name:'PCSX2 (PS2)',     icon:'2️⃣', url:'https://pcsx2.net', desc:'Emulador de PlayStation 2 para PC.'},
-			  {name:'RPCS3 (PS3)',     icon:'3️⃣', url:'https://rpcs3.net', desc:'Emulador de PlayStation 3 para PC.'},
-			  {name:'Dolphin (Wii/GC)',icon:'🐬', url:'https://dolphin-emu.org', desc:'Emulador de GameCube y Wii.'},
-			  {name:'Ryujinx (Switch)',icon:'🔴', url:'https://ryujinx.app', desc:'Emulador de Nintendo Switch para PC.'},
-			  {name:'Cemu (Wii U)',    icon:'🟦', url:'https://cemu.info', desc:'Emulador de Wii U para PC.'},
-			  {name:'Xemu (Xbox)',     icon:'🟩', url:'https://xemu.app', desc:'Emulador de Xbox original para PC.'},
-			  {name:'Xenia (Xbox 360)',icon:'🟢', url:'https://xenia.jp', desc:'Emulador de Xbox 360 para PC.'},
-			  {name:'PPSSPP (PSP)',    icon:'🟠', url:'https://www.ppsspp.org', desc:'Emulador de PSP para PC, Android, iOS.'},
-			  {name:'melonDS (NDS)',   icon:'🖊️', url:'https://melonds.kuribo64.net', desc:'Emulador de Nintendo DS para PC.'}
-			];
 
 			/* ===================== EMULADOR RETRO (EmulatorJS, BYO-ROM) =====================
 			   El usuario carga SUS PROPIOS archivos de juego (ROMs que posea legalmente).
@@ -10896,6 +10864,7 @@
 			      <input id="amap-search" type="text" placeholder="Buscar lugar…" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;color:#fff;font-size:13px;padding:7px 14px;outline:none;" onkeydown="if(event.key==='Enter')amapSearch(this.value)">
 			      <button onclick="amapSearch(document.getElementById('amap-search').value)" style="background:#0a84ff;border:none;color:#fff;padding:7px 14px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;">Ir</button>
 			      <button onclick="amapMyLocation()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:7px 10px;border-radius:12px;cursor:pointer;font-size:16px;" title="Mi ubicación">📍</button>
+			      <button onclick="amapToggleDirections()" style="background:rgba(52,199,89,.2);border:1px solid rgba(52,199,89,.4);color:#34c759;padding:7px 10px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;" title="Cómo llegar">🧭 Cómo llegar</button>
 			      <select id="amap-type" onchange="amapChangeType()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:7px;border-radius:10px;cursor:pointer;font-size:11px;outline:none;">
 			        <option value="standard">🗺️ Estándar</option>
 			        <option value="satellite">🛰️ Satélite</option>
@@ -10907,6 +10876,24 @@
 			      <div id="amap-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#1c1c2e;flex-direction:column;gap:12px;z-index:5;">
 			        <div style="font-size:2.5rem;">🗺️</div>
 			        <div style="color:#fff;font-size:13px;opacity:.7;">Cargando Mapas…</div>
+			      </div>
+			      <div id="amap-directions" style="display:none;position:absolute;top:12px;left:12px;z-index:8;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;width:280px;max-width:82vw;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+			        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+			          <span style="font-size:13px;font-weight:800;color:#fff;">🧭 Cómo llegar</span>
+			          <button onclick="amapToggleDirections()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;">✕</button>
+			        </div>
+			        <input id="amap-from" type="text" placeholder="Origen (o 📍 mi ubicación)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:12px;padding:8px 10px;outline:none;margin-bottom:6px;">
+			        <input id="amap-to" type="text" placeholder="Destino" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:12px;padding:8px 10px;outline:none;margin-bottom:6px;" onkeydown="if(event.key==='Enter')amapRoute()">
+			        <div style="display:flex;gap:6px;margin-bottom:8px;">
+			          <button onclick="amapUseMyLocationFrom()" style="flex:1;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;border-radius:10px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📍 Mi ubicación</button>
+			          <select id="amap-mode" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:10px;padding:7px;font-size:11px;outline:none;cursor:pointer;">
+			            <option value="driving">🚗 Auto</option>
+			            <option value="cycling">🚲 Bici</option>
+			            <option value="foot">🚶 A pie</option>
+			          </select>
+			        </div>
+			        <button onclick="amapRoute()" style="width:100%;background:#34c759;border:none;color:#fff;border-radius:10px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;">Trazar ruta</button>
+			        <div id="amap-route-info" style="font-size:12px;color:#fff;margin-top:8px;min-height:16px;"></div>
 			      </div>
 			    </div>
 			  `;
@@ -10973,6 +10960,63 @@
 			  if(t==='satellite'){_aplSatellite.addTo(_aplMap);if(div)div.style.filter='none';}
 			  else if(t==='transit'){_aplTransit.addTo(_aplMap);if(div)div.style.filter='sepia(0.3) hue-rotate(180deg) invert(1) hue-rotate(180deg)';}
 			  else{_aplStandard.addTo(_aplMap);if(div)div.style.filter='none';}
+			}
+
+			/* ── Direcciones / rutas (OSRM público, gratis, sin clave) ── */
+			let _aplRouteLayer=null, _aplRouteMarkers=[];
+			function amapToggleDirections(){
+			  const d=document.getElementById('amap-directions');
+			  if(d) d.style.display = d.style.display==='none' ? 'block' : 'none';
+			}
+			function amapUseMyLocationFrom(){
+			  if(!navigator.geolocation) return;
+			  const inp=document.getElementById('amap-from');
+			  if(inp) inp.value='📍 Mi ubicación';
+			  navigator.geolocation.getCurrentPosition(p=>{
+			    inp.dataset.lat=p.coords.latitude; inp.dataset.lon=p.coords.longitude;
+			  },()=>{ if(inp) inp.value=''; });
+			}
+			async function amapGeocode(q){
+			  const r=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'Accept-Language':'es'}});
+			  const d=await r.json();
+			  if(!d.length) return null;
+			  return {lat:parseFloat(d[0].lat), lon:parseFloat(d[0].lon), name:d[0].display_name.split(',').slice(0,2).join(', ')};
+			}
+			async function amapRoute(){
+			  const info=document.getElementById('amap-route-info');
+			  const fromInp=document.getElementById('amap-from');
+			  const toInp=document.getElementById('amap-to');
+			  const mode=(document.getElementById('amap-mode')||{}).value||'driving';
+			  if(!_aplMap||!fromInp||!toInp) return;
+			  if(info){ info.textContent='⏳ Calculando ruta…'; info.style.color='#fff'; }
+			  try{
+			    // Origen: usa coords de "mi ubicación" si están; si no, geocodifica.
+			    let from;
+			    if(fromInp.dataset.lat && fromInp.dataset.lon){ from={lat:parseFloat(fromInp.dataset.lat),lon:parseFloat(fromInp.dataset.lon),name:'Mi ubicación'}; }
+			    else if(fromInp.value.trim()){ from=await amapGeocode(fromInp.value.trim()); }
+			    if(!from){ if(info){info.textContent='⚠️ No se encontró el origen.';info.style.color='#ff6961';} return; }
+			    const to=await amapGeocode(toInp.value.trim());
+			    if(!to){ if(info){info.textContent='⚠️ No se encontró el destino.';info.style.color='#ff6961';} return; }
+			    const url=`https://router.project-osrm.org/route/v1/${mode}/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+			    const res=await fetch(url); const data=await res.json();
+			    if(!data.routes||!data.routes.length){ if(info){info.textContent='⚠️ No se encontró ruta.';info.style.color='#ff6961';} return; }
+			    const route=data.routes[0];
+			    const coords=route.geometry.coordinates.map(c=>[c[1],c[0]]);
+			    // Limpia ruta anterior
+			    if(_aplRouteLayer) _aplMap.removeLayer(_aplRouteLayer);
+			    _aplRouteMarkers.forEach(m=>_aplMap.removeLayer(m)); _aplRouteMarkers=[];
+			    _aplRouteLayer=L.polyline(coords,{color:'#0a84ff',weight:6,opacity:.85}).addTo(_aplMap);
+			    _aplRouteMarkers.push(L.marker([from.lat,from.lon]).addTo(_aplMap).bindPopup('🅰️ '+from.name));
+			    _aplRouteMarkers.push(L.marker([to.lat,to.lon]).addTo(_aplMap).bindPopup('🅱️ '+to.name));
+			    _aplMap.fitBounds(_aplRouteLayer.getBounds(),{padding:[60,60]});
+			    const km=(route.distance/1000).toFixed(1);
+			    const min=Math.round(route.duration/60);
+			    const tiempo = min>=60 ? Math.floor(min/60)+' h '+(min%60)+' min' : min+' min';
+			    const emoji = mode==='cycling'?'🚲':(mode==='foot'?'🚶':'🚗');
+			    if(info){ info.innerHTML=`${emoji} <b>${km} km</b> · ⏱️ ${tiempo}`; info.style.color='#34c759'; }
+			  }catch(e){
+			    if(info){ info.textContent='⚠️ Error al calcular la ruta. Intenta de nuevo.'; info.style.color='#ff6961'; }
+			  }
 			}
 
 			/* ═══════════════════════════════════════════
@@ -11752,11 +11796,20 @@
 			    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0d0d0d;border-bottom:1px solid #333;flex-shrink:0;">
 			      <div style="display:flex;align-items:center;gap:12px;">
 			        <span style="font-size:1.3rem;">🎸</span><span style="font-weight:800;font-size:15px;">GarageBand</span>
-			        <div style="display:flex;gap:4px;">
-			          <button onclick="gbSelectInstrument('piano')" id="gb-btn-piano" class="gb-inst-btn" style="background:#ff6600;border:none;color:#fff;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;">🎹 Piano</button>
-			          <button onclick="gbSelectInstrument('drums')" id="gb-btn-drums" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;">🥁 Batería</button>
-			          <button onclick="gbSelectInstrument('bass')" id="gb-btn-bass" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;">🎸 Bajo</button>
-			          <button onclick="gbSelectInstrument('synth')" id="gb-btn-synth" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;">🎛️ Synth</button>
+			        <div style="display:flex;gap:4px;overflow-x:auto;max-width:60vw;padding-bottom:2px;">
+			          <button onclick="gbSelectInstrument('piano')" data-inst="piano" class="gb-inst-btn" style="background:#ff6600;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎹 Piano</button>
+			          <button onclick="gbSelectInstrument('epiano')" data-inst="epiano" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎹 E-Piano</button>
+			          <button onclick="gbSelectInstrument('organ')" data-inst="organ" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎛️ Órgano</button>
+			          <button onclick="gbSelectInstrument('guitar')" data-inst="guitar" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎸 Guitarra</button>
+			          <button onclick="gbSelectInstrument('strings')" data-inst="strings" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎻 Cuerdas</button>
+			          <button onclick="gbSelectInstrument('flute')" data-inst="flute" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🪈 Flauta</button>
+			          <button onclick="gbSelectInstrument('brass')" data-inst="brass" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎺 Metales</button>
+			          <button onclick="gbSelectInstrument('marimba')" data-inst="marimba" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎵 Marimba</button>
+			          <button onclick="gbSelectInstrument('musicbox')" data-inst="musicbox" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎶 Caja música</button>
+			          <button onclick="gbSelectInstrument('bell')" data-inst="bell" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🔔 Campanas</button>
+			          <button onclick="gbSelectInstrument('synth')" data-inst="synth" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎛️ Synth</button>
+			          <button onclick="gbSelectInstrument('bass')" data-inst="bass" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎸 Bajo</button>
+			          <button onclick="gbSelectInstrument('drums')" data-inst="drums" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🥁 Batería</button>
 			        </div>
 			      </div>
 			      <div style="display:flex;align-items:center;gap:8px;">
@@ -11807,8 +11860,8 @@
 			    const k=document.createElement('div');
 			    k.style.cssText=`position:absolute;left:${i*kw}px;width:${kw-2}px;height:200px;background:linear-gradient(180deg,#fff 0%,#e8e8e8 100%);border:1px solid #ccc;border-radius:0 0 8px 8px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:9px;color:#666;font-weight:700;transition:background .08s;`;
 			    k.textContent=note;
-			    k.addEventListener('mousedown',()=>gbPlayNote(GB_FREQS[note],'piano'));
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_FREQS[note],'piano');},{passive:false});
+			    k.addEventListener('mousedown',()=>gbPlayNote(GB_FREQS[note],_gbMelodicVoice));
+			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_FREQS[note],_gbMelodicVoice);},{passive:false});
 			    k.addEventListener('mousedown',()=>k.style.background='linear-gradient(180deg,#d0d8ff 0%,#b0b8ee 100%)');
 			    k.addEventListener('mouseup',()=>k.style.background='linear-gradient(180deg,#fff 0%,#e8e8e8 100%)');
 			    area.appendChild(k);
@@ -11818,9 +11871,9 @@
 			  blackKeys.forEach(([note,pos])=>{
 			    const k=document.createElement('div');
 			    k.style.cssText=`position:absolute;left:${(pos+0.65)*kw}px;width:${kw*0.6}px;height:130px;background:linear-gradient(180deg,#1c1c1e 0%,#000 100%);border-radius:0 0 6px 6px;cursor:pointer;z-index:2;transition:background .08s;`;
-			    k.addEventListener('mousedown',()=>{gbPlayNote(GB_SHARP_FREQS[note],'piano');k.style.background='linear-gradient(180deg,#3a3aff 0%,#0000aa 100%)';});
+			    k.addEventListener('mousedown',()=>{gbPlayNote(GB_SHARP_FREQS[note],_gbMelodicVoice);k.style.background='linear-gradient(180deg,#3a3aff 0%,#0000aa 100%)';});
 			    k.addEventListener('mouseup',()=>k.style.background='linear-gradient(180deg,#1c1c1e 0%,#000 100%)');
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_SHARP_FREQS[note],'piano');},{passive:false});
+			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_SHARP_FREQS[note],_gbMelodicVoice);},{passive:false});
 			    area.appendChild(k);
 			  });
 			}
@@ -11909,47 +11962,74 @@
 			  });
 			}
 			let _gbSynthWave='sawtooth';
+			// Instrumentos melódicos que se tocan en el teclado del piano (mismo
+			// teclado, distinto timbre). Drums y bass tienen su propia área.
+			let _gbMelodicVoice='piano';
+			const GB_MELODIC=['piano','epiano','organ','guitar','strings','flute','brass','marimba','musicbox','bell','synth'];
 			function gbSelectInstrument(inst){
 			  _gbSelectedInstrument=inst;
-			  ['piano','drums','bass','synth'].forEach(i=>{
-			    const a=document.getElementById('gb-'+i+'-area');
-			    const b=document.getElementById('gb-btn-'+i);
-			    if(a)a.style.display=i===inst?'block':'none';
-			    if(b)b.style.background=i===inst?'#ff6600':'#333';
+			  const isMelodic=GB_MELODIC.includes(inst);
+			  if(isMelodic) _gbMelodicVoice=inst;
+			  // Áreas: los melódicos comparten el teclado del piano; synth muestra su
+			  // fila de sliders; bass y drums tienen su propia área.
+			  const showPiano = isMelodic;
+			  document.getElementById('gb-piano-area').style.display = showPiano ? 'block' : 'none';
+			  document.getElementById('gb-synth-area').style.display = (inst==='synth') ? 'block' : 'none';
+			  document.getElementById('gb-drums-area').style.display = (inst==='drums') ? 'block' : 'none';
+			  document.getElementById('gb-bass-area').style.display = (inst==='bass') ? 'block' : 'none';
+			  document.querySelectorAll('.gb-inst-btn').forEach(b=>{
+			    b.style.background = (b.dataset.inst===inst) ? '#ff6600' : '#333';
 			  });
-			  if(inst==='bass'){document.getElementById('gb-bass-area').style.display='block';}
 			}
+			// Tabla de timbres: cada instrumento melódico se sintetiza con una o
+			// varias ondas (mul = múltiplo de la frecuencia base = armónico),
+			// un filtro y una envolvente A/D/R. No son grabaciones reales (eso pesa
+			// GB), pero cubren muchísimos instrumentos con Web Audio.
+			const GB_VOICES={
+			  piano:   {parts:[{w:'triangle',g:.42,mul:1},{w:'sine',g:.12,mul:2}], filter:{t:'lowpass',f:3200}, env:{a:.01,s:.28,r:.6}},
+			  epiano:  {parts:[{w:'sine',g:.4,mul:1},{w:'sine',g:.16,mul:3}],       filter:{t:'lowpass',f:2600}, env:{a:.01,s:.2,r:.8}},
+			  organ:   {parts:[{w:'sine',g:.3,mul:1},{w:'sine',g:.22,mul:2},{w:'sine',g:.16,mul:3},{w:'sine',g:.1,mul:4}], filter:{t:'lowpass',f:4200}, env:{a:.03,s:.45,r:.14}},
+			  guitar:  {parts:[{w:'sawtooth',g:.34,mul:1,det:4}],                    filter:{t:'lowpass',f:2200}, env:{a:.005,s:.12,r:.45}},
+			  strings: {parts:[{w:'sawtooth',g:.26,mul:1,det:-7},{w:'sawtooth',g:.26,mul:1,det:7}], filter:{t:'lowpass',f:3000}, env:{a:.13,s:.4,r:.5}},
+			  flute:   {parts:[{w:'sine',g:.42,mul:1},{w:'triangle',g:.1,mul:2}],    filter:{t:'lowpass',f:4500}, env:{a:.06,s:.3,r:.3}},
+			  brass:   {parts:[{w:'sawtooth',g:.32,mul:1},{w:'square',g:.08,mul:1}], filter:{t:'lowpass',f:2600}, env:{a:.05,s:.32,r:.28}},
+			  marimba: {parts:[{w:'sine',g:.44,mul:1},{w:'sine',g:.2,mul:4}],        filter:{t:'lowpass',f:5000}, env:{a:.004,s:.02,r:.5}},
+			  musicbox:{parts:[{w:'sine',g:.4,mul:2},{w:'sine',g:.18,mul:5}],        filter:{t:'lowpass',f:6000}, env:{a:.002,s:.02,r:1.2}},
+			  bell:    {parts:[{w:'sine',g:.36,mul:1},{w:'sine',g:.24,mul:2.76},{w:'sine',g:.14,mul:5.4}], filter:{t:'lowpass',f:6000}, env:{a:.003,s:.05,r:1.4}},
+			  synth:   {parts:[{w:'sawtooth',g:.36,mul:1}],                          filter:{t:'bandpass',f:0}, env:{a:.02,s:.35,r:.4}, bandMul:2},
+			  bass:    {parts:[{w:'sawtooth',g:.5,mul:.5}],                          filter:{t:'lowpass',f:500}, env:{a:.01,s:.2,r:.4}}
+			};
 			function gbPlayNote(freq,type){
 			  if(!_gbAudioCtx)return;
 			  if(_gbAudioCtx.state==='suspended')_gbAudioCtx.resume();
 			  const now=_gbAudioCtx.currentTime;
-			  const attack=parseFloat(document.getElementById('gb-attack')?.value||0.05);
-			  const sustain=parseFloat(document.getElementById('gb-sustain')?.value||0.5);
-			  const release=parseFloat(document.getElementById('gb-release')?.value||0.5);
-			  const osc=_gbAudioCtx.createOscillator();
-			  const gain=_gbAudioCtx.createGain();
+			  const v=GB_VOICES[type]||GB_VOICES.piano;
+			  // Los sliders A/S/R (si existen) afinan sobre la base del instrumento.
+			  const sa=parseFloat(document.getElementById('gb-attack')?.value);
+			  const ss=parseFloat(document.getElementById('gb-sustain')?.value);
+			  const sr=parseFloat(document.getElementById('gb-release')?.value);
+			  const attack=(type==='synth'&&!isNaN(sa))?sa:v.env.a;
+			  const sustain=(type==='synth'&&!isNaN(ss))?ss:v.env.s;
+			  const release=(type==='synth'&&!isNaN(sr))?sr:v.env.r;
+			  const dur=attack+sustain+release+0.1;
 			  const filter=_gbAudioCtx.createBiquadFilter();
-			  if(type==='piano'){osc.type='triangle';filter.type='lowpass';filter.frequency.value=3000;}
-			  else if(type==='bass'){osc.type='sawtooth';freq*=0.5;filter.type='lowpass';filter.frequency.value=500;}
-			  else if(type==='synth'){osc.type=_gbSynthWave;filter.type='bandpass';filter.frequency.value=freq*2;}
-			  else{osc.type='sine';}
-			  osc.frequency.setValueAtTime(freq,now);
-			  gain.gain.setValueAtTime(0,now);
-			  gain.gain.linearRampToValueAtTime(0.4,now+attack);
-			  gain.gain.setValueAtTime(0.4,now+sustain);
-			  gain.gain.exponentialRampToValueAtTime(0.001,now+sustain+release);
-			  osc.connect(filter);filter.connect(gain);gain.connect(_gbAudioCtx.destination);
-			  osc.start(now);osc.stop(now+sustain+release+0.1);
-			  // Add reverb-like effect for piano
-			  if(type==='piano'){
-			    const osc2=_gbAudioCtx.createOscillator();
-			    const gain2=_gbAudioCtx.createGain();
-			    osc2.type='sine';osc2.frequency.value=freq*2;
-			    gain2.gain.setValueAtTime(0,now);gain2.gain.linearRampToValueAtTime(0.1,now+attack);
-			    gain2.gain.exponentialRampToValueAtTime(0.001,now+sustain+release);
-			    osc2.connect(gain2);gain2.connect(_gbAudioCtx.destination);
-			    osc2.start(now);osc2.stop(now+sustain+release+0.1);
-			  }
+			  filter.type=v.filter.t;
+			  filter.frequency.value = v.filter.t==='bandpass' ? freq*(v.bandMul||2) : v.filter.f;
+			  const master=_gbAudioCtx.createGain();
+			  master.gain.setValueAtTime(0,now);
+			  master.gain.linearRampToValueAtTime(1,now+attack);
+			  master.gain.setValueAtTime(1,now+attack+sustain);
+			  master.gain.exponentialRampToValueAtTime(0.001,now+attack+sustain+release);
+			  filter.connect(master);master.connect(_gbAudioCtx.destination);
+			  v.parts.forEach(p=>{
+			    const osc=_gbAudioCtx.createOscillator();
+			    osc.type = (type==='synth' ? _gbSynthWave : p.w);
+			    osc.frequency.setValueAtTime(freq*(p.mul||1),now);
+			    if(p.det) osc.detune.setValueAtTime(p.det,now);
+			    const g=_gbAudioCtx.createGain(); g.gain.value=p.g;
+			    osc.connect(g);g.connect(filter);
+			    osc.start(now);osc.stop(now+dur);
+			  });
 			  if(_gbRecording)_gbRecorded.push({time:Date.now(),freq,type});
 			  gbUpdateWaveform(freq);
 			}
