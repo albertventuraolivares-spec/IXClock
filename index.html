@@ -1724,7 +1724,10 @@
 							type="text"
 						/>
 					</div>
-					<button onclick="setRandomWallpaper()" class="shrink-0 mb-3" style="width:100%;padding:9px;border-radius:12px;background:linear-gradient(135deg,#ff007f,#7928ca,#00f0ff);border:none;color:#fff;font-weight:800;font-size:12px;cursor:pointer;">🎲 Fondo aleatorio infinito</button>
+					<div class="shrink-0 mb-3" style="display:flex;gap:6px;">
+					<button onclick="setRandomWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#ff007f,#7928ca,#00f0ff);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🎲 Aleatorio</button>
+					<button onclick="setRandomPhotoWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🖼️ Foto real infinita</button>
+				</div>
 					<div
 						class="custom-scrollbar pr-1"
 						id="wallpaper-grid-wrap"
@@ -3158,9 +3161,14 @@
 					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
 				</div>
 				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro</div>
+					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro (en la app)</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
-					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (archivo ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS. Funciona con NES, SNES, Sega, Game Boy/GBA, N64, PSX y arcade.</div>
+					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS.</div>
+				</div>
+				<div>
+					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🎮 Consolas potentes (PS2/PS3/Switch/Xbox…)</div>
+					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-native-grid"></div>
+					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Estas consolas <b>no corren dentro de un navegador</b> — necesitan emuladores nativos en tu PC/consola. Estos accesos abren las <b>páginas oficiales</b> para instalarlos (o Batocera, un sistema completo listo para usar). Con ellos sí emulas PS2, PS3, Switch, Wii U, GameCube, Xbox y más, con tus propios juegos.</div>
 				</div>
 			</div>
 		</div>
@@ -4565,6 +4573,23 @@
 			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
 			  applyWallpaperToFill(nextFillEl, wp);
 			  nextLayerEl.style.animation='none'; void nextLayerEl.offsetWidth; nextLayerEl.style.animation='';
+			  nextLayerEl.classList.add('active'); currLayerEl.classList.remove('active');
+			  activeLayer = nextLayer;
+			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
+			  isDynamicBgEnabled = false;
+			}
+
+			// Fotos reales ilimitadas desde Lorem Picsum (gratis, sin clave, licencia
+			// libre). Cada llamada trae una foto distinta: prácticamente infinitas.
+			function setRandomPhotoWallpaper(){
+			  const seed = Date.now() + '-' + Math.floor(Math.random()*1e6);
+			  const url = `https://picsum.photos/seed/${seed}/1920/1080`;
+			  const wp = { id:'photo-random-'+seed, name:'Foto real', tags:'random photo', type:'photo', url };
+			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
+			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
+			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
+			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
+			  applyWallpaperToFill(nextFillEl, wp);
 			  nextLayerEl.classList.add('active'); currLayerEl.classList.remove('active');
 			  activeLayer = nextLayer;
 			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
@@ -7543,7 +7568,34 @@
 			      </div>`
 			    ).join('');
 			  }
+			  const emuN = document.getElementById('emu-native-grid');
+			  if(emuN){
+			    emuN.innerHTML = EMU_NATIVE.map(e=>
+			      `<div class="game-tile" onclick="openBrowserWindow('${e.url}')" title="${escapeHtml(e.desc)}">
+			        <div class="game-tile-icon">${e.icon}</div>
+			        <div class="game-tile-label">${escapeHtml(e.name)}</div>
+			      </div>`
+			    ).join('');
+			  }
 			}
+
+			// Emuladores NATIVOS (no corren en navegador): estos accesos abren sus
+			// páginas oficiales de descarga para instalarlos en PC/consola. Así el
+			// usuario sí puede emular las consolas potentes con sus propios juegos.
+			const EMU_NATIVE = [
+			  {name:'Batocera (todo)', icon:'🧩', url:'https://batocera.org', desc:'Sistema completo listo para emular casi todo. Se instala en USB/SD.'},
+			  {name:'RetroArch',       icon:'🎛️', url:'https://retroarch.com', desc:'Multi-emulador para PC, Android, iOS.'},
+			  {name:'EmuDeck',         icon:'🛠️', url:'https://www.emudeck.com', desc:'Instalador automático de emuladores (PC / Steam Deck).'},
+			  {name:'PCSX2 (PS2)',     icon:'2️⃣', url:'https://pcsx2.net', desc:'Emulador de PlayStation 2 para PC.'},
+			  {name:'RPCS3 (PS3)',     icon:'3️⃣', url:'https://rpcs3.net', desc:'Emulador de PlayStation 3 para PC.'},
+			  {name:'Dolphin (Wii/GC)',icon:'🐬', url:'https://dolphin-emu.org', desc:'Emulador de GameCube y Wii.'},
+			  {name:'Ryujinx (Switch)',icon:'🔴', url:'https://ryujinx.app', desc:'Emulador de Nintendo Switch para PC.'},
+			  {name:'Cemu (Wii U)',    icon:'🟦', url:'https://cemu.info', desc:'Emulador de Wii U para PC.'},
+			  {name:'Xemu (Xbox)',     icon:'🟩', url:'https://xemu.app', desc:'Emulador de Xbox original para PC.'},
+			  {name:'Xenia (Xbox 360)',icon:'🟢', url:'https://xenia.jp', desc:'Emulador de Xbox 360 para PC.'},
+			  {name:'PPSSPP (PSP)',    icon:'🟠', url:'https://www.ppsspp.org', desc:'Emulador de PSP para PC, Android, iOS.'},
+			  {name:'melonDS (NDS)',   icon:'🖊️', url:'https://melonds.kuribo64.net', desc:'Emulador de Nintendo DS para PC.'}
+			];
 
 			/* ===================== EMULADOR RETRO (EmulatorJS, BYO-ROM) =====================
 			   El usuario carga SUS PROPIOS archivos de juego (ROMs que posea legalmente).
