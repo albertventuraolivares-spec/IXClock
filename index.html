@@ -457,6 +457,24 @@
 		#top-dock.expanded{gap:5px;padding:5px 10px;}
 		#top-dock.expanded .dock-btn{width:30px;height:30px;border-radius:8px;}
 		#top-dock.expanded .dock-btn svg{width:30px;height:30px;}
+
+		/* Siri orb: onda de voz fluida y luminosa, animación CSS original */
+		.siri-orb{position:absolute;inset:0;overflow:hidden;border-radius:50%;background:#000;}
+		.siri-blob{position:absolute;width:150%;height:150%;top:-25%;left:-25%;border-radius:44%;filter:blur(5px);mix-blend-mode:screen;opacity:.85;animation-iteration-count:infinite;animation-timing-function:ease-in-out;}
+		.siri-blob-1{background:radial-gradient(circle at 30% 40%,#7cfc9a,transparent 60%);animation-name:siriWave1;animation-duration:4.2s;}
+		.siri-blob-2{background:radial-gradient(circle at 60% 55%,#4a6cff,transparent 60%);animation-name:siriWave2;animation-duration:3.6s;}
+		.siri-blob-3{background:radial-gradient(circle at 45% 60%,#ff5c7a,transparent 60%);animation-name:siriWave3;animation-duration:5s;}
+		.siri-blob-4{background:radial-gradient(circle at 50% 45%,#ffffff,transparent 55%);opacity:.55;animation-name:siriWave4;animation-duration:3.2s;}
+		@keyframes siriWave1{0%,100%{transform:translate(0,6%) scale(1) rotate(0deg);}50%{transform:translate(4%,-6%) scale(1.15) rotate(8deg);}}
+		@keyframes siriWave2{0%,100%{transform:translate(0,-4%) scale(1) rotate(0deg);}50%{transform:translate(-6%,5%) scale(1.1) rotate(-10deg);}}
+		@keyframes siriWave3{0%,100%{transform:translate(-3%,3%) scale(1) rotate(0deg);}50%{transform:translate(5%,-4%) scale(1.2) rotate(6deg);}}
+		@keyframes siriWave4{0%,100%{transform:scale(.9) rotate(0deg);}50%{transform:scale(1.25) rotate(-6deg);}}
+		/* Escuchando: más rápido y brillante */
+		.siri-orb.listening .siri-blob{animation-duration:1.3s;opacity:1;}
+		/* Hablando: pulso rápido tipo "boca hablando" + más brillo */
+		.siri-orb.speaking .siri-blob{animation-duration:.5s;opacity:1;}
+		.siri-orb.speaking{animation:siriTalkPulse .32s infinite ease-in-out alternate;}
+		@keyframes siriTalkPulse{0%{transform:scale(1);}100%{transform:scale(1.1);}}
 	</style>
 	<div id="top-dock">
 		<!-- Achicar/Agrandar dock -->
@@ -765,14 +783,20 @@
 				<circle cx="24" cy="22" r="2" fill="rgba(255,255,255,.6)" />
 			</svg>
 		</button>
-		<!-- Siri orb -->
+		<!-- Siri orb (animación original tipo "onda de voz", no es un asset de Apple) -->
 		<button
 			class="dock-btn"
+			id="siri-dock-btn"
 			onclick="activateSiri()"
 			title="Siri"
-			style="background:linear-gradient(135deg,#1c1c2e,#2c2c4e);border-radius:50%;box-shadow:0 3px 16px rgba(90,60,220,.55);font-size:22px;"
+			style="background:#000;border-radius:50%;box-shadow:0 3px 16px rgba(90,60,220,.55);padding:0;overflow:hidden;position:relative;"
 		>
-			🔮
+			<div class="siri-orb" id="siri-orb">
+				<div class="siri-blob siri-blob-1"></div>
+				<div class="siri-blob siri-blob-2"></div>
+				<div class="siri-blob siri-blob-3"></div>
+				<div class="siri-blob siri-blob-4"></div>
+			</div>
 		</button>
 
 		<!-- Apple Maps -->
@@ -8427,8 +8451,9 @@
 			  utterance.volume = 1;
 			  _siriCurrentUtterance = utterance;
 			  _siriSpeaking = true;
-			  utterance.onend = () => { _siriSpeaking = false; updateSiriVoiceBtn(); };
-			  utterance.onerror = () => { _siriSpeaking = false; };
+			  setSiriOrbState('speaking');
+			  utterance.onend = () => { _siriSpeaking = false; setSiriOrbState(siriListening?'listening':'idle'); updateSiriVoiceBtn(); };
+			  utterance.onerror = () => { _siriSpeaking = false; setSiriOrbState(siriListening?'listening':'idle'); };
 			  window.speechSynthesis.speak(utterance);
 			  updateSiriVoiceBtn();
 			}
@@ -8436,6 +8461,7 @@
 			function siriStopSpeaking(){
 			  window.speechSynthesis?.cancel();
 			  _siriSpeaking = false;
+			  setSiriOrbState(siriListening?'listening':'idle');
 			  updateSiriVoiceBtn();
 			}
 
@@ -9614,6 +9640,14 @@
 
 			/* ===== SIRI BUTTON ===== */
 			let siriListening=false;
+			// Estados del orbe: 'idle' (reposo), 'listening' (escuchando el mic),
+			// 'speaking' (hablando en voz alta). 'speaking' tiene prioridad visual.
+			function setSiriOrbState(state){
+			  const orb=document.getElementById('siri-orb');
+			  if(!orb) return;
+			  orb.classList.remove('listening','speaking');
+			  if(state==='listening'||state==='speaking') orb.classList.add(state);
+			}
 			function activateSiri(){
 			  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 			  // Always open the AI chat panel
@@ -9624,8 +9658,9 @@
 			    if(inp) inp.focus();
 			    return;
 			  }
-			  if(siriListening){ siriListening=false; return; }
+			  if(siriListening){ siriListening=false; setSiriOrbState(_siriSpeaking?'speaking':'idle'); return; }
 			  siriListening=true;
+			  setSiriOrbState('listening');
 			  // Visual feedback on the Search or Ask bar
 			  const bar=document.getElementById('siri-text-bar');
 			  if(bar){ bar.style.boxShadow='0 0 0 3px rgba(94,92,230,.8), 0 8px 32px rgba(0,0,0,.65)'; }
@@ -9636,6 +9671,7 @@
 			  rec.onresult=function(e){
 			    const t=e.results[0][0].transcript;
 			    siriListening=false;
+			    setSiriOrbState('idle');
 			    if(bar){ bar.style.boxShadow='0 8px 32px rgba(0,0,0,.65)'; }
 			    if(inp){ inp.placeholder='Search or Ask...'; inp.value=''; inp.style.color='rgba(255,255,255,.5)'; }
 			    // Send to AI chat
@@ -9644,6 +9680,7 @@
 			  };
 			  rec.onerror=rec.onend=function(){
 			    siriListening=false;
+			    setSiriOrbState(_siriSpeaking?'speaking':'idle');
 			    if(bar){ bar.style.boxShadow='0 8px 32px rgba(0,0,0,.65)'; }
 			    if(inp){ inp.placeholder='Search or Ask...'; inp.style.color='rgba(255,255,255,.5)'; }
 			  };
