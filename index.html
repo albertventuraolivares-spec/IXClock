@@ -458,23 +458,16 @@
 		#top-dock.expanded .dock-btn{width:30px;height:30px;border-radius:8px;}
 		#top-dock.expanded .dock-btn svg{width:30px;height:30px;}
 
-		/* Siri orb: onda de voz fluida y luminosa, animación CSS original */
-		.siri-orb{position:absolute;inset:0;overflow:hidden;border-radius:50%;background:#000;}
-		.siri-blob{position:absolute;width:150%;height:150%;top:-25%;left:-25%;border-radius:44%;filter:blur(5px);mix-blend-mode:screen;opacity:.85;animation-iteration-count:infinite;animation-timing-function:ease-in-out;}
-		.siri-blob-1{background:radial-gradient(circle at 30% 40%,#7cfc9a,transparent 60%);animation-name:siriWave1;animation-duration:4.2s;}
-		.siri-blob-2{background:radial-gradient(circle at 60% 55%,#4a6cff,transparent 60%);animation-name:siriWave2;animation-duration:3.6s;}
-		.siri-blob-3{background:radial-gradient(circle at 45% 60%,#ff5c7a,transparent 60%);animation-name:siriWave3;animation-duration:5s;}
-		.siri-blob-4{background:radial-gradient(circle at 50% 45%,#ffffff,transparent 55%);opacity:.55;animation-name:siriWave4;animation-duration:3.2s;}
-		@keyframes siriWave1{0%,100%{transform:translate(0,6%) scale(1) rotate(0deg);}50%{transform:translate(4%,-6%) scale(1.15) rotate(8deg);}}
-		@keyframes siriWave2{0%,100%{transform:translate(0,-4%) scale(1) rotate(0deg);}50%{transform:translate(-6%,5%) scale(1.1) rotate(-10deg);}}
-		@keyframes siriWave3{0%,100%{transform:translate(-3%,3%) scale(1) rotate(0deg);}50%{transform:translate(5%,-4%) scale(1.2) rotate(6deg);}}
-		@keyframes siriWave4{0%,100%{transform:scale(.9) rotate(0deg);}50%{transform:scale(1.25) rotate(-6deg);}}
-		/* Escuchando: más rápido y brillante */
-		.siri-orb.listening .siri-blob{animation-duration:1.3s;opacity:1;}
-		/* Hablando: pulso rápido tipo "boca hablando" + más brillo */
-		.siri-orb.speaking .siri-blob{animation-duration:.5s;opacity:1;}
-		.siri-orb.speaking{animation:siriTalkPulse .32s infinite ease-in-out alternate;}
-		@keyframes siriTalkPulse{0%{transform:scale(1);}100%{transform:scale(1.1);}}
+		/* Siri: onda de voz tipo "lente" dibujada en canvas (mini en el dock,
+		   grande en pantalla completa al escuchar/hablar). Animación original. */
+		#siri-mini-canvas{width:100%;height:100%;display:block;border-radius:50%;background:#000;}
+		#siri-fs{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;flex-direction:column;
+			background:radial-gradient(circle at 50% 45%,rgba(12,12,18,.82),rgba(0,0,0,.95));
+			backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);}
+		#siri-fs.open{display:flex;}
+		#siri-fs-canvas{width:min(92vw,560px);height:min(46vh,280px);display:block;}
+		#siri-fs-caption{margin-top:8px;color:#fff;opacity:.7;font-size:15px;font-weight:600;letter-spacing:.02em;min-height:20px;}
+		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
 		<!-- Achicar/Agrandar dock -->
@@ -783,7 +776,7 @@
 				<circle cx="24" cy="22" r="2" fill="rgba(255,255,255,.6)" />
 			</svg>
 		</button>
-		<!-- Siri orb (animación original tipo "onda de voz", no es un asset de Apple) -->
+		<!-- Siri: onda de voz en canvas (animación original, no es un asset de Apple) -->
 		<button
 			class="dock-btn"
 			id="siri-dock-btn"
@@ -791,12 +784,7 @@
 			title="Siri"
 			style="background:#000;border-radius:50%;box-shadow:0 3px 16px rgba(90,60,220,.55);padding:0;overflow:hidden;position:relative;"
 		>
-			<div class="siri-orb" id="siri-orb">
-				<div class="siri-blob siri-blob-1"></div>
-				<div class="siri-blob siri-blob-2"></div>
-				<div class="siri-blob siri-blob-3"></div>
-				<div class="siri-blob siri-blob-4"></div>
-			</div>
+			<canvas id="siri-mini-canvas" width="96" height="96"></canvas>
 		</button>
 
 		<!-- Apple Maps -->
@@ -3087,6 +3075,13 @@
 		</div>
 
 		<!-- Escenario de juego (overlay grande) -->
+		<!-- Siri pantalla completa: onda de voz grande al escuchar/hablar -->
+		<div id="siri-fs" onclick="closeSiriFS(event)">
+			<canvas id="siri-fs-canvas" width="1120" height="560"></canvas>
+			<div id="siri-fs-caption">Escuchando…</div>
+			<div id="siri-fs-hint">Toca para cerrar</div>
+		</div>
+
 		<div id="game-stage-modal">
 			<div id="game-stage-box">
 				<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.1);">
@@ -9638,16 +9633,79 @@
 			}
 			(function(){const p=localStorage.getItem('ai_provider')||'claude';const b=document.getElementById('ai-provider-'+p);if(b){document.querySelectorAll('[id^="ai-provider-"]').forEach(x=>x.classList.remove('active'));b.classList.add('active');}})();
 
-			/* ===== SIRI BUTTON ===== */
+			/* ===== SIRI: onda de voz en canvas ===== */
 			let siriListening=false;
-			// Estados del orbe: 'idle' (reposo), 'listening' (escuchando el mic),
-			// 'speaking' (hablando en voz alta). 'speaking' tiene prioridad visual.
-			function setSiriOrbState(state){
-			  const orb=document.getElementById('siri-orb');
-			  if(!orb) return;
-			  orb.classList.remove('listening','speaking');
-			  if(state==='listening'||state==='speaking') orb.classList.add(state);
+			// Estado del orbe controla la intensidad de la onda:
+			//  idle → suave, listening → más amplia y rápida, speaking → pulsa.
+			let _siriState='idle';
+			const _siriWave={ t:0, intensity:0.32, target:0.32 };
+			// Cintas de color entrelazadas, como en la onda de voz de Siri.
+			const _siriRibbons=[
+			  {color:'43,140,255', k:1.15, ph:0.0, spd:1.00, a:0.55},
+			  {color:'55,214,122', k:0.90, ph:1.1, spd:1.20, a:0.50},
+			  {color:'255,77,109', k:1.30, ph:2.4, spd:0.85, a:0.48},
+			  {color:'255,176,32', k:1.00, ph:3.6, spd:1.35, a:0.45},
+			  {color:'255,255,255',k:1.10, ph:4.7, spd:1.05, a:0.32}
+			];
+			function _siriDraw(canvas, big){
+			  const ctx=canvas.getContext('2d');
+			  const w=canvas.width, h=canvas.height, cy=h/2;
+			  ctx.clearRect(0,0,w,h);
+			  ctx.globalCompositeOperation='lighter';
+			  ctx.lineCap='round'; ctx.lineJoin='round';
+			  ctx.lineWidth = big ? h*0.07 : h*0.11;
+			  // Pulso extra cuando "habla": la amplitud late rápido como una voz.
+			  let inten=_siriWave.intensity;
+			  if(_siriState==='speaking') inten += 0.18*Math.abs(Math.sin(_siriWave.t*7.5));
+			  const step = big ? 4 : 3;
+			  for(const r of _siriRibbons){
+			    ctx.beginPath();
+			    for(let x=0;x<=w;x+=step){
+			      const nx=x/w;
+			      // Envolvente tipo lente: 0 en los bordes, máximo al centro.
+			      const env=Math.pow(Math.sin(Math.PI*nx),1.5);
+			      const y=cy + env*cy*0.55*inten*Math.sin(r.k*nx*Math.PI*2 + r.ph + _siriWave.t*r.spd);
+			      if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+			    }
+			    ctx.strokeStyle='rgba('+r.color+','+r.a+')';
+			    ctx.shadowColor='rgba('+r.color+',0.8)';
+			    ctx.shadowBlur = big ? 32 : 8;
+			    ctx.stroke();
+			  }
+			  ctx.globalCompositeOperation='source-over';
+			  ctx.shadowBlur=0;
 			}
+			function _siriLoop(){
+			  _siriWave.t += 0.02 + _siriWave.intensity*0.05;
+			  _siriWave.intensity += (_siriWave.target - _siriWave.intensity)*0.08;
+			  const mini=document.getElementById('siri-mini-canvas');
+			  if(mini) _siriDraw(mini,false);
+			  const fs=document.getElementById('siri-fs');
+			  if(fs && fs.classList.contains('open')){
+			    const fc=document.getElementById('siri-fs-canvas');
+			    if(fc) _siriDraw(fc,true);
+			  }
+			  requestAnimationFrame(_siriLoop);
+			}
+			function setSiriOrbState(state){
+			  _siriState=state;
+			  _siriWave.target = state==='speaking' ? 0.85 : (state==='listening' ? 0.7 : 0.32);
+			  const cap=document.getElementById('siri-fs-caption');
+			  if(cap) cap.textContent = state==='speaking' ? 'Hablando…' : (state==='listening' ? 'Escuchando…' : '');
+			  const fs=document.getElementById('siri-fs');
+			  if(fs){
+			    if(state==='listening'||state==='speaking') fs.classList.add('open');
+			    else fs.classList.remove('open');
+			  }
+			}
+			function closeSiriFS(e){
+			  // Solo cierra si se toca el fondo (no interrumpe si tocan el canvas).
+			  const fs=document.getElementById('siri-fs');
+			  if(fs) fs.classList.remove('open');
+			  if(siriListening){ siriListening=false; }
+			  siriStopSpeaking();
+			}
+			document.addEventListener('DOMContentLoaded', ()=>{ requestAnimationFrame(_siriLoop); });
 			function activateSiri(){
 			  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 			  // Always open the AI chat panel
