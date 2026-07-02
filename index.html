@@ -1724,6 +1724,7 @@
 							type="text"
 						/>
 					</div>
+					<button onclick="setRandomWallpaper()" class="shrink-0 mb-3" style="width:100%;padding:9px;border-radius:12px;background:linear-gradient(135deg,#ff007f,#7928ca,#00f0ff);border:none;color:#fff;font-weight:800;font-size:12px;cursor:pointer;">🎲 Fondo aleatorio infinito</button>
 					<div
 						class="custom-scrollbar pr-1"
 						id="wallpaper-grid-wrap"
@@ -1751,6 +1752,7 @@
 							type="text"
 						/>
 					</div>
+					<button onclick="setRandomClockStyle()" class="shrink-0 mb-3" style="width:100%;padding:9px;border-radius:12px;background:linear-gradient(135deg,#5e5ce6,#0a84ff);border:none;color:#fff;font-weight:800;font-size:12px;cursor:pointer;">🎲 Estilo de reloj aleatorio infinito</button>
 					<div class="custom-scrollbar pr-1">
 						<div
 							class="grid grid-cols-3 gap-2"
@@ -4542,6 +4544,33 @@
 			  isDynamicBgEnabled = false;
 			}
 
+			// Generador de fondos "infinito": crea un gradiente animado al azar cada
+			// vez. Combinando color/ángulo/velocidad hay millones de resultados sin
+			// inflar el archivo con un millón de entradas fijas.
+			function setRandomWallpaper(){
+			  const rnd = (a,b)=>a+Math.random()*(b-a);
+			  const h1 = Math.floor(rnd(0,360));
+			  const h2 = (h1 + Math.floor(rnd(30,180))) % 360;
+			  const h3 = (h2 + Math.floor(rnd(30,180))) % 360;
+			  const colors = [
+			    `hsl(${h1},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
+			    `hsl(${h2},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
+			    `hsl(${h3},${rnd(55,90)|0}%,${rnd(30,55)|0}%)`
+			  ];
+			  const wp = { id:'random-'+Date.now(), name:'Aleatorio', tags:'random', type:'gradient',
+			    colors, angle:Math.floor(rnd(0,360)), dur:Math.floor(rnd(10,26)) };
+			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
+			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
+			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
+			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
+			  applyWallpaperToFill(nextFillEl, wp);
+			  nextLayerEl.style.animation='none'; void nextLayerEl.offsetWidth; nextLayerEl.style.animation='';
+			  nextLayerEl.classList.add('active'); currLayerEl.classList.remove('active');
+			  activeLayer = nextLayer;
+			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
+			  isDynamicBgEnabled = false;
+			}
+
 			function renderWallpaperGrid(){
 			  const grid = document.getElementById('wallpaper-grid');
 			  grid.innerHTML = '';
@@ -4772,6 +4801,28 @@
 			  const btn = document.getElementById('clockbtn-' + id);
 			  if(btn) btn.classList.add('active');
 			}
+			// Generador "infinito" de estilos de reloj: combina fuente + grosor +
+			// color + efecto al azar. Miles de millones de combinaciones sin listar
+			// medio millón de entradas fijas.
+			const _RND_FONTS = ["'Inter',sans-serif","'Orbitron',sans-serif","'Playfair Display',serif","'VT323',monospace","'Outfit',sans-serif","'Bebas Neue',cursive","'Space Grotesk',sans-serif","'JetBrains Mono',monospace","'Oswald',sans-serif","'Righteous',cursive","'Syncopate',sans-serif","'Rajdhani',sans-serif","'Marcellus',serif","'Cormorant Garamond',serif","'Lora',serif","'Dancing Script',cursive","'Lexend Deca',sans-serif","'Bebas Neue',cursive"];
+			const _RND_EXTRAS = ['','upper','italic','glow-cyan','glow-green','glow-gold','long-shadow','stroke'];
+			function setRandomClockStyle(){
+			  const rnd = (a,b)=>a+Math.random()*(b-a);
+			  const pick = arr=>arr[Math.floor(Math.random()*arr.length)];
+			  const hue = Math.floor(rnd(0,360));
+			  const style = {
+			    id:'random-clock', name:'Aleatorio', tags:'random',
+			    ff: pick(_RND_FONTS),
+			    fw: pick([200,300,400,500,600,700,800,900]),
+			    ls: (Math.random()<0.5?'-':'') + (rnd(0,3)|0) + 'px',
+			    color: `hsl(${hue},${rnd(60,95)|0}%,${rnd(55,75)|0}%)`,
+			    grad:'none',
+			    extra: pick(_RND_EXTRAS)
+			  };
+			  applyClockStyle(style);
+			  document.querySelectorAll('.clock-style-btn').forEach(b=>b.classList.remove('active'));
+			}
+
 			function renderClockGrid(){
 			  const grid = document.getElementById('clock-style-grid');
 			  grid.innerHTML = '';
@@ -7499,15 +7550,30 @@
 			   No se incluye ni descarga ningún juego. EmulatorJS corre 100% en el navegador.
 			   Consolas soportadas de verdad en web (no Xbox/PS modernas). */
 			const EMU_CONSOLES = [
-			  {core:'nes',    name:'NES',            icon:'🔴', ext:'.nes'},
-			  {core:'snes',   name:'Super Nintendo',icon:'🟣', ext:'.sfc,.smc'},
-			  {core:'segaMD', name:'Sega Genesis',  icon:'🔵', ext:'.md,.gen,.bin'},
-			  {core:'gb',     name:'Game Boy',      icon:'🟢', ext:'.gb,.gbc'},
-			  {core:'gba',    name:'Game Boy Adv.', icon:'🟡', ext:'.gba'},
-			  {core:'n64',    name:'Nintendo 64',   icon:'🟠', ext:'.n64,.z64,.v64'},
-			  {core:'psx',    name:'PlayStation 1', icon:'⚫', ext:'.bin,.cue,.iso,.pbp,.chd'},
-			  {core:'segaMS', name:'Master System', icon:'🔷', ext:'.sms'},
-			  {core:'arcade', name:'Arcade (MAME)', icon:'🕹️', ext:'.zip'}
+			  {core:'nes',      name:'NES',            icon:'🔴', ext:'.nes,.zip'},
+			  {core:'snes',     name:'Super Nintendo',icon:'🟣', ext:'.sfc,.smc,.zip'},
+			  {core:'n64',      name:'Nintendo 64',   icon:'🟠', ext:'.n64,.z64,.v64,.zip'},
+			  {core:'nds',      name:'Nintendo DS',   icon:'🖊️', ext:'.nds,.zip'},
+			  {core:'gb',       name:'Game Boy / GBC',icon:'🟢', ext:'.gb,.gbc,.zip'},
+			  {core:'gba',      name:'Game Boy Adv.', icon:'🟡', ext:'.gba,.zip'},
+			  {core:'vb',       name:'Virtual Boy',   icon:'🥽', ext:'.vb,.zip'},
+			  {core:'segaMD',   name:'Sega Genesis',  icon:'🔵', ext:'.md,.gen,.bin,.zip'},
+			  {core:'segaMS',   name:'Master System', icon:'🔷', ext:'.sms,.zip'},
+			  {core:'segaGG',   name:'Game Gear',     icon:'🎮', ext:'.gg,.zip'},
+			  {core:'segaCD',   name:'Sega CD',       icon:'💿', ext:'.chd,.cue,.iso,.zip'},
+			  {core:'sega32x',  name:'Sega 32X',      icon:'🟩', ext:'.32x,.bin,.zip'},
+			  {core:'segaSaturn',name:'Sega Saturn',  icon:'🪐', ext:'.chd,.cue,.iso,.zip'},
+			  {core:'psx',      name:'PlayStation 1', icon:'⚫', ext:'.bin,.cue,.iso,.pbp,.chd,.zip'},
+			  {core:'pce',      name:'PC Engine',     icon:'🟥', ext:'.pce,.zip'},
+			  {core:'ngp',      name:'Neo Geo Pocket',icon:'🔶', ext:'.ngp,.ngc,.zip'},
+			  {core:'ws',       name:'WonderSwan',    icon:'🦢', ext:'.ws,.wsc,.zip'},
+			  {core:'coleco',   name:'ColecoVision',  icon:'🟫', ext:'.col,.zip'},
+			  {core:'atari2600',name:'Atari 2600',    icon:'🕹️', ext:'.a26,.bin,.zip'},
+			  {core:'atari7800',name:'Atari 7800',    icon:'🎯', ext:'.a78,.bin,.zip'},
+			  {core:'lynx',     name:'Atari Lynx',    icon:'🐱', ext:'.lnx,.zip'},
+			  {core:'jaguar',   name:'Atari Jaguar',  icon:'🐆', ext:'.j64,.jag,.zip'},
+			  {core:'3do',      name:'3DO',           icon:'⚪', ext:'.iso,.cue,.chd,.zip'},
+			  {core:'arcade',   name:'Arcade (MAME)', icon:'🎰', ext:'.zip'}
 			];
 			let _emuCore=null, _emuRomUrl=null, _emuLoaded=false;
 			function openEmulator(core, name, ext){
@@ -8744,6 +8810,22 @@
 			let _siriVoiceEnabled = localStorage.getItem('siri_voice') !== 'off';
 			let _siriSpeaking = false;
 			let _siriCurrentUtterance = null;
+			let _ttsUnlocked = false;
+
+			/* iOS/Safari (y móviles) solo permiten hablar (speechSynthesis) si se
+			   "desbloquea" DURANTE un toque del usuario. Como la respuesta de Siri
+			   llega asíncrona (tras un await), ahí ya no hay gesto y no habla.
+			   Solución: al enviar/activar Siri —que sí es un gesto— pronunciamos una
+			   frase vacía para desbloquear el motor de voz para después. */
+			function siriUnlockTTS(){
+			  if(_ttsUnlocked || !window.speechSynthesis) return;
+			  try{
+			    const u = new SpeechSynthesisUtterance(' ');
+			    u.volume = 0; u.rate = 2;
+			    window.speechSynthesis.speak(u);
+			    _ttsUnlocked = true;
+			  }catch(e){}
+			}
 
 			function siriSpeak(text){
 			  if(!_siriVoiceEnabled) return;
@@ -8809,6 +8891,7 @@
 			  const input = document.getElementById('ai-input');
 			  const text = input.value.trim();
 			  if(!text) return;
+			  siriUnlockTTS(); // desbloquea la voz durante el gesto de enviar
 			  input.value = '';
 			  appendAIMessage('user', text);
 			  aiChatHistory.push({role:'user', content:text});
@@ -10032,6 +10115,7 @@
 			}
 			document.addEventListener('DOMContentLoaded', ()=>{ requestAnimationFrame(_siriLoop); });
 			function activateSiri(){
+			  siriUnlockTTS(); // desbloquea la voz durante el toque en el orbe
 			  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 			  // Always open the AI chat panel
 			  if(!document.getElementById('ai-chat-panel').classList.contains('open')) toggleAIChat();
