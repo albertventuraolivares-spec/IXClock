@@ -453,10 +453,10 @@
 		.dock-btn:hover{transform:scale(1.1) translateY(-2px);}
 		.dock-btn:active{transform:scale(.94);}
 		.dock-btn svg{transition:width .22s ease,height .22s ease;}
-		/* Modo compacto: mismos iconos, todo más chiquito para que quepan mejor */
-		#top-dock.expanded{gap:5px;padding:5px 10px;}
-		#top-dock.expanded .dock-btn{width:30px;height:30px;border-radius:8px;}
-		#top-dock.expanded .dock-btn svg{width:30px;height:30px;}
+		/* Modo compacto: oculta las apps secundarias para dejar más espacio.
+		   Al pulsar el botón se muestran TODAS; al pulsar de nuevo se ocultan
+		   las secundarias otra vez. No cambia el tamaño de los iconos. */
+		#top-dock.compact .dock-secondary{display:none;}
 
 		/* Siri: onda de voz tipo "lente" dibujada en canvas (mini en el dock,
 		   grande en pantalla completa al escuchar/hablar). Animación original. */
@@ -470,12 +470,12 @@
 		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
-		<!-- Achicar/Agrandar dock -->
+		<!-- Mostrar todas / ocultar algunas apps (para dejar más espacio) -->
 		<button
 			class="dock-btn"
 			id="dock-expand-btn"
 			onclick="toggleDockSize()"
-			title="Achicar/Agrandar iconos"
+			title="Mostrar todas / ocultar algunas apps"
 			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 12px rgba(0,0,0,.4);"
 		>
 			<svg id="dock-expand-icon" width="40" height="40" viewBox="0 0 40 40">
@@ -486,9 +486,12 @@
 						<stop offset="100%" stop-color="#0a84ff" />
 					</linearGradient>
 				</defs>
-				<g stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
-					<path d="M16 20 H12 M16 20 L20 16 M16 20 L20 24" />
-					<path d="M24 20 H28 M24 20 L20 16 M24 20 L20 24" />
+				<!-- Icono de "cuadrícula de apps" -->
+				<g fill="#fff">
+					<rect x="11" y="11" width="5.5" height="5.5" rx="1.4"/>
+					<rect x="23.5" y="11" width="5.5" height="5.5" rx="1.4"/>
+					<rect x="11" y="23.5" width="5.5" height="5.5" rx="1.4"/>
+					<rect x="23.5" y="23.5" width="5.5" height="5.5" rx="1.4"/>
 				</g>
 			</svg>
 		</button>
@@ -577,7 +580,7 @@
 		</button>
 		<!-- Calculadora -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="toggleCalcPanel()"
 			title="Calculadora"
 			style="background:#1c1c1e;box-shadow:0 3px 12px rgba(0,0,0,.5);"
@@ -667,7 +670,7 @@
 		</button>
 		<!-- Notas -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="toggleNotesPanel()"
 			title="Notas"
 			style="background:#ffd60a;box-shadow:0 3px 12px rgba(255,214,10,.4);"
@@ -725,7 +728,7 @@
 		</button>
 		<!-- Traductor -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="toggleTranslator()"
 			title="Traductor"
 			style="background:linear-gradient(135deg,#0a3d6b,#0a84ff);box-shadow:0 3px 14px rgba(10,132,255,.4);"
@@ -789,7 +792,7 @@
 
 		<!-- Apple Maps -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="openAppleMaps()"
 			title="Mapas"
 			style="background:linear-gradient(135deg,#1a9c3e,#2fd060);box-shadow:0 3px 14px rgba(48,208,88,.4);"
@@ -867,7 +870,7 @@
 		</button>
 		<!-- GarageBand -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="openGarageBand()"
 			title="GarageBand"
 			style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);box-shadow:0 3px 14px rgba(0,0,0,.6);border:1px solid rgba(255,100,0,.3);"
@@ -929,7 +932,7 @@
 		</button>
 		<!-- iCloud / Nube -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="openCloudPanel()"
 			title="Mi Nube · Datos"
 			style="background:linear-gradient(135deg,#0a84ff,#5e5ce6);box-shadow:0 3px 14px rgba(10,132,255,.4);"
@@ -974,7 +977,7 @@
 		</button>
 		<!-- Brújula -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			onclick="openCompass()"
 			title="Brújula"
 			style="background:linear-gradient(135deg,#1c1c1e,#3a3a3c);box-shadow:0 3px 14px rgba(0,0,0,.5);"
@@ -1117,19 +1120,22 @@
 				/>
 			</svg>
 		</button>
-		<!-- Ventanas flotantes -->
+		<!-- (El botón de ventanas flotantes se movió DENTRO del navegador: es lo mismo.
+		     Se abre con el botón ⊞ de la barra del navegador.) -->
+		<!-- VPN -->
 		<button
-			class="dock-btn"
-			onclick="openBrowserWindow('')"
-			title="Ventana flotante"
-			style="background:linear-gradient(135deg,#5e5ce6,#2c2c6e);box-shadow:0 3px 14px rgba(94,92,230,.4);"
+			class="dock-btn dock-secondary"
+			onclick="openVpnModal()"
+			title="VPN"
+			style="background:linear-gradient(135deg,#0b8f5a,#0a84ff);box-shadow:0 3px 14px rgba(11,143,90,.4);"
 		>
 			<svg width="40" height="40" viewBox="0 0 40 40">
-				<rect width="40" height="40" rx="9" fill="#5e5ce6"/>
-				<rect x="6" y="9" width="26" height="20" rx="3" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
-				<rect x="6" y="9" width="26" height="5" rx="3" fill="#fff" opacity=".3"/>
-				<rect x="14" y="16" width="16" height="11" rx="2.5" fill="none" stroke="#fff" stroke-width="1.5" opacity=".9"/>
-				<rect x="14" y="16" width="16" height="4" rx="2.5" fill="#fff" opacity=".3"/>
+				<rect width="40" height="40" rx="9" fill="url(#vpnGrad)"/>
+				<defs><linearGradient id="vpnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+					<stop offset="0%" stop-color="#0b8f5a"/><stop offset="100%" stop-color="#0a84ff"/>
+				</linearGradient></defs>
+				<path d="M20 8 L30 12 V20 C30 26 25 30 20 32 C15 30 10 26 10 20 V12 Z" fill="#fff" opacity=".92"/>
+				<path d="M16 20 L19 23 L25 16" fill="none" stroke="#0b8f5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
 		</button>
 		<!-- TV Mundial -->
@@ -1192,7 +1198,7 @@
 		</button>
 		<!-- Pantalla completa -->
 		<button
-			class="dock-btn"
+			class="dock-btn dock-secondary"
 			id="fullscreen-dock-btn"
 			onclick="toggleFullscreen()"
 			title="Pantalla completa"
@@ -3075,13 +3081,6 @@
 		</div>
 
 		<!-- Escenario de juego (overlay grande) -->
-		<!-- Siri pantalla completa: onda de voz grande al escuchar/hablar -->
-		<div id="siri-fs" onclick="closeSiriFS(event)">
-			<canvas id="siri-fs-canvas" width="1120" height="560"></canvas>
-			<div id="siri-fs-caption">Escuchando…</div>
-			<div id="siri-fs-hint">Toca para cerrar</div>
-		</div>
-
 		<div id="game-stage-modal">
 			<div id="game-stage-box">
 				<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.1);">
@@ -6415,6 +6414,62 @@
 			  const modal = document.getElementById('music-apps-modal');
 			  if(modal) modal.style.display = 'none';
 			}
+
+			// VPN: una página web NO puede ser un VPN real (eso necesita permisos del
+			// sistema/túnel de red). Esto abre servicios VPN gratis legítimos en la
+			// ventana flotante, con su propia app/cuenta, sin salir de IXClocK.
+			const VPN_APPS = [
+			  {icon:'🛡️', name:'Proton VPN', url:'https://protonvpn.com', note:'Gratis, sin límite de datos'},
+			  {icon:'🪟', name:'Windscribe', url:'https://windscribe.com', note:'10 GB/mes gratis'},
+			  {icon:'🙈', name:'hide.me', url:'https://hide.me/en/', note:'10 GB/mes gratis'},
+			  {icon:'☁️', name:'Cloudflare WARP', url:'https://one.one.one.one', note:'Gratis, ilimitado'},
+			  {icon:'🧅', name:'Tor Project', url:'https://www.torproject.org', note:'Anónimo, gratis'},
+			  {icon:'🌐', name:'Navegar por proxy', url:'', note:'Cambia tu IP dentro de la app'}
+			];
+			function openVpnModal(){
+			  let modal = document.getElementById('vpn-apps-modal');
+			  if(!modal){
+			    modal = document.createElement('div');
+			    modal.id = 'vpn-apps-modal';
+			    modal.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px;';
+			    modal.innerHTML = `
+			      <div style="width:100%;max-width:360px;max-height:82vh;background:rgba(28,28,30,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
+			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
+			          <div>
+			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🛡️ VPN</div>
+			            <div style="font-size:11px;opacity:.45;">Servicios VPN gratis · Se abren dentro de la app</div>
+			          </div>
+			          <button onclick="closeVpnModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			        </div>
+			        <div style="overflow-y:auto;padding:12px 16px 8px;">
+			          ${VPN_APPS.map((a,i)=>`<div onclick="_vpnOpen(${i})" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:14px;padding:11px 12px;cursor:pointer;margin-bottom:7px;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
+			            <div style="font-size:24px;flex-shrink:0;">${a.icon}</div>
+			            <div style="flex:1;min-width:0;">
+			              <div style="font-size:13px;font-weight:700;color:#fff;">${escapeHtml(a.name)}</div>
+			              <div style="font-size:10px;opacity:.5;">${escapeHtml(a.note)}</div>
+			            </div>
+			            <span style="font-size:14px;opacity:.5;flex-shrink:0;">↗</span>
+			          </div>`).join('')}
+			        </div>
+			        <div style="padding:6px 18px 16px;font-size:9px;opacity:.4;line-height:1.5;">Nota: una app web no puede enrutar todo tu tráfico como un VPN de sistema. Estos son los servicios VPN reales gratuitos — se instalan/usan con su propia cuenta. "Navegar por proxy" sí cambia tu IP para las webs que abras aquí dentro.</div>
+			      </div>`;
+			    document.body.appendChild(modal);
+			  }
+			  modal.style.display = 'flex';
+			}
+			function closeVpnModal(){ const m=document.getElementById('vpn-apps-modal'); if(m) m.style.display='none'; }
+			function _vpnOpen(i){
+			  const a = VPN_APPS[i]; if(!a) return;
+			  closeVpnModal();
+			  if(a.url){ openBrowserWindow(a.url); }
+			  else {
+			    // "Navegar por proxy": abre el navegador y activa el modo proxy, que
+			    // enruta las páginas por nuestro servidor (IP distinta a la tuya).
+			    openBrowser();
+			    setTimeout(()=>browserNavigate('https://www.whatismyip.com'), 300);
+			    setTimeout(()=>{ try{ browserRetryViaProxy(); }catch(e){} }, 1400);
+			  }
+			}
 			async function loadWorldCountries(){
 			  const sel = document.getElementById('world-country-select');
 			  if(!sel) return;
@@ -6564,7 +6619,8 @@
 			// Apps oficiales gratis (sin suscripción): se abren en la ventana
 			// flotante del navegador. No incluyen ni redistribuyen nada.
 			const TV_SUB_APPS = [
-			  {icon:'🇺🇸', name:'FIFA+', url:'https://plus.fifa.com'},
+			  {icon:'⚽', name:'FIFA+ En vivo', url:'https://www.plus.fifa.com/en/watch/live'},
+			  {icon:'🏆', name:'FIFA+', url:'https://plus.fifa.com'},
 			  {icon:'🟢', name:'ViX (gratis)', url:'https://vix.com'},
 			  {icon:'🟠', name:'Claro Sports', url:'https://www.clarosports.com'}
 			];
@@ -6640,12 +6696,7 @@
 			    const text = await res.text();
 			    let channels = parseM3U(text);
 			    channels = applyHttpOnlyFallback(channels);
-			    // En una página servida por HTTPS, los streams http:// puros (sin
-			    // fallback conocido) quedan bloqueados por "contenido mixto" y nunca
-			    // reproducen: se descartan de la lista.
-			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
-			    }
+			    channels = proxyHttpChannels(channels); // http:// → proxy (no se descartan)
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
 			    renderTVResults(channels);
 			  }catch(e){
@@ -6671,9 +6722,7 @@
 			    const text = await res.text();
 			    let channels = parseM3U(text);
 			    channels = applyHttpOnlyFallback(channels);
-			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
-			    }
+			    channels = proxyHttpChannels(channels);
 			    const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
 			    if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
 			    channels.sort((a,b)=>{
@@ -6706,6 +6755,17 @@
 			// por nuestra función hls-proxy, que trae el manifiesto/segmentos del lado
 			// del servidor y los re-sirve por https, para sumarlos igual (~2,000 más).
 			const HLS_PROXY_PFX = '/.netlify/functions/hls-proxy?url=';
+			// En una página https, los streams http:// quedan bloqueados por contenido
+			// mixto. En vez de descartarlos, los enrutamos por el proxy para que
+			// reproduzcan igual (así aparecen canales como Canal 9 / Color Visión de RD).
+			function proxyHttpChannels(channels){
+			  if(location.protocol !== 'https:') return channels;
+			  return (channels||[]).filter(c=>c && c.url).map(c=>{
+			    if(c.officialUrl) return c;
+			    if(c.url.startsWith('http://')) return { ...c, url: HLS_PROXY_PFX + encodeURIComponent(c.url), viaProxy:true };
+			    return c;
+			  });
+			}
 
 			// Catálogo completo de iptv-org (~12,900 canales gratis). Se descarga y
 			// parsea una sola vez (2-3 MB), se guarda en memoria y se filtra en vivo.
@@ -6924,9 +6984,7 @@
 			      result = result.filter(c => urlsInList.has(c.url));
 			    }
 			    let channels = applyHttpOnlyFallback(result);
-			    if(location.protocol === 'https:'){
-			      channels = channels.filter(c=>c.officialUrl || (c.url && c.url.startsWith('https://')));
-			    }
+			    channels = proxyHttpChannels(channels);
 			    if(!channels.length){
 			      if(status) status.textContent = 'Sin canales que combinen esos filtros. Prueba con menos.';
 			      return;
@@ -7145,29 +7203,22 @@
 			  }
 			}
 
-			/* ===================== AMPLIAR/REDUCIR DOCK ===================== */
-			function updateDockExpandIcon(expanded){
-				const g = document.querySelector('#dock-expand-icon g');
-				if(!g) return;
-				// Flechas hacia afuera (ampliar) vs hacia adentro (reducir).
-				g.innerHTML = expanded
-					? '<path d="M16 20 H12 M16 20 L20 16 M16 20 L20 24"/><path d="M24 20 H28 M24 20 L20 16 M24 20 L20 24"/>'
-					: '<path d="M12 20 H20 M12 20 L16 16 M12 20 L16 24"/><path d="M28 20 H20 M28 20 L24 16 M28 20 L24 24"/>';
-			}
+			/* ============ MOSTRAR TODAS / OCULTAR ALGUNAS APPS DEL DOCK ============ */
+			// compact = algunas apps ocultas (más espacio). Al pulsar se muestran
+			// todas; al pulsar de nuevo se vuelven a ocultar las secundarias.
 			function toggleDockSize(){
 				const dock = document.getElementById('top-dock');
 				if(!dock) return;
-				const expanded = dock.classList.toggle('expanded');
-				updateDockExpandIcon(expanded);
-				try{ localStorage.setItem('dock_expanded', expanded ? '1' : '0'); }catch(e){}
+				const compact = dock.classList.toggle('compact');
+				try{ localStorage.setItem('dock_compact', compact ? '1' : '0'); }catch(e){}
 			}
 			document.addEventListener('DOMContentLoaded', ()=>{
-				try{
-					if(localStorage.getItem('dock_expanded') === '1'){
-						const dock = document.getElementById('top-dock');
-						if(dock){ dock.classList.add('expanded'); updateDockExpandIcon(true); }
-					}
-				}catch(e){}
+				const dock = document.getElementById('top-dock');
+				if(!dock) return;
+				let pref = null;
+				try{ pref = localStorage.getItem('dock_compact'); }catch(e){}
+				// Por defecto compacto (algunas apps ocultas) para que quepan mejor.
+				if(pref !== '0') dock.classList.add('compact');
 			});
 
 			/* ===================== PANTALLA COMPLETA ===================== */
@@ -8612,32 +8663,39 @@
 			  let translated = null;
 			  let usedSource = '';
 
-			  // 1) MyMemory
-			  try{
-			    const langPair = from.value + '|' + to.value;
-			    const url = 'https://api.mymemory.translated.net/get?q=' +
-			                encodeURIComponent(slice) +
-			                '&langpair=' + encodeURIComponent(langPair);
-			    const res  = await fetch(url);
-			    const data = await res.json();
-			    const t = data?.responseData?.translatedText;
-			    if(t && data?.responseStatus === 200 && !/MYMEMORY WARNING/i.test(t)){
-			      translated = t;
-			      usedSource = 'MyMemory';
-			    }
-			  }catch(e){ console.error('MyMemory falló:', e); }
+			  // fetch con timeout: sin esto, si un servicio se cuelga la traducción
+			  // "nunca termina" y nunca cae al respaldo (era el bug reportado).
+			  const fetchJSON = async (url, ms) => {
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), ms || 7000);
+			    try{ const r = await fetch(url, {signal: ctrl.signal}); return await r.json(); }
+			    finally{ clearTimeout(timer); }
+			  };
 
-			  // 2) Fallback: Google Translate (endpoint público gtx, sin clave)
+			  // 1) Google (endpoint público gtx, sin clave) — suele ser el más rápido.
+			  try{
+			    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' +
+			                encodeURIComponent(from.value) + '&tl=' + encodeURIComponent(to.value) +
+			                '&dt=t&q=' + encodeURIComponent(slice);
+			    const data = await fetchJSON(url, 7000);
+			    const t = (data?.[0] || []).map(seg=>seg[0]).join('');
+			    if(t){ translated = t; usedSource = 'Google'; }
+			  }catch(e){ console.error('Google Translate falló:', e); }
+
+			  // 2) Respaldo: MyMemory
 			  if(!translated){
 			    try{
-			      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' +
-			                  encodeURIComponent(from.value) + '&tl=' + encodeURIComponent(to.value) +
-			                  '&dt=t&q=' + encodeURIComponent(slice);
-			      const res  = await fetch(url);
-			      const data = await res.json();
-			      const t = (data?.[0] || []).map(seg=>seg[0]).join('');
-			      if(t){ translated = t; usedSource = 'Google'; }
-			    }catch(e){ console.error('Google Translate falló:', e); }
+			      const langPair = from.value + '|' + to.value;
+			      const url = 'https://api.mymemory.translated.net/get?q=' +
+			                  encodeURIComponent(slice) +
+			                  '&langpair=' + encodeURIComponent(langPair);
+			      const data = await fetchJSON(url, 8000);
+			      const t = data?.responseData?.translatedText;
+			      if(t && data?.responseStatus === 200 && !/MYMEMORY WARNING/i.test(t)){
+			        translated = t;
+			        usedSource = 'MyMemory';
+			      }
+			    }catch(e){ console.error('MyMemory falló:', e); }
 			  }
 
 			  if(translated){
@@ -9680,23 +9738,12 @@
 			  _siriWave.intensity += (_siriWave.target - _siriWave.intensity)*0.08;
 			  const mini=document.getElementById('siri-mini-canvas');
 			  if(mini) _siriDraw(mini,false);
-			  const fs=document.getElementById('siri-fs');
-			  if(fs && fs.classList.contains('open')){
-			    const fc=document.getElementById('siri-fs-canvas');
-			    if(fc) _siriDraw(fc,true);
-			  }
 			  requestAnimationFrame(_siriLoop);
 			}
 			function setSiriOrbState(state){
+			  // El orbe se mueve/pulsa EN EL DOCK, sin agrandarse a pantalla completa.
 			  _siriState=state;
 			  _siriWave.target = state==='speaking' ? 0.85 : (state==='listening' ? 0.7 : 0.32);
-			  const cap=document.getElementById('siri-fs-caption');
-			  if(cap) cap.textContent = state==='speaking' ? 'Hablando…' : (state==='listening' ? 'Escuchando…' : '');
-			  const fs=document.getElementById('siri-fs');
-			  if(fs){
-			    if(state==='listening'||state==='speaking') fs.classList.add('open');
-			    else fs.classList.remove('open');
-			  }
 			}
 			function closeSiriFS(e){
 			  // Solo cierra si se toca el fondo (no interrumpe si tocan el canvas).
@@ -10541,7 +10588,7 @@
 			      <button id="browser-zoom-btn" onclick="browserCycleZoom()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:11px;font-weight:800;" title="Tamaño de texto">Aa</button>
 			      <button id="browser-fav-btn" onclick="browserToggleFavorite()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Añadir a favoritos">☆</button>
 			      <button onclick="browserToggleOptionsMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Más opciones">⋯</button>
-			      <button onclick="browserOpenInNewTab()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;" title="Abrir en pestaña del sistema">↗</button>
+			      <button onclick="browserViewSource()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:34px;height:30px;border-radius:14px;cursor:pointer;font-size:12px;font-weight:800;" title="Ver el HTML de la página">&lt;/&gt;</button>
 			      <button onclick="openBrowserWindow(getActiveTab()&&getActiveTab().url||'')" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Abrir en ventana flotante">⊞</button>
 			      <button onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			    </div>
@@ -10575,14 +10622,13 @@
 			        <input class="browser-home-search" type="text" placeholder="Buscar en Google o escribir una URL" autocomplete="off" style="flex:1;border:none;outline:none;font-size:14px;color:#222;background:transparent;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
 			        <button class="browser-home-go" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
 			      </div>
-			      <div style="font-size:12px;opacity:.55;max-width:320px;">Casi todos los sitios se muestran aquí mismo. Algunos con protección anti-bot muy estricta (como Amazon) pueden no funcionar del todo dentro del navegador embebido — en ese caso usá "Abrir en pestaña nueva ↗".</div>
+			      <div style="font-size:12px;opacity:.55;max-width:320px;">Casi todos los sitios se muestran aquí mismo, sin salir de la app. Algunos con protección anti-bot muy estricta (como Amazon) pueden no cargar del todo dentro del navegador embebido — en ese caso probá "Intentar con proxy ↺".</div>
 			    </div>
 			    <div class="browser-viewport" style="position:absolute;inset:0;overflow:hidden;">
 			      <iframe class="browser-iframe" style="display:none;width:100%;height:100%;border:none;background:#fff;"></iframe>
 			      <div class="browser-stuck-banner" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:8px 10px 8px 14px;align-items:center;gap:10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:90%;">
-			        <span class="browser-stuck-msg">¿Tenés problemas con esta página? Podés abrirla en el navegador real:</span>
+			        <span class="browser-stuck-msg">¿Tenés problemas con esta página? Probá cargarla con el proxy:</span>
 			        <button class="browser-stuck-proxy" onclick="browserRetryViaProxy()" style="background:#34c759;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;font-size:12px;cursor:pointer;">Intentar con proxy ↺</button>
-			        <a class="browser-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;">Abrir en Safari ↗</a>
 			        <button class="browser-stuck-dismiss" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 2px;">✕</button>
 			      </div>
 			    </div>
@@ -10591,7 +10637,6 @@
 			      <div class="browser-blocked-title" style="font-size:14px;font-weight:700;">Este sitio no se cargó</div>
 			      <div class="browser-blocked-text" style="font-size:12px;opacity:.6;word-break:break-all;max-width:320px;"></div>
 			      <button onclick="browserRetryViaProxy()" style="background:#34c759;color:#fff;border:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Intentar con proxy ↺</button>
-			      <a class="browser-open-new" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:700;">Abrir en Safari ↗</a>
 			    </div>
 			  `;
 			  const goBtn=pane.querySelector('.browser-home-go');
@@ -10763,19 +10808,15 @@
 			          ? (tab._proxyMode
 			              ? 'Este sitio usa protección anti-bots que no puede superarse incluso con proxy.'
 			              : 'Este sitio usa protección anti-bots que no funciona en navegadores embebidos — no es un error de la app.')
-			          : '¿Tenés problemas con esta página? Podés abrirla en el navegador real:';
+			          : '¿Tenés problemas con esta página? Probá cargarla con el proxy:';
 			        if(proxyBtn) proxyBtn.style.display=tab._proxyMode ? 'none' : '';
-			        const openLink=stuckBanner.querySelector('.browser-stuck-open');
-			        if(openLink) openLink.href=realUrl;
 			        stuckBanner.style.display='flex';
 			      }
 			    },2500);
 			  };
 			  iframe.onerror=()=>{ clearTimeout(tab._loadTimer); browserShowBlocked(realUrl); };
 			  if(stuckBanner){
-			    const openLink=stuckBanner.querySelector('.browser-stuck-open');
 			    const dismissBtn=stuckBanner.querySelector('.browser-stuck-dismiss');
-			    if(openLink) openLink.href=realUrl;
 			    if(dismissBtn) dismissBtn.onclick=()=>{ stuckBanner.style.display='none'; };
 			  }
 			  iframe.src=url;
@@ -10796,6 +10837,40 @@
 			  if(tab.historyIndex>=0) tab.history[tab.historyIndex]=proxyUrl;
 			  browserLoadUrl(proxyUrl);
 			}
+			// Ver el HTML de la página actual (dentro de la app, sin salir).
+			// El fetch directo cross-origin lo bloquea CORS, así que se trae por el
+			// proxy (que sí manda Access-Control-Allow-Origin:*) y se muestra el código.
+			async function browserViewSource(){
+			  const tab=getActiveTab();
+			  let url = tab && tab.historyIndex>=0 ? (tab.url || tab.history[tab.historyIndex]) : (document.getElementById('browser-url')?.value||'');
+			  if(!url){ return; }
+			  const PROXY_PFX='/.netlify/functions/proxy?url=';
+			  // Si ya es una URL proxada, saca la real para volver a pedirla como texto.
+			  if(url.startsWith(PROXY_PFX)){ try{ url=decodeURIComponent(url.slice(PROXY_PFX.length)); }catch(e){} }
+			  const real = browserNormalizeUrl(url) || url;
+			  let overlay=document.getElementById('browser-source-overlay');
+			  if(!overlay){
+			    overlay=document.createElement('div');
+			    overlay.id='browser-source-overlay';
+			    overlay.style.cssText='position:absolute;inset:0;z-index:40;background:#0d0d12;display:flex;flex-direction:column;';
+			    overlay.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1c1c22;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;"><span style="color:#9ad;font-size:12px;font-weight:700;">&lt;/&gt; Código HTML</span><button onclick="document.getElementById(\'browser-source-overlay\').style.display=\'none\'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">✕</button></div><pre id="browser-source-pre" style="flex:1;overflow:auto;margin:0;padding:14px;color:#c8e1ff;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;"></pre>';
+			    const cont=document.getElementById('browser-container');
+			    if(cont) cont.appendChild(overlay);
+			  }
+			  overlay.style.display='flex';
+			  const pre=document.getElementById('browser-source-pre');
+			  if(pre) pre.textContent='⏳ Obteniendo el HTML de '+real+' …';
+			  try{
+			    const ctrl=new AbortController();
+			    const timer=setTimeout(()=>ctrl.abort(),15000);
+			    const res=await fetch(PROXY_PFX+encodeURIComponent(real),{signal:ctrl.signal});
+			    clearTimeout(timer);
+			    const html=await res.text();
+			    if(pre) pre.textContent=html;
+			  }catch(e){
+			    if(pre) pre.textContent='⚠️ No se pudo obtener el HTML de esta página.\n\n'+(e.message||'');
+			  }
+			}
 			function browserShowBlocked(url){
 			  const tab=getActiveTab();
 			  if(!tab) return;
@@ -10805,18 +10880,10 @@
 			  const blocked=pane.querySelector('.browser-blocked');
 			  const blockedTitle=pane.querySelector('.browser-blocked-title');
 			  const blockedText=pane.querySelector('.browser-blocked-text');
-			  const openNew=pane.querySelector('.browser-open-new');
 			  if(iframe) iframe.style.display='none';
 			  if(blocked) blocked.style.display='flex';
 			  if(blockedTitle) blockedTitle.textContent = 'Este sitio no pudo cargarse aquí';
 			  if(blockedText) blockedText.textContent=url;
-			  if(openNew) openNew.href=url;
-			}
-			function browserOpenInNewTab(){
-			  const tab=getActiveTab();
-			  const url=tab && tab.historyIndex>=0 ? tab.history[tab.historyIndex] : (document.getElementById('browser-url')?.value||'');
-			  const normalized=browserNormalizeUrl(url);
-			  if(normalized) window.open(normalized,'_blank','noopener,noreferrer');
 			}
 			function browserGoBack(){
 			  const tab=getActiveTab(); if(!tab) return;
@@ -11040,7 +11107,6 @@
 			      <div class="bwin-stuck" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:6px 8px 6px 12px;align-items:center;gap:8px;font-size:11px;box-shadow:0 4px 14px rgba(0,0,0,.4);max-width:92%;">
 			        <span class="bwin-stuck-msg" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">¿Tenés problemas?</span>
 			        <button class="bwin-stuck-proxy" onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">↺ Proxy</button>
-			        <a class="bwin-stuck-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:4px 8px;border-radius:6px;font-weight:700;font-size:11px;white-space:nowrap;">↗ Safari</a>
 			        <button onclick="this.closest('.bwin-stuck').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;">✕</button>
 			      </div>
 			      <div class="bwin-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#1c1c2e;color:#fff;text-align:center;padding:16px;">
@@ -11048,7 +11114,6 @@
 			        <div style="font-size:13px;font-weight:700;">No se pudo cargar</div>
 			        <div class="bwin-blocked-url" style="font-size:10px;opacity:.45;word-break:break-all;max-width:260px;"></div>
 			        <button onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">↺ Intentar con proxy</button>
-			        <a class="bwin-blocked-open" href="#" target="_blank" rel="noopener noreferrer" style="background:#0a84ff;color:#fff;text-decoration:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;">↗ Abrir en Safari</a>
 			      </div>
 			    </div>
 			    <div class="bwin-resize-handle" style="position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:se-resize;touch-action:none;z-index:2;background:linear-gradient(135deg,transparent 50%,rgba(255,255,255,.12) 50%);border-bottom-right-radius:14px;"></div>
@@ -11207,18 +11272,15 @@
 			      if(stuck){
 			        const msgEl=stuck.querySelector('.bwin-stuck-msg');
 			        const proxyBtn=stuck.querySelector('.bwin-stuck-proxy');
-			        const openLink=stuck.querySelector('.bwin-stuck-open');
 			        if(msgEl) msgEl.textContent=botBlocked
 			          ? (win._proxyMode ? 'Protección anti-bots activa incluso con proxy.' : 'Este sitio usa anti-bots — no es un error de la app.')
 			          : '¿Tenés problemas con esta página?';
 			        if(proxyBtn) proxyBtn.style.display=win._proxyMode?'none':'';
-			        if(openLink) openLink.href=realUrl;
 			        stuck.style.display='flex'; stuck.style.alignItems='center';
 			      }
 			    }, 2500);
 			  };
 			  iframe.onerror=()=>{ clearTimeout(win._loadTimer); _bwinShowBlocked(id, realUrl); };
-			  if(stuck){ const ol=stuck.querySelector('.bwin-stuck-open'); if(ol) ol.href=realUrl; }
 			  iframe.src=url;
 			}
 			function _bwinRetryProxy(id){
@@ -11236,10 +11298,8 @@
 			  const iframe=el.querySelector('.bwin-iframe');
 			  const blocked=el.querySelector('.bwin-blocked');
 			  const blockedUrl=el.querySelector('.bwin-blocked-url');
-			  const blockedOpen=el.querySelector('.bwin-blocked-open');
 			  if(iframe) iframe.style.display='none';
 			  if(blockedUrl) blockedUrl.textContent=url;
-			  if(blockedOpen) blockedOpen.href=url;
 			  if(blocked) blocked.style.display='flex';
 			}
 			function _bwinGoBack(id){
