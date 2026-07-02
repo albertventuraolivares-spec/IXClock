@@ -3168,6 +3168,11 @@
 					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
 				</div>
 				<div>
+					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">☁️ Cloud Gaming (Fortnite, Call of Duty, AAA)</div>
+					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-cloud-grid"></div>
+					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Los juegos AAA (Fortnite, Call of Duty, FC/FIFA, GTA…) no caben en una web, pero <b>se transmiten por internet</b> y se juegan <b>dentro del navegador de la app</b> con tu propia cuenta. Xbox Cloud Gaming es gratis con cuenta Microsoft; Fortnite ahí es gratis.</div>
+				</div>
+				<div>
 					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro (en la app)</div>
 					<button onclick="openEmuMenu()" style="width:100%;padding:12px;border-radius:14px;background:linear-gradient(135deg,#5e5ce6,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 16px rgba(94,92,230,.4);">🎮 Modo Batocera (menú de consolas)</button>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
@@ -6680,8 +6685,11 @@
 			// sistema/túnel de red). Esto abre servicios VPN gratis legítimos en la
 			// ventana flotante, con su propia app/cuenta, sin salir de IXClocK.
 			const VPN_APPS = [
-			  {icon:'🛡️', name:'Proton VPN', url:'https://protonvpn.com', note:'Gratis, sin límite de datos'},
-			  {icon:'🪟', name:'Windscribe', url:'https://windscribe.com', note:'10 GB/mes gratis'},
+			  {icon:'🚫', name:'AdGuard (bloquea ads)', url:'https://adguard.com/es/adguard-dns/overview.html', note:'Bloquea anuncios en TODO el sistema'},
+			  {icon:'🛑', name:'NextDNS (bloquea ads)', url:'https://nextdns.io', note:'DNS que bloquea anuncios y rastreo'},
+			  {icon:'🛡️', name:'1.1.1.1 for Families', url:'https://one.one.one.one/family/', note:'Cloudflare, bloquea malware/ads'},
+			  {icon:'🟢', name:'Proton VPN', url:'https://protonvpn.com', note:'Gratis, sin límite de datos'},
+			  {icon:'🪟', name:'Windscribe', url:'https://windscribe.com', note:'10 GB/mes gratis + bloquea ads'},
 			  {icon:'🙈', name:'hide.me', url:'https://hide.me/en/', note:'10 GB/mes gratis'},
 			  {icon:'☁️', name:'Cloudflare WARP', url:'https://one.one.one.one', note:'Gratis, ilimitado'},
 			  {icon:'🧅', name:'Tor Project', url:'https://www.torproject.org', note:'Anónimo, gratis'},
@@ -6712,7 +6720,7 @@
 			            <span style="font-size:14px;opacity:.5;flex-shrink:0;">↗</span>
 			          </div>`).join('')}
 			        </div>
-			        <div style="padding:6px 18px 16px;font-size:9px;opacity:.4;line-height:1.5;">Nota: una app web no puede enrutar todo tu tráfico como un VPN de sistema. Estos son los servicios VPN reales gratuitos — se instalan/usan con su propia cuenta. "Navegar por proxy" sí cambia tu IP para las webs que abras aquí dentro.</div>
+			        <div style="padding:6px 18px 16px;font-size:9px;opacity:.4;line-height:1.5;">Nota: una app web no puede bloquear anuncios ni enrutar el tráfico como un servicio de sistema. Un VPN por sí solo NO bloquea anuncios — para eso están AdGuard/NextDNS/1.1.1.1 (DNS que sí bloquean ads en todo el dispositivo, gratis, se configuran una vez). "Navegar por proxy" cambia tu IP para las webs que abras aquí dentro.</div>
 			      </div>`;
 			    document.body.appendChild(modal);
 			  }
@@ -7608,7 +7616,30 @@
 			      </div>`
 			    ).join('');
 			  }
+			  const cloud = document.getElementById('games-cloud-grid');
+			  if(cloud){
+			    cloud.innerHTML = CLOUD_GAMING.map(g=>
+			      `<div class="game-tile" onclick="openBrowser();browserNavigate('${g.url}')" title="${escapeHtml(g.desc||'')}">
+			        <div class="game-tile-icon">${g.icon}</div>
+			        <div class="game-tile-label">${escapeHtml(g.name)}</div>
+			      </div>`
+			    ).join('');
+			  }
 			}
+
+			// Cloud gaming: los juegos AAA (Fortnite, Call of Duty…) se transmiten y
+			// se juegan DENTRO del navegador de la app, con la cuenta del usuario.
+			const CLOUD_GAMING = [
+			  {icon:'🎮', name:'Xbox Cloud (Fortnite/COD)', url:'https://www.xbox.com/play', desc:'Gratis con cuenta Microsoft. Incluye Fortnite y Call of Duty.'},
+			  {icon:'🟢', name:'GeForce NOW', url:'https://play.geforcenow.com', desc:'Juega tus juegos de Steam/Epic en streaming.'},
+			  {icon:'🟣', name:'Fortnite (Xbox Cloud)', url:'https://www.xbox.com/play/games/fortnite/BT5P2X999VH2', desc:'Fortnite gratis en el navegador vía Xbox Cloud.'},
+			  {icon:'🔫', name:'Call of Duty (Xbox)', url:'https://www.xbox.com/play', desc:'Call of Duty vía Xbox Cloud Gaming.'},
+			  {icon:'🟠', name:'Amazon Luna', url:'https://luna.amazon.com', desc:'Streaming de juegos de Amazon.'},
+			  {icon:'🚀', name:'Boosteroid', url:'https://boosteroid.com', desc:'Cloud gaming en el navegador.'},
+			  {icon:'🎯', name:'now.gg (móviles)', url:'https://now.gg', desc:'Juega juegos de móvil (Roblox, etc.) en la nube.'},
+			  {icon:'🟥', name:'Roblox (now.gg)', url:'https://now.gg/apps/roblox-corporation/5349/roblox.html', desc:'Roblox en la nube, dentro del navegador.'},
+			  {icon:'🕹️', name:'Antstream Arcade', url:'https://www.antstream.com', desc:'Miles de juegos retro con licencia, en streaming.'}
+			];
 
 			/* ===================== EMULADOR RETRO (EmulatorJS, BYO-ROM) =====================
 			   El usuario carga SUS PROPIOS archivos de juego (ROMs que posea legalmente).
