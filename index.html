@@ -119,19 +119,21 @@
 			.wallpaper-layer.active{opacity:1;}
 			/* Fondo tipo "video en loop": la imagen/gradiente se desliza de forma continua e infinita,
 			   en una sola dirección (sin alternate), como si fuera un clip de video reproduciéndose. */
-			.wallpaper-fill{position:absolute;inset:0;background-size:160% 160%;background-position:center;animation:videoPan 38s linear infinite;}
-			.wallpaper-fill.fill-anim{background-size:420% 420%;animation-name:auroraFlow;animation-timing-function:linear;animation-iteration-count:infinite;}
-			@keyframes videoPan{
-			  0%{background-position:0% 20%;}
-			  25%{background-position:80% 0%;}
-			  50%{background-position:100% 80%;}
-			  75%{background-position:20% 100%;}
-			  100%{background-position:0% 20%;}
+			/* Fotos: movimiento sutil y natural (la cámara "respira", no hace zoom
+			   brusco ni se acerca de golpe). Realista. */
+			.wallpaper-fill{position:absolute;inset:0;background-size:cover;background-position:center;animation:photoDrift 70s ease-in-out infinite alternate;}
+			.wallpaper-fill.fill-anim{background-size:340% 340%;animation:auroraFlow 40s linear infinite;}
+			@keyframes photoDrift{
+			  0%{background-position:48% 50%;background-size:112% 112%;}
+			  100%{background-position:52% 50%;background-size:112% 112%;}
 			}
 			@keyframes auroraFlow{
 			  0%{background-position:0% 50%;}
 			  100%{background-position:100% 50%;}
 			}
+			/* Opción: fondo totalmente quieto (clase en body) */
+			body.wp-still .wallpaper-fill,
+			body.wp-still .wallpaper-fill.fill-anim{animation:none !important;background-size:cover !important;background-position:center !important;}
 			#brightness-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;background:#000;opacity:0;transition:opacity .3s ease;}
 
 			/* ===== LIQUID GLASS -- iOS 27 style ===== */
@@ -1724,10 +1726,11 @@
 							type="text"
 						/>
 					</div>
-					<div class="shrink-0 mb-3" style="display:flex;gap:6px;">
+					<div class="shrink-0 mb-2" style="display:flex;gap:6px;">
 					<button onclick="setRandomWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#ff007f,#7928ca,#00f0ff);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🎲 Aleatorio</button>
 					<button onclick="setRandomPhotoWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🖼️ Foto real infinita</button>
 				</div>
+				<button id="wp-motion-btn" onclick="toggleWallpaperMotion()" class="shrink-0 mb-3" style="width:100%;padding:8px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-weight:700;font-size:11px;cursor:pointer;">🎥 Movimiento: Natural</button>
 					<div
 						class="custom-scrollbar pr-1"
 						id="wallpaper-grid-wrap"
@@ -4591,18 +4594,9 @@
 			// Generador de fondos "infinito": crea un gradiente animado al azar cada
 			// vez. Combinando color/ángulo/velocidad hay millones de resultados sin
 			// inflar el archivo con un millón de entradas fijas.
-			function setRandomWallpaper(){
-			  const rnd = (a,b)=>a+Math.random()*(b-a);
-			  const h1 = Math.floor(rnd(0,360));
-			  const h2 = (h1 + Math.floor(rnd(30,180))) % 360;
-			  const h3 = (h2 + Math.floor(rnd(30,180))) % 360;
-			  const colors = [
-			    `hsl(${h1},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
-			    `hsl(${h2},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
-			    `hsl(${h3},${rnd(55,90)|0}%,${rnd(30,55)|0}%)`
-			  ];
-			  const wp = { id:'random-'+Date.now(), name:'Aleatorio', tags:'random', type:'gradient',
-			    colors, angle:Math.floor(rnd(0,360)), dur:Math.floor(rnd(10,26)) };
+			// Aplica un fondo personalizado (aleatorio/foto) y lo GUARDA para que
+			// persista al recargar la página.
+			function _applyCustomWallpaper(wp, save){
 			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
 			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
 			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
@@ -4613,6 +4607,37 @@
 			  activeLayer = nextLayer;
 			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
 			  isDynamicBgEnabled = false;
+			  if(save!==false){ try{ localStorage.setItem('saved_wallpaper_custom', JSON.stringify(wp)); localStorage.removeItem('saved_wallpaper'); }catch(e){} }
+			}
+			// Movimiento del fondo: natural (sutil) o quieto. Se guarda.
+			function toggleWallpaperMotion(){
+			  const still = !document.body.classList.contains('wp-still');
+			  document.body.classList.toggle('wp-still', still);
+			  try{ localStorage.setItem('wp_still', still ? '1' : '0'); }catch(e){}
+			  const btn=document.getElementById('wp-motion-btn');
+			  if(btn) btn.textContent = still ? '🎥 Movimiento: Quieto' : '🎥 Movimiento: Natural';
+			}
+			(function restoreWallpaperMotion(){
+			  try{
+			    if(localStorage.getItem('wp_still')==='1'){
+			      document.body.classList.add('wp-still');
+			      const apply=()=>{ const b=document.getElementById('wp-motion-btn'); if(b) b.textContent='🎥 Movimiento: Quieto'; };
+			      document.addEventListener('DOMContentLoaded',apply); apply();
+			    }
+			  }catch(e){}
+			})();
+			function setRandomWallpaper(){
+			  const rnd = (a,b)=>a+Math.random()*(b-a);
+			  const h1 = Math.floor(rnd(0,360));
+			  const h2 = (h1 + Math.floor(rnd(30,180))) % 360;
+			  const h3 = (h2 + Math.floor(rnd(30,180))) % 360;
+			  const colors = [
+			    `hsl(${h1},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
+			    `hsl(${h2},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
+			    `hsl(${h3},${rnd(55,90)|0}%,${rnd(30,55)|0}%)`
+			  ];
+			  _applyCustomWallpaper({ id:'random-'+Date.now(), name:'Aleatorio', tags:'random', type:'gradient',
+			    colors, angle:Math.floor(rnd(0,360)), dur:Math.floor(rnd(10,26)) });
 			}
 
 			// Fotos reales ilimitadas desde Lorem Picsum (gratis, sin clave, licencia
@@ -4620,16 +4645,7 @@
 			function setRandomPhotoWallpaper(){
 			  const seed = Date.now() + '-' + Math.floor(Math.random()*1e6);
 			  const url = `https://picsum.photos/seed/${seed}/1920/1080`;
-			  const wp = { id:'photo-random-'+seed, name:'Foto real', tags:'random photo', type:'photo', url };
-			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
-			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
-			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
-			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
-			  applyWallpaperToFill(nextFillEl, wp);
-			  nextLayerEl.classList.add('active'); currLayerEl.classList.remove('active');
-			  activeLayer = nextLayer;
-			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
-			  isDynamicBgEnabled = false;
+			  _applyCustomWallpaper({ id:'photo-random-'+seed, name:'Foto real', tags:'random photo', type:'photo', url });
 			}
 
 			function renderWallpaperGrid(){
@@ -6189,13 +6205,18 @@
 			  val=parseInt(val)||0; _ipodVolPct=val;
 			  const lbl=document.getElementById('ipod-vol-pct');
 			  if(lbl) lbl.textContent=val+'%';
-			  if(!_ipodUsingGain && val<=100){
-			    streamPlayer.volume = val/100;
-			    return;
-			  }
+			  // En iOS/iPad, streamPlayer.volume se IGNORA por completo (Apple solo
+			  // permite volumen por botones físicos). La ÚNICA forma de controlar el
+			  // volumen por software es el GainNode de Web Audio → siempre lo usamos.
 			  const gn=_ipodSetupGain();
-			  if(gn){ gn.gain.value=val/100; streamPlayer.volume=1.0; }
-			  else streamPlayer.volume=Math.min(val/100,1.0);
+			  if(gn){
+			    const actx=getAudioCtx(); if(actx && actx.state==='suspended') actx.resume();
+			    gn.gain.value=val/100;
+			    try{ streamPlayer.volume=1.0; }catch(e){}
+			  }else{
+			    // Sin Web Audio (muy raro): intento el nativo por si acaso.
+			    try{ streamPlayer.volume=Math.min(val/100,1.0); }catch(e){}
+			  }
 			}
 			function _ipodSetupDrag(){
 			  const el=document.getElementById('ipod-player');
@@ -7630,14 +7651,11 @@
 			// Cloud gaming: los juegos AAA (Fortnite, Call of Duty…) se transmiten y
 			// se juegan DENTRO del navegador de la app, con la cuenta del usuario.
 			const CLOUD_GAMING = [
-			  {icon:'🎮', name:'Xbox Cloud (Fortnite/COD)', url:'https://www.xbox.com/play', desc:'Gratis con cuenta Microsoft. Incluye Fortnite y Call of Duty.'},
+			  {icon:'🎮', name:'Xbox Cloud Gaming', url:'https://www.xbox.com/play', desc:'Gratis con cuenta Microsoft. Incluye Fortnite y Call of Duty.'},
 			  {icon:'🟢', name:'GeForce NOW', url:'https://play.geforcenow.com', desc:'Juega tus juegos de Steam/Epic en streaming.'},
-			  {icon:'🟣', name:'Fortnite (Xbox Cloud)', url:'https://www.xbox.com/play/games/fortnite/BT5P2X999VH2', desc:'Fortnite gratis en el navegador vía Xbox Cloud.'},
-			  {icon:'🔫', name:'Call of Duty (Xbox)', url:'https://www.xbox.com/play', desc:'Call of Duty vía Xbox Cloud Gaming.'},
 			  {icon:'🟠', name:'Amazon Luna', url:'https://luna.amazon.com', desc:'Streaming de juegos de Amazon.'},
 			  {icon:'🚀', name:'Boosteroid', url:'https://boosteroid.com', desc:'Cloud gaming en el navegador.'},
-			  {icon:'🎯', name:'now.gg (móviles)', url:'https://now.gg', desc:'Juega juegos de móvil (Roblox, etc.) en la nube.'},
-			  {icon:'🟥', name:'Roblox (now.gg)', url:'https://now.gg/apps/roblox-corporation/5349/roblox.html', desc:'Roblox en la nube, dentro del navegador.'},
+			  {icon:'🎯', name:'now.gg', url:'https://now.gg', desc:'Juega juegos de móvil (Roblox, etc.) en la nube.'},
 			  {icon:'🕹️', name:'Antstream Arcade', url:'https://www.antstream.com', desc:'Miles de juegos retro con licencia, en streaming.'}
 			];
 
@@ -8934,8 +8952,7 @@
 			  arg:      {label:'Argentino 🇦🇷',         ttsLang:'es-AR', persona:'Habla en español rioplatense: voseo ("vos tenés", "mirá", "che"), "dale", "bárbaro", "posta". Canchero y simpático.'},
 			  esp:      {label:'España 🇪🇸',            ttsLang:'es-ES', persona:'Habla en español de España: usa "vale", "tío/tía", "guay", "mola", "venga". Cercano y directo.'},
 			  colomb:   {label:'Colombiano 🇨🇴',        ttsLang:'es-CO', persona:'Habla en español colombiano: "parcero/a", "chévere", "¿qué más?", "bacano", "listo". Amable y educado.'},
-			  formal:   {label:'Formal / Elegante 🎩', ttsLang:'es-ES', persona:'Habla en español formal y educado, tratando de usted, con vocabulario cuidado y elegante.'},
-			  en:       {label:'English 🇺🇸',          ttsLang:'en-US', persona:'Respond in casual, friendly American English regardless of the question language.'}
+			  formal:   {label:'Formal / Elegante 🎩', ttsLang:'es-ES', persona:'Habla en español formal y educado, tratando de usted, con vocabulario cuidado y elegante.'}
 			};
 			let _siriDialect = (()=>{ try{ return localStorage.getItem('siri_dialect') || 'neutral'; }catch(e){ return 'neutral'; } })();
 			function getAISystemPrompt(){
@@ -10299,7 +10316,30 @@
 			  siriStopSpeaking();
 			}
 			document.addEventListener('DOMContentLoaded', ()=>{ requestAnimationFrame(_siriLoop); });
+			// Pulsación larga (4 s) sobre el orbe de Siri → enfoca la barra
+			// "Search or Ask" en vez de activar el micrófono.
+			let _siriLongTimer=null, _siriLongFired=false;
+			function _setupSiriLongPress(){
+			  const btn=document.getElementById('siri-dock-btn');
+			  if(!btn || btn._lpReady) return; btn._lpReady=true;
+			  const start=()=>{ _siriLongFired=false; clearTimeout(_siriLongTimer);
+			    _siriLongTimer=setTimeout(()=>{ _siriLongFired=true;
+			      const bar=document.getElementById('siri-text-input');
+			      if(bar){ bar.focus(); bar.scrollIntoView({behavior:'smooth',block:'center'}); }
+			    },4000);
+			  };
+			  const cancel=()=>{ clearTimeout(_siriLongTimer); };
+			  btn.addEventListener('pointerdown',start);
+			  btn.addEventListener('pointerup',cancel);
+			  btn.addEventListener('pointerleave',cancel);
+			  btn.addEventListener('pointercancel',cancel);
+			}
+			document.addEventListener('DOMContentLoaded',_setupSiriLongPress);
+			_setupSiriLongPress();
+
 			function activateSiri(){
+			  // Si acaba de dispararse la pulsación larga (4 s), no actives el mic.
+			  if(_siriLongFired){ _siriLongFired=false; return; }
 			  siriUnlockTTS(); // desbloquea la voz durante el toque en el orbe
 			  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 			  // Always open the AI chat panel
@@ -10672,10 +10712,15 @@
 			  }
 			}
 
-			/* ===== LOCALSTORAGE: WALLPAPER PERSIST ===== */
+			/* ===== LOCALSTORAGE: WALLPAPER + CLOCK PERSIST =====
+			   Antes el default setWallpaper('ios27') se ejecutaba DESPUÉS de programar
+			   el restore y pisaba el fondo guardado. Ahora: si hay algo guardado se
+			   restaura eso; si no, se usa el default. Guarda fondos normales, aleatorios
+			   y de foto, además del estilo de reloj. */
 			const _origSW=window.setWallpaper;
-			window.setWallpaper=function(id){_origSW(id);localStorage.setItem('saved_wallpaper',id);};
-			setTimeout(()=>{const sw=localStorage.getItem('saved_wallpaper');if(sw)setWallpaper(sw);},120);
+			window.setWallpaper=function(id){_origSW(id);try{localStorage.setItem('saved_wallpaper',id);localStorage.removeItem('saved_wallpaper_custom');}catch(e){}};
+			const _origSC=window.setClockStyleById;
+			window.setClockStyleById=function(id){_origSC(id);try{localStorage.setItem('saved_clock_style',id);}catch(e){}};
 
 			renderWallpaperGrid();
 			renderClockGrid();
@@ -10685,8 +10730,25 @@
 			renderCalcGrid();
 			calcUpdateDisplay();
 			renderTimerDisplay();
-			setWallpaper('ios27');
-			setClockStyleById('minimal');
+			// Restaurar fondo: primero un fondo personalizado (aleatorio/foto), luego
+			// uno por id; si no hay nada guardado, el default.
+			(function restoreWallpaper(){
+			  try{
+			    const custom=JSON.parse(localStorage.getItem('saved_wallpaper_custom')||'null');
+			    if(custom && custom.type){ _applyCustomWallpaper(custom); return; }
+			    const sw=localStorage.getItem('saved_wallpaper');
+			    if(sw && WALLPAPERS.find(w=>w.id===sw)){ setWallpaper(sw); return; }
+			  }catch(e){}
+			  setWallpaper('ios27');
+			})();
+			// Restaurar estilo de reloj guardado, si existe.
+			(function restoreClockStyle(){
+			  try{
+			    const sc=localStorage.getItem('saved_clock_style');
+			    if(sc && CLOCK_STYLES.find(s=>s.id===sc)){ setClockStyleById(sc); return; }
+			  }catch(e){}
+			  setClockStyleById('minimal');
+			})();
 			setInterval(updateClockAndDate, 1000);
 			updateClockAndDate();
 			generateHourlyForecast();
@@ -12003,7 +12065,12 @@
 			  gbInit();
 			}
 			function gbInit(){
-			  if(!_gbAudioCtx) _gbAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+			  // Reusar el AudioContext compartido de la app: en iOS un segundo
+			  // contexto suele quedar silenciado/bloqueado si ya hay audio activo.
+			  if(!_gbAudioCtx){
+			    _gbAudioCtx = (typeof getAudioCtx==='function' ? getAudioCtx() : null) || new(window.AudioContext||window.webkitAudioContext)();
+			  }
+			  if(_gbAudioCtx && _gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
 			  gbBuildPiano();gbBuildDrums();gbBuildBass();gbBuildSynth();
 			  gbSelectInstrument('piano');
 			  gbDrawWaveform();
