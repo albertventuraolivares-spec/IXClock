@@ -8080,6 +8080,8 @@
 			  if(el) el.textContent = connected ? '🎮 Mando conectado' : '🎮 Sin mando';
 			}
 			function _pollGamepads(){
+			  // No malgastar CPU cuando la pestaña no está visible.
+			  if(document.hidden){ requestAnimationFrame(_pollGamepads); return; }
 			  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
 			  let any = false;
 			  for(let i=0;i<pads.length;i++){
@@ -10296,12 +10298,24 @@
 			  ctx.globalCompositeOperation='source-over';
 			  ctx.shadowBlur=0;
 			}
-			function _siriLoop(){
-			  _siriWave.t += 0.02 + _siriWave.intensity*0.05;
-			  _siriWave.intensity += (_siriWave.target - _siriWave.intensity)*0.08;
-			  const mini=document.getElementById('siri-mini-canvas');
-			  if(mini) _siriDraw(mini,false);
+			// Optimizado para NO calentar el dispositivo:
+			//  - Si la pestaña no está visible, no dibuja nada (ahorra batería/CPU).
+			//  - En reposo baja a ~15 fps (suficiente para el orbe suave).
+			//  - Solo va fluido cuando Siri escucha/habla.
+			let _siriLastDraw=0;
+			function _siriLoop(ts){
 			  requestAnimationFrame(_siriLoop);
+			  if(document.hidden) return;
+			  const active = _siriState==='listening' || _siriState==='speaking';
+			  const minGap = active ? 0 : 66; // ~15 fps en reposo
+			  if(ts && (ts - _siriLastDraw) < minGap) return;
+			  _siriLastDraw = ts || 0;
+			  const mini=document.getElementById('siri-mini-canvas');
+			  // Si el orbe no está en pantalla (dock oculto), tampoco dibujamos.
+			  if(!mini || mini.offsetParent===null) return;
+			  _siriWave.t += (active?0.05:0.02) + _siriWave.intensity*0.05;
+			  _siriWave.intensity += (_siriWave.target - _siriWave.intensity)*0.08;
+			  _siriDraw(mini,false);
 			}
 			function setSiriOrbState(state){
 			  // El orbe se mueve/pulsa EN EL DOCK, sin agrandarse a pantalla completa.
@@ -12302,6 +12316,10 @@
 			  const canvas=document.getElementById('gb-waveform');if(!canvas)return;
 			  const ctx=canvas.getContext('2d');
 			  function draw(){
+			    // No dibujar (ni consumir CPU) si GarageBand está cerrado o la pestaña
+			    // no está visible. Se reanuda solo al reabrirlo.
+			    const modal=document.getElementById('garageband-modal');
+			    if(document.hidden || !modal || modal.style.display==='none'){ _gbWaveAnim=requestAnimationFrame(draw); return; }
 			    ctx.fillStyle='#0d0d0d';ctx.fillRect(0,0,canvas.width,canvas.height);
 			    if(_gbRecorded.length>0){
 			      ctx.strokeStyle='#0a84ff';ctx.lineWidth=2;ctx.beginPath();
