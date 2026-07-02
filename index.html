@@ -75,6 +75,44 @@
 			  transition:color .3s ease;
 			}
 
+			/* ===== RESPONSIVE: móviles / vertical / pantallas chicas =====
+			   En pantallas angostas la columna fija de 420px no cabe: se pasa a
+			   una sola columna que se apila y hace scroll. Los paneles flotantes
+			   se limitan al ancho de la pantalla para que nunca se salgan. */
+			@media (max-width: 900px){
+			  body{
+			    grid-template-columns:1fr;
+			    grid-auto-rows:min-content;
+			    height:auto;min-height:100vh;min-height:100dvh;
+			    overflow-y:auto;overflow-x:hidden;
+			  }
+			  body > main{min-height:88vh;padding:72px 16px 40px !important;}
+			  body > aside:last-of-type{
+			    height:auto !important;border-left:none !important;
+			    border-top:1px solid rgba(255,255,255,.12);border-radius:0;
+			  }
+			  #top-dock{max-width:96vw;}
+			  /* Paneles/menús flotantes anclados a la derecha: caben en el teléfono */
+			  #tv-panel,#alarm-panel,#games-panel,#ai-chat-panel,#notes-panel,
+			  #translator-panel,#trans-panel,#cal-panel,#tv-player,#compass-panel,
+			  #cloud-panel,#maps-panel{
+			    width:min(94vw,380px) !important;
+			    right:3vw !important;left:auto !important;
+			    max-height:80vh;
+			  }
+			  #left-sidebar{width:min(92vw,360px) !important;}
+			}
+			@media (max-width: 520px){
+			  :root{--clock-size:5rem;}
+			  body > main{padding-top:66px !important;}
+			}
+			/* Horizontal en teléfono (poca altura): reduce relojes y márgenes */
+			@media (max-height: 480px) and (orientation: landscape){
+			  :root{--clock-size:4.2rem;}
+			  body > main{padding-top:58px !important;padding-bottom:20px !important;}
+			  #top-dock{top:6px;}
+			}
+
 			/* ===== WALLPAPER STAGE: crossfade + ken burns (universal, every wallpaper) ===== */
 			#wallpaper-stage{position:fixed;inset:0;z-index:-2;overflow:hidden;background:#000;}
 			.wallpaper-layer{position:absolute;inset:-15%;opacity:0;transition:opacity 1.8s ease;}
@@ -2069,13 +2107,37 @@
 					<!-- Traductor -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🌐 Traductor</div>
-						<p class="text-xs opacity-70 leading-relaxed">Traduce texto entre más de 30 idiomas usando MyMemory API (gratuito). Selecciona idioma origen y destino, escribe o pega el texto y pulsa Traducir.</p>
+						<p class="text-xs opacity-70 leading-relaxed">Traduce entre más de 30 idiomas (Google gratis, con MyMemory de respaldo). Selecciona idioma origen y destino, escribe o pega el texto y pulsa Traducir. Ahora con tiempo límite para que no se quede cargando.</p>
 					</div>
 
 					<!-- Radio y Música -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎵 Radio &amp; Música</div>
-						<p class="text-xs opacity-70 leading-relaxed">Panel de radio con estaciones de todo el mundo. Haz clic en una estación para reproducir. Usa el control de volumen lateral. También hay sonidos ambiente (lluvia, bosque, café…) accesibles desde el panel de clima.</p>
+						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor iPod. También hay sonidos ambiente en el panel de clima.</p>
+					</div>
+
+					<!-- TV Mundial -->
+					<div class="p-3.5 glass rounded-2xl space-y-1.5">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">📺 TV Mundial</div>
+						<p class="text-xs opacity-70 leading-relaxed">+12.000 canales gratis (iptv-org). "🌐 Todos los canales" busca en todo el catálogo; "🎯 País + idioma + deporte" combina filtros; también Deportes, 4K y apps gratis (FIFA+ En vivo, ViX, Claro Sports). Canales solo-http (como Canal 9 / Color Visión de RD) se reproducen vía proxy.</p>
+					</div>
+
+					<!-- Navegador -->
+					<div class="p-3.5 glass rounded-2xl space-y-1.5">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🌐 Navegador</div>
+						<p class="text-xs opacity-70 leading-relaxed">Navega sin salir de la app. Pestañas, favoritos, zoom y modo escritorio. Botón <b>⊞</b> para abrir en ventana flotante (varias páginas a la vez) y <b>&lt;/&gt;</b> para ver el HTML de la página. Si un sitio con anti-bots no carga, usa "Intentar con proxy ↺".</p>
+					</div>
+
+					<!-- VPN -->
+					<div class="p-3.5 glass rounded-2xl space-y-1.5">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🛡️ VPN</div>
+						<p class="text-xs opacity-70 leading-relaxed">Servicios VPN gratis reales (Proton VPN, Windscribe, hide.me, Cloudflare WARP, Tor) que se abren dentro de la app. Una web no puede ser un VPN de sistema; para cambiar tu IP dentro del navegador usa "Navegar por proxy".</p>
+					</div>
+
+					<!-- Barra de apps -->
+					<div class="p-3.5 glass rounded-2xl space-y-1.5">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔲 Barra de apps</div>
+						<p class="text-xs opacity-70 leading-relaxed">El primer botón de la barra superior muestra <b>todas</b> las apps o esconde algunas para dejar más espacio (púlsalo de nuevo para alternar). La app funciona en vertical y horizontal, en móvil y pantallas grandes.</p>
 					</div>
 
 					<!-- Mapas -->
