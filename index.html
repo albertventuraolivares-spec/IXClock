@@ -2207,6 +2207,13 @@
 						</div>
 					</div>
 
+					<!-- Créditos / Acerca de -->
+					<div class="p-3.5 glass rounded-2xl" style="border:1.5px solid rgba(94,92,230,.35);background:rgba(94,92,230,.08);">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">💜 Acerca de IXClocK</div>
+						<p class="text-xs opacity-80 leading-relaxed">Creado por <b>Albert</b>, con la ayuda de su papá <b>Neftalí</b> y su tío <b>Carlos</b>. 🛠️❤️</p>
+						<p class="text-[11px] opacity-45 leading-relaxed mt-2">Un dashboard universal hecho con cariño, en familia.</p>
+					</div>
+
 					<!-- Info técnica -->
 					<div class="p-3.5 glass rounded-2xl">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">ℹ️ Información</div>
@@ -3162,6 +3169,7 @@
 				</div>
 				<div>
 					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro (en la app)</div>
+					<button onclick="openEmuMenu()" style="width:100%;padding:12px;border-radius:14px;background:linear-gradient(135deg,#5e5ce6,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 16px rgba(94,92,230,.4);">🎮 Modo Batocera (menú de consolas)</button>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
 					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS.</div>
 				</div>
@@ -3188,6 +3196,34 @@
 				</div>
 				<div id="game" style="width:100%;height:100%;"></div>
 			</div>
+		</div>
+
+		<!-- Menú estilo Batocera (carrusel de consolas, a pantalla completa) -->
+		<div id="emu-menu" style="display:none;position:fixed;inset:0;z-index:9600;flex-direction:column;background:radial-gradient(circle at 50% 30%,#1a1a3a,#05050f 70%);overflow:hidden;">
+			<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-shrink:0;">
+				<div style="display:flex;align-items:center;gap:10px;">
+					<span style="font-size:22px;">🎮</span>
+					<div>
+						<div style="color:#fff;font-weight:900;font-size:16px;letter-spacing:1px;">IXCADE</div>
+						<div style="color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;">Retro Console Hub</div>
+					</div>
+				</div>
+				<div style="display:flex;align-items:center;gap:8px;">
+					<button id="emu-menu-music" onclick="emuToggleMenuMusic()" title="Música" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;">🎵</button>
+					<button onclick="closeEmuMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+				</div>
+			</div>
+			<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
+				<div id="emu-carousel-name" style="color:#fff;font-size:30px;font-weight:900;text-align:center;margin-bottom:6px;text-shadow:0 2px 20px rgba(94,92,230,.8);min-height:38px;">—</div>
+				<div id="emu-carousel-ext" style="color:rgba(255,255,255,.45);font-size:12px;margin-bottom:26px;min-height:16px;">—</div>
+				<div id="emu-carousel" style="display:flex;align-items:center;gap:18px;"></div>
+				<div style="display:flex;gap:14px;margin-top:34px;">
+					<button onclick="emuCarouselMove(-1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">◀</button>
+					<button onclick="emuCarouselSelect()" style="background:linear-gradient(135deg,#30d158,#0a84ff);border:none;color:#fff;padding:0 26px;height:52px;border-radius:26px;cursor:pointer;font-size:15px;font-weight:800;">▶ Jugar</button>
+					<button onclick="emuCarouselMove(1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">▶</button>
+				</div>
+			</div>
+			<div style="text-align:center;color:rgba(255,255,255,.35);font-size:11px;padding:12px;flex-shrink:0;">← → para moverte · Enter para jugar · Cargas tu propio juego (ROM). Solo consolas que corren en el navegador.</div>
 		</div>
 
 		<!-- Escenario de juego (overlay grande) -->
@@ -7485,14 +7521,23 @@
 			  {id:'puzzle15', icon:'🧩', name:'Puzzle 15'}
 			];
 			const EXTERNAL_GAMES = [
+			  {icon:'🟥', name:'Roblox', url:'https://www.roblox.com/games'},
 			  {icon:'🎮', name:'CrazyGames', url:'https://www.crazygames.com'},
 			  {icon:'🟦', name:'Poki', url:'https://poki.com'},
+			  {icon:'🕹️', name:'Kizi', url:'https://www.kizi.com'},
+			  {icon:'🎲', name:'Y8', url:'https://www.y8.com'},
+			  {icon:'🎯', name:'Miniclip', url:'https://www.miniclip.com'},
 			  {icon:'♟️', name:'Chess.com', url:'https://www.chess.com/play/online'},
 			  {icon:'🧱', name:'Tetris oficial', url:'https://tetris.com/play-tetris'},
-			  {icon:'🎯', name:'Miniclip', url:'https://www.miniclip.com'},
 			  {icon:'🃏', name:'Solitaire.org', url:'https://www.solitaire.org'},
 			  {icon:'🔫', name:'Krunker.io', url:'https://krunker.io'},
 			  {icon:'🐍', name:'Slither.io', url:'https://slither.io'},
+			  {icon:'🪱', name:'Paper.io', url:'https://paper-io.com'},
+			  {icon:'🟢', name:'Agar.io', url:'https://agar.io'},
+			  {icon:'⚔️', name:'Skribbl', url:'https://skribbl.io'},
+			  {icon:'🏗️', name:'Minecraft Classic', url:'https://classic.minecraft.net'},
+			  {icon:'👾', name:'Retro (Arcade Spot)', url:'https://arcadespot.com'},
+			  {icon:'🎨', name:'GameJolt', url:'https://gamejolt.com'},
 			  {icon:'🌐', name:'Itch.io', url:'https://itch.io/games/free/platform-web'}
 			];
 
@@ -7650,6 +7695,95 @@
 			  emuTeardown();
 			  const modal = document.getElementById('emu-modal');
 			  if(modal) modal.style.display = 'none';
+			}
+
+			/* ===================== MENÚ ESTILO BATOCERA (carrusel) ===================== */
+			let _emuCarIdx=0, _emuMenuMusic=null, _emuMenuMusicOn=false, _emuMenuKeyHandler=null;
+			function openEmuMenu(){
+			  const menu=document.getElementById('emu-menu');
+			  if(!menu) return;
+			  menu.style.display='flex';
+			  _emuCarIdx=0;
+			  emuRenderCarousel();
+			  emuStartMenuMusic();
+			  _emuMenuKeyHandler=(e)=>{
+			    if(document.getElementById('emu-menu').style.display==='none') return;
+			    if(e.key==='ArrowRight'){ e.preventDefault(); emuCarouselMove(1); }
+			    else if(e.key==='ArrowLeft'){ e.preventDefault(); emuCarouselMove(-1); }
+			    else if(e.key==='Enter'){ e.preventDefault(); emuCarouselSelect(); }
+			    else if(e.key==='Escape'){ closeEmuMenu(); }
+			  };
+			  document.addEventListener('keydown', _emuMenuKeyHandler);
+			}
+			function closeEmuMenu(){
+			  const menu=document.getElementById('emu-menu');
+			  if(menu) menu.style.display='none';
+			  emuStopMenuMusic();
+			  if(_emuMenuKeyHandler){ document.removeEventListener('keydown', _emuMenuKeyHandler); _emuMenuKeyHandler=null; }
+			}
+			function emuRenderCarousel(){
+			  const car=document.getElementById('emu-carousel');
+			  if(!car) return;
+			  car.innerHTML=EMU_CONSOLES.map((c,i)=>{
+			    const d=Math.abs(i-_emuCarIdx);
+			    const active=i===_emuCarIdx;
+			    const size=active?116:(d===1?86:70);
+			    const op=active?1:(d===1?.6:.3);
+			    const scale=active?1:.9;
+			    return `<div onclick="_emuCarIdx=${i};emuRenderCarousel()" style="flex:0 0 auto;width:${size}px;height:${size}px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:${active?54:38}px;cursor:pointer;opacity:${op};transform:scale(${scale});transition:all .25s;background:${active?'linear-gradient(135deg,#5e5ce6,#0a84ff)':'rgba(255,255,255,.06)'};border:2px solid ${active?'rgba(255,255,255,.5)':'transparent'};box-shadow:${active?'0 8px 30px rgba(94,92,230,.6)':'none'};">${c.icon}</div>`;
+			  }).join('');
+			  // centra el activo desplazando el carrusel
+			  const car2=document.getElementById('emu-carousel');
+			  const active=car2.children[_emuCarIdx];
+			  if(active){ const off = active.offsetLeft + active.offsetWidth/2 - car2.parentElement.offsetWidth/2; car2.style.transform=`translateX(${-off}px)`; car2.style.transition='transform .28s cubic-bezier(.2,.8,.2,1)'; }
+			  const c=EMU_CONSOLES[_emuCarIdx];
+			  const nm=document.getElementById('emu-carousel-name'); if(nm) nm.textContent=c.name;
+			  const ex=document.getElementById('emu-carousel-ext'); if(ex) ex.textContent='Archivos: '+c.ext;
+			}
+			function emuCarouselMove(dir){
+			  _emuCarIdx=(_emuCarIdx+dir+EMU_CONSOLES.length)%EMU_CONSOLES.length;
+			  emuRenderCarousel();
+			}
+			function emuCarouselSelect(){
+			  const c=EMU_CONSOLES[_emuCarIdx];
+			  if(!c) return;
+			  closeEmuMenu();
+			  openEmulator(c.core, c.name, c.ext);
+			  // abre directo el selector de ROM para que se sienta "entrar a jugar"
+			  setTimeout(()=>{ const inp=document.getElementById('emu-rom-input'); if(inp) inp.click(); }, 350);
+			}
+			// Música de fondo original (arpegio suave generado con Web Audio, sin
+			// copyright). Se puede activar/desactivar con el botón 🎵.
+			function emuStartMenuMusic(){
+			  if(!_emuMenuMusicOn) return; // arranca solo si el usuario la activó
+			  emuStopMenuMusic();
+			  try{
+			    const ctx=getAudioCtx(); if(!ctx) return;
+			    const notes=[261.63,329.63,392,523.25,392,329.63];
+			    let i=0;
+			    const gain=ctx.createGain(); gain.gain.value=0.06; gain.connect(ctx.destination);
+			    _emuMenuMusic={ctx,gain,timer:null};
+			    const step=()=>{
+			      const o=ctx.createOscillator(); o.type='triangle';
+			      o.frequency.value=notes[i%notes.length];
+			      const g=ctx.createGain(); g.gain.setValueAtTime(0,ctx.currentTime);
+			      g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.05);
+			      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+			      o.connect(g); g.connect(gain); o.start(); o.stop(ctx.currentTime+0.55);
+			      i++;
+			    };
+			    step();
+			    _emuMenuMusic.timer=setInterval(step,420);
+			  }catch(e){}
+			}
+			function emuStopMenuMusic(){
+			  if(_emuMenuMusic){ try{ clearInterval(_emuMenuMusic.timer); _emuMenuMusic.gain.disconnect(); }catch(e){} _emuMenuMusic=null; }
+			}
+			function emuToggleMenuMusic(){
+			  _emuMenuMusicOn=!_emuMenuMusicOn;
+			  const btn=document.getElementById('emu-menu-music');
+			  if(btn){ btn.style.background=_emuMenuMusicOn?'rgba(48,209,88,.3)':'rgba(255,255,255,.1)'; btn.textContent=_emuMenuMusicOn?'🎵':'🔇'; }
+			  if(_emuMenuMusicOn) emuStartMenuMusic(); else emuStopMenuMusic();
 			}
 
 			let _activeGameId = null;
