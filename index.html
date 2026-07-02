@@ -1469,6 +1469,22 @@
 						style="font-size:9px;margin-top:6px;text-align:center;min-height:12px;font-weight:700;"
 					></div>
 				</div>
+
+				<!-- DIALECTO / VOZ DE SIRI -->
+				<div
+					class="shrink-0"
+					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
+				>
+					<div style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
+						🔮 Cómo habla Siri / el asistente
+					</div>
+					<div style="display:flex;flex-wrap:wrap;gap:6px;" id="siri-dialect-btns"></div>
+					<div style="font-size:10px;opacity:.5;margin-top:8px;line-height:1.4;">
+						Elige el acento y estilo del asistente. Ej.: <b>Dominicano</b> responde tipo "¿qué lo qué manito?". También cambia la voz al hablar.
+						Actual: <span id="siri-dialect-current" style="color:#a5a3ff;font-weight:700;">Español neutro</span>
+					</div>
+				</div>
+
 				<div class="shrink-0 grid grid-cols-2 gap-2">
 					<button
 						class="btn-option active"
@@ -8490,7 +8506,7 @@
 			}
 
 			/* ===================== AI ASSISTANT (tareas + salud/peso) ===================== */
-			const AI_SYSTEM_PROMPT = `Eres un asistente personal inteligente integrado en un dashboard. Responde siempre en el idioma del usuario. Eres útil, directo y amigable. Puedes ayudar con:
+			const AI_SYSTEM_PROMPT_BASE = `Eres un asistente personal inteligente integrado en un dashboard. Responde siempre en el idioma del usuario. Eres útil, directo y amigable. Puedes ayudar con:
 			- Preguntas generales, curiosidades, ciencia, historia, geografía
 			- Tareas escolares: matemáticas, redacciones, resúmenes, explicaciones
 			- Consejos de salud y bienestar (no eres médico, recomienda profesionales para temas médicos serios)
@@ -8498,6 +8514,45 @@
 			- Tecnología, programación, recetas, viajes, y cualquier otro tema
 			- Alarmas: si el usuario quiere programar una alarma, al FINAL de tu respuesta incluye exactamente: [[ALARM time="HH:MM" label="descripción"]] en formato 24h
 			Responde de forma concisa y útil. No repitas la pregunta del usuario.`;
+
+			/* ===== DIALECTO / PERSONALIDAD DEL ASISTENTE (Siri) =====
+			   Cada opción ajusta cómo habla el asistente (instrucción al modelo) y
+			   qué voz usa el text-to-speech. El estilo es solo forma de hablar; no
+			   cambia lo que puede hacer. */
+			const SIRI_DIALECTS = {
+			  neutral:  {label:'Español neutro',      ttsLang:'es-ES', persona:''},
+			  domin:    {label:'Dominicano 🇩🇴',       ttsLang:'es-US', persona:'Habla en español dominicano bien coloquial y con sabor: usa expresiones como "que lo que", "ta to", "manito", "dique", "vaina", "chin", "klk", "wawawa". Se relajado y con buena vibra, pero manten la respuesta clara y util.'},
+			  mex:      {label:'Mexicano 🇲🇽',          ttsLang:'es-MX', persona:'Habla en español mexicano coloquial: usa "órale", "qué onda", "chido", "ahorita", "no manches", "va". Amistoso y cálido.'},
+			  arg:      {label:'Argentino 🇦🇷',         ttsLang:'es-AR', persona:'Habla en español rioplatense: voseo ("vos tenés", "mirá", "che"), "dale", "bárbaro", "posta". Canchero y simpático.'},
+			  esp:      {label:'España 🇪🇸',            ttsLang:'es-ES', persona:'Habla en español de España: usa "vale", "tío/tía", "guay", "mola", "venga". Cercano y directo.'},
+			  colomb:   {label:'Colombiano 🇨🇴',        ttsLang:'es-CO', persona:'Habla en español colombiano: "parcero/a", "chévere", "¿qué más?", "bacano", "listo". Amable y educado.'},
+			  formal:   {label:'Formal / Elegante 🎩', ttsLang:'es-ES', persona:'Habla en español formal y educado, tratando de usted, con vocabulario cuidado y elegante.'},
+			  en:       {label:'English 🇺🇸',          ttsLang:'en-US', persona:'Respond in casual, friendly American English regardless of the question language.'}
+			};
+			let _siriDialect = (()=>{ try{ return localStorage.getItem('siri_dialect') || 'neutral'; }catch(e){ return 'neutral'; } })();
+			function getAISystemPrompt(){
+			  const d = SIRI_DIALECTS[_siriDialect] || SIRI_DIALECTS.neutral;
+			  return d.persona ? (AI_SYSTEM_PROMPT_BASE + '\n\nESTILO AL RESPONDER: ' + d.persona) : AI_SYSTEM_PROMPT_BASE;
+			}
+			function setSiriDialect(key){
+			  if(!SIRI_DIALECTS[key]) return;
+			  _siriDialect = key;
+			  try{ localStorage.setItem('siri_dialect', key); }catch(e){}
+			  const lbl = document.getElementById('siri-dialect-current');
+			  if(lbl) lbl.textContent = SIRI_DIALECTS[key].label;
+			  renderSiriDialectButtons();
+			}
+			function renderSiriDialectButtons(){
+			  const cont = document.getElementById('siri-dialect-btns');
+			  if(!cont) return;
+			  cont.innerHTML = Object.entries(SIRI_DIALECTS).map(([k,v])=>{
+			    const on = k===_siriDialect;
+			    return `<button onclick="setSiriDialect('${k}')" style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;background:${on?'rgba(94,92,230,.28)':'rgba(255,255,255,.06)'};border:1px solid ${on?'rgba(94,92,230,.6)':'rgba(255,255,255,.15)'};color:${on?'#a5a3ff':'#fff'};">${escapeHtml(v.label)}</button>`;
+			  }).join('');
+			  const lbl = document.getElementById('siri-dialect-current');
+			  if(lbl) lbl.textContent = (SIRI_DIALECTS[_siriDialect]||SIRI_DIALECTS.neutral).label;
+			}
+			document.addEventListener('DOMContentLoaded', renderSiriDialectButtons);
 			let aiChatHistory = [];
 			let aiChatOpen = false;
 			function toggleAIChat(){
@@ -8547,13 +8602,17 @@
 			    .slice(0, 500); // limit length
 			  if(!clean) return;
 			  const utterance = new SpeechSynthesisUtterance(clean);
-			  // Pick best Spanish voice
+			  // Voz según el dialecto elegido para el asistente (dominicano, mexicano…).
+			  const dcfg = SIRI_DIALECTS[_siriDialect] || SIRI_DIALECTS.neutral;
+			  const ttsLang = dcfg.ttsLang || 'es-ES';
+			  const langBase = ttsLang.slice(0,2);
 			  const voices = window.speechSynthesis.getVoices();
-			  const esVoice = voices.find(v => v.lang.startsWith('es') && v.localService) ||
-			                  voices.find(v => v.lang.startsWith('es')) ||
-			                  voices.find(v => v.lang.startsWith('en'));
-			  if(esVoice) utterance.voice = esVoice;
-			  utterance.lang = 'es-ES';
+			  const bestVoice = voices.find(v => v.lang.replace('_','-') === ttsLang) ||
+			                    voices.find(v => v.lang.startsWith(langBase) && v.localService) ||
+			                    voices.find(v => v.lang.startsWith(langBase)) ||
+			                    voices.find(v => v.lang.startsWith('es'));
+			  if(bestVoice) utterance.voice = bestVoice;
+			  utterance.lang = ttsLang;
 			  utterance.rate = 1.05;
 			  utterance.pitch = 1.1;
 			  utterance.volume = 1;
@@ -8608,7 +8667,7 @@
 			        body: JSON.stringify({
 			          model: "claude-sonnet-4-6",
 			          max_tokens: 1000,
-			          system: AI_SYSTEM_PROMPT,
+			          system: getAISystemPrompt(),
 			          messages: aiChatHistory
 			        })
 			      });
@@ -8618,7 +8677,7 @@
 			    }catch(e){}
 			    // Fallback: Pollinations AI (gratis, sin cuenta)
 			    if(!rawReply){
-			      rawReply = await callFreeAI(aiChatHistory, AI_SYSTEM_PROMPT);
+			      rawReply = await callFreeAI(aiChatHistory, getAISystemPrompt());
 			    }
 			    if(!rawReply) rawReply = 'No pude generar una respuesta, intenta de nuevo.';
 			    const {cleaned, found} = extractAlarmTags(rawReply);
