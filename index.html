@@ -3155,6 +3155,33 @@
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-external-grid"></div>
 					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
 				</div>
+				<div>
+					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro</div>
+					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
+					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (archivo ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS. Funciona con NES, SNES, Sega, Game Boy/GBA, N64, PSX y arcade.</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Emulador retro (pantalla completa) -->
+		<div id="emu-modal" style="display:none;position:fixed;inset:0;z-index:9600;background:#000;flex-direction:column;">
+			<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#111;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0;">
+				<div style="display:flex;align-items:center;gap:10px;min-width:0;">
+					<span id="emu-title" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Emulador</span>
+				</div>
+				<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+					<label id="emu-load-label" style="background:#0a84ff;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:10px;cursor:pointer;">📂 Cargar juego (ROM)
+						<input id="emu-rom-input" type="file" style="display:none;" onchange="emuLoadRom(this)">
+					</label>
+					<button onclick="closeEmulator()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+				</div>
+			</div>
+			<div id="emu-stage" style="flex:1;position:relative;background:#000;overflow:hidden;">
+				<div id="emu-hint" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:rgba(255,255,255,.6);gap:10px;padding:24px;">
+					<div style="font-size:44px;">🎮</div>
+					<div id="emu-hint-text" style="font-size:14px;max-width:340px;line-height:1.5;">Toca "📂 Cargar juego (ROM)" y elige un archivo de tu dispositivo para empezar a jugar.</div>
+				</div>
+				<div id="game" style="width:100%;height:100%;"></div>
 			</div>
 		</div>
 
@@ -7456,6 +7483,87 @@
 			      </div>`
 			    ).join('');
 			  }
+			  const emu = document.getElementById('emu-consoles-grid');
+			  if(emu){
+			    emu.innerHTML = EMU_CONSOLES.map(c=>
+			      `<div class="game-tile" onclick="openEmulator('${c.core}','${escapeHtml(c.name)}','${c.ext}')">
+			        <div class="game-tile-icon">${c.icon}</div>
+			        <div class="game-tile-label">${escapeHtml(c.name)}</div>
+			      </div>`
+			    ).join('');
+			  }
+			}
+
+			/* ===================== EMULADOR RETRO (EmulatorJS, BYO-ROM) =====================
+			   El usuario carga SUS PROPIOS archivos de juego (ROMs que posea legalmente).
+			   No se incluye ni descarga ningún juego. EmulatorJS corre 100% en el navegador.
+			   Consolas soportadas de verdad en web (no Xbox/PS modernas). */
+			const EMU_CONSOLES = [
+			  {core:'nes',    name:'NES',            icon:'🔴', ext:'.nes'},
+			  {core:'snes',   name:'Super Nintendo',icon:'🟣', ext:'.sfc,.smc'},
+			  {core:'segaMD', name:'Sega Genesis',  icon:'🔵', ext:'.md,.gen,.bin'},
+			  {core:'gb',     name:'Game Boy',      icon:'🟢', ext:'.gb,.gbc'},
+			  {core:'gba',    name:'Game Boy Adv.', icon:'🟡', ext:'.gba'},
+			  {core:'n64',    name:'Nintendo 64',   icon:'🟠', ext:'.n64,.z64,.v64'},
+			  {core:'psx',    name:'PlayStation 1', icon:'⚫', ext:'.bin,.cue,.iso,.pbp,.chd'},
+			  {core:'segaMS', name:'Master System', icon:'🔷', ext:'.sms'},
+			  {core:'arcade', name:'Arcade (MAME)', icon:'🕹️', ext:'.zip'}
+			];
+			let _emuCore=null, _emuRomUrl=null, _emuLoaded=false;
+			function openEmulator(core, name, ext){
+			  _emuCore = core;
+			  const modal = document.getElementById('emu-modal');
+			  const title = document.getElementById('emu-title');
+			  const hint = document.getElementById('emu-hint');
+			  const hintText = document.getElementById('emu-hint-text');
+			  const input = document.getElementById('emu-rom-input');
+			  if(title) title.textContent = '🕹️ ' + name;
+			  if(input && ext) input.setAttribute('accept', ext);
+			  if(hint) hint.style.display = 'flex';
+			  if(hintText) hintText.textContent = 'Carga tu propio juego de ' + name + ' (archivo ' + ext + ') con "📂 Cargar juego (ROM)".';
+			  // Limpia cualquier emulador previo
+			  emuTeardown();
+			  if(modal) modal.style.display = 'flex';
+			}
+			function emuTeardown(){
+			  try{ if(window.EJS_emulator && window.EJS_emulator.callEvent) window.EJS_emulator.callEvent('exit'); }catch(e){}
+			  const g = document.getElementById('game');
+			  if(g) g.innerHTML = '';
+			  if(_emuRomUrl){ try{ URL.revokeObjectURL(_emuRomUrl); }catch(e){} _emuRomUrl=null; }
+			  _emuLoaded=false;
+			  // EmulatorJS deja globals; los limpiamos para poder recargar otro juego
+			  ['EJS_player','EJS_core','EJS_gameUrl','EJS_gameName','EJS_pathtodata','EJS_emulator','EJS_ready','EJS_startOnLoaded'].forEach(k=>{ try{ delete window[k]; }catch(e){ window[k]=undefined; } });
+			}
+			function emuLoadRom(input){
+			  const file = input && input.files && input.files[0];
+			  if(!file || !_emuCore) return;
+			  const hint = document.getElementById('emu-hint');
+			  const hintText = document.getElementById('emu-hint-text');
+			  if(hintText) hintText.textContent = '⏳ Cargando ' + file.name + '…';
+			  emuTeardown();
+			  _emuRomUrl = URL.createObjectURL(file);
+			  // Config de EmulatorJS (se lee al cargar su loader).
+			  window.EJS_player = '#game';
+			  window.EJS_core = _emuCore;
+			  window.EJS_gameUrl = _emuRomUrl;
+			  window.EJS_gameName = file.name.replace(/\.[^.]+$/,'');
+			  window.EJS_pathtodata = 'https://cdn.jsdelivr.net/npm/emulatorjs@latest/data/';
+			  window.EJS_startOnLoaded = true;
+			  if(hint) hint.style.display = 'none';
+			  // Carga (una sola vez) el loader de EmulatorJS desde CDN.
+			  const s = document.createElement('script');
+			  s.src = 'https://cdn.jsdelivr.net/npm/emulatorjs@latest/data/loader.js';
+			  s.onerror = ()=>{
+			    if(hint){ hint.style.display='flex'; }
+			    if(hintText) hintText.textContent = '⚠️ No se pudo cargar el motor del emulador (revisa tu conexión). Intenta de nuevo.';
+			  };
+			  document.getElementById('emu-stage').appendChild(s);
+			  _emuLoaded=true;
+			}
+			function closeEmulator(){
+			  emuTeardown();
+			  const modal = document.getElementById('emu-modal');
+			  if(modal) modal.style.display = 'none';
 			}
 
 			let _activeGameId = null;
