@@ -121,7 +121,7 @@
 			   en una sola dirección (sin alternate), como si fuera un clip de video reproduciéndose. */
 			/* Fotos: movimiento sutil y natural (la cámara "respira", no hace zoom
 			   brusco ni se acerca de golpe). Realista. */
-			.wallpaper-fill{position:absolute;inset:0;background-size:cover;background-position:center;animation:photoDrift 70s ease-in-out infinite alternate;}
+			.wallpaper-fill{position:absolute;inset:0;background-size:cover;background-position:center;}
 			.wallpaper-fill.fill-anim{background-size:340% 340%;animation:auroraFlow 40s linear infinite;}
 			@keyframes photoDrift{
 			  0%{background-position:48% 50%;background-size:112% 112%;}
@@ -449,9 +449,13 @@
 			     primero. Ahora queda por encima de toda app, como el botón Home. */
 			  position:fixed;top:22px;left:22px;z-index:9700;width:46px;height:46px;border-radius:50%;
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;
-			  transition:transform .3s ease,background .2s ease;
+			  opacity:0;pointer-events:none;
+			  transition:transform .3s ease,background .2s ease,opacity .4s ease;
 			}
+			.btn-settings.visible{opacity:1;pointer-events:auto;}
 			.btn-settings:hover{transform:scale(1.08) rotate(25deg);}
+			/* Zona invisible en la esquina superior-izquierda que activa el botón */
+			#settings-hotzone{position:fixed;top:0;left:0;width:110px;height:110px;z-index:9699;pointer-events:none;}
 			.btn-settings svg{width:22px;height:22px;fill:currentColor;}
 
 			.wallpaper-card{cursor:pointer;transition:transform .2s,border-color .2s;position:relative;border:2px solid transparent;border-radius:12px;overflow:hidden;aspect-ratio:9/13;}
@@ -4640,6 +4644,24 @@
 			  // --- Fondos en movimiento desde YouTube (necesitan internet) ---
 			  {id:'yt-live-paisaje',name:'Paisaje en vivo 24/7 📺',tags:'video youtube live directo paisaje nature movimiento relax',type:'youtube',videoId:'TfDnf1oVm04'},
 			  {id:'yt-lofi',name:'Lofi Girl 24/7 🎧',tags:'video youtube live directo lofi anime music movimiento',type:'youtube',videoId:'jfKfPfyJRdk'},
+			  {id:'yt-chillhop',name:'Chillhop Radio ☕',tags:'video youtube live directo lofi beats music cafe movimiento',type:'youtube',videoId:'5qap5aO4i9A'},
+			  {id:'yt-jazz',name:'Jazz & Coffee ☕',tags:'video youtube live directo jazz cafe music movimiento relax',type:'youtube',videoId:'neV3EPgvZ3g'},
+			  {id:'yt-nasa-iss',name:'Tierra desde el espacio 🌍',tags:'video youtube live directo nasa iss space earth movimiento',type:'youtube',videoId:'xRPjKQtRXR8'},
+			  {id:'yt-tokyo',name:'Tokyo en la noche 🌆',tags:'video youtube live directo tokyo japon ciudad night movimiento',type:'youtube',videoId:'_Whf4ZHOMR4'},
+			  {id:'yt-ocean',name:'Océano en vivo 🌊',tags:'video youtube live directo ocean sea waves nature movimiento relax',type:'youtube',videoId:'bn9F19Hi1Lk'},
+			  {id:'yt-rain',name:'Lluvia en el bosque 🌧️',tags:'video youtube live directo rain lluvia forest nature movimiento relax',type:'youtube',videoId:'mPZkdNFkNps'},
+			  {id:'yt-fireplace',name:'Chimenea en casa 🔥',tags:'video youtube live directo fire chimenea fireplace cozy movimiento',type:'youtube',videoId:'L_LUpnjgPso'},
+			  {id:'yt-underwater',name:'Mundo submarino 🐠',tags:'video youtube live directo underwater ocean fish nature movimiento',type:'youtube',videoId:'t3PnKiRKOAI'},
+			  // --- Fondos animados por canvas (movimiento real generado en tiempo real) ---
+			  {id:'cv-stars',name:'Estrellas volando ✨',tags:'canvas stars space warp universe movimiento real animacion',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000005,#000820)',thumb:'linear-gradient(135deg,#000010,#001040)'},
+			  {id:'cv-rain',name:'Lluvia nocturna 🌧️',tags:'canvas rain lluvia night ciudad movimiento real animacion',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#050510,#0a0a1a)',thumb:'linear-gradient(135deg,#050515,#101025)'},
+			  {id:'cv-aurora',name:'Aurora Boreal 🌌',tags:'canvas aurora northern lights nature movimiento real animacion',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000208,#00071a)',thumb:'linear-gradient(135deg,#000208,#001520)'},
+			  {id:'cv-fireflies',name:'Luciérnagas 🌿',tags:'canvas fireflies forest luciérnagas naturaleza movimiento real animacion',type:'canvas',anim:'fireflies',bg:'linear-gradient(180deg,#010601,#021203)',thumb:'linear-gradient(135deg,#010601,#041804)'},
+			  {id:'cv-snow',name:'Nevada de noche ❄️',tags:'canvas snow nieve winter invierno movimiento real animacion',type:'canvas',anim:'snow',bg:'linear-gradient(180deg,#0d1b2a,#1b2838)',thumb:'linear-gradient(135deg,#0d1b2a,#1b2838)'},
+			  {id:'cv-lava',name:'Lava colores 🔴',tags:'canvas lava colors colores fluid movimiento real animacion',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200005,#400010)'},
+			  {id:'cv-ocean',name:'Olas del mar 🌊',tags:'canvas ocean waves olas mar sea movimiento real animacion',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
+			  {id:'cv-particles',name:'Partículas de luz 💫',tags:'canvas particles particulas light neon movimiento real animacion',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
+			  {id:'cv-matrix',name:'Matrix digital 💻',tags:'canvas matrix digital code cyber movimiento real animacion',type:'canvas',anim:'matrix',bg:'#000',thumb:'linear-gradient(135deg,#000,#001a00)'},
 			];
 
 			// Generador de fondos por tema: crea cientos de variaciones de gradientes
@@ -4963,10 +4985,12 @@
 			/* ===================== WALLPAPER ENGINE ===================== */
 			let activeLayer = 'a';
 			function applyWallpaperToFill(fillEl, wp){
+			  // Stop any running canvas animation before reusing the fill element
+			  if(fillEl._canvasHandle){ try{fillEl._canvasHandle.stop();}catch(e){} fillEl._canvasHandle=null; }
 			  fillEl.className = 'wallpaper-fill';
 			  fillEl.style.animation = '';
 			  fillEl.style.backgroundImage = '';
-			  fillEl.innerHTML = ''; // limpia cualquier <video>/<iframe> de un fondo anterior
+			  fillEl.innerHTML = ''; // limpia cualquier <video>/<iframe>/<canvas> de un fondo anterior
 			  if(wp.type === 'youtube'){
 			    // Video/directo de YouTube como fondo, vía el embed oficial (iframe).
 			    // mute=1 + playsinline son obligatorios para que iOS permita el
@@ -4991,6 +5015,15 @@
 			    fillEl.style.backgroundImage = `url('${wp.url}')`;
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
+			  } else if(wp.type === 'canvas'){
+			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
+			    const cvs = document.createElement('canvas');
+			    cvs.width = window.innerWidth;
+			    cvs.height = window.innerHeight;
+			    cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+			    fillEl.appendChild(cvs);
+			    const animator = typeof _canvasAnimators !== 'undefined' && _canvasAnimators[wp.anim];
+			    if(animator){ const h = animator(cvs); fillEl._canvasHandle = h; }
 			  } else {
 			    fillEl.style.backgroundImage = `linear-gradient(${wp.angle||135}deg, ${(wp.colors||['#000','#111']).join(',')})`;
 			    fillEl.classList.add('fill-anim');
@@ -5017,6 +5050,8 @@
 			      const v=layer.querySelector('video');
 			      if(v) v.pause();
 			      layer.querySelectorAll('iframe.wp-yt-iframe').forEach(f=>f.remove());
+			      const fill=layer.querySelector('.wallpaper-fill');
+			      if(fill&&fill._canvasHandle){try{fill._canvasHandle.stop();}catch(e){}fill._canvasHandle=null;}
 			    });
 			  },1900);
 			}
@@ -5034,6 +5069,220 @@
 			    if(yt) _wpYtCommand(yt,'playVideo');
 			  }
 			});
+
+			/* ===== ANIMACIONES CANVAS (fondos con movimiento real, generado en tiempo real) ===== */
+			const _canvasAnimators = {};
+
+			// Estrellas volando hacia el espectador (warp speed)
+			_canvasAnimators.stars = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const stars=Array.from({length:200},()=>({x:(Math.random()-.5)*w*2,y:(Math.random()-.5)*h*2,z:Math.random()*w}));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.fillStyle='rgba(0,0,20,0.18)';ctx.fillRect(0,0,w,h);
+			    ctx.fillStyle='#fff';
+			    stars.forEach(s=>{
+			      s.z-=6;
+			      if(s.z<=0){s.x=(Math.random()-.5)*w*2;s.y=(Math.random()-.5)*h*2;s.z=w;}
+			      const sx=s.x/s.z*w/2+w/2,sy=s.y/s.z*h/2+h/2,r=Math.max(.2,(1-s.z/w)*2.8);
+			      ctx.beginPath();ctx.arc(sx,sy,r,0,6.28);ctx.fill();
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Lluvia cayendo sobre fondo oscuro
+			_canvasAnimators.rain = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const drops=Array.from({length:160},()=>({x:Math.random()*w,y:Math.random()*h,len:Math.random()*14+8,spd:Math.random()*5+7,op:Math.random()*.5+.2}));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    drops.forEach(d=>{
+			      ctx.strokeStyle=`rgba(174,214,241,${d.op})`;ctx.lineWidth=1;
+			      ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x-d.len*.12,d.y+d.len);ctx.stroke();
+			      d.y+=d.spd;if(d.y>h){d.y=-d.len;d.x=Math.random()*w;}
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Aurora boreal (blobs de color que se mueven con blending screen)
+			_canvasAnimators.aurora = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const B=[{c:'0,255,140',ph:0},{c:'0,180,255',ph:1.4},{c:'160,0,255',ph:2.8},{c:'255,100,0',ph:4.2}];
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<40)return;last=now;
+			    ctx.globalCompositeOperation='source-over';
+			    ctx.fillStyle='rgba(0,0,12,0.07)';ctx.fillRect(0,0,w,h);
+			    ctx.globalCompositeOperation='screen';
+			    B.forEach(b=>{
+			      const cx=(.5+Math.sin(t*.35+b.ph)*.3)*w,cy=(.3+Math.cos(t*.28+b.ph)*.12)*h,r=.65*Math.max(w,h);
+			      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+			      g.addColorStop(0,`rgba(${b.c},0.3)`);g.addColorStop(.6,`rgba(${b.c},0.1)`);g.addColorStop(1,`rgba(${b.c},0)`);
+			      ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+			    });
+			    ctx.globalCompositeOperation='source-over';
+			    t+=.009;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Luciérnagas flotando en la oscuridad
+			_canvasAnimators.fireflies = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const flies=Array.from({length:60},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2.5+1,ph:Math.random()*6.28,spd:Math.random()*.02+.01}));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.fillStyle='rgba(0,10,0,0.15)';ctx.fillRect(0,0,w,h);
+			    flies.forEach(f=>{
+			      f.ph+=f.spd;const op=(Math.sin(f.ph)+1)/2;
+			      f.x+=f.vx;f.y+=f.vy;
+			      if(f.x<0)f.x=w;if(f.x>w)f.x=0;if(f.y<0)f.y=h;if(f.y>h)f.y=0;
+			      const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r*5);
+			      g.addColorStop(0,`rgba(200,255,100,${op*.9})`);g.addColorStop(1,'rgba(200,255,100,0)');
+			      ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,f.r*5,0,6.28);ctx.fill();
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Nieve cayendo
+			_canvasAnimators.snow = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const flakes=Array.from({length:130},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*3+1,spd:Math.random()*1.5+.5,drift:(Math.random()-.5)*.4,op:Math.random()*.7+.3}));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    flakes.forEach(f=>{
+			      f.y+=f.spd;f.x+=f.drift;
+			      if(f.y>h){f.y=0;f.x=Math.random()*w;}if(f.x<0)f.x=w;if(f.x>w)f.x=0;
+			      ctx.globalAlpha=f.op;ctx.fillStyle='#fff';
+			      ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,6.28);ctx.fill();
+			    });
+			    ctx.globalAlpha=1;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Burbujas de lava / fluido de colores
+			_canvasAnimators.lava = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const cols=[[255,60,60],[255,150,0],[255,220,30],[60,255,80],[0,200,255],[160,60,255],[255,60,200],[255,100,30]];
+			  const blobs=cols.map((col,i)=>({col,x:.1+Math.random()*.8,y:.1+Math.random()*.8,r:.1+Math.random()*.14,ph:i*(6.28/8)}));
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<40)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    blobs.forEach(b=>{
+			      const cx=(b.x+Math.sin(t*.5+b.ph)*.3)*w,cy=(b.y+Math.cos(t*.4+b.ph)*.35)*h;
+			      const r=b.r*Math.min(w,h)*(1+Math.sin(t*.8+b.ph)*.15);
+			      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+			      g.addColorStop(0,`rgba(${b.col[0]},${b.col[1]},${b.col[2]},0.7)`);
+			      g.addColorStop(1,`rgba(${b.col[0]},${b.col[1]},${b.col[2]},0)`);
+			      ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,6.28);ctx.fill();
+			    });
+			    t+=.006;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Olas del mar
+			_canvasAnimators.ocean = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const waves=[{a:.04,f:.015,s:.4,y:.55,op:.4},{a:.035,f:.012,s:-.35,y:.65,op:.5},{a:.025,f:.018,s:.3,y:.75,op:.6},{a:.02,f:.022,s:-.25,y:.82,op:.7}];
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    const bg=ctx.createLinearGradient(0,0,0,h);
+			    bg.addColorStop(0,'#006994');bg.addColorStop(1,'#001f3f');
+			    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+			    waves.forEach(wv=>{
+			      ctx.beginPath();
+			      for(let x=0;x<=w;x+=3){
+			        const y=wv.y*h+Math.sin(x*wv.f+t*wv.s)*wv.a*h;
+			        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+			      }
+			      ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+			      ctx.fillStyle=`rgba(0,120,200,${wv.op})`;ctx.fill();
+			    });
+			    t+=.04;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Partículas de luz conectadas (red de nodos)
+			_canvasAnimators.particles = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const pts=Array.from({length:70},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,r:Math.random()*2.5+1,hue:Math.random()*360}));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.fillStyle='rgba(0,0,20,0.12)';ctx.fillRect(0,0,w,h);
+			    pts.forEach(p=>{
+			      p.x+=p.vx;p.y+=p.vy;p.hue=(p.hue+.3)%360;
+			      if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;
+			      ctx.globalAlpha=.8;ctx.fillStyle=`hsl(${p.hue},90%,65%)`;
+			      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fill();
+			    });
+			    ctx.globalAlpha=.15;ctx.lineWidth=.7;
+			    for(let i=0;i<pts.length;i++){
+			      for(let j=i+1;j<pts.length;j++){
+			        const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+			        if(d<130){
+			          ctx.strokeStyle=`hsl(${(pts[i].hue+pts[j].hue)/2},80%,60%)`;
+			          ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.stroke();
+			        }
+			      }
+			    }
+			    ctx.globalAlpha=1;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Matrix — cascada de caracteres verdes
+			_canvasAnimators.matrix = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const cols=Math.floor(w/18);
+			  const drops=Array.from({length:cols},()=>Math.random()*h/18|0);
+			  const chars='アイウエオカキクケコ0123456789ABCDEF';
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<50)return;last=now;
+			    ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(0,0,w,h);
+			    ctx.fillStyle='#0f0';ctx.font='16px monospace';
+			    drops.forEach((y,i)=>{
+			      ctx.fillText(chars[Math.random()*chars.length|0],i*18,y*18);
+			      if(Math.random()>.97)drops[i]=0;
+			      drops[i]++;
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
 			function setWallpaper(id){
 			  const wp = WALLPAPERS.find(w=>w.id===id);
 			  if(!wp) return;
@@ -5125,6 +5374,10 @@
 			      v.style.cssText = 'width:100%;height:100%;object-fit:cover;';
 			      fill.appendChild(v);
 			      v.play().catch(()=>{});
+			    } else if(wp.type === 'canvas'){
+			      fill.className = 'wp-fill';
+			      fill.style.backgroundImage = wp.thumb || wp.bg || 'linear-gradient(135deg,#000,#111)';
+			      fill.style.backgroundSize = 'cover';
 			    } else if(wp.type === 'photo' || wp.type === 'custom'){
 			      fill.className = 'wp-fill';
 			      fill.style.backgroundImage = `url('${wp.url}')`;
@@ -5513,11 +5766,37 @@
 			// configuración lo pasaba a false sin abrir nada (quitaba una clase que
 			// nunca estuvo puesta) y recién el segundo clic abría el panel.
 			let isSidebarVisible = false;
+			let _settingsHideTimer = null;
+			function _showSettingsBtn(){
+			  const btn = document.querySelector('.btn-settings');
+			  if(!btn) return;
+			  btn.classList.add('visible');
+			  clearTimeout(_settingsHideTimer);
+			  if(!isSidebarVisible){
+			    _settingsHideTimer = setTimeout(()=>{ if(!isSidebarVisible) btn.classList.remove('visible'); }, 3000);
+			  }
+			}
 			function toggleSidebar(){
 			  isSidebarVisible = !isSidebarVisible;
 			  document.getElementById('left-sidebar').classList.toggle('open', isSidebarVisible);
 			  document.getElementById('sidebar-backdrop').classList.toggle('show', isSidebarVisible);
+			  const btn = document.querySelector('.btn-settings');
+			  if(isSidebarVisible){
+			    if(btn) btn.classList.add('visible');
+			    clearTimeout(_settingsHideTimer);
+			  } else {
+			    clearTimeout(_settingsHideTimer);
+			    _settingsHideTimer = setTimeout(()=>{ if(btn) btn.classList.remove('visible'); }, 3000);
+			  }
 			}
+			// Detectar toque/ratón cerca de la esquina superior-izquierda para mostrar el botón
+			document.addEventListener('touchstart', e=>{
+			  const t=e.touches[0];
+			  if(t && t.clientX < 110 && t.clientY < 110) _showSettingsBtn();
+			},{passive:true});
+			document.addEventListener('mousemove', e=>{
+			  if(e.clientX < 110 && e.clientY < 110) _showSettingsBtn();
+			},{passive:true});
 			function showTab(name){
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
