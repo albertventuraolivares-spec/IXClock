@@ -123,10 +123,6 @@
 			   brusco ni se acerca de golpe). Realista. */
 			.wallpaper-fill{position:absolute;inset:0;background-size:cover;background-position:center;}
 			.wallpaper-fill.fill-anim{background-size:340% 340%;animation:auroraFlow 40s linear infinite;}
-			@keyframes photoDrift{
-			  0%{background-position:48% 50%;background-size:112% 112%;}
-			  100%{background-position:52% 50%;background-size:112% 112%;}
-			}
 			@keyframes auroraFlow{
 			  0%{background-position:0% 50%;}
 			  100%{background-position:100% 50%;}
@@ -1717,33 +1713,6 @@
 					>
 						🌍 Fondo Dinámico (según la hora)
 					</button>
-					<!-- Motion mode -->
-					<div class="grid grid-cols-3 gap-1.5 mb-2 shrink-0">
-						<button
-							class="btn-option active text-[10px]"
-							id="motion-ken"
-							onclick="setMotionMode('kenburns',this)"
-							title="Ken Burns: zoom + paneo continuo"
-						>
-							🎬 Ken Burns
-						</button>
-						<button
-							class="btn-option text-[10px]"
-							id="motion-still"
-							onclick="setMotionMode('still',this)"
-							title="Sin movimiento"
-						>
-							⏸️ Quieto
-						</button>
-						<button
-							class="btn-option text-[10px]"
-							id="motion-nature"
-							onclick="setMotionMode('nature',this)"
-							title="Movimiento sutil de plantas / agua"
-						>
-							🌿 Natural
-						</button>
-					</div>
 					<div class="relative mb-3 shrink-0">
 						<span
 							class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"
@@ -4662,6 +4631,13 @@
 			  {id:'cv-ocean',name:'Olas del mar 🌊',tags:'canvas ocean waves olas mar sea movimiento real animacion',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
 			  {id:'cv-particles',name:'Partículas de luz 💫',tags:'canvas particles particulas light neon movimiento real animacion',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
 			  {id:'cv-matrix',name:'Matrix digital 💻',tags:'canvas matrix digital code cyber movimiento real animacion',type:'canvas',anim:'matrix',bg:'#000',thumb:'linear-gradient(135deg,#000,#001a00)'},
+			  {id:'cv-leaves',name:'Hojas de otoño 🍂',tags:'canvas hojas leaves autumn otoño bosque movimiento real animacion naturaleza',type:'canvas',anim:'leaves',bg:'linear-gradient(180deg,#1a0a00,#2a1000)',thumb:'linear-gradient(135deg,#3a1a00,#5a2800)'},
+			  {id:'cv-river',name:'Río en la noche 🌊',tags:'canvas river rio agua water movimiento real animacion naturaleza',type:'canvas',anim:'river',bg:'linear-gradient(180deg,#091f38,#0d3352)',thumb:'linear-gradient(135deg,#091f38,#0d3352)'},
+			  {id:'cv-fire',name:'Fuego y llamas 🔥',tags:'canvas fire fuego llamas flame movimiento real animacion',type:'canvas',anim:'fire',bg:'linear-gradient(180deg,#050000,#0d0000)',thumb:'linear-gradient(135deg,#200000,#500010)'},
+			  {id:'cv-butterflies',name:'Mariposas 🦋',tags:'canvas butterflies mariposas nature movimiento real animacion',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#1a0a2e,#2e1a0a)',thumb:'linear-gradient(135deg,#2a1040,#403010)'},
+			  {id:'cv-clouds',name:'Nubes al atardecer ☁️',tags:'canvas clouds nubes sky sunset atardecer movimiento real animacion',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a2a6c,#b21f1f,#fdbb2d)',thumb:'linear-gradient(135deg,#1a2a6c,#b21f1f)'},
+			  {id:'cv-lake',name:'Lago nocturno 🌙',tags:'canvas lake lago night noche water movimiento real animacion naturaleza',type:'canvas',anim:'lake',bg:'linear-gradient(180deg,#0a1628,#050d1a)',thumb:'linear-gradient(135deg,#0a1628,#050d1a)'},
+			  {id:'cv-grass',name:'Prado al viento 🌾',tags:'canvas grass hierba prado wind viento campo field movimiento real animacion naturaleza',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
 			];
 
 			// Generador de fondos por tema: crea cientos de variaciones de gradientes
@@ -5283,6 +5259,248 @@
 			  raf=requestAnimationFrame(draw);
 			  return{stop:()=>cancelAnimationFrame(raf)};
 			};
+
+			// Hojas de otoño cayendo y rotando
+			_canvasAnimators.leaves = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const cols=['#e8722a','#d4522a','#c44a1a','#f0a030','#8b3a0f','#cc6820','#f0c040','#a84010'];
+			  const lv=Array.from({length:55},()=>({
+			    x:Math.random()*w,y:Math.random()*h-h,
+			    vy:Math.random()*1.2+.5,vx:(Math.random()-.5)*.8,
+			    rot:Math.random()*Math.PI*2,vrot:(Math.random()-.5)*.04,
+			    sz:Math.random()*14+7,col:cols[Math.random()*cols.length|0],sw:Math.random()*.6+.5
+			  }));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    lv.forEach(l=>{
+			      l.y+=l.vy;l.x+=Math.sin(l.y*.012)*1.2+l.vx;l.rot+=l.vrot;
+			      if(l.y>h+20){l.y=-20;l.x=Math.random()*w;}
+			      ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.rot);
+			      ctx.fillStyle=l.col;ctx.globalAlpha=.85;
+			      ctx.beginPath();
+			      // Leaf shape: two arcs
+			      ctx.moveTo(0,-l.sz);
+			      ctx.bezierCurveTo(l.sz*l.sw,-l.sz*.5,l.sz*l.sw,l.sz*.5,0,l.sz);
+			      ctx.bezierCurveTo(-l.sz*l.sw,l.sz*.5,-l.sz*l.sw,-l.sz*.5,0,-l.sz);
+			      ctx.fill();
+			      ctx.globalAlpha=1;ctx.restore();
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Río / agua fluyendo con reflejos de luz
+			_canvasAnimators.river = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const ripples=Array.from({length:25},()=>({x:Math.random()*w,y:Math.random()*h,r:0,maxR:Math.random()*30+15,spd:Math.random()*.4+.3,op:Math.random()*.4+.2}));
+			  const streaks=Array.from({length:40},()=>({x:Math.random()*w,y:Math.random()*h,len:Math.random()*60+30,spd:Math.random()*3+2,op:Math.random()*.3+.1}));
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    // Water base
+			    const bg=ctx.createLinearGradient(0,0,0,h);
+			    bg.addColorStop(0,'#1a4a6e');bg.addColorStop(.5,'#0d3352');bg.addColorStop(1,'#091f38');
+			    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+			    // Light streaks flowing downstream
+			    ctx.globalCompositeOperation='screen';
+			    streaks.forEach(s=>{
+			      s.y+=s.spd;if(s.y>h+s.len){s.y=-s.len;s.x=Math.random()*w;}
+			      const g=ctx.createLinearGradient(s.x,s.y,s.x+4,s.y+s.len);
+			      g.addColorStop(0,'rgba(100,200,255,0)');
+			      g.addColorStop(.5,`rgba(100,200,255,${s.op})`);
+			      g.addColorStop(1,'rgba(100,200,255,0)');
+			      ctx.fillStyle=g;ctx.fillRect(s.x,s.y,2,s.len);
+			    });
+			    // Ripples
+			    ctx.globalCompositeOperation='source-over';
+			    ripples.forEach(rp=>{
+			      rp.r+=rp.spd;rp.op*=.988;
+			      if(rp.r>rp.maxR){rp.r=0;rp.op=Math.random()*.4+.2;rp.x=Math.random()*w;rp.y=Math.random()*h;}
+			      ctx.strokeStyle=`rgba(150,220,255,${rp.op})`;ctx.lineWidth=1;
+			      ctx.beginPath();ctx.ellipse(rp.x,rp.y,rp.r,rp.r*.35,0,0,Math.PI*2);ctx.stroke();
+			    });
+			    t+=.02;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Llamas de fuego realistas
+			_canvasAnimators.fire = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const parts=Array.from({length:120},()=>({
+			    x:w/2+(Math.random()-.5)*w*.5,y:h,
+			    vx:(Math.random()-.5)*1.5,vy:-(Math.random()*4+3),
+			    life:Math.random(),decay:Math.random()*.015+.008,
+			    sz:Math.random()*20+10
+			  }));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<30)return;last=now;
+			    ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(0,0,w,h);
+			    parts.forEach(p=>{
+			      p.x+=p.vx;p.y+=p.vy;p.life-=p.decay;p.vx+=(Math.random()-.5)*.3;
+			      if(p.life<=0){
+			        p.x=w/2+(Math.random()-.5)*w*.5;p.y=h;
+			        p.life=Math.random()*.6+.4;p.decay=Math.random()*.015+.008;
+			        p.vy=-(Math.random()*4+3);p.sz=Math.random()*20+10;
+			      }
+			      const t=p.life;
+			      // Color: white→yellow→orange→red as life depletes
+			      let r=255,g=Math.round(t>0.5?255:t*2*200),b=Math.round(t>0.7?Math.min(255,t*200):0);
+			      const g2=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.sz*t);
+			      g2.addColorStop(0,`rgba(${r},${g},${b},${t*.9})`);
+			      g2.addColorStop(1,`rgba(${r},${g>>1},0,0)`);
+			      ctx.fillStyle=g2;ctx.beginPath();ctx.arc(p.x,p.y,p.sz*t,0,6.28);ctx.fill();
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Mariposas volando
+			_canvasAnimators.butterflies = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const cols=['#ff6bb5','#ffb347','#87ceeb','#98ff98','#dda0dd','#fffacd'];
+			  const bfs=Array.from({length:20},()=>({
+			    x:Math.random()*w,y:Math.random()*h,
+			    vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.5,
+			    wing:0,wspd:Math.random()*.12+.06,wsz:Math.random()*18+12,
+			    col:cols[Math.random()*cols.length|0]
+			  }));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    ctx.clearRect(0,0,w,h);
+			    bfs.forEach(b=>{
+			      b.wing+=b.wspd;
+			      b.x+=b.vx+Math.sin(b.wing*.5)*.4;
+			      b.y+=b.vy+Math.cos(b.wing*.3)*.3;
+			      if(b.x<-30)b.x=w+30;if(b.x>w+30)b.x=-30;
+			      if(b.y<-30)b.y=h+30;if(b.y>h+30)b.y=-30;
+			      const ww=b.wsz*Math.abs(Math.cos(b.wing));
+			      ctx.save();ctx.translate(b.x,b.y);ctx.globalAlpha=.8;
+			      // Left wing
+			      ctx.fillStyle=b.col;
+			      ctx.beginPath();ctx.ellipse(-ww*.5,0,ww*.8,b.wsz*.6,-.4,0,6.28);ctx.fill();
+			      ctx.beginPath();ctx.ellipse(-ww*.3,-b.wsz*.4,ww*.6,b.wsz*.5,.4,0,6.28);ctx.fill();
+			      // Right wing
+			      ctx.beginPath();ctx.ellipse(ww*.5,0,ww*.8,b.wsz*.6,.4,0,6.28);ctx.fill();
+			      ctx.beginPath();ctx.ellipse(ww*.3,-b.wsz*.4,ww*.6,b.wsz*.5,-.4,0,6.28);ctx.fill();
+			      ctx.globalAlpha=1;ctx.restore();
+			    });
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Nubes moviéndose — cielo al atardecer
+			_canvasAnimators.clouds = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const cls=Array.from({length:8},()=>({
+			    x:Math.random()*w,y:Math.random()*h*.5,
+			    spd:Math.random()*.4+.15,sz:Math.random()*80+60,op:Math.random()*.7+.3,
+			    puffs:Array.from({length:5},()=>({ox:(Math.random()-.5)*60,oy:(Math.random()-.5)*20,r:Math.random()*25+20}))
+			  }));
+			  let raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<40)return;last=now;
+			    const sky=ctx.createLinearGradient(0,0,0,h);
+			    sky.addColorStop(0,'#1a2a6c');sky.addColorStop(.5,'#b21f1f');sky.addColorStop(1,'#fdbb2d');
+			    ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+			    cls.forEach(cl=>{
+			      cl.x+=cl.spd;if(cl.x>w+cl.sz*2)cl.x=-cl.sz*2;
+			      ctx.globalAlpha=cl.op;
+			      cl.puffs.forEach(p=>{
+			        const g=ctx.createRadialGradient(cl.x+p.ox,cl.y+p.oy,0,cl.x+p.ox,cl.y+p.oy,p.r);
+			        g.addColorStop(0,'rgba(255,240,220,.95)');g.addColorStop(1,'rgba(255,220,180,0)');
+			        ctx.fillStyle=g;ctx.beginPath();ctx.arc(cl.x+p.ox,cl.y+p.oy,p.r,0,6.28);ctx.fill();
+			      });
+			    });
+			    ctx.globalAlpha=1;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Brillo de agua (lago en calma con destellos de luz)
+			_canvasAnimators.lake = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const glints=Array.from({length:60},()=>({
+			    x:Math.random()*w,y:h*.4+Math.random()*h*.6,
+			    op:0,mop:Math.random()*.7+.2,spd:Math.random()*.02+.01,rising:true
+			  }));
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    // Sky + water
+			    const sky=ctx.createLinearGradient(0,0,0,h);
+			    sky.addColorStop(0,'#0a1628');sky.addColorStop(.4,'#1a3a5c');sky.addColorStop(.4,'#0d2035');sky.addColorStop(1,'#050d1a');
+			    ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+			    // Horizontal wave lines
+			    for(let y=h*.42;y<h;y+=Math.random()*.5+3){
+			      const op=.04+Math.sin(y*.05+t)*.03;
+			      ctx.strokeStyle=`rgba(100,180,255,${op})`;ctx.lineWidth=1;
+			      ctx.beginPath();ctx.moveTo(0,y+Math.sin(t*2+y*.02)*2);
+			      for(let x=0;x<=w;x+=8)ctx.lineTo(x,y+Math.sin(x*.02+t*1.5+y*.03)*3);
+			      ctx.stroke();
+			    }
+			    // Glints
+			    glints.forEach(g=>{
+			      if(g.rising)g.op+=g.spd;else g.op-=g.spd;
+			      if(g.op>=g.mop){g.rising=false;}
+			      if(g.op<=0){g.rising=true;g.x=Math.random()*w;g.y=h*.4+Math.random()*h*.6;}
+			      ctx.fillStyle=`rgba(220,240,255,${g.op})`;
+			      ctx.beginPath();ctx.ellipse(g.x,g.y,3,1.5,Math.random()*.5,0,6.28);ctx.fill();
+			    });
+			    t+=.015;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
+
+			// Campo de hierba meciéndose al viento
+			_canvasAnimators.grass = function(c){
+			  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+			  const blades=Array.from({length:200},()=>({
+			    x:Math.random()*w,baseH:h*.5+Math.random()*h*.5,
+			    len:Math.random()*80+40,ph:Math.random()*Math.PI*2,
+			    sp:Math.random()*.02+.01,g:Math.random()*.4+.2
+			  }));
+			  let t=0,raf,last=0;
+			  const draw=(now)=>{
+			    raf=requestAnimationFrame(draw);
+			    if(now-last<33)return;last=now;
+			    // Sky
+			    const sky=ctx.createLinearGradient(0,0,0,h);
+			    sky.addColorStop(0,'#87ceeb');sky.addColorStop(1,'#d4f0a0');
+			    ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+			    // Ground
+			    ctx.fillStyle='#2d5a1b';ctx.fillRect(0,h*.55,w,h*.45);
+			    // Blades
+			    blades.forEach(b=>{
+			      const sway=Math.sin(t*b.sp*60+b.ph)*b.g*b.len;
+			      const shade=Math.floor(60+Math.sin(t*b.sp*60+b.ph)*20);
+			      ctx.strokeStyle=`rgb(${shade},${shade+60},${shade>>1})`;
+			      ctx.lineWidth=1.5;
+			      ctx.beginPath();ctx.moveTo(b.x,b.baseH);
+			      ctx.quadraticCurveTo(b.x+sway*.5,b.baseH-b.len*.6,b.x+sway,b.baseH-b.len);
+			      ctx.stroke();
+			    });
+			    t+=.016;
+			  };
+			  raf=requestAnimationFrame(draw);
+			  return{stop:()=>cancelAnimationFrame(raf)};
+			};
 			function setWallpaper(id){
 			  const wp = WALLPAPERS.find(w=>w.id===id);
 			  if(!wp) return;
@@ -5344,10 +5562,7 @@
 			  _applyCustomWallpaper({ id:'yt-'+id, name:'YouTube', tags:'video youtube movimiento', type:'youtube', videoId:id });
 			  if(inp) inp.value='';
 			}
-			// El movimiento del fondo se controla con los botones Ken Burns / Quieto /
-			// Natural (setMotionMode). Limpiamos cualquier resto del antiguo modo
-			// "wp-still" para que "Natural" vuelva a animarse.
-			try{ document.body.classList.remove('wp-still'); localStorage.removeItem('wp_still'); }catch(e){}
+			try{ document.body.classList.remove('wp-still'); localStorage.removeItem('wp_still'); localStorage.removeItem('motion_mode'); }catch(e){}
 
 			function renderWallpaperGrid(){
 			  const grid = document.getElementById('wallpaper-grid');
@@ -11302,52 +11517,6 @@
 			}
 			(function(){const s=localStorage.getItem('user_status');if(s){const m=s.match(/^(\S+)\s*(.*)?$/);if(m){document.getElementById('status-icon').textContent=m[1];document.getElementById('status-label').textContent=m[2]||'';}else document.getElementById('status-label').textContent=s;}})();
 
-			/* ===== WALLPAPER MOTION MODE ===== */
-			let currentMotionMode=localStorage.getItem('motion_mode')||'kenburns';
-			function setMotionMode(mode,btn){
-			  currentMotionMode=mode;localStorage.setItem('motion_mode',mode);
-			  document.querySelectorAll('#motion-ken,#motion-still,#motion-nature').forEach(b=>b.classList.remove('active'));
-			  if(btn)btn.classList.add('active');
-			  document.querySelectorAll('.wallpaper-fill').forEach(f=>{
-			    if(mode==='still'){
-			      f.style.animation='none';f.style.transform='scale(1.05)';
-			    } else if(mode==='nature'){
-			      f.style.animation='natureBreath 8s ease-in-out infinite';
-			      f.style.transform='';
-			    } else {
-			      f.style.animation='';f.style.transform='';
-			    }
-			  });
-			  if(mode==='nature') enableNatureParallax();
-			  else disableNatureParallax();
-			}
-
-			// Nature mode: subtle organic breathing + mouse parallax (trees/plants sway feel)
-			let _natureParallaxOn=false;
-			function enableNatureParallax(){
-			  if(_natureParallaxOn) return;
-			  _natureParallaxOn=true;
-			  document.addEventListener('mousemove', _natureMoveHandler);
-			}
-			function disableNatureParallax(){
-			  _natureParallaxOn=false;
-			  document.removeEventListener('mousemove', _natureMoveHandler);
-			  document.querySelectorAll('.wallpaper-fill').forEach(f=>{ f.style.transform=''; });
-			}
-			function _natureMoveHandler(e){
-			  if(!_natureParallaxOn) return;
-			  const cx=window.innerWidth/2, cy=window.innerHeight/2;
-			  const dx=(e.clientX-cx)/cx, dy=(e.clientY-cy)/cy;
-			  // Very subtle sway — like wind through foliage: small tilt + slight scale
-			  const tiltX=(dy*1.8).toFixed(2), tiltY=(-dx*1.8).toFixed(2);
-			  const shiftX=(dx*8).toFixed(1), shiftY=(dy*8).toFixed(1);
-			  document.querySelectorAll('.wallpaper-fill').forEach(f=>{
-			    f.style.transform=`scale(1.12) perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translate(${shiftX}px,${shiftY}px)`;
-			    f.style.transition='transform .9s cubic-bezier(.16,1,.3,1)';
-			  });
-			}
-			document.head.insertAdjacentHTML('beforeend','<style>@keyframes natureBreath{0%,100%{background-size:120% 120%;}50%{background-size:128% 128%;}}</style>');
-			(function(){const m=localStorage.getItem('motion_mode')||'kenburns';const bm={kenburns:'motion-ken',still:'motion-still',nature:'motion-nature'};const apply=()=>{const b=document.getElementById(bm[m]);setMotionMode(m,b);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();})();
 
 			/* ===== AI PROVIDER ===== */
 			/* ===== TRADUCCIÓN DE INTERFAZ — Pollinations AI en lotes ===== */
