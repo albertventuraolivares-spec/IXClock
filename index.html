@@ -1270,6 +1270,22 @@
 				</g>
 			</svg>
 		</button>
+		<!-- Benchmark -->
+		<button
+			class="dock-btn dock-secondary"
+			onclick="openBenchmark()"
+			title="Benchmark"
+			style="background:linear-gradient(135deg,#ff3b30,#ff6b35);box-shadow:0 3px 14px rgba(255,59,48,.4);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="url(#benchGrad)"/>
+				<defs><linearGradient id="benchGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff3b30"/><stop offset="100%" stop-color="#ff6b35"/></linearGradient></defs>
+				<circle cx="20" cy="22" r="10" fill="none" stroke="#fff" stroke-width="2"/>
+				<path d="M20 22 L20 14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+				<path d="M20 22 L26 18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+				<text x="20" y="35" text-anchor="middle" fill="#fff" font-size="6" font-weight="700">BENCH</text>
+			</svg>
+		</button>
 		<!-- Juegos -->
 		<button
 			class="dock-btn"
@@ -6976,6 +6992,294 @@
 			    setTimeout(()=>{ try{ browserRetryViaProxy(); }catch(e){} }, 1400);
 			  }
 			}
+			/* ===== BENCHMARK APP (estilo AnTuTu / Geekbench) ===== */
+			function openBenchmark(){
+			  let modal=document.getElementById('bench-modal');
+			  if(modal){ modal.style.display='flex'; return; }
+			  modal=document.createElement('div'); modal.id='bench-modal';
+			  modal.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px;';
+			  modal.innerHTML=`
+			  <div style="width:100%;max-width:400px;max-height:90vh;background:rgba(20,20,24,.97);border-radius:24px;border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
+			    <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;">
+			      <div>
+			        <div style="font-size:17px;font-weight:800;color:#fff;">🔥 IXBench</div>
+			        <div style="font-size:10px;color:rgba(255,255,255,.4);">Benchmark de rendimiento del dispositivo</div>
+			      </div>
+			      <button onclick="document.getElementById('bench-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			    </div>
+			    <div style="overflow-y:auto;padding:16px 20px;" id="bench-content">
+			      <div id="bench-score-ring" style="display:flex;justify-content:center;margin-bottom:16px;">
+			        <div style="position:relative;width:140px;height:140px;">
+			          <svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">
+			            <circle cx="70" cy="70" r="62" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/>
+			            <circle id="bench-ring" cx="70" cy="70" r="62" fill="none" stroke="url(#benchRingGrad)" stroke-width="8" stroke-linecap="round" stroke-dasharray="389.56" stroke-dashoffset="389.56"/>
+			            <defs><linearGradient id="benchRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff3b30"/><stop offset="50%" stop-color="#ff9500"/><stop offset="100%" stop-color="#30d158"/></linearGradient></defs>
+			          </svg>
+			          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+			            <div id="bench-total-score" style="font-size:32px;font-weight:900;color:#fff;">—</div>
+			            <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;">PUNTOS</div>
+			          </div>
+			        </div>
+			      </div>
+			      <div id="bench-bars" style="display:grid;gap:10px;margin-bottom:16px;">
+			        <div class="bench-cat" data-cat="cpu">
+			          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+			            <span style="font-size:12px;font-weight:700;color:#fff;">🧠 CPU</span>
+			            <span id="bench-cpu-score" style="font-size:12px;font-weight:800;color:#ff9500;">—</span>
+			          </div>
+			          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div id="bench-cpu-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff3b30,#ff9500);border-radius:3px;transition:width 1s ease;"></div></div>
+			        </div>
+			        <div class="bench-cat" data-cat="gpu">
+			          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+			            <span style="font-size:12px;font-weight:700;color:#fff;">🎨 GPU</span>
+			            <span id="bench-gpu-score" style="font-size:12px;font-weight:800;color:#0a84ff;">—</span>
+			          </div>
+			          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div id="bench-gpu-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#0a84ff,#5e5ce6);border-radius:3px;transition:width 1s ease;"></div></div>
+			        </div>
+			        <div class="bench-cat" data-cat="mem">
+			          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+			            <span style="font-size:12px;font-weight:700;color:#fff;">💾 Memoria</span>
+			            <span id="bench-mem-score" style="font-size:12px;font-weight:800;color:#30d158;">—</span>
+			          </div>
+			          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div id="bench-mem-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#30d158,#34c759);border-radius:3px;transition:width 1s ease;"></div></div>
+			        </div>
+			        <div class="bench-cat" data-cat="ai">
+			          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+			            <span style="font-size:12px;font-weight:700;color:#fff;">🤖 AI / ML</span>
+			            <span id="bench-ai-score" style="font-size:12px;font-weight:800;color:#bf5af2;">—</span>
+			          </div>
+			          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div id="bench-ai-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#bf5af2,#ff2d55);border-radius:3px;transition:width 1s ease;"></div></div>
+			        </div>
+			      </div>
+			      <div id="bench-details" style="background:rgba(255,255,255,.04);border-radius:14px;padding:12px;margin-bottom:14px;">
+			        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:8px;">INFO DEL DISPOSITIVO</div>
+			        <div id="bench-device-info" style="font-size:11px;color:rgba(255,255,255,.65);line-height:1.6;"></div>
+			      </div>
+			      <div id="bench-status" style="text-align:center;font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;">Presiona iniciar para comenzar</div>
+			      <button id="bench-start-btn" onclick="_benchRun()" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#ff3b30,#ff6b35);border:none;color:#fff;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.5px;">▶ INICIAR BENCHMARK</button>
+			    </div>
+			  </div>`;
+			  document.body.appendChild(modal);
+			  _benchDeviceInfo();
+			}
+			function _benchDeviceInfo(){
+			  const info=document.getElementById('bench-device-info');
+			  if(!info)return;
+			  const ua=navigator.userAgent;
+			  let device='Desconocido';
+			  if(/iPad/.test(ua)) device='iPad';
+			  else if(/iPhone/.test(ua)) device='iPhone';
+			  else if(/Android/.test(ua)) device='Android';
+			  else if(/Mac/.test(ua)) device='Mac';
+			  else if(/Windows/.test(ua)) device='Windows';
+			  else if(/Linux/.test(ua)) device='Linux';
+			  const cores=navigator.hardwareConcurrency||'?';
+			  const mem=navigator.deviceMemory?navigator.deviceMemory+' GB':'N/A';
+			  const gpu=(function(){try{const c=document.createElement('canvas');const g=c.getContext('webgl')||c.getContext('experimental-webgl');if(!g)return'N/A';const d=g.getExtension('WEBGL_debug_renderer_info');return d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'WebGL disponible';}catch(e){return'N/A';}})();
+			  const screen=window.screen.width+'x'+window.screen.height+' @'+window.devicePixelRatio+'x';
+			  info.innerHTML=`
+			    <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;">
+			      <span style="opacity:.5;">Dispositivo</span><span>${device}</span>
+			      <span style="opacity:.5;">Núcleos CPU</span><span>${cores}</span>
+			      <span style="opacity:.5;">RAM</span><span>${mem}</span>
+			      <span style="opacity:.5;">GPU</span><span style="word-break:break-all;">${gpu}</span>
+			      <span style="opacity:.5;">Pantalla</span><span>${screen}</span>
+			      <span style="opacity:.5;">Navegador</span><span>${/Safari/.test(ua)&&!/Chrome/.test(ua)?'Safari':/Chrome/.test(ua)?'Chrome':/Firefox/.test(ua)?'Firefox':'Otro'}</span>
+			    </div>`;
+			}
+			let _benchRunning=false;
+			async function _benchRun(){
+			  if(_benchRunning)return;
+			  _benchRunning=true;
+			  const btn=document.getElementById('bench-start-btn');
+			  btn.textContent='⏳ Ejecutando...'; btn.style.opacity='.6';
+			  const status=document.getElementById('bench-status');
+			  const ring=document.getElementById('bench-ring');
+			  const total=document.getElementById('bench-total-score');
+			  ['cpu','gpu','mem','ai'].forEach(k=>{
+			    document.getElementById('bench-'+k+'-score').textContent='...';
+			    document.getElementById('bench-'+k+'-bar').style.width='0%';
+			  });
+			  ring.style.strokeDashoffset='389.56'; total.textContent='...';
+			  await new Promise(r=>setTimeout(r,300));
+
+			  // CPU Benchmark
+			  status.textContent='🧠 Probando CPU...';
+			  const cpuScore=await _benchCPU();
+			  _benchShowScore('cpu',cpuScore,3000);
+
+			  // GPU Benchmark
+			  status.textContent='🎨 Probando GPU...';
+			  const gpuScore=await _benchGPU();
+			  _benchShowScore('gpu',gpuScore,3000);
+
+			  // Memory Benchmark
+			  status.textContent='💾 Probando Memoria...';
+			  const memScore=await _benchMem();
+			  _benchShowScore('mem',memScore,3000);
+
+			  // AI Benchmark
+			  status.textContent='🤖 Probando AI / ML...';
+			  const aiScore=await _benchAI();
+			  _benchShowScore('ai',aiScore,3000);
+
+			  const totalScore=Math.round(cpuScore+gpuScore+memScore+aiScore);
+			  total.textContent=totalScore.toLocaleString();
+			  const pct=Math.min(totalScore/12000,1);
+			  ring.style.strokeDashoffset=(389.56*(1-pct)).toFixed(1);
+			  ring.style.transition='stroke-dashoffset 1.5s ease';
+
+			  let rating='';
+			  if(totalScore>=10000) rating='🏆 Excelente';
+			  else if(totalScore>=7000) rating='🥇 Muy bueno';
+			  else if(totalScore>=4000) rating='🥈 Bueno';
+			  else if(totalScore>=2000) rating='🥉 Normal';
+			  else rating='📉 Bajo';
+			  status.textContent=`${rating} — ${totalScore.toLocaleString()} puntos`;
+			  btn.textContent='🔄 REPETIR BENCHMARK'; btn.style.opacity='1';
+			  _benchRunning=false;
+
+			  try{const old=JSON.parse(localStorage.getItem('bench_history')||'[]');
+			  old.push({date:new Date().toISOString().slice(0,16),cpu:cpuScore,gpu:gpuScore,mem:memScore,ai:aiScore,total:totalScore});
+			  if(old.length>20)old.splice(0,old.length-20);
+			  localStorage.setItem('bench_history',JSON.stringify(old));}catch(e){}
+			}
+			function _benchShowScore(cat,score,max){
+			  document.getElementById('bench-'+cat+'-score').textContent=Math.round(score).toLocaleString();
+			  document.getElementById('bench-'+cat+'-bar').style.width=Math.min(score/max*100,100).toFixed(1)+'%';
+			}
+			function _benchCPU(){
+			  return new Promise(resolve=>{
+			    setTimeout(()=>{
+			      let score=0;
+			      // Integer math
+			      const t0=performance.now();
+			      let x=0;for(let i=0;i<2000000;i++){x+=i*i;x=x%1000000007;}
+			      const intTime=performance.now()-t0;
+			      score+=Math.round(Math.max(50,2000/(intTime+1))*500);
+			      // Float math
+			      const t1=performance.now();
+			      let y=1.0;for(let i=0;i<1000000;i++){y=Math.sin(y)*Math.cos(y*0.7)+Math.sqrt(Math.abs(y)+1);}
+			      const floatTime=performance.now()-t1;
+			      score+=Math.round(Math.max(50,1000/(floatTime+1))*400);
+			      // Sort
+			      const t2=performance.now();
+			      const arr=[];for(let i=0;i<100000;i++)arr.push(Math.random());
+			      arr.sort((a,b)=>a-b);
+			      const sortTime=performance.now()-t2;
+			      score+=Math.round(Math.max(50,500/(sortTime+1))*300);
+			      // Primes
+			      const t3=performance.now();
+			      let primes=0;for(let n=2;n<50000;n++){let ok=true;for(let d=2;d*d<=n;d++){if(n%d===0){ok=false;break;}}if(ok)primes++;}
+			      const primeTime=performance.now()-t3;
+			      score+=Math.round(Math.max(50,500/(primeTime+1))*300);
+			      resolve(Math.min(score,3000));
+			    },50);
+			  });
+			}
+			function _benchGPU(){
+			  return new Promise(resolve=>{
+			    const c=document.createElement('canvas');c.width=512;c.height=512;
+			    const gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+			    if(!gl){resolve(500);return;}
+			    // Vertex shader
+			    const vs=gl.createShader(gl.VERTEX_SHADER);
+			    gl.shaderSource(vs,'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}');
+			    gl.compileShader(vs);
+			    // Fragment shader (heavy math)
+			    const fs=gl.createShader(gl.FRAGMENT_SHADER);
+			    gl.shaderSource(fs,'precision mediump float;uniform float t;void main(){float x=gl_FragCoord.x/512.0;float y=gl_FragCoord.y/512.0;float r=sin(x*10.0+t)*cos(y*10.0+t);float g=cos(x*8.0-t)*sin(y*12.0+t);float b=sin((x+y)*6.0+t);gl_FragColor=vec4(r*0.5+0.5,g*0.5+0.5,b*0.5+0.5,1);}');
+			    gl.compileShader(fs);
+			    const prg=gl.createProgram();gl.attachShader(prg,vs);gl.attachShader(prg,fs);gl.linkProgram(prg);gl.useProgram(prg);
+			    const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+			    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+			    const loc=gl.getAttribLocation(prg,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+			    const tLoc=gl.getUniformLocation(prg,'t');
+			    const frames=120;
+			    const t0=performance.now();
+			    for(let i=0;i<frames;i++){gl.uniform1f(tLoc,i*0.1);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
+			    gl.finish();
+			    const elapsed=performance.now()-t0;
+			    const fps=frames/(elapsed/1000);
+			    let score=Math.round(fps*5);
+			    // Texture fill rate
+			    const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+			    const pixels=new Uint8Array(512*512*4);for(let i=0;i<pixels.length;i++)pixels[i]=Math.random()*255;
+			    const t1=performance.now();
+			    for(let i=0;i<30;i++){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,512,512,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);}
+			    gl.finish();
+			    const texTime=performance.now()-t1;
+			    score+=Math.round(Math.max(100,1000/(texTime+1))*400);
+			    gl.deleteTexture(tex);gl.deleteProgram(prg);gl.deleteShader(vs);gl.deleteShader(fs);gl.deleteBuffer(buf);
+			    resolve(Math.min(score,3000));
+			  });
+			}
+			function _benchMem(){
+			  return new Promise(resolve=>{
+			    setTimeout(()=>{
+			      let score=0;
+			      // Allocation speed
+			      const t0=performance.now();
+			      const arrs=[];for(let i=0;i<200;i++){arrs.push(new Float64Array(10000));}
+			      const allocTime=performance.now()-t0;
+			      score+=Math.round(Math.max(100,500/(allocTime+1))*600);
+			      // Sequential read/write
+			      const big=new Float64Array(500000);
+			      const t1=performance.now();
+			      for(let i=0;i<big.length;i++)big[i]=i*1.1;
+			      let sum=0;for(let i=0;i<big.length;i++)sum+=big[i];
+			      const rwTime=performance.now()-t1;
+			      score+=Math.round(Math.max(100,500/(rwTime+1))*500);
+			      // Random access
+			      const t2=performance.now();
+			      let rsum=0;for(let i=0;i<200000;i++){rsum+=big[Math.floor(Math.random()*big.length)];}
+			      const randTime=performance.now()-t2;
+			      score+=Math.round(Math.max(100,300/(randTime+1))*400);
+			      resolve(Math.min(score,3000));
+			    },50);
+			  });
+			}
+			function _benchAI(){
+			  return new Promise(resolve=>{
+			    setTimeout(()=>{
+			      let score=0;
+			      // Matrix multiply (simulated neural network layer)
+			      const N=64;
+			      const A=new Float32Array(N*N);const B=new Float32Array(N*N);const C=new Float32Array(N*N);
+			      for(let i=0;i<N*N;i++){A[i]=Math.random();B[i]=Math.random();}
+			      const t0=performance.now();
+			      for(let rep=0;rep<50;rep++){
+			        for(let i=0;i<N;i++)for(let j=0;j<N;j++){let s=0;for(let k=0;k<N;k++)s+=A[i*N+k]*B[k*N+j];C[i*N+j]=s;}
+			      }
+			      const matTime=performance.now()-t0;
+			      score+=Math.round(Math.max(100,2000/(matTime+1))*500);
+			      // Activation functions (ReLU, sigmoid, tanh batch)
+			      const data=new Float32Array(200000);
+			      for(let i=0;i<data.length;i++)data[i]=(Math.random()-0.5)*10;
+			      const t1=performance.now();
+			      for(let i=0;i<data.length;i++){const v=data[i];data[i]=v>0?v:0;}
+			      for(let i=0;i<data.length;i++){data[i]=1/(1+Math.exp(-data[i]));}
+			      for(let i=0;i<data.length;i++){data[i]=Math.tanh(data[i]);}
+			      const actTime=performance.now()-t1;
+			      score+=Math.round(Math.max(100,500/(actTime+1))*500);
+			      // Convolution simulation
+			      const img=new Float32Array(128*128);for(let i=0;i<img.length;i++)img[i]=Math.random();
+			      const kernel=[1,2,1,2,4,2,1,2,1];
+			      const out=new Float32Array(126*126);
+			      const t2=performance.now();
+			      for(let rep=0;rep<10;rep++){
+			        for(let y=0;y<126;y++)for(let x=0;x<126;x++){
+			          let s=0;for(let ky=0;ky<3;ky++)for(let kx=0;kx<3;kx++){s+=img[(y+ky)*128+(x+kx)]*kernel[ky*3+kx];}
+			          out[y*126+x]=s/16;
+			        }
+			      }
+			      const convTime=performance.now()-t2;
+			      score+=Math.round(Math.max(100,1000/(convTime+1))*500);
+			      resolve(Math.min(score,3000));
+			    },50);
+			  });
+			}
+
 			async function loadWorldCountries(){
 			  const sel = document.getElementById('world-country-select');
 			  if(!sel) return;
