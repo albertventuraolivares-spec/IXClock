@@ -384,6 +384,183 @@
 			.toggle-switch .knob-sw{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.3);}
 			.toggle-switch.on .knob-sw{transform:translateX(18px);}
 			.alarm-del{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:.4;cursor:pointer;flex-shrink:0;}
+
+			/* ===== iOS CLOCK APP (full-screen panel) ===== */
+			#ios-clock-app{
+			  position:fixed;inset:0;z-index:9500;
+			  background:#000;color:#fff;
+			  display:flex;flex-direction:column;
+			  opacity:0;pointer-events:none;transform:translateY(100%);
+			  transition:opacity .3s ease,transform .3s ease;
+			  font-family:var(--sf-pro);
+			}
+			#ios-clock-app.open{opacity:1;pointer-events:auto;transform:translateY(0);}
+			.ica-tab-bar{
+			  position:absolute;bottom:0;left:0;right:0;
+			  display:flex;justify-content:space-around;align-items:center;
+			  padding:8px 0 max(env(safe-area-inset-bottom),12px);
+			  background:rgba(20,20,20,.95);
+			  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+			  border-top:1px solid rgba(255,255,255,.1);
+			  z-index:2;
+			}
+			.ica-tab{
+			  display:flex;flex-direction:column;align-items:center;gap:2px;
+			  cursor:pointer;padding:4px 12px;border:none;background:none;
+			  color:rgba(255,255,255,.4);font-size:10px;font-weight:500;
+			  transition:color .2s;
+			}
+			.ica-tab.active{color:#ff9f0a;}
+			.ica-tab svg{width:24px;height:24px;fill:currentColor;}
+			.ica-view{
+			  flex:1;overflow-y:auto;padding:0 16px;
+			  display:none;flex-direction:column;
+			  padding-bottom:90px;
+			}
+			.ica-view.active{display:flex;}
+			.ica-header{
+			  display:flex;align-items:center;justify-content:space-between;
+			  padding:60px 0 10px;position:sticky;top:0;
+			  background:#000;z-index:1;
+			}
+			.ica-header h1{font-size:34px;font-weight:700;margin:0;}
+			.ica-header-btn{
+			  width:32px;height:32px;border-radius:50%;
+			  background:rgba(255,159,10,.15);border:none;
+			  color:#ff9f0a;font-size:22px;font-weight:300;
+			  display:flex;align-items:center;justify-content:center;cursor:pointer;
+			}
+			.ica-close-btn{
+			  position:absolute;top:16px;right:16px;z-index:10;
+			  width:30px;height:30px;border-radius:50%;
+			  background:rgba(255,255,255,.12);border:none;color:#fff;
+			  font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+			}
+			.ica-empty{
+			  flex:1;display:flex;align-items:center;justify-content:center;
+			  color:rgba(255,255,255,.3);font-size:16px;
+			}
+			/* Alarm rows */
+			.ica-alarm-row{
+			  display:flex;align-items:center;justify-content:space-between;
+			  padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);
+			}
+			.ica-alarm-time{font-size:3.2rem;font-weight:200;line-height:1;}
+			.ica-alarm-ampm{font-size:1.4rem;font-weight:300;opacity:.7;margin-left:4px;}
+			.ica-alarm-label{font-size:13px;opacity:.5;margin-top:2px;}
+			/* Sleep section */
+			.ica-sleep-block{
+			  background:rgba(255,255,255,.05);border-radius:14px;
+			  padding:14px 16px;margin:12px 0;
+			  display:flex;align-items:center;justify-content:space-between;
+			}
+			.ica-sleep-block .ica-sleep-title{font-size:13px;opacity:.6;}
+			.ica-sleep-block .ica-sleep-btn{
+			  background:none;border:none;color:#ff9f0a;
+			  font-size:13px;font-weight:700;cursor:pointer;
+			}
+			/* Toggle iOS */
+			.ica-toggle{
+			  position:relative;width:51px;height:31px;border-radius:16px;
+			  background:rgba(255,255,255,.2);cursor:pointer;transition:background .2s;flex-shrink:0;
+			}
+			.ica-toggle.on{background:#30d158;}
+			.ica-toggle::after{
+			  content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;
+			  border-radius:50%;background:#fff;transition:transform .2s;
+			  box-shadow:0 2px 4px rgba(0,0,0,.3);
+			}
+			.ica-toggle.on::after{transform:translateX(20px);}
+			/* Stopwatch */
+			.ica-sw-display{font-size:4.5rem;font-weight:100;text-align:center;margin:40px 0 20px;font-variant-numeric:tabular-nums;}
+			.ica-sw-analog{
+			  width:280px;height:280px;border-radius:50%;margin:20px auto;
+			  border:3px solid rgba(255,255,255,.15);position:relative;
+			}
+			.ica-sw-analog .mark{
+			  position:absolute;width:2px;height:10px;background:rgba(255,255,255,.4);
+			  top:4px;left:50%;transform-origin:50% 136px;
+			}
+			.ica-sw-analog .mark.major{height:16px;background:rgba(255,255,255,.7);width:2px;}
+			.ica-sw-analog .hand-sec{
+			  position:absolute;width:2px;height:120px;background:#ff9f0a;
+			  top:20px;left:50%;transform-origin:50% 120px;
+			  margin-left:-1px;transition:none;border-radius:1px;
+			}
+			.ica-sw-analog .center-dot{
+			  position:absolute;width:10px;height:10px;border-radius:50%;
+			  background:#ff9f0a;top:50%;left:50%;transform:translate(-50%,-50%);
+			}
+			.ica-sw-analog .sub-dial{
+			  position:absolute;width:70px;height:70px;border-radius:50%;
+			  border:1.5px solid rgba(255,255,255,.15);
+			  top:55%;left:50%;transform:translate(-50%,-50%);
+			}
+			.ica-sw-analog .sub-dial .hand-min{
+			  position:absolute;width:1.5px;height:28px;background:#ff9f0a;
+			  top:7px;left:50%;transform-origin:50% 28px;margin-left:-.75px;
+			}
+			.ica-sw-pager{display:flex;justify-content:center;gap:6px;margin:10px 0;}
+			.ica-sw-pager .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);}
+			.ica-sw-pager .dot.active{background:#fff;}
+			.ica-sw-btns{
+			  display:flex;justify-content:space-around;align-items:center;
+			  padding:20px 40px;margin-top:auto;
+			}
+			.ica-sw-btn{
+			  width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
+			  display:flex;align-items:center;justify-content:center;
+			  font-size:14px;font-weight:600;cursor:pointer;
+			  background:rgba(255,255,255,.08);color:#fff;
+			}
+			.ica-sw-btn.green{background:rgba(48,209,88,.15);border-color:rgba(48,209,88,.5);color:#30d158;}
+			.ica-sw-btn.red{background:rgba(255,69,58,.15);border-color:rgba(255,69,58,.5);color:#ff453a;}
+			/* Timer picker */
+			.ica-timer-picker{
+			  display:flex;justify-content:center;align-items:center;gap:0;
+			  height:200px;margin:30px 0;position:relative;
+			  overflow:hidden;
+			}
+			.ica-timer-picker::before,.ica-timer-picker::after{
+			  content:'';position:absolute;left:10%;right:10%;height:40px;
+			  border-top:1px solid rgba(255,255,255,.15);
+			  border-bottom:1px solid rgba(255,255,255,.15);
+			  pointer-events:none;z-index:2;
+			}
+			.ica-timer-picker::before{top:50%;transform:translateY(-20px);}
+			.ica-timer-picker::after{display:none;}
+			.ica-picker-col{
+			  width:70px;height:200px;overflow:hidden;position:relative;
+			  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+			  mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+			}
+			.ica-picker-col .scroll{
+			  position:absolute;top:0;left:0;width:100%;
+			  transition:transform .3s cubic-bezier(.23,1,.32,1);
+			}
+			.ica-picker-col .item{
+			  height:40px;display:flex;align-items:center;justify-content:center;
+			  font-size:22px;font-weight:300;opacity:.4;transition:opacity .2s,transform .2s;
+			}
+			.ica-picker-col .item.selected{opacity:1;font-weight:500;transform:scale(1.1);}
+			.ica-picker-label{font-size:13px;opacity:.5;margin:0 4px;align-self:center;}
+			.ica-timer-opts{
+			  display:flex;flex-direction:column;gap:1px;
+			  background:rgba(255,255,255,.05);border-radius:12px;overflow:hidden;
+			  margin:16px 0;
+			}
+			.ica-timer-opt{
+			  display:flex;align-items:center;justify-content:space-between;
+			  padding:14px 16px;background:rgba(255,255,255,.03);
+			}
+			.ica-timer-opt span:first-child{font-size:15px;}
+			.ica-timer-opt span:last-child{font-size:15px;opacity:.4;display:flex;align-items:center;gap:4px;}
+			.ica-timer-btns{
+			  display:flex;justify-content:space-around;padding:20px 40px;margin-top:auto;
+			}
+			.ica-timer-recent{margin-top:20px;}
+			.ica-timer-recent h3{font-size:13px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+
 			.alarm-del:hover{opacity:1;}
 			.alarm-add-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);}
 			#alarm-ringing-overlay{
@@ -485,7 +662,7 @@
 		<style id="hide-old-dock-btns">
 			/* Hide old fixed-bottom buttons — now all in top dock */
 			#notes-btn, #calc-btn, #alarm-btn, #siri-btn, #siri-text-btn,
-			button[onclick="toggleAlarmPanel()"][style*="position:fixed"],
+			button[onclick="toggleIOSClockApp()"][style*="position:fixed"],
 			button[onclick="toggleCalcPanel()"][style*="position:fixed"],
 			button[onclick="toggleNotesPanel()"][style*="position:fixed"] {
 			  display: none !important;
@@ -3450,7 +3627,117 @@
 			</div>
 		</div>
 
-		<!-- ================= CALCULADORA iPhone-style ================= -->
+		
+		<!-- ================= iOS CLOCK APP ================= -->
+		<div id="ios-clock-app">
+			<button class="ica-close-btn" onclick="toggleIOSClockApp()">✕</button>
+			<!-- === VIEW: Reloj Mundial === -->
+			<div class="ica-view active" id="ica-view-world">
+				<div class="ica-header">
+					<h1>Reloj mundial</h1>
+					<button class="ica-header-btn" onclick="icaAddWorldClock()">+</button>
+				</div>
+				<div class="ica-empty" id="ica-world-empty">No hay ningún reloj mundial</div>
+				<div id="ica-world-list" style="display:flex;flex-direction:column;gap:0;"></div>
+			</div>
+			<!-- === VIEW: Alarmas === -->
+			<div class="ica-view" id="ica-view-alarms">
+				<div class="ica-header">
+					<button style="background:none;border:none;color:#ff9f0a;font-size:15px;cursor:pointer;" onclick="icaEditAlarms()">Editar</button>
+					<h1 style="position:absolute;left:16px;top:90px;">Alarmas</h1>
+					<button class="ica-header-btn" onclick="icaAddAlarm()">+</button>
+				</div>
+				<div style="height:30px;"></div>
+				<div class="ica-sleep-block">
+					<div style="display:flex;align-items:center;gap:10px;">
+						<span style="font-size:20px;">🛏️</span>
+						<div>
+							<div class="ica-sleep-title">Para dormir | Despertar</div>
+						</div>
+					</div>
+					<button class="ica-sleep-block .ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
+				</div>
+				<div id="ica-alarms-list" style="display:flex;flex-direction:column;"></div>
+			</div>
+			<!-- === VIEW: Cronómetro === -->
+			<div class="ica-view" id="ica-view-stopwatch">
+				<div style="flex:1;display:flex;flex-direction:column;padding-top:60px;">
+					<div id="ica-sw-pages" style="flex:1;position:relative;overflow:hidden;">
+						<!-- Page 1: Digital -->
+						<div class="ica-sw-page active" id="ica-sw-digital">
+							<div class="ica-sw-display" id="ica-sw-time">00:00.00</div>
+						</div>
+						<!-- Page 2: Analog -->
+						<div class="ica-sw-page" id="ica-sw-analog" style="display:none;">
+							<div class="ica-sw-analog" id="ica-sw-face"></div>
+						</div>
+					</div>
+					<div class="ica-sw-pager">
+						<div class="dot active" id="ica-sw-dot0"></div>
+						<div class="dot" id="ica-sw-dot1"></div>
+					</div>
+					<div class="ica-sw-btns">
+						<button class="ica-sw-btn" id="ica-sw-lap" onclick="icaSwLap()">Vuelta</button>
+						<button class="ica-sw-btn green" id="ica-sw-start" onclick="icaSwToggle()">Iniciar</button>
+					</div>
+					<div id="ica-sw-laps" style="max-height:120px;overflow-y:auto;padding:0 20px;"></div>
+				</div>
+			</div>
+			<!-- === VIEW: Timers === -->
+			<div class="ica-view" id="ica-view-timer">
+				<div class="ica-header">
+					<h1>Timers</h1>
+				</div>
+				<div class="ica-timer-picker" id="ica-timer-picker">
+					<div class="ica-picker-col" id="ica-pick-h" data-max="23" data-val="0"></div>
+					<span class="ica-picker-label">h</span>
+					<div class="ica-picker-col" id="ica-pick-m" data-max="59" data-val="5"></div>
+					<span class="ica-picker-label">min</span>
+					<div class="ica-picker-col" id="ica-pick-s" data-max="59" data-val="0"></div>
+					<span class="ica-picker-label">s</span>
+				</div>
+				<div class="ica-timer-opts">
+					<div class="ica-timer-opt">
+						<span>Etiqueta</span>
+						<span>Timer <span style="opacity:.3;">›</span></span>
+					</div>
+					<div class="ica-timer-opt">
+						<span>Al finalizar</span>
+						<span>Radial <span style="opacity:.3;">›</span></span>
+					</div>
+				</div>
+				<div class="ica-timer-btns">
+					<button class="ica-sw-btn" onclick="icaTimerCancel()">Cancelar</button>
+					<button class="ica-sw-btn green" onclick="icaTimerStart()">Iniciar</button>
+				</div>
+				<div class="ica-timer-recent">
+					<h3>Recientes</h3>
+					<div id="ica-timer-recents" style="display:flex;flex-direction:column;gap:8px;"></div>
+				</div>
+			</div>
+			<!-- Tab Bar -->
+			<div class="ica-tab-bar">
+				<button class="ica-tab active" data-view="world" onclick="icaSwitchTab('world')">
+					<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+					<span>Reloj mundial</span>
+				</button>
+				<button class="ica-tab" data-view="alarms" onclick="icaSwitchTab('alarms')">
+					<svg viewBox="0 0 24 24"><path d="M22 5.72l-4.6-3.86-1.29 1.53 4.6 3.86L22 5.72zM7.88 3.39L6.6 1.86 2 5.71l1.29 1.53 4.59-3.85zM12.5 8H11v6l4.75 2.85.75-1.23-4-2.37V8zM12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+					<span>Alarmas</span>
+				</button>
+				<button class="ica-tab" data-view="stopwatch" onclick="icaSwitchTab('stopwatch')">
+					<svg viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+					<span>Cronómetro</span>
+				</button>
+				<button class="ica-tab" data-view="timer" onclick="icaSwitchTab('timer')">
+					<svg viewBox="0 0 24 24"><path d="M15 3H9v2h6V3zm2.54 8.46L18.96 10c-.39-.39-1.02-.39-1.41 0l-1.42 1.42c-.39.39-.39 1.02 0 1.41l1.42 1.42c.39.39 1.02.39 1.41 0l.58-.58-1.42-1.42 1.42-1.39zM12 6c-3.87 0-7 3.13-7 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/><circle cx="12" cy="13" r="4.5" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+					<span>Timers</span>
+				</button>
+			</div>
+		</div>
+
+
+<!-- ================= CALCULADORA iPhone-style ================= -->
 		<button id="calc-btn" onclick="toggleCalcPanel()" title="Calculadora">
 			<svg
 				width="48"
@@ -14216,7 +14503,274 @@
 			    }
 			  });
 			})();
-		</script>
+		
+
+			/* ================= iOS CLOCK APP LOGIC ================= */
+			function toggleIOSClockApp(){
+			  const app = document.getElementById('ios-clock-app');
+			  app.classList.toggle('open');
+			}
+			function icaSwitchTab(view){
+			  document.querySelectorAll('.ica-view').forEach(v=>v.classList.remove('active'));
+			  document.querySelectorAll('.ica-tab').forEach(t=>t.classList.remove('active'));
+			  document.getElementById('ica-view-'+view).classList.add('active');
+			  document.querySelector('.ica-tab[data-view="'+view+'"]').classList.add('active');
+			}
+
+			// --- World Clock ---
+			let _icaWorldClocks = JSON.parse(localStorage.getItem('ica_world_clocks')||'[]');
+			function icaRenderWorldClocks(){
+			  const list = document.getElementById('ica-world-list');
+			  const empty = document.getElementById('ica-world-empty');
+			  if(!_icaWorldClocks.length){empty.style.display='flex';list.innerHTML='';return;}
+			  empty.style.display='none';
+			  list.innerHTML = _icaWorldClocks.map((tz,i)=>{
+			    const now = new Date();
+			    const fmt = new Intl.DateTimeFormat('es',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:true});
+			    const parts = fmt.formatToParts(now);
+			    const h = parts.find(p=>p.type==='hour').value;
+			    const m = parts.find(p=>p.type==='minute').value;
+			    const dp = parts.find(p=>p.type==='dayPeriod');
+			    const ampm = dp ? dp.value : '';
+			    const city = tz.split('/').pop().replace(/_/g,' ');
+			    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08);">'
+			      +'<div><div style="font-size:13px;opacity:.5;">Hoy</div><div style="font-size:17px;font-weight:500;">'+city+'</div></div>'
+			      +'<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +'</div>';
+			  }).join('');
+			}
+			function icaAddWorldClock(){
+			  const zones = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : ['America/New_York','Europe/London','Europe/Madrid','Asia/Tokyo','Australia/Sydney'];
+			  const tz = prompt('Zona horaria (ej: America/New_York, Europe/Madrid, Asia/Tokyo):');
+			  if(!tz) return;
+			  if(!_icaWorldClocks.includes(tz)){
+			    _icaWorldClocks.push(tz);
+			    localStorage.setItem('ica_world_clocks',JSON.stringify(_icaWorldClocks));
+			  }
+			  icaRenderWorldClocks();
+			}
+			icaRenderWorldClocks();
+			setInterval(icaRenderWorldClocks, 30000);
+
+			// --- Alarms ---
+			let _icaAlarms = JSON.parse(localStorage.getItem('ica_alarms')||'[{"time":"7:39","label":"Alarma","on":true}]');
+			function icaRenderAlarms(){
+			  const list = document.getElementById('ica-alarms-list');
+			  list.innerHTML = _icaAlarms.map((a,i)=>{
+			    const [h,m] = a.time.split(':');
+			    const h12 = ((+h % 12) || 12);
+			    const ampm = +h >= 12 ? 'p.\u202fm.' : 'a.\u202fm.';
+			    return '<div class="ica-alarm-row">'
+			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
+			      +'<div class="ica-alarm-label">'+a.label+'</div></div>'
+			      +'<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
+			      +'</div>';
+			  }).join('');
+			}
+			function icaToggleAlarm(i){
+			  _icaAlarms[i].on = !_icaAlarms[i].on;
+			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			  icaRenderAlarms();
+			}
+			function icaAddAlarm(){
+			  const t = prompt('Hora (formato 24h, ej: 7:30):','7:00');
+			  if(!t) return;
+			  const label = prompt('Etiqueta:','Alarma') || 'Alarma';
+			  _icaAlarms.push({time:t,label:label,on:true});
+			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			  icaRenderAlarms();
+			}
+			function icaEditAlarms(){
+			  if(!_icaAlarms.length) return;
+			  const idx = prompt('Número de alarma a eliminar (1-'+_icaAlarms.length+'):');
+			  if(!idx) return;
+			  const n = parseInt(idx)-1;
+			  if(n >= 0 && n < _icaAlarms.length){
+			    _icaAlarms.splice(n,1);
+			    localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			    icaRenderAlarms();
+			  }
+			}
+			icaRenderAlarms();
+
+			// --- Stopwatch ---
+			let _icaSwRunning=false, _icaSwStart=0, _icaSwElapsed=0, _icaSwRaf=null, _icaSwLaps=[];
+			let _icaSwPage=0;
+			function icaSwToggle(){
+			  const btn = document.getElementById('ica-sw-start');
+			  if(_icaSwRunning){
+			    _icaSwRunning=false;
+			    _icaSwElapsed += performance.now()-_icaSwStart;
+			    cancelAnimationFrame(_icaSwRaf);
+			    btn.textContent='Iniciar';btn.className='ica-sw-btn green';
+			  } else {
+			    _icaSwRunning=true;
+			    _icaSwStart=performance.now();
+			    btn.textContent='Detener';btn.className='ica-sw-btn red';
+			    _icaSwTick();
+			  }
+			}
+			function _icaSwTick(){
+			  if(!_icaSwRunning) return;
+			  const total = _icaSwElapsed + (performance.now()-_icaSwStart);
+			  _icaSwUpdateDisplay(total);
+			  _icaSwRaf = requestAnimationFrame(_icaSwTick);
+			}
+			function _icaSwUpdateDisplay(ms){
+			  const min = Math.floor(ms/60000);
+			  const sec = Math.floor((ms%60000)/1000);
+			  const cs = Math.floor((ms%1000)/10);
+			  document.getElementById('ica-sw-time').textContent =
+			    String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
+			  // Analog hand
+			  const face = document.getElementById('ica-sw-face');
+			  if(face){
+			    const secHand = face.querySelector('.hand-sec');
+			    const minHand = face.querySelector('.hand-min');
+			    if(secHand) secHand.style.transform = 'rotate('+(ms/1000*6)+'deg)';
+			    if(minHand) minHand.style.transform = 'rotate('+(ms/60000*6)+'deg)';
+			  }
+			}
+			function icaSwLap(){
+			  if(!_icaSwRunning && _icaSwElapsed===0) return;
+			  if(!_icaSwRunning && _icaSwElapsed>0){
+			    // Reset
+			    _icaSwElapsed=0;_icaSwLaps=[];
+			    _icaSwUpdateDisplay(0);
+			    document.getElementById('ica-sw-laps').innerHTML='';
+			    document.getElementById('ica-sw-start').textContent='Iniciar';
+			    document.getElementById('ica-sw-start').className='ica-sw-btn green';
+			    return;
+			  }
+			  const total = _icaSwElapsed + (performance.now()-_icaSwStart);
+			  _icaSwLaps.push(total);
+			  const lapsEl = document.getElementById('ica-sw-laps');
+			  const lapTime = _icaSwLaps.length>1 ? total-_icaSwLaps[_icaSwLaps.length-2] : total;
+			  const min=Math.floor(lapTime/60000),sec=Math.floor((lapTime%60000)/1000),cs=Math.floor((lapTime%1000)/10);
+			  lapsEl.innerHTML = '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;"><span>Vuelta '+_icaSwLaps.length+'</span><span>'+String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')+'.'+String(cs).padStart(2,'0')+'</span></div>' + lapsEl.innerHTML;
+			}
+			// Swipe between digital/analog
+			(function(){
+			  const pages = document.getElementById('ica-sw-pages');
+			  if(!pages) return;
+			  let startX=0;
+			  pages.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;},{passive:true});
+			  pages.addEventListener('touchend',e=>{
+			    const dx = e.changedTouches[0].clientX - startX;
+			    if(Math.abs(dx)>50){
+			      _icaSwPage = dx<0 ? 1 : 0;
+			      document.getElementById('ica-sw-digital').style.display = _icaSwPage===0?'block':'none';
+			      document.getElementById('ica-sw-analog').style.display = _icaSwPage===1?'block':'none';
+			      document.getElementById('ica-sw-dot0').classList.toggle('active',_icaSwPage===0);
+			      document.getElementById('ica-sw-dot1').classList.toggle('active',_icaSwPage===1);
+			    }
+			  },{passive:true});
+			})();
+			// Build analog face
+			(function(){
+			  const face = document.getElementById('ica-sw-face');
+			  if(!face) return;
+			  for(let i=0;i<60;i++){
+			    const mark = document.createElement('div');
+			    mark.className = 'mark'+(i%5===0?' major':'');
+			    mark.style.transform = 'rotate('+i*6+'deg)';
+			    face.appendChild(mark);
+			  }
+			  const secHand = document.createElement('div');
+			  secHand.className='hand-sec';face.appendChild(secHand);
+			  const center = document.createElement('div');
+			  center.className='center-dot';face.appendChild(center);
+			  const sub = document.createElement('div');
+			  sub.className='sub-dial';
+			  const minHand = document.createElement('div');
+			  minHand.className='hand-min';sub.appendChild(minHand);
+			  face.appendChild(sub);
+			})();
+
+			// --- Timer ---
+			let _icaTimerInterval=null, _icaTimerRemaining=0;
+			function icaInitPickers(){
+			  ['ica-pick-h','ica-pick-m','ica-pick-s'].forEach(id=>{
+			    const col = document.getElementById(id);
+			    if(!col) return;
+			    const max = parseInt(col.dataset.max);
+			    const val = parseInt(col.dataset.val);
+			    const scroll = document.createElement('div');
+			    scroll.className='scroll';
+			    // Add padding items for centering
+			    for(let p=0;p<2;p++){const d=document.createElement('div');d.className='item';d.textContent='';scroll.appendChild(d);}
+			    for(let i=0;i<=max;i++){
+			      const item = document.createElement('div');
+			      item.className='item'+(i===val?' selected':'');
+			      item.textContent = String(i).padStart(2,'0');
+			      item.dataset.v = i;
+			      scroll.appendChild(item);
+			    }
+			    for(let p=0;p<2;p++){const d=document.createElement('div');d.className='item';d.textContent='';scroll.appendChild(d);}
+			    col.appendChild(scroll);
+			    scroll.style.transform = 'translateY(-'+(val*40)+'px)';
+			    // Touch scroll
+			    let startY=0, startT=0, currentVal=val;
+			    col.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;startT=currentVal;},{passive:true});
+			    col.addEventListener('touchmove',e=>{
+			      const dy = startY - e.touches[0].clientY;
+			      let newVal = Math.round(startT + dy/40);
+			      newVal = Math.max(0,Math.min(max,newVal));
+			      currentVal = newVal;
+			      col.dataset.val = newVal;
+			      scroll.style.transform = 'translateY(-'+(newVal*40)+'px)';
+			      scroll.querySelectorAll('.item[data-v]').forEach(it=>{
+			        it.classList.toggle('selected', parseInt(it.dataset.v)===newVal);
+			      });
+			    },{passive:true});
+			    // Mouse wheel
+			    col.addEventListener('wheel',e=>{
+			      e.preventDefault();
+			      let newVal = currentVal + (e.deltaY>0?1:-1);
+			      newVal = Math.max(0,Math.min(max,newVal));
+			      currentVal = newVal;
+			      col.dataset.val = newVal;
+			      scroll.style.transform = 'translateY(-'+(newVal*40)+'px)';
+			      scroll.querySelectorAll('.item[data-v]').forEach(it=>{
+			        it.classList.toggle('selected', parseInt(it.dataset.v)===newVal);
+			      });
+			    });
+			  });
+			}
+			icaInitPickers();
+			function icaTimerStart(){
+			  const h=parseInt(document.getElementById('ica-pick-h').dataset.val);
+			  const m=parseInt(document.getElementById('ica-pick-m').dataset.val);
+			  const s=parseInt(document.getElementById('ica-pick-s').dataset.val);
+			  _icaTimerRemaining = h*3600+m*60+s;
+			  if(_icaTimerRemaining<=0) return;
+			  // Save to recents
+			  const recents = JSON.parse(localStorage.getItem('ica_timer_recents')||'[]');
+			  const label = h+'h '+m+'m '+s+'s';
+			  if(!recents.includes(label)){recents.unshift(label);if(recents.length>5)recents.pop();}
+			  localStorage.setItem('ica_timer_recents',JSON.stringify(recents));
+			  icaRenderRecents();
+			  clearInterval(_icaTimerInterval);
+			  _icaTimerInterval = setInterval(()=>{
+			    _icaTimerRemaining--;
+			    if(_icaTimerRemaining<=0){
+			      clearInterval(_icaTimerInterval);_icaTimerInterval=null;
+			      try{new Audio('data:audio/wav;base64,UklGRl9vT19teleXAQBAABAAEARAAEARAABAAQAAAJkZmF0YUB').play();}catch(e){}
+			      alert('Timer finalizado!');
+			    }
+			  },1000);
+			}
+			function icaTimerCancel(){
+			  clearInterval(_icaTimerInterval);_icaTimerInterval=null;_icaTimerRemaining=0;
+			}
+			function icaRenderRecents(){
+			  const el = document.getElementById('ica-timer-recents');
+			  const recents = JSON.parse(localStorage.getItem('ica_timer_recents')||'[]');
+			  el.innerHTML = recents.map(r=>'<div style="padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:14px;">'+r+'</div>').join('');
+			}
+			icaRenderRecents();
+
+			</script>
 
 		<!-- EASY MODE CSS — al final para sobrescribir Tailwind -->
 		<style>
