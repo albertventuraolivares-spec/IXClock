@@ -7062,29 +7062,158 @@
 			  document.body.appendChild(modal);
 			  _benchDeviceInfo();
 			}
+			function _benchGetGPU(){
+			  try{const c=document.createElement('canvas');const g=c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl');
+			  if(!g)return{renderer:'N/A',vendor:'N/A'};
+			  const d=g.getExtension('WEBGL_debug_renderer_info');
+			  return{renderer:d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'WebGL',vendor:d?g.getParameter(d.UNMASKED_VENDOR_WEBGL):''};}catch(e){return{renderer:'N/A',vendor:'N/A'};}
+			}
+			function _benchIdentifyDevice(){
+			  const ua=navigator.userAgent;
+			  const cores=navigator.hardwareConcurrency||0;
+			  const w=window.screen.width,h=window.screen.height;
+			  const dpr=window.devicePixelRatio||1;
+			  const pw=Math.round(w*dpr),ph=Math.round(h*dpr);
+			  const gpu=_benchGetGPU();
+			  const gpuR=gpu.renderer.toLowerCase();
+			  let model='',chip='',arch='',fab='',gpuName='',npu='';
+			  if(/iPad/.test(ua)){
+			    model='iPad';
+			    // Identify iPad model by screen resolution + cores + GPU hints
+			    if(pw>=2732||ph>=2732){
+			      // 12.9" iPad Pro
+			      if(cores>=8){
+			        if(/gpu\s*15/i.test(gpuR)||gpuR.includes('a17')){model='iPad Pro 12.9" (6.a gen, M2)';chip='Apple M2';arch='ARMv9-A';fab='5 nm (TSMC N5P)';gpuName='Apple M2 GPU (10 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';}
+			        else{model='iPad Pro 12.9" (5.a gen, M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			      }else{model='iPad Pro 12.9"';chip='Apple A12X/A12Z Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
+			    }else if((pw>=2388||ph>=2388)&&(pw<=2420&&ph<=2420)){
+			      // 11" iPad Pro
+			      if(cores>=8){
+			        if(/gpu\s*15/i.test(gpuR)||gpuR.includes('a17')){model='iPad Pro 11" (4.a gen, M2)';chip='Apple M2';arch='ARMv9-A';fab='5 nm (TSMC N5P)';gpuName='Apple M2 GPU (10 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';}
+			        else{model='iPad Pro 11" (M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			      }else{model='iPad Pro 11"';chip='Apple A12X Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
+			    }else if(pw>=2360||ph>=2360){
+			      model='iPad Air (5.a gen, M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';
+			    }else if((pw>=2266||ph>=2266)&&(pw<=2270||ph<=2270)){
+			      model='iPad mini (6.a gen)';chip='Apple A15 Bionic';arch='ARMv8.6-A';fab='5 nm (TSMC N5P)';gpuName='Apple A15 GPU (5 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';
+			    }else if(pw>=2160||ph>=2160){
+			      model='iPad (10.a gen)';chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm (TSMC N5)';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';
+			    }else if(pw>=2048||ph>=2048){
+			      if(cores>=8){model='iPad Air (M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			      else if(cores>=6){model='iPad Air (4.a gen)';chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			      else{model='iPad';chip='Apple A13 Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A13 GPU (4 núcleos)';npu='Neural Engine 8 núcleos';}
+			    }
+			    if(!chip&&cores>=8){chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			    else if(!chip&&cores>=6){chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos';}
+			    else if(!chip){chip='Apple A-series';arch='ARM64';fab='';gpuName='Apple GPU';npu='Neural Engine';}
+			  }else if(/iPhone/.test(ua)){
+			    model='iPhone';
+			    if(cores>=6){
+			      if(pw>=1290||ph>=2796){model='iPhone 15 Pro Max / 16 Pro Max';chip='Apple A17 Pro';arch='ARMv9.2-A';fab='3 nm (TSMC N3B)';gpuName='Apple A17 Pro GPU (6 núcleos)';npu='Neural Engine 16 núcleos (35 TOPS)';}
+			      else if(pw>=1179||ph>=2556){model='iPhone 15 Pro / 16 Pro';chip='Apple A17 Pro';arch='ARMv9.2-A';fab='3 nm (TSMC N3B)';gpuName='Apple A17 Pro GPU (6 núcleos)';npu='Neural Engine 16 núcleos (35 TOPS)';}
+			      else if(pw>=1170||ph>=2532){model='iPhone 14 / 15';chip='Apple A15/A16 Bionic';arch='ARMv8.6-A';fab='5 nm';gpuName='Apple GPU (5 núcleos)';npu='Neural Engine 16 núcleos';}
+			      else{model='iPhone';chip='Apple A15+ Bionic';arch='ARMv8.6-A';fab='5 nm';gpuName='Apple GPU';npu='Neural Engine 16 núcleos';}
+			    }else{chip='Apple A-series';arch='ARM64';fab='';gpuName='Apple GPU';npu='Neural Engine';}
+			  }else if(/Macintosh/.test(ua)){
+			    model='Mac';
+			    if(cores>=8&&/apple/i.test(gpu.vendor)){
+			      if(cores>=12){chip='Apple M2 Pro / M3 Pro';gpuName='Apple GPU (hasta 19 núcleos)';npu='Neural Engine 16 núcleos';}
+			      else if(cores>=10){chip='Apple M1 Pro / M2';gpuName='Apple GPU (hasta 16 núcleos)';npu='Neural Engine 16 núcleos';}
+			      else{chip='Apple M1';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			      arch='ARMv8.5-A+';fab='5 nm (TSMC)';
+			    }else if(/intel/i.test(gpu.vendor)||/intel/i.test(gpuR)){
+			      chip='Intel Core (Mac Intel)';arch='x86-64';fab='14/10 nm';gpuName=gpu.renderer;npu='N/A';
+			    }else{chip='Apple Silicon / Intel';arch='';fab='';gpuName=gpu.renderer;npu='';}
+			  }else if(/Android/.test(ua)){
+			    model='Android';
+			    if(/adreno/i.test(gpuR)){
+			      if(/adreno.*7/i.test(gpuR)){chip='Qualcomm Snapdragon 8 Gen 2/3';gpuName=gpu.renderer;}
+			      else if(/adreno.*6[3-9]/i.test(gpuR)){chip='Qualcomm Snapdragon 8xx';gpuName=gpu.renderer;}
+			      else{chip='Qualcomm Snapdragon';gpuName=gpu.renderer;}
+			      arch='ARMv9-A';fab='4 nm';npu='Hexagon DSP';
+			    }else if(/mali/i.test(gpuR)){
+			      if(/mali-g7/i.test(gpuR)){chip='MediaTek Dimensity / Samsung Exynos';gpuName=gpu.renderer;}
+			      else{chip='ARM SoC';gpuName=gpu.renderer;}
+			      arch='ARMv8/v9';fab='';npu='NPU/APU';
+			    }else{chip='SoC móvil';gpuName=gpu.renderer;arch='ARM64';fab='';npu='';}
+			  }else if(/Windows/.test(ua)){
+			    model='PC Windows';
+			    chip=cores>=16?'CPU de alto rendimiento ('+cores+' núcleos)':cores>=8?'CPU de rendimiento medio ('+cores+' núcleos)':'CPU ('+cores+' núcleos)';
+			    gpuName=gpu.renderer;arch='x86-64';fab='';npu=/nvidia/i.test(gpuR)?'CUDA Cores':'';
+			  }else{
+			    model='Dispositivo';chip='CPU ('+cores+' núcleos)';gpuName=gpu.renderer;arch='';fab='';npu='';
+			  }
+			  return{model,chip,arch,fab,gpuName,gpuVendor:gpu.vendor,npu,cores};
+			}
 			function _benchDeviceInfo(){
 			  const info=document.getElementById('bench-device-info');
 			  if(!info)return;
 			  const ua=navigator.userAgent;
-			  let device='Desconocido';
-			  if(/iPad/.test(ua)) device='iPad';
-			  else if(/iPhone/.test(ua)) device='iPhone';
-			  else if(/Android/.test(ua)) device='Android';
-			  else if(/Mac/.test(ua)) device='Mac';
-			  else if(/Windows/.test(ua)) device='Windows';
-			  else if(/Linux/.test(ua)) device='Linux';
+			  const d=_benchIdentifyDevice();
 			  const cores=navigator.hardwareConcurrency||'?';
 			  const mem=navigator.deviceMemory?navigator.deviceMemory+' GB':'N/A';
-			  const gpu=(function(){try{const c=document.createElement('canvas');const g=c.getContext('webgl')||c.getContext('experimental-webgl');if(!g)return'N/A';const d=g.getExtension('WEBGL_debug_renderer_info');return d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'WebGL disponible';}catch(e){return'N/A';}})();
-			  const screen=window.screen.width+'x'+window.screen.height+' @'+window.devicePixelRatio+'x';
+			  const sw=window.screen.width,sh=window.screen.height;
+			  const dpr=window.devicePixelRatio||1;
+			  const pw=Math.round(sw*dpr),ph=Math.round(sh*dpr);
+			  // OS version
+			  let os='';
+			  const iosMatch=ua.match(/OS (\d+[_\.]\d+[_\.]?\d*)/);
+			  const macMatch=ua.match(/Mac OS X (\d+[_\.]\d+[_\.]?\d*)/);
+			  const andMatch=ua.match(/Android ([\d.]+)/);
+			  const winMatch=ua.match(/Windows NT ([\d.]+)/);
+			  if(iosMatch){os='iOS/iPadOS '+iosMatch[1].replace(/_/g,'.');}
+			  else if(macMatch){os='macOS '+macMatch[1].replace(/_/g,'.');}
+			  else if(andMatch){os='Android '+andMatch[1];}
+			  else if(winMatch){const v={'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'};os='Windows '+(v[winMatch[1]]||winMatch[1]);}
+			  else{os=navigator.platform||'Desconocido';}
+			  // Browser + version
+			  let browser='';
+			  const safariV=ua.match(/Version\/([\d.]+).*Safari/);
+			  const chromeV=ua.match(/Chrome\/([\d.]+)/);
+			  const firefoxV=ua.match(/Firefox\/([\d.]+)/);
+			  if(safariV&&!/Chrome/.test(ua)){browser='Safari '+safariV[1];}
+			  else if(chromeV){browser='Chrome '+chromeV[1];}
+			  else if(firefoxV){browser='Firefox '+firefoxV[1];}
+			  else{browser='Navegador web';}
+			  // WebGL version
+			  let webglVer='';
+			  try{const c2=document.createElement('canvas');if(c2.getContext('webgl2'))webglVer='WebGL 2.0';else if(c2.getContext('webgl'))webglVer='WebGL 1.0';else webglVer='Sin WebGL';}catch(e){webglVer='N/A';}
+			  // Battery (async, update later)
+			  let batteryHTML='<span id="bench-battery">Consultando...</span>';
+			  if(navigator.getBattery){navigator.getBattery().then(b=>{const el=document.getElementById('bench-battery');if(el)el.textContent=Math.round(b.level*100)+'%'+(b.charging?' (cargando)':'');}).catch(()=>{const el=document.getElementById('bench-battery');if(el)el.textContent='N/A';});}
+			  else{batteryHTML='N/A';}
+			  // Storage estimate
+			  let storageHTML='<span id="bench-storage">Consultando...</span>';
+			  if(navigator.storage&&navigator.storage.estimate){navigator.storage.estimate().then(e=>{const el=document.getElementById('bench-storage');if(el){const used=(e.usage/1e9).toFixed(2);const total=(e.quota/1e9).toFixed(1);el.textContent=used+' GB usados / '+total+' GB disponible';}}).catch(()=>{const el=document.getElementById('bench-storage');if(el)el.textContent='N/A';});}
+			  else{storageHTML='N/A';}
+			  // Connection
+			  let conn='N/A';
+			  if(navigator.connection){const c=navigator.connection;conn=(c.effectiveType||'').toUpperCase();if(c.downlink)conn+=' ('+c.downlink+' Mbps)';if(c.rtt)conn+=' · '+c.rtt+'ms RTT';}
+			  // Touch
+			  const touch=navigator.maxTouchPoints||0;
+			  // Build rows
+			  const row=(label,val)=>`<span style="opacity:.5;white-space:nowrap;">${label}</span><span style="word-break:break-word;">${val||'N/A'}</span>`;
 			  info.innerHTML=`
-			    <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;">
-			      <span style="opacity:.5;">Dispositivo</span><span>${device}</span>
-			      <span style="opacity:.5;">Núcleos CPU</span><span>${cores}</span>
-			      <span style="opacity:.5;">RAM</span><span>${mem}</span>
-			      <span style="opacity:.5;">GPU</span><span style="word-break:break-all;">${gpu}</span>
-			      <span style="opacity:.5;">Pantalla</span><span>${screen}</span>
-			      <span style="opacity:.5;">Navegador</span><span>${/Safari/.test(ua)&&!/Chrome/.test(ua)?'Safari':/Chrome/.test(ua)?'Chrome':/Firefox/.test(ua)?'Firefox':'Otro'}</span>
+			    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;">
+			      ${row('Modelo',d.model)}
+			      ${row('Procesador','<b style=\"color:#ff9500\">'+d.chip+'</b>')}
+			      ${d.arch?row('Arquitectura',d.arch):''}
+			      ${d.fab?row('Fabricación',d.fab):''}
+			      ${row('Núcleos CPU',cores+' núcleos'+(cores>=8?' (alto rendimiento)':cores>=6?' (rendimiento)':cores>=4?' (eficiente)':''))}
+			      ${row('RAM',mem)}
+			      ${row('GPU','<b style=\"color:#0a84ff\">'+d.gpuName+'</b>')}
+			      ${d.gpuVendor&&d.gpuVendor!=='N/A'?row('Fabricante GPU',d.gpuVendor):''}
+			      ${d.npu?row('NPU / Neural Engine','<b style=\"color:#bf5af2\">'+d.npu+'</b>'):''}
+			      ${row('Gráficos API',webglVer)}
+			      ${row('Pantalla',sw+'x'+sh+' puntos ('+pw+'x'+ph+' px @ '+dpr+'x)')}
+			      ${row('Prof. color',window.screen.colorDepth+' bits')}
+			      ${row('Sistema',os)}
+			      ${row('Navegador',browser)}
+			      ${row('Batería',batteryHTML)}
+			      ${row('Almacenamiento',storageHTML)}
+			      ${row('Conexión',conn)}
+			      ${row('Táctil',touch>0?touch+' puntos de contacto':'No táctil')}
+			      ${row('Idioma',navigator.language||'?')}
 			    </div>`;
 			}
 			let _benchRunning=false;
