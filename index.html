@@ -4468,312 +4468,121 @@
 			   Every wallpaper (photo or gradient) gets Ken Burns zoom + crossfade.
 			   ===================================================================== */
 			const WALLPAPERS = [
-			  // --- NUEVOS fondos de pantalla añadidos ✨ ---
-			  {id:'photo-purplesunset',name:'Atardecer Púrpura',tags:'photo sunset purple water calm night',type:'photo',url:'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-pinkmountain',name:'Montaña Rosa Nevada',tags:'photo pink mountain snow winter alpine rose',type:'photo',url:'https://images.unsplash.com/photo-1518818419601-72c8673f5852?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-aurora2',name:'Aurora Boreal Verde',tags:'photo northern lights aurora green snow night',type:'photo',url:'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?q=90&w=7680&auto=format&fit=crop'},
-			  // --- Lote extra de fondos libres (Unsplash + gradientes originales) ---
-			  {id:'photo-forestfog',name:'Bosque con Niebla',tags:'photo forest fog green nature mist',type:'photo',url:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-oceanwave',name:'Ola del Océano',tags:'photo ocean wave blue water sea',type:'photo',url:'https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-desertdunes',name:'Dunas del Desierto',tags:'photo desert dunes sand orange',type:'photo',url:'https://images.unsplash.com/photo-1509316785289-025f5b846b35?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-milkyway',name:'Vía Láctea',tags:'photo stars galaxy milky way night space',type:'photo',url:'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-cherry',name:'Flor de Cerezo',tags:'photo sakura cherry blossom pink spring',type:'photo',url:'https://images.unsplash.com/photo-1522383225653-ed111181a951?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-lake',name:'Lago de Montaña',tags:'photo lake mountain reflection calm',type:'photo',url:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-city night',name:'Ciudad de Noche',tags:'photo city night lights urban',type:'photo',url:'https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-beach',name:'Playa Tropical',tags:'photo beach tropical turquoise palm',type:'photo',url:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'grad-sunset2',name:'Ocaso Cálido',tags:'gradient sunset warm orange pink',type:'gradient',colors:['#ff512f','#f09819','#ff5f6d'],angle:135,dur:16},
-			  {id:'grad-mint',name:'Menta Fresca',tags:'gradient mint green fresh calm',type:'gradient',colors:['#00b09b','#96c93d'],angle:135,dur:18},
-			  {id:'grad-berry',name:'Frutos Rojos',tags:'gradient berry purple pink',type:'gradient',colors:['#8e2de2','#4a00e0','#ff0080'],angle:135,dur:14},
-			  {id:'grad-ocean2',name:'Océano Profundo',tags:'gradient ocean blue deep',type:'gradient',colors:['#2b5876','#4e4376','#00c6ff'],angle:135,dur:20},
-			  {id:'grad-peach',name:'Durazno Suave',tags:'gradient peach soft warm',type:'gradient',colors:['#ffecd2','#fcb69f','#ff9a9e'],angle:120,dur:19},
-			  {id:'grad-midnight',name:'Medianoche',tags:'gradient dark blue night navy',type:'gradient',colors:['#020024','#090979','#00d4ff'],angle:135,dur:22},
-			  {id:'grad-emerald',name:'Esmeralda',tags:'gradient green emerald teal',type:'gradient',colors:['#004d40','#00897b','#4db6ac'],angle:135,dur:17},
-			  {id:'grad-rose',name:'Oro Rosa',tags:'gradient rose gold pink elegant',type:'gradient',colors:['#b76e79','#eab0b7','#f7cac9'],angle:120,dur:18},
-			  {id:'grad-flame',name:'Llama',tags:'gradient fire red orange hot',type:'gradient',colors:['#f00000','#dc281e','#ff8008'],angle:135,dur:10},
-			  {id:'grad-ice',name:'Hielo Ártico',tags:'gradient ice blue white cold',type:'gradient',colors:['#e0eafc','#89f7fe','#66a6ff'],angle:135,dur:21},
-			  {id:'grad-galaxy2',name:'Galaxia Violeta',tags:'gradient galaxy purple space stars',type:'gradient',colors:['#42275a','#734b6d','#bc4e9c'],angle:135,dur:19},
-			  {id:'grad-lime',name:'Lima Eléctrica',tags:'gradient lime green electric bright',type:'gradient',colors:['#a8ff78','#78ffd6'],angle:135,dur:12},
-			  {id:'grad-sunrise',name:'Amanecer',tags:'gradient sunrise yellow orange morning',type:'gradient',colors:['#ff6e7f','#bfe9ff'],angle:120,dur:16},
-			  {id:'grad-grape',name:'Uva',tags:'gradient purple grape violet',type:'gradient',colors:['#6a0572','#ab83a1'],angle:135,dur:18},
-			  {id:'grad-coral',name:'Coral',tags:'gradient coral pink orange warm',type:'gradient',colors:['#ff9a9e','#fecfef','#ffb199'],angle:120,dur:17},
-			  {id:'grad-teal2',name:'Turquesa Noche',tags:'gradient teal dark night',type:'gradient',colors:['#000428','#004e92'],angle:135,dur:20},
-			  {id:'grad-gold',name:'Oro Líquido',tags:'gradient gold luxury yellow',type:'gradient',colors:['#b8860b','#ffd700','#8b6914'],angle:135,dur:15},
-			  {id:'grad-nebula',name:'Nebulosa',tags:'gradient nebula pink blue space',type:'gradient',colors:['#360033','#0b8793','#ff512f'],angle:135,dur:23},
-			  {id:'grad-forest2',name:'Bosque Profundo',tags:'gradient forest green dark nature',type:'gradient',colors:['#0f2027','#2c5364','#5a3f37'],angle:135,dur:19},
-			  {id:'grad-candy',name:'Algodón de Azúcar',tags:'gradient candy pink blue pastel',type:'gradient',colors:['#a1c4fd','#c2e9fb','#fbc2eb'],angle:120,dur:18},
-			  {id:'grad-volcano',name:'Volcán',tags:'gradient volcano red black lava',type:'gradient',colors:['#200122','#6f0000','#ff4b1f'],angle:135,dur:13},
-			  {id:'grad-aqua',name:'Aqua Marina',tags:'gradient aqua cyan blue water',type:'gradient',colors:['#13547a','#80d0c7'],angle:135,dur:20},
-			  {id:'grad-dusk',name:'Crepúsculo',tags:'gradient dusk purple orange evening',type:'gradient',colors:['#2c3e50','#fd746c','#ff9068'],angle:135,dur:18},
-			  {id:'grad-jade',name:'Jade',tags:'gradient jade green calm',type:'gradient',colors:['#136a8a','#267871'],angle:135,dur:19},
-			  {id:'grad-cosmic',name:'Cósmico',tags:'gradient cosmic purple magenta space',type:'gradient',colors:['#41295a','#2f0743'],angle:135,dur:21},
-			  // --- iOS / Apple style fluid ---
-			  {id:'ios27',name:'iOS 27 Liquid',tags:'apple ios liquid glass fluid color',type:'gradient',colors:['#ff007f','#ff7e5f','#701a75','#3b82f6'],angle:270,dur:24},
-			  {id:'aurora',name:'Aurora Boreal',tags:'apple ios nordic blue purple',type:'gradient',colors:['#0f172a','#1e1b4b','#4c1d95','#701a75','#991b1b'],angle:135,dur:16},
-			  {id:'samsung-ultra',name:'OneUI Galaxy',tags:'samsung galaxy space purple',type:'gradient',colors:['#090979','#8b5cf6','#00d4ff','#1e1b4b'],angle:270,dur:20},
-			  {id:'pixel-fluid',name:'Pixel Material',tags:'google pixel material abstract',type:'gradient',colors:['#fb923c','#fcd34d','#34d399','#38bdf8'],angle:270,dur:22},
-			  {id:'deep-space',name:'Espacio Profundo',tags:'space galaxy stars dark',type:'gradient',colors:['#1a1a2e','#16213e','#0f3460','#1a1a2e'],angle:45,dur:18},
-			  {id:'cyberpunk',name:'Cyberpunk City',tags:'neon city pink purple cyan',type:'gradient',colors:['#ff007f','#7928ca','#00f0ff'],angle:135,dur:10},
-			  {id:'matrix',name:'The Matrix',tags:'green code abstract dark',type:'gradient',colors:['#000000','#003300','#00ff00'],angle:135,dur:14},
-			  {id:'neon',name:'Neon Pulse',tags:'neon bright cyan magenta',type:'gradient',colors:['#ff00ff','#00ffff'],angle:135,dur:6},
-			  {id:'plasma',name:'Plasma Core',tags:'red orange hot abstract',type:'gradient',colors:['#ff416c','#ff4b2b'],angle:135,dur:10},
-			  // --- Asia ---
-			  {id:'tokyo',name:'Tokio Neón',tags:'asia japon tokyo neon city night',type:'gradient',colors:['#0d0221','#ff2079','#7303c0','#0f0c29'],angle:135,dur:12},
-			  {id:'kyoto',name:'Kioto Otoño',tags:'asia japon kyoto autumn red',type:'gradient',colors:['#3a0a0a','#a8201a','#ec9f05','#3a0a0a'],angle:135,dur:18},
-			  {id:'sakura',name:'Sakura',tags:'asia japon flores rosa primavera',type:'gradient',colors:['#ffdde1','#ee9ca7','#fbc2eb'],angle:120,dur:16},
-			  {id:'seoul',name:'Seúl K-Pop',tags:'asia corea seoul pink blue city',type:'gradient',colors:['#ff61a6','#7b4397','#1e90ff'],angle:135,dur:11},
-			  {id:'shanghai',name:'Shanghái Skyline',tags:'asia china shanghai night city gold',type:'gradient',colors:['#0f2027','#203a43','#d4af37'],angle:135,dur:15},
-			  {id:'bali',name:'Bali Tropical',tags:'asia indonesia bali jungle green tropical',type:'gradient',colors:['#134e5e','#71b280','#a8e063'],angle:135,dur:20},
-			  {id:'mumbai',name:'Mumbai Vibrante',tags:'asia india mumbai colorful sunset',type:'gradient',colors:['#f12711','#f5af19','#ff6a00'],angle:135,dur:13},
-			  {id:'dubai',name:'Dubái Lujo',tags:'asia dubai gold desert luxury',type:'gradient',colors:['#1a1a2e','#bfa14a','#e6c35c','#1a1a2e'],angle:135,dur:19},
-			  // --- Europe ---
-			  {id:'paris',name:'París Pastel',tags:'europa francia paris pastel romantic',type:'gradient',colors:['#fbc2eb','#a6c1ee'],angle:120,dur:17},
-			  {id:'santorini',name:'Santorini',tags:'europa grecia santorini blue white sea',type:'gradient',colors:['#2980b9','#6dd5fa','#ffffff'],angle:135,dur:14},
-			  {id:'venice',name:'Venecia',tags:'europa italia venice water sunset',type:'gradient',colors:['#ff9966','#ff5e62','#3a1c71'],angle:135,dur:16},
-			  {id:'milan',name:'Milán Editorial',tags:'europa italia milan fashion grey',type:'gradient',colors:['#232526','#414345'],angle:135,dur:24},
-			  {id:'swiss-alps',name:'Alpes Suizos',tags:'europa suiza alps snow mountain ice',type:'gradient',colors:['#83a4d4','#b6fbff'],angle:135,dur:18},
-			  {id:'iceland',name:'Islandia Glaciar',tags:'europa islandia ice glacier arctic blue',type:'gradient',colors:['#0f2027','#2c5364','#a8e6cf'],angle:135,dur:20},
-			  {id:'london',name:'Londres Real',tags:'europa inglaterra london fog grey royal',type:'gradient',colors:['#485563','#29323c'],angle:135,dur:22},
-			  {id:'berlin',name:'Berlín Bauhaus',tags:'europa alemania berlin bold red yellow',type:'gradient',colors:['#0d0d0d','#e63946','#ffd60a'],angle:135,dur:13},
-			  {id:'moscow',name:'Moscú Constructivista',tags:'europa rusia moscow red black geometric',type:'gradient',colors:['#000000','#8b0000','#1a1a1a'],angle:135,dur:15},
-			  {id:'provence',name:'Provenza Lavanda',tags:'europa francia provence lavender purple',type:'gradient',colors:['#7f53ac','#647dee'],angle:135,dur:18},
-			  // --- Africa ---
-			  {id:'sahara',name:'Desierto del Sahara',tags:'africa desert sahara sand orange',type:'gradient',colors:['#f7971e','#ffd200'],angle:135,dur:20},
-			  {id:'marrakech',name:'Marrakech',tags:'africa morocco marrakech terracotta spice',type:'gradient',colors:['#c0392b','#e67e22','#f39c12'],angle:135,dur:16},
-			  {id:'serengeti',name:'Serengeti',tags:'africa safari savanna sunset gold',type:'gradient',colors:['#ee9ca7','#ffdde1','#d38312'],angle:135,dur:17},
-			  // --- Americas ---
-			  {id:'nyc',name:'Nueva York Bold',tags:'america usa newyork city skyline night',type:'gradient',colors:['#0f0c29','#302b63','#24243e'],angle:135,dur:14},
-			  {id:'rio',name:'Río Vibrante',tags:'america brasil rio carnival colorful',type:'gradient',colors:['#f7971e','#ffd200','#21d4fd'],angle:135,dur:12},
-			  {id:'amazon',name:'Amazonía',tags:'america brasil amazon jungle green river',type:'gradient',colors:['#005c29','#00b09b','#96c93d'],angle:135,dur:21},
-			  {id:'patagonia',name:'Patagonia',tags:'america argentina chile patagonia ice mountain',type:'gradient',colors:['#283c86','#45a247'],angle:135,dur:19},
-			  {id:'caribbean',name:'Caribe Turquesa',tags:'america caribbean dominican turquoise beach',type:'gradient',colors:['#00c6ff','#0072ff','#00f2c3'],angle:135,dur:15},
-			  {id:'inca',name:'Andes Inca',tags:'america peru andes mountains terracotta',type:'gradient',colors:['#c94b4b','#4b134f'],angle:135,dur:18},
-			  // --- Oceania / abstract worlds ---
-			  {id:'sydney',name:'Sídney Bahía',tags:'oceania australia sydney harbor blue',type:'gradient',colors:['#2193b0','#6dd5ed'],angle:135,dur:16},
-			  {id:'reef',name:'Gran Barrera de Coral',tags:'oceania australia reef coral teal',type:'gradient',colors:['#00b4db','#0083b0','#00f5a0'],angle:135,dur:17},
-			  {id:'sunset',name:'Atardecer Global',tags:'sunset orange warm world',type:'gradient',colors:['#ff7e5f','#feb47b'],angle:135,dur:10},
-			  {id:'forest',name:'Bosque Profundo',tags:'forest green nature world',type:'gradient',colors:['#004d00','#008000','#b3ffb3'],angle:135,dur:20},
-			  {id:'ocean',name:'Océano Global',tags:'ocean blue water world',type:'gradient',colors:['#020024','#090979','#00d4ff'],angle:135,dur:12},
-			  // --- Real-world photos (Ken Burns) ---
-			  {id:'photo-mountain',name:'Montaña al Amanecer',tags:'photo mountain sunrise nature world',type:'photo',url:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-ocean',name:'Costa Tropical',tags:'photo ocean beach coast world',type:'photo',url:'https://images.unsplash.com/photo-1507400492013-162706c8c05e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-city',name:'Skyline Nocturno',tags:'photo city night skyline world',type:'photo',url:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-desert',name:'Dunas Doradas',tags:'photo desert dunes sand world',type:'photo',url:'https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-forest',name:'Sendero Verde',tags:'photo forest green path world',type:'photo',url:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-northern',name:'Luces del Norte',tags:'photo aurora northern lights night world',type:'photo',url:'https://images.unsplash.com/photo-1483347756197-71ef80e95f73?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-lake',name:'Lago Sereno',tags:'photo lake reflection mountain world',type:'photo',url:'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-snow',name:'Picos Nevados',tags:'photo snow peaks mountain world',type:'photo',url:'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-waterfall',name:'Cascada Esmeralda',tags:'photo waterfall jungle green world',type:'photo',url:'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-canyon',name:'Cañón al Atardecer',tags:'photo canyon desert sunset world',type:'photo',url:'https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-island',name:'Isla Paradisíaca',tags:'photo island beach tropical world',type:'photo',url:'https://images.unsplash.com/photo-1573790387438-4da905039392?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-stars',name:'Cielo Estrellado',tags:'photo stars night sky milky way world',type:'photo',url:'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'photo-city2',name:'Metrópolis al Amanecer',tags:'photo city sunrise skyline world',type:'photo',url:'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=90&w=7680&auto=format&fit=crop'},
-			  // --- Mega lote: fotos reales Unsplash ---
-			  {id:'ph-volcano',name:'Volcán Activo',tags:'photo volcano lava fire nature',type:'photo',url:'https://images.unsplash.com/photo-1462332420958-a05d1e002413?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-rainforest',name:'Selva Tropical',tags:'photo rainforest jungle green nature',type:'photo',url:'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-fjord',name:'Fiordo Noruego',tags:'photo fjord norway water mountain nature',type:'photo',url:'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-lavender',name:'Campo de Lavanda',tags:'photo lavender purple field france nature',type:'photo',url:'https://images.unsplash.com/photo-1499002238440-d264edd596ec?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-glacier',name:'Glaciar Azul',tags:'photo glacier ice blue arctic nature',type:'photo',url:'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-coral-reef',name:'Arrecife de Coral',tags:'photo coral reef underwater ocean nature',type:'photo',url:'https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-redwood',name:'Secuoyas Gigantes',tags:'photo redwood trees forest nature tall',type:'photo',url:'https://images.unsplash.com/photo-1448375240586-882707db888b?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-tulips',name:'Tulipanes Holanda',tags:'photo tulips flowers holland colorful nature',type:'photo',url:'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-rice',name:'Terrazas de Arroz',tags:'photo rice terrace bali green nature',type:'photo',url:'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-savanna',name:'Sabana Africana',tags:'photo savanna africa sunset tree nature',type:'photo',url:'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-bamboo',name:'Bosque de Bambú',tags:'photo bamboo japan green zen nature',type:'photo',url:'https://images.unsplash.com/photo-1510797215324-95aa89f43c33?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-cliff',name:'Acantilado Irlanda',tags:'photo cliff ireland sea green nature',type:'photo',url:'https://images.unsplash.com/photo-1533154683220-d2608cdcb88e?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-tokyo-night',name:'Tokio de Noche',tags:'photo tokyo japan city neon night',type:'photo',url:'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-nyc-bridge',name:'Brooklyn Bridge',tags:'photo nyc new york bridge city night',type:'photo',url:'https://images.unsplash.com/photo-1496588152823-86ff7695e68f?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-dubai-sky',name:'Dubái Skyline',tags:'photo dubai skyline city tower night',type:'photo',url:'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-paris-tower',name:'Torre Eiffel',tags:'photo paris eiffel tower france city night',type:'photo',url:'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-london-bridge',name:'Londres Big Ben',tags:'photo london big ben bridge city night',type:'photo',url:'https://images.unsplash.com/photo-1486299267070-83823f5448dd?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-hongkong',name:'Hong Kong',tags:'photo hong kong city skyline lights night',type:'photo',url:'https://images.unsplash.com/photo-1536599018102-9f803c140fc1?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-venice-canal',name:'Canal de Venecia',tags:'photo venice canal italy water city',type:'photo',url:'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-santorini-dome',name:'Santorini Cúpulas',tags:'photo santorini greece blue dome sea city',type:'photo',url:'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-machu',name:'Machu Picchu',tags:'photo machu picchu peru ruins mountain',type:'photo',url:'https://images.unsplash.com/photo-1526392060635-9d6019884377?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-rio-christ',name:'Cristo Redentor',tags:'photo rio brazil christ statue sunset city',type:'photo',url:'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-taj',name:'Taj Mahal',tags:'photo taj mahal india sunrise monument',type:'photo',url:'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-petra',name:'Petra Jordania',tags:'photo petra jordan ancient desert stone',type:'photo',url:'https://images.unsplash.com/photo-1579606032821-4e6161c81571?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-sydney-opera',name:'Ópera de Sídney',tags:'photo sydney opera house australia city',type:'photo',url:'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-colosseum',name:'Coliseo Romano',tags:'photo rome colosseum italy ancient city',type:'photo',url:'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-greatwall',name:'Gran Muralla China',tags:'photo china great wall mountains ancient',type:'photo',url:'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-niagara',name:'Cataratas del Niágara',tags:'photo niagara falls water nature',type:'photo',url:'https://images.unsplash.com/photo-1489447068241-b3490214e879?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-aurora-ice',name:'Aurora sobre Hielo',tags:'photo aurora iceland ice night nature',type:'photo',url:'https://images.unsplash.com/photo-1504700610630-ac6eeec48b45?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-cherry-road',name:'Camino de Cerezos',tags:'photo cherry blossom sakura road japan spring',type:'photo',url:'https://images.unsplash.com/photo-1462275646964-a0e3c11f18a6?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-maldives',name:'Maldivas',tags:'photo maldives beach ocean turquoise paradise',type:'photo',url:'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-sahara-star',name:'Sahara Estrellado',tags:'photo sahara desert stars night milky way',type:'photo',url:'https://images.unsplash.com/photo-1509023464722-18d996393ca8?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-autumn-road',name:'Camino de Otoño',tags:'photo autumn fall road trees orange nature',type:'photo',url:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-thunderstorm',name:'Tormenta Eléctrica',tags:'photo storm thunder lightning night sky',type:'photo',url:'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-sunflower',name:'Girasoles',tags:'photo sunflower field yellow flower nature',type:'photo',url:'https://images.unsplash.com/photo-1566873535350-a3f5d4a804b7?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-jellyfish',name:'Medusas',tags:'photo jellyfish underwater ocean glow blue',type:'photo',url:'https://images.unsplash.com/photo-1545671913-b89ac1b4ac10?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-northern-lake',name:'Lago Boreal',tags:'photo lake northern forest reflection nature calm',type:'photo',url:'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-kyoto-temple',name:'Templo de Kioto',tags:'photo kyoto japan temple shrine autumn',type:'photo',url:'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-singapore',name:'Singapur Marina',tags:'photo singapore marina bay skyline city night',type:'photo',url:'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-cappadocia',name:'Capadocia Globos',tags:'photo cappadocia turkey balloons sunrise',type:'photo',url:'https://images.unsplash.com/photo-1526048598645-62b31f82aaca?q=90&w=7680&auto=format&fit=crop'},
-			  {id:'ph-northern-lights2',name:'Aurora Rosa',tags:'photo aurora pink northern lights iceland',type:'photo',url:'https://images.unsplash.com/photo-1579033461380-adb47c3eb938?q=90&w=7680&auto=format&fit=crop'},
-			  // --- Fondos en video (loop real, no foto) ---
-			  {id:'vid-lago-como',name:'Lago di Como (video)',tags:'video lake italy lago como varenna aerial drone real motion',type:'video',url:'videos/lago-como-varenna.mp4'},
-			  // --- Fondos en movimiento desde YouTube (necesitan internet) ---
-			  {id:'yt-live-paisaje',name:'Paisaje en vivo 24/7 📺',tags:'video youtube live directo paisaje nature movimiento relax',type:'youtube',videoId:'TfDnf1oVm04'},
-			  {id:'yt-lofi',name:'Lofi Girl 24/7 🎧',tags:'video youtube live directo lofi anime music movimiento',type:'youtube',videoId:'jfKfPfyJRdk'},
-			  {id:'yt-chillhop',name:'Chillhop Radio ☕',tags:'video youtube live directo lofi beats music cafe movimiento',type:'youtube',videoId:'5qap5aO4i9A'},
-			  {id:'yt-jazz',name:'Jazz & Coffee ☕',tags:'video youtube live directo jazz cafe music movimiento relax',type:'youtube',videoId:'neV3EPgvZ3g'},
-			  {id:'yt-nasa-iss',name:'Tierra desde el espacio 🌍',tags:'video youtube live directo nasa iss space earth movimiento',type:'youtube',videoId:'xRPjKQtRXR8'},
-			  {id:'yt-tokyo',name:'Tokyo en la noche 🌆',tags:'video youtube live directo tokyo japon ciudad night movimiento',type:'youtube',videoId:'_Whf4ZHOMR4'},
-			  {id:'yt-ocean',name:'Océano en vivo 🌊',tags:'video youtube live directo ocean sea waves nature movimiento relax',type:'youtube',videoId:'bn9F19Hi1Lk'},
-			  {id:'yt-rain',name:'Lluvia en el bosque 🌧️',tags:'video youtube live directo rain lluvia forest nature movimiento relax',type:'youtube',videoId:'mPZkdNFkNps'},
-			  {id:'yt-fireplace',name:'Chimenea en casa 🔥',tags:'video youtube live directo fire chimenea fireplace cozy movimiento',type:'youtube',videoId:'L_LUpnjgPso'},
-			  {id:'yt-underwater',name:'Mundo submarino 🐠',tags:'video youtube live directo underwater ocean fish nature movimiento',type:'youtube',videoId:'t3PnKiRKOAI'},
-			  // --- Fondos animados por canvas (movimiento real generado en tiempo real) ---
-			  {id:'cv-stars',name:'Estrellas volando ✨',tags:'canvas stars space warp universe movimiento real animacion',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000005,#000820)',thumb:'linear-gradient(135deg,#000010,#001040)'},
-			  {id:'cv-rain',name:'Lluvia nocturna 🌧️',tags:'canvas rain lluvia night ciudad movimiento real animacion',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#050510,#0a0a1a)',thumb:'linear-gradient(135deg,#050515,#101025)'},
-			  {id:'cv-aurora',name:'Aurora Boreal 🌌',tags:'canvas aurora northern lights nature movimiento real animacion',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000208,#00071a)',thumb:'linear-gradient(135deg,#000208,#001520)'},
-			  {id:'cv-fireflies',name:'Luciérnagas 🌿',tags:'canvas fireflies forest luciérnagas naturaleza movimiento real animacion',type:'canvas',anim:'fireflies',bg:'linear-gradient(180deg,#010601,#021203)',thumb:'linear-gradient(135deg,#010601,#041804)'},
-			  {id:'cv-snow',name:'Nevada de noche ❄️',tags:'canvas snow nieve winter invierno movimiento real animacion',type:'canvas',anim:'snow',bg:'linear-gradient(180deg,#0d1b2a,#1b2838)',thumb:'linear-gradient(135deg,#0d1b2a,#1b2838)'},
-			  {id:'cv-lava',name:'Lava colores 🔴',tags:'canvas lava colors colores fluid movimiento real animacion',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200005,#400010)'},
-			  {id:'cv-ocean',name:'Olas del mar 🌊',tags:'canvas ocean waves olas mar sea movimiento real animacion',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
-			  {id:'cv-particles',name:'Partículas de luz 💫',tags:'canvas particles particulas light neon movimiento real animacion',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
-			  {id:'cv-matrix',name:'Matrix digital 💻',tags:'canvas matrix digital code cyber movimiento real animacion',type:'canvas',anim:'matrix',bg:'#000',thumb:'linear-gradient(135deg,#000,#001a00)'},
-			  {id:'cv-leaves',name:'Hojas de otoño 🍂',tags:'canvas hojas leaves autumn otoño bosque movimiento real animacion naturaleza',type:'canvas',anim:'leaves',bg:'linear-gradient(180deg,#1a0a00,#2a1000)',thumb:'linear-gradient(135deg,#3a1a00,#5a2800)'},
-			  {id:'cv-river',name:'Río en la noche 🌊',tags:'canvas river rio agua water movimiento real animacion naturaleza',type:'canvas',anim:'river',bg:'linear-gradient(180deg,#091f38,#0d3352)',thumb:'linear-gradient(135deg,#091f38,#0d3352)'},
-			  {id:'cv-fire',name:'Fuego y llamas 🔥',tags:'canvas fire fuego llamas flame movimiento real animacion',type:'canvas',anim:'fire',bg:'linear-gradient(180deg,#050000,#0d0000)',thumb:'linear-gradient(135deg,#200000,#500010)'},
-			  {id:'cv-butterflies',name:'Mariposas 🦋',tags:'canvas butterflies mariposas nature movimiento real animacion',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#1a0a2e,#2e1a0a)',thumb:'linear-gradient(135deg,#2a1040,#403010)'},
-			  {id:'cv-clouds',name:'Nubes al atardecer ☁️',tags:'canvas clouds nubes sky sunset atardecer movimiento real animacion',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a2a6c,#b21f1f,#fdbb2d)',thumb:'linear-gradient(135deg,#1a2a6c,#b21f1f)'},
-			  {id:'cv-lake',name:'Lago nocturno 🌙',tags:'canvas lake lago night noche water movimiento real animacion naturaleza',type:'canvas',anim:'lake',bg:'linear-gradient(180deg,#0a1628,#050d1a)',thumb:'linear-gradient(135deg,#0a1628,#050d1a)'},
-			  {id:'cv-grass',name:'Prado al viento 🌾',tags:'canvas grass hierba prado wind viento campo field movimiento real animacion naturaleza',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
+			  // ===== 100 LIVE WALLPAPERS - 10 categorías x 10 fondos =====
+			  // Categorías: Mansiones, Fútbol, Tecnología, Juegos, Playa, Animales, Anime, Abstracto, Coches, Espacio
+			  // Los type:'video' intentan cargar el MP4 directo; si falla, muestran la animación canvas de fallback.
+			  // --- Mansiones y Lujo ---
+			  {id:'lw-mansion-1',name:'Mansión de Lujo Moderna',tags:'luxury mansion modern lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Modern-Luxury-Mansion.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-2',name:'Villa con Piscina Interior',tags:'luxury pool villa indoor lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Indoor-Pool-Villa.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-3',name:'Habitación Lluviosa Acogedora',tags:'cozy rain room lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Cozy-Rainy-Room.mp4',fallbackAnim:'rain'},
+			  {id:'lw-mansion-4',name:'Casa Moderna en el Bosque',tags:'modern house forest lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Modern-House-In-The-Forest.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-mansion-5',name:'Penthouse de Lujo',tags:'luxury penthouse view lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Luxury-Penthouse-View.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-6',name:'Arquitectura Moderna',tags:'modern architecture building design canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a2a3a,#2d4a5a)',thumb:'linear-gradient(135deg,#1a2a3a,#2d4a5a)'},
+			  {id:'lw-mansion-7',name:'Interior Lujoso',tags:'luxury home interior design canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#1a0a00,#3d2000)',thumb:'linear-gradient(135deg,#2a1500,#4d3000)'},
+			  {id:'lw-mansion-8',name:'Diseño Blueprint',tags:'blueprint design architect canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#001030,#002060)',thumb:'linear-gradient(135deg,#001030,#002060)'},
+			  {id:'lw-mansion-9',name:'Smart Home Tech',tags:'smart home technology futuristic canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
+			  {id:'lw-mansion-10',name:'Piscina Mansión',tags:'swimming pool mansion luxury canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003050,#001428)',thumb:'linear-gradient(135deg,#003050,#001428)'},
+			  // --- Fútbol y Deportes ---
+			  {id:'lw-football-1',name:'Messi Copa del Mundo',tags:'messi world cup football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Lionel-Messi-World-Cup.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-2',name:'Cristiano Ronaldo Neón',tags:'ronaldo neon football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Cristiano-Ronaldo-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-3',name:'Neymar Jr PSG',tags:'neymar psg football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Neymar-Jr-Psg.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-4',name:'Estadio Champions League',tags:'champions league stadium football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Champions-League-Stadium.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-5',name:'Balón en Llamas',tags:'soccer ball fire football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Soccer-Ball-On-Fire.mp4',fallbackAnim:'fire'},
+			  {id:'lw-football-6',name:'Luces del Estadio',tags:'football stadium lights sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a1a0a,#001500)',thumb:'linear-gradient(135deg,#0a1a0a,#002000)'},
+			  {id:'lw-football-7',name:'Regates de Fútbol',tags:'soccer dribbling football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#001a00,#003000)',thumb:'linear-gradient(135deg,#001a00,#003000)'},
+			  {id:'lw-football-8',name:'Centrocampista',tags:'midfielder soccer football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a1a,#001020)',thumb:'linear-gradient(135deg,#0a0a1a,#001020)'},
+			  {id:'lw-football-9',name:'Entrenamiento Fútbol',tags:'football training sports pitch canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
+			  {id:'lw-football-10',name:'Balón en el Césped',tags:'soccer ball grass football sports canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#6baa3d,#1a4d1a)',thumb:'linear-gradient(135deg,#4a8a2d,#1a4d1a)'},
+			  // --- Tecnología y Mac ---
+			  {id:'lw-tech-1',name:'macOS Monterey Abstracto',tags:'macos monterey abstract technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Monterey-Abstract.mp4',fallbackAnim:'lava'},
+			  {id:'lw-tech-2',name:'macOS Big Sur Fluido',tags:'macos big sur fluid technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Big-Sur-Fluid.mp4',fallbackAnim:'lava'},
+			  {id:'lw-tech-3',name:'Apple M1 Chip Glow',tags:'apple m1 chip glow technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Apple-M1-Chip-Glow.mp4',fallbackAnim:'particles'},
+			  {id:'lw-tech-4',name:'Circuito Neón',tags:'circuit board neon technology video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Technology/Circuit-Board-Neon.mp4',fallbackAnim:'matrix'},
+			  {id:'lw-tech-5',name:'Interfaz Hacker',tags:'hacker screen interface technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Hacker-Screen-Interface.mp4',fallbackAnim:'matrix'},
+			  {id:'lw-tech-6',name:'Pantalla MacBook',tags:'macbook screen loop technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a0a1a,#1a1a3a)',thumb:'linear-gradient(135deg,#0a0a1a,#1a1a3a)'},
+			  {id:'lw-tech-7',name:'iPad Tecnología',tags:'ipad tablet technology canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
+			  {id:'lw-tech-8',name:'Procesador Chip',tags:'processor chip technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#000500,#001a00)',thumb:'linear-gradient(135deg,#000500,#001a00)'},
+			  {id:'lw-tech-9',name:'Sala de Servidores',tags:'server room tech data center canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#050510,#0a0a20)',thumb:'linear-gradient(135deg,#050510,#0a0a20)'},
+			  {id:'lw-tech-10',name:'Apple Abstracto',tags:'apple device abstract technology canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200010,#400020)'},
+			  // --- Juegos ---
+			  {id:'lw-games-1',name:'Roblox Doors',tags:'roblox doors games horror video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Roblox-Doors.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-2',name:'Cyberpunk 2077 Neón',tags:'cyberpunk 2077 neon games video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Cyberpunk-2077-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-3',name:'GTA 5 Los Santos',tags:'gta 5 los santos games city video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Gta-5-Los-Santos.mp4',fallbackAnim:'rain'},
+			  {id:'lw-games-4',name:'Steam Deck Abstracto',tags:'steam deck abstract games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Steam-Deck-Abstract.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-5',name:'Sala Arcade Retro',tags:'retro arcade room games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Retro-Arcade-Room.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-6',name:'Roblox Gaming',tags:'roblox gaming games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300060)',thumb:'linear-gradient(135deg,#1a0030,#300060)'},
+			  {id:'lw-games-7',name:'Biblioteca Steam',tags:'steam game library games canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a1020,#152040)',thumb:'linear-gradient(135deg,#0a1020,#152040)'},
+			  {id:'lw-games-8',name:'Arena Esports',tags:'esports arena games competition canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0d0020,#1a0040)',thumb:'linear-gradient(135deg,#0d0020,#1a0040)'},
+			  {id:'lw-games-9',name:'Mando Videojuegos',tags:'video game controller games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#100818,#200830)',thumb:'linear-gradient(135deg,#100818,#200830)'},
+			  {id:'lw-games-10',name:'Mundo 3D Gaming',tags:'3d game environment games canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000010,#000830)',thumb:'linear-gradient(135deg,#000010,#000830)'},
+			  // --- Playa y Naturaleza ---
+			  {id:'lw-beach-1',name:'Olas Tropicales',tags:'tropical beach waves nature video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Tropical-Beach-Waves.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-2',name:'Resort Maldivas',tags:'maldives ocean resort nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Maldives-Ocean-Resort.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-3',name:'Palmeras al Atardecer',tags:'sunset palm trees nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Sunset-Palm-Trees.mp4',fallbackAnim:'clouds'},
+			  {id:'lw-beach-4',name:'Playa Relajante al Atardecer',tags:'relaxing beach sunset nature video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Relaxing-Beach-Sunset.mp4',fallbackAnim:'clouds'},
+			  {id:'lw-beach-5',name:'Agua de Piscina',tags:'swimming pool water nature relax video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Swimming-Pool-Water.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-6',name:'Resort de Playa',tags:'beach resort tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
+			  {id:'lw-beach-7',name:'Olas en la Arena',tags:'ocean waves sand beach canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004080,#002040)',thumb:'linear-gradient(135deg,#004080,#002040)'},
+			  {id:'lw-beach-8',name:'Tumbona en la Playa',tags:'lounge chair beach relax canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#ff7e5f,#003060)',thumb:'linear-gradient(135deg,#ff7e5f,#003060)'},
+			  {id:'lw-beach-9',name:'Isla Tropical Drone',tags:'tropical island drone aerial canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#006080,#003040)',thumb:'linear-gradient(135deg,#006080,#003040)'},
+			  {id:'lw-beach-10',name:'Mar Caribe Loop',tags:'caribbean sea loop tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#00b4d8,#003060)',thumb:'linear-gradient(135deg,#00b4d8,#003060)'},
+			  // --- Animales y Perros ---
+			  {id:'lw-animals-1',name:'Cachorro Golden Retriever',tags:'golden retriever puppy animals dogs video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Cute-Golden-Retriever-Puppy.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-animals-2',name:'Perro Durmiendo Lofi',tags:'sleeping dog lofi animals video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Sleeping-Dog-Lofi.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-animals-3',name:'Husky en la Nieve',tags:'husky snow animals dogs winter video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Husky-Snow.mp4',fallbackAnim:'snow'},
+			  {id:'lw-animals-4',name:'Estanque de Peces Koi',tags:'koi fish pond animals water video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Koi-Fish-Pond.mp4',fallbackAnim:'river'},
+			  {id:'lw-animals-5',name:'Shiba Inu Cyberpunk',tags:'shiba inu cyberpunk animals neon video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Shiba-Inu-Cyberpunk.mp4',fallbackAnim:'particles'},
+			  {id:'lw-animals-6',name:'Perro Corriendo',tags:'dog running animals canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
+			  {id:'lw-animals-7',name:'Mascota en Casa',tags:'pet dog home animals canvas',type:'canvas',anim:'fireflies',bg:'linear-gradient(180deg,#1a1000,#2a1800)',thumb:'linear-gradient(135deg,#2a1800,#3a2800)'},
+			  {id:'lw-animals-8',name:'Cachorro Jugando',tags:'puppy playing animals dogs canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#1a2a1a,#2a4a2a)',thumb:'linear-gradient(135deg,#1a2a1a,#2a4a2a)'},
+			  {id:'lw-animals-9',name:'Golden Retriever',tags:'golden retriever animals dogs canvas',type:'canvas',anim:'leaves',bg:'linear-gradient(180deg,#2a1a00,#4a3000)',thumb:'linear-gradient(135deg,#3a2000,#5a3800)'},
+			  {id:'lw-animals-10',name:'Perro en la Playa',tags:'dog beach animals ocean canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004060,#002030)',thumb:'linear-gradient(135deg,#004060,#002030)'},
+			  // --- Anime y Memes ---
+			  {id:'lw-anime-1',name:'Skibidi Toilet Dance',tags:'skibidi toilet dance memes funny video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Funny/Skibidi-Toilet-Dance.mp4',fallbackAnim:'particles'},
+			  {id:'lw-anime-2',name:'Demon Slayer Zenitsu',tags:'demon slayer zenitsu anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Demon-Slayer-Zenitsu.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-anime-3',name:'Jujutsu Kaisen Gojo',tags:'jujutsu kaisen gojo anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Jujutsu-Kaisen-Gojo.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-anime-4',name:'Ghibli Tren Fantasma',tags:'ghibli spirited away train anime video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Ghibli-Spirited-Away-Train.mp4',fallbackAnim:'rain'},
+			  {id:'lw-anime-5',name:'Lofi Girl Estudiando',tags:'lofi girl studying anime chill video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Lofi-Girl-Studying.mp4',fallbackAnim:'rain'},
+			  {id:'lw-anime-6',name:'Animación Subscribe',tags:'youtube subscribe animation memes canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#200000,#400000)',thumb:'linear-gradient(135deg,#300000,#500000)'},
+			  {id:'lw-anime-7',name:'Animación 3D Loop',tags:'3d animation loop abstract canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0020,#200040)',thumb:'linear-gradient(135deg,#0a0020,#200040)'},
+			  {id:'lw-anime-8',name:'Fondo Cartoon',tags:'cartoon background animated canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#87ceeb,#4a90d9)',thumb:'linear-gradient(135deg,#87ceeb,#4a90d9)'},
+			  {id:'lw-anime-9',name:'Fondo Meme',tags:'meme background video funny canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300050)',thumb:'linear-gradient(135deg,#1a0030,#300050)'},
+			  {id:'lw-anime-10',name:'Fondo VTuber',tags:'vtuber background anime stream canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
+			  // --- Abstracto ---
+			  {id:'lw-abstract-1',name:'Colores Fluidos',tags:'fluid colors abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Fluid-Colors.mp4',fallbackAnim:'lava'},
+			  {id:'lw-abstract-2',name:'Partículas Materia Oscura',tags:'dark matter particles abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Dark-Matter-Particles.mp4',fallbackAnim:'particles'},
+			  {id:'lw-abstract-3',name:'Metal Líquido Loop',tags:'liquid metal loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Liquid-Metal-Loop.mp4',fallbackAnim:'lava'},
+			  {id:'lw-abstract-4',name:'Ondas Neón Grid',tags:'neon waves grid abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Neon-Waves-Grid.mp4',fallbackAnim:'particles'},
+			  {id:'lw-abstract-5',name:'Túnel Infinito Loop',tags:'infinite tunnel loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Infinite-Tunnel-Loop.mp4',fallbackAnim:'stars'},
+			  {id:'lw-abstract-6',name:'Luces Neón Loop',tags:'neon lights loop abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
+			  {id:'lw-abstract-7',name:'Fluido Abstracto 4K',tags:'abstract fluid 4k canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200005,#400010)'},
+			  {id:'lw-abstract-8',name:'Partículas de Fondo',tags:'particles background abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000020,#001040)',thumb:'linear-gradient(135deg,#000020,#001040)'},
+			  {id:'lw-abstract-9',name:'Formas Geométricas',tags:'geometric shapes loop abstract canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
+			  {id:'lw-abstract-10',name:'Animación Fractal',tags:'fractal animation abstract canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000208,#00071a)',thumb:'linear-gradient(135deg,#000208,#001520)'},
+			  // --- Coches ---
+			  {id:'lw-cars-1',name:'Nissan GTR R34 Neón',tags:'nissan gtr r34 neon cars jdm video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Nissan-Gtr-R34-Neon.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-2',name:'Porsche 911 Lluvia',tags:'porsche 911 rain cars luxury video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Porsche-911-Rain.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-3',name:'JDM Street Racing',tags:'jdm street racing cars night video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Jdm-Street-Racing.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-4',name:'McLaren P1 Neón',tags:'mclaren p1 neon cars supercar video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Mclaren-P1-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-cars-5',name:'DeLorean Cyberpunk',tags:'cyberpunk delorean cars retro video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Cyberpunk-Delorean.mp4',fallbackAnim:'particles'},
+			  {id:'lw-cars-6',name:'Deportivo en Carretera',tags:'sports car driving cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#050510,#0a0a1a)',thumb:'linear-gradient(135deg,#050515,#101025)'},
+			  {id:'lw-cars-7',name:'Interior Auto Lujo',tags:'luxury car interior cars canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0500,#1a0a00)',thumb:'linear-gradient(135deg,#1a0a00,#2a1500)'},
+			  {id:'lw-cars-8',name:'Supercar Ciudad Noche',tags:'supercar night city cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#0a0510,#140a1a)',thumb:'linear-gradient(135deg,#0a0510,#140a1a)'},
+			  {id:'lw-cars-9',name:'Drift Humo',tags:'drift car smoke cars canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a1a1a,#333333)',thumb:'linear-gradient(135deg,#1a1a1a,#333333)'},
+			  {id:'lw-cars-10',name:'Motor Mecánica',tags:'engine mechanic cars canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a0a,#1a1a1a)',thumb:'linear-gradient(135deg,#0a0a0a,#1a1a1a)'},
+			  // --- Espacio ---
+			  {id:'lw-space-1',name:'Agujero Negro Gargantúa',tags:'black hole gargantua space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Black-Hole-Gargantua.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-2',name:'Vía Láctea Timelapse',tags:'milky way timelapse space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Milky-Way-Timelapse.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-3',name:'Nubes de Nebulosa Loop',tags:'nebula clouds loop space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Nebula-Clouds-Loop.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-space-4',name:'Estación Orbital Cyber',tags:'cyber station orbit space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Cyber-Station-Orbit.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-5',name:'Vista Superficie Lunar',tags:'moon surface view space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Moon-Surface-View.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-6',name:'Galaxia Estrellas Loop',tags:'galaxy stars loop space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000005,#000820)',thumb:'linear-gradient(135deg,#000010,#001040)'},
+			  {id:'lw-space-7',name:'Astronauta Espacio',tags:'astronaut space cosmos canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#000510)',thumb:'linear-gradient(135deg,#000000,#000510)'},
+			  {id:'lw-space-8',name:'Planeta Tierra Órbita',tags:'planet earth orbit space canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000005,#001020)',thumb:'linear-gradient(135deg,#000005,#001020)'},
+			  {id:'lw-space-9',name:'Nave Sci-Fi',tags:'sci-fi spaceship space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000008,#000420)',thumb:'linear-gradient(135deg,#000008,#000420)'},
+			  {id:'lw-space-10',name:'Animación Agujero Negro',tags:'black hole animation space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#0a0005)',thumb:'linear-gradient(135deg,#000000,#100010)'}
 			];
 
-			// Generador de fondos por tema: crea cientos de variaciones de gradientes
-			// organizadas por categoría para que el usuario pueda elegir.
-			(function generateThemedWallpapers(){
-			  const themes = [
-			    {cat:'Naturaleza',tag:'naturaleza nature',palettes:[
-			      ['#0b3d0b','#1a5c1a','#2e8b57'],['#006400','#228b22','#90ee90'],['#013220','#2e8b57','#66cdaa'],
-			      ['#004d00','#008000','#7cfc00'],['#0d4d0d','#1e7b1e','#98fb98'],['#2d572c','#4a7c59','#8fbc8f'],
-			      ['#1a472a','#2d8659','#50c878'],['#355e3b','#568203','#a9ba9d'],['#023020','#2e8b57','#32cd32'],
-			      ['#0b6623','#3cb371','#00fa9a'],['#004225','#009b4d','#39d98a'],['#1b4332','#40916c','#95d5b2'],
-			      ['#0a2f0a','#006d2c','#41ab5d'],['#143601','#538d22','#a7c957'],['#1a3a1a','#4d804d','#b2d8b2'],
-			    ]},
-			    {cat:'Océano',tag:'oceano ocean agua water mar sea',palettes:[
-			      ['#000080','#0047ab','#00bfff'],['#001f3f','#005f73','#0a9396'],['#03045e','#0077b6','#90e0ef'],
-			      ['#023e8a','#0096c7','#48cae4'],['#0b132b','#1c2541','#3a506b'],['#1a535c','#4ecdc4','#f7fff7'],
-			      ['#002855','#0073cf','#89cff0'],['#1b4965','#5fa8d3','#bee9e8'],['#006994','#00a6a6','#bbdef0'],
-			      ['#14213d','#1d3557','#457b9d'],['#0d1b2a','#1b3a4b','#065a60'],['#1a759f','#34a0a4','#76c893'],
-			      ['#0a3d62','#1289a7','#38ada9'],['#003459','#007ea7','#00a8e8'],['#0c2d48','#2e8bc0','#b1d4e0'],
-			    ]},
-			    {cat:'Atardecer',tag:'atardecer sunset sunrise amanecer cielo sky',palettes:[
-			      ['#ff6b35','#f7c59f','#1a535c'],['#ff4e50','#fc913a','#f9d423'],['#e65c00','#f9d423','#ffec5c'],
-			      ['#ff007f','#ff7e5f','#feb47b'],['#e44d26','#f16529','#fbb034'],['#c21460','#fb5b5a','#feae96'],
-			      ['#d63031','#e17055','#fdcb6e'],['#f39c12','#e74c3c','#9b59b6'],['#ff6348','#ffbe76','#f9ca24'],
-			      ['#cc2b5e','#753a88','#f093fb'],['#ff512f','#dd2476','#f09819'],['#fc466b','#3f5efb','#ffecd2'],
-			      ['#f12711','#f5af19','#ff6b6b'],['#c0392b','#e74c3c','#f39c12'],['#ff4757','#ff6b81','#ffa502'],
-			    ]},
-			    {cat:'Espacio',tag:'espacio space galaxia galaxy nebula estrellas stars',palettes:[
-			      ['#0c0032','#190061','#240090'],['#000000','#0d0221','#470d67'],['#0a0a23','#1a1a40','#3d0066'],
-			      ['#09001a','#1a0533','#6b0f6b'],['#000033','#000066','#330066'],['#020024','#3c096c','#9d4edd'],
-			      ['#10002b','#240046','#5a189a'],['#090320','#2d0064','#7400b8'],['#0b0033','#1a0050','#6200ea'],
-			      ['#000000','#0d0628','#2a0845'],['#03071e','#370617','#6a040f'],['#12002e','#2d006b','#7b2ff7'],
-			      ['#000428','#004e92','#6c3483'],['#0a0025','#2c003e','#50007f'],['#1a0a2e','#3d1e6d','#8e44ad'],
-			    ]},
-			    {cat:'Ciudad',tag:'ciudad city urban metro neon night nocturno',palettes:[
-			      ['#0f0c29','#302b63','#24243e'],['#0d0d0d','#1a1a2e','#ff007f'],['#141e30','#243b55','#e94560'],
-			      ['#1a1a2e','#16213e','#e94560'],['#0f2027','#203a43','#2c5364'],['#0c0c1d','#1a1a3e','#4834d4'],
-			      ['#0d0221','#150734','#38006b'],['#11052c','#3d087b','#f43b86'],['#1b1b2f','#1f4068','#e43f5a'],
-			      ['#16161a','#242629','#7f5af0'],['#0a0e27','#1a1f4e','#ff2e63'],['#0b0c10','#1f2833','#66fcf1'],
-			      ['#1e1e2e','#313244','#cba6f7'],['#0d1117','#161b22','#58a6ff'],['#020c18','#0a192f','#64ffda'],
-			    ]},
-			    {cat:'Montaña',tag:'montaña mountain alps sierra nevada nieve snow',palettes:[
-			      ['#2c3e50','#3498db','#ecf0f1'],['#1a1a2e','#34495e','#bdc3c7'],['#2b2d42','#8d99ae','#edf2f4'],
-			      ['#1b2838','#304352','#d7d2cc'],['#283048','#859398','#bdc3c7'],['#0f2027','#2c5364','#d7d2cc'],
-			      ['#16222a','#3a6073','#95a5a6'],['#373b44','#4286f4','#e0e5ec'],['#485563','#29323c','#a0aec0'],
-			      ['#1f1c2c','#928dab','#e0e0e0'],['#232526','#414345','#7f8c8d'],['#2c3e50','#4ca1af','#bdc3c7'],
-			      ['#0f0c29','#302b63','#b2bec3'],['#373737','#616161','#c0c0c0'],['#1d3557','#457b9d','#a8dadc'],
-			    ]},
-			    {cat:'Pastel',tag:'pastel suave soft rosa pink aesthetic kawaii',palettes:[
-			      ['#fbc2eb','#a6c1ee','#f5efef'],['#ffecd2','#fcb69f','#fbc2eb'],['#a8edea','#fed6e3','#d4fc79'],
-			      ['#f093fb','#f5576c','#fbc2eb'],['#c1dfc4','#deecdd','#fbc2eb'],['#e0c3fc','#8ec5fc','#d4fc79'],
-			      ['#ffeaa7','#fab1a0','#dfe6e9'],['#ff9ff3','#feca57','#48dbfb'],['#c7ecee','#dff9fb','#f8a5c2'],
-			      ['#fad0c4','#ffd1ff','#b8e6cf'],['#a1c4fd','#c2e9fb','#f5f7fa'],['#f0c27f','#4b1248','#fbd3e9'],
-			      ['#ffecd2','#fcb69f','#ee9ca7'],['#e8daef','#d5f5e3','#f9e79f'],['#f5cac3','#f7ede2','#84a59d'],
-			    ]},
-			    {cat:'Desierto',tag:'desierto desert arena sand dunas dunes calido warm sahara',palettes:[
-			      ['#c2703e','#daa06d','#f7dc6f'],['#8b4513','#cd853f','#ffd700'],['#a0522d','#d2691e','#f4a460'],
-			      ['#8b6914','#daa520','#f0e68c'],['#704214','#cc7722','#ffa812'],['#7c4700','#b8860b','#f5deb3'],
-			      ['#5c3317','#a0522d','#e8c39e'],['#6f4e37','#c19a6b','#f0e4d7'],['#964b00','#cc7722','#ffe5b4'],
-			      ['#483c32','#8b7355','#d2b48c'],['#654321','#a67b5b','#deb887'],['#7b3f00','#b5651d','#f5cba7'],
-			      ['#5c4033','#a0522d','#d2b48c'],['#704214','#b87333','#e0c8a8'],['#3e2723','#795548','#bcaaa4'],
-			    ]},
-			    {cat:'Neón',tag:'neon brillante bright glow electric cyberpunk retro',palettes:[
-			      ['#ff00ff','#00ffff','#ff007f'],['#39ff14','#00ff00','#0d0d0d'],['#ff073a','#7b2ff7','#00f5ff'],
-			      ['#ffff00','#ff00ff','#00ffff'],['#ff6ec7','#7df9ff','#ff2400'],['#bc13fe','#39ff14','#ff6700'],
-			      ['#ff1493','#00bfff','#7fff00'],['#ff4500','#ff00ff','#00ff7f'],['#e100ff','#00e5ff','#76ff03'],
-			      ['#ff3131','#ff31d2','#313dff'],['#f72585','#b5179e','#7209b7'],['#e6fb04','#d504e6','#04e6fb'],
-			      ['#ff6b6b','#feca57','#48dbfb'],['#ee5a24','#0652dd','#1b1464'],['#fd79a8','#6c5ce7','#00cec9'],
-			    ]},
-			    {cat:'Fuego',tag:'fuego fire lava rojo red caliente hot volcan',palettes:[
-			      ['#200122','#6f0000','#ff0000'],['#3d0000','#8b0000','#ff4500'],['#1a0000','#660000','#cc0000'],
-			      ['#0d0000','#4d0000','#b30000'],['#300000','#800000','#ff2200'],['#1c0000','#550000','#aa0000'],
-			      ['#200000','#6b0000','#e60000'],['#120000','#450000','#990000'],['#2b0000','#720000','#dd1100'],
-			      ['#0a0000','#3a0000','#880000'],['#350000','#850000','#ff3300'],['#100000','#4a0000','#a50000'],
-			      ['#1e0000','#5e0000','#c00000'],['#280000','#700000','#d40000'],['#160000','#500000','#b50000'],
-			    ]},
-			    {cat:'Bosque',tag:'bosque forest verde green arbol tree selva jungle',palettes:[
-			      ['#0b3d0b','#134e13','#1e8c1e'],['#0a2f0a','#1a5c1a','#3cb371'],['#003300','#006600','#339933'],
-			      ['#013a20','#02735e','#58b09c'],['#1b4332','#2d6a4f','#52b788'],['#081c15','#1b4332','#40916c'],
-			      ['#002f14','#005c29','#2e8b57'],['#00230e','#004d25','#228b22'],['#0e2412','#1c5631','#3a9d5c'],
-			      ['#041f0a','#0d4d1a','#2d8b4e'],['#062f12','#106b2b','#34a853'],['#001a09','#003d1a','#008000'],
-			      ['#04260a','#0e5c1f','#28a745'],['#071a0d','#174a27','#3d8b5a'],['#0b2e14','#1a6930','#4caf50'],
-			    ]},
-			    {cat:'Hielo',tag:'hielo ice artico arctic frio cold glaciar polar',palettes:[
-			      ['#e0f7fa','#80deea','#006064'],['#b2ebf2','#4dd0e1','#00838f'],['#e0eafc','#89f7fe','#66a6ff'],
-			      ['#caf0f8','#90e0ef','#0077b6'],['#d4f1f9','#75e6da','#189ab4'],['#e8f4f8','#96deda','#50b9c6'],
-			      ['#cce5ff','#99ccff','#3399ff'],['#d6eaf8','#aed6f1','#5dade2'],['#dbedf3','#a1d2e6','#4fa3c7'],
-			      ['#e3f2fd','#90caf9','#42a5f5'],['#f0f4f8','#c3dafe','#7f9cf5'],['#edf2f7','#a0aec0','#718096'],
-			      ['#ebf8ff','#bee3f8','#63b3ed'],['#f0fdfa','#99f6e4','#2dd4bf'],['#ecfdf5','#a7f3d0','#34d399'],
-			    ]},
-			    {cat:'Abstracto',tag:'abstracto abstract moderno modern arte art geometrico',palettes:[
-			      ['#667eea','#764ba2','#f093fb'],['#a8c0ff','#3f2b96','#a8c0ff'],['#b721ff','#21d4fd','#b721ff'],
-			      ['#4776e6','#8e54e9','#4776e6'],['#11998e','#38ef7d','#11998e'],['#fc5c7d','#6a82fb','#fc5c7d'],
-			      ['#c471ed','#f64f59','#c471ed'],['#00c9ff','#92fe9d','#00c9ff'],['#fccb90','#d57eeb','#fccb90'],
-			      ['#e44d26','#4ecdc4','#e44d26'],['#ff9966','#ff5e62','#ff9966'],['#f7971e','#ffd200','#f7971e'],
-			      ['#654ea3','#eaafc8','#654ea3'],['#009fff','#ec2f4b','#009fff'],['#c0c0aa','#1cefff','#c0c0aa'],
-			    ]},
-			    {cat:'Lujo',tag:'lujo luxury elegante elegant oro gold premium',palettes:[
-			      ['#0c0c0c','#d4af37','#f5e7a0'],['#1a1a2e','#b8860b','#ffd700'],['#0d0d0d','#8b6914','#daa520'],
-			      ['#000000','#b39700','#e6c200'],['#1c1c1c','#9b7a2f','#c9a74e'],['#0a0a0a','#7d6608','#c8a415'],
-			      ['#121212','#a68b2c','#d4b84a'],['#050505','#6b5b1f','#b59535'],['#0e0e0e','#8c7320','#c29d3e'],
-			      ['#181818','#aa8f30','#dbb94e'],['#0c0c0c','#786525','#b08f42'],['#141414','#9e8428','#cca946'],
-			      ['#0a0a0a','#695a1e','#a88e38'],['#101010','#877125','#bf9b43'],['#060606','#5c4e1a','#9a8032'],
-			    ]},
-			    {cat:'Fantasía',tag:'fantasia fantasy magic magia anime unicornio dragon',palettes:[
-			      ['#2e0854','#7b2ff7','#ff6ec7'],['#1a0033','#6600cc','#ff3399'],['#0d0033','#4d00b3','#ff66b2'],
-			      ['#200066','#8000ff','#ff4da6'],['#130040','#5900b3','#ff3385'],['#180050','#6600e6','#ff4d94'],
-			      ['#0a0026','#4000b3','#e64d8c'],['#1d004d','#7300cc','#ff1a8c'],['#100033','#5300b3','#ff3377'],
-			      ['#220066','#8800ff','#ff66aa'],['#150044','#6000cc','#ff2288'],['#1b0055','#6e00d9','#ff4499'],
-			      ['#0e002e','#4600a8','#d94d89'],['#240070','#9000ff','#ff55aa'],['#170048','#6400c8','#ff3391'],
-			    ]},
-			    {cat:'Tropical',tag:'tropical caribe caribbean playa beach palmera palm verano summer',palettes:[
-			      ['#009688','#4db6ac','#ffeb3b'],['#00796b','#26a69a','#ffcc02'],['#00695c','#009688','#ffc107'],
-			      ['#005749','#00897b','#f9a825'],['#004d40','#00796b','#ff8f00'],['#006064','#0097a7','#ffd54f'],
-			      ['#00897b','#4db6ac','#fff176'],['#00695c','#26a69a','#ffe082'],['#004d40','#00bfa5','#ffca28'],
-			      ['#005f56','#00a38d','#ffd740'],['#007c6e','#2eb8a4','#ffe57f'],['#003d33','#007a68','#ff9e00'],
-			      ['#006a5f','#00b89a','#ffd149'],['#004838','#008e74','#ffab40'],['#005a4e','#009e88','#ffc400'],
-			    ]},
-			  ];
-			  let idx=0;
-			  themes.forEach(t=>{
-			    t.palettes.forEach((p,pi)=>{
-			      const angles=[90,120,135,150,180,225,270,315,45,60];
-			      const a=angles[pi%angles.length];
-			      const dur=10+Math.floor(pi*1.5);
-			      WALLPAPERS.push({
-			        id:`gen-${t.cat.toLowerCase().replace(/\s/g,'')}-${pi}`,
-			        name:`${t.cat} ${pi+1}`,
-			        tags:`gradient ${t.tag} generado`,
-			        type:'gradient',colors:p,angle:a,dur:dur
-			      });
-			      idx++;
-			    });
-			  });
-			})();
 
 			/* =====================================================================
 			   CLOCK STYLE LIBRARY -- "todos los estilos de relojes del mundo mundial"
@@ -4986,6 +4795,18 @@
 			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			    vid.setAttribute('webkit-playsinline','true');
 			    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+			    vid.onerror = function(){
+			      const anim = wp.fallbackAnim;
+			      if(anim && typeof _canvasAnimators !== 'undefined' && _canvasAnimators[anim]){
+			        vid.remove();
+			        const cvs = document.createElement('canvas');
+			        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+			        fillEl.appendChild(cvs);
+			        const h = _canvasAnimators[anim](cvs);
+			        fillEl._canvasHandle = h;
+			      }
+			    };
 			    fillEl.appendChild(vid);
 			    vid.play().catch(()=>{});
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
