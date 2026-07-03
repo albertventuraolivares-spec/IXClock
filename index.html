@@ -4170,50 +4170,129 @@
 						IXClocK -- Universal OS Dashboard
 					</div>
 				</div>
+				<!-- VISTA: elegir -->
 				<div
+					id="login-view-chooser"
 					style="width:100%;display:flex;flex-direction:column;gap:0.7rem;"
 				>
+					<button
+						onclick="loginShowSignIn()"
+						style="width:100%;padding:0.85rem;border-radius:0.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 18px rgba(10,132,255,0.4);"
+					>
+						🔐 Iniciar sesión
+					</button>
+					<button
+						onclick="loginShowSignUp()"
+						style="width:100%;padding:0.85rem;border-radius:0.9rem;background:rgba(255,255,255,0.1);color:#fff;font-weight:700;font-size:0.9rem;border:1px solid rgba(255,255,255,0.18);cursor:pointer;letter-spacing:0.02em;"
+					>
+						✨ Crear cuenta
+					</button>
+					<button
+						onclick="loginAsGuest()"
+						style="width:100%;padding:0.85rem;border-radius:0.9rem;background:transparent;color:rgba(255,255,255,0.65);font-weight:600;font-size:0.85rem;border:1px solid rgba(255,255,255,0.12);cursor:pointer;letter-spacing:0.02em;"
+					>
+						👤 Continuar como invitado
+					</button>
+				</div>
+
+				<!-- VISTA: iniciar sesión -->
+				<div
+					id="login-view-signin"
+					style="display:none;width:100%;flex-direction:column;gap:0.7rem;"
+				>
 					<input
-						id="login-username"
+						id="signin-username"
 						type="text"
-						placeholder="Tu nombre (opcional)"
+						placeholder="Nombre de usuario"
 						autocomplete="off"
 						style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:0.9rem;padding:0.75rem 1rem;color:#fff;font-size:0.85rem;outline:none;"
-						oninput="loginClearError()"
-						onkeydown="if(event.key==='Enter')loginSubmit()"
+						oninput="loginClearErrors()"
+						onkeydown="if(event.key==='Enter')loginSubmitSignIn()"
 					/>
-					<div style="display:flex;align-items:center;gap:0.5rem;">
-						<input
-							id="login-password"
-							type="password"
-							placeholder="Contraseña (opcional)"
-							autocomplete="off"
-							style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
-							oninput="loginClearError()"
-							onkeydown="if(event.key==='Enter')loginSubmit()"
-						/>
+					<input
+						id="signin-password"
+						type="password"
+						placeholder="Contraseña"
+						autocomplete="off"
+						style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
+						oninput="loginClearErrors()"
+						onkeydown="if(event.key==='Enter')loginSubmitSignIn()"
+					/>
+					<div
+						id="login-error-signin"
+						style="display:none;color:#ff453a;font-size:0.75rem;text-align:center;"
+					></div>
+					<button
+						onclick="loginSubmitSignIn()"
+						style="width:100%;padding:0.85rem;border-radius:0.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 18px rgba(10,132,255,0.4);"
+					>
+						Iniciar sesión
+					</button>
+					<div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.45);">
+						¿No tienes cuenta?
+						<a onclick="loginShowSignUp()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Crear cuenta</a>
 					</div>
-					<div style="display:flex;align-items:center;gap:0.5rem;">
-						<input
-							id="login-email"
-							type="email"
-							placeholder="Correo electrónico (opcional)"
-							autocomplete="off"
-							style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
-							onkeydown="if(event.key==='Enter')loginSubmit()"
-						/>
-					</div>
+					<button
+						onclick="loginShowChooser()"
+						style="width:100%;padding:0.6rem;border-radius:0.9rem;background:transparent;color:rgba(255,255,255,0.5);font-weight:600;font-size:0.78rem;border:none;cursor:pointer;"
+					>
+						← Volver
+					</button>
 				</div>
+
+				<!-- VISTA: crear cuenta -->
 				<div
-					id="login-error"
-					style="display:none;color:#ff453a;font-size:0.75rem;text-align:center;"
-				></div>
-				<button
-					onclick="loginSubmit()"
-					style="width:100%;padding:0.85rem;border-radius:0.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 18px rgba(10,132,255,0.4);"
+					id="login-view-signup"
+					style="display:none;width:100%;flex-direction:column;gap:0.7rem;"
 				>
-					Entrar
-				</button>
+					<input
+						id="signup-username"
+						type="text"
+						placeholder="Elige un nombre de usuario"
+						autocomplete="off"
+						style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:0.9rem;padding:0.75rem 1rem;color:#fff;font-size:0.85rem;outline:none;"
+						oninput="loginClearErrors()"
+						onkeydown="if(event.key==='Enter')loginSubmitSignUp()"
+					/>
+					<input
+						id="signup-password"
+						type="password"
+						placeholder="Contraseña (opcional)"
+						autocomplete="off"
+						style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
+						oninput="loginClearErrors()"
+						onkeydown="if(event.key==='Enter')loginSubmitSignUp()"
+					/>
+					<input
+						id="signup-email"
+						type="email"
+						placeholder="Correo electrónico (opcional)"
+						autocomplete="off"
+						style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:0.9rem;padding:0.7rem 1rem;color:#fff;font-size:0.8rem;outline:none;"
+						onkeydown="if(event.key==='Enter')loginSubmitSignUp()"
+					/>
+					<div
+						id="login-error-signup"
+						style="display:none;color:#ff453a;font-size:0.75rem;text-align:center;"
+					></div>
+					<button
+						onclick="loginSubmitSignUp()"
+						style="width:100%;padding:0.85rem;border-radius:0.9rem;background:linear-gradient(135deg,#30d158,#0a84ff);color:#fff;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 18px rgba(48,209,88,0.35);"
+					>
+						Crear cuenta
+					</button>
+					<div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.45);">
+						¿Ya tienes cuenta?
+						<a onclick="loginShowSignIn()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Iniciar sesión</a>
+					</div>
+					<button
+						onclick="loginShowChooser()"
+						style="width:100%;padding:0.6rem;border-radius:0.9rem;background:transparent;color:rgba(255,255,255,0.5);font-weight:600;font-size:0.78rem;border:none;cursor:pointer;"
+					>
+						← Volver
+					</button>
+				</div>
+
 				<p
 					style="font-size:0.68rem;color:rgba(255,255,255,0.3);text-align:center;line-height:1.5;"
 				>
@@ -4524,6 +4603,8 @@
 			  {id:'ph-singapore',name:'Singapur Marina',tags:'photo singapore marina bay skyline city night',type:'photo',url:'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=3840&auto=format&fit=crop'},
 			  {id:'ph-cappadocia',name:'Capadocia Globos',tags:'photo cappadocia turkey balloons sunrise',type:'photo',url:'https://images.unsplash.com/photo-1526048598645-62b31f82aaca?q=80&w=3840&auto=format&fit=crop'},
 			  {id:'ph-northern-lights2',name:'Aurora Rosa',tags:'photo aurora pink northern lights iceland',type:'photo',url:'https://images.unsplash.com/photo-1579033461380-adb47c3eb938?q=80&w=3840&auto=format&fit=crop'},
+			  // --- Fondos en video (loop real, no foto) ---
+			  {id:'vid-lago-como',name:'Lago di Como (video)',tags:'video lake italy lago como varenna aerial drone real motion',type:'video',url:'videos/lago-como-varenna.mp4'},
 			];
 
 			// Generador de fondos por tema: crea cientos de variaciones de gradientes
@@ -4850,7 +4931,16 @@
 			  fillEl.className = 'wallpaper-fill';
 			  fillEl.style.animation = '';
 			  fillEl.style.backgroundImage = '';
-			  if(wp.type === 'photo' || wp.type === 'custom'){
+			  fillEl.innerHTML = ''; // limpia cualquier <video> de un fondo anterior
+			  if(wp.type === 'video'){
+			    const vid = document.createElement('video');
+			    vid.src = wp.url;
+			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
+			    vid.setAttribute('webkit-playsinline','true');
+			    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+			    fillEl.appendChild(vid);
+			    vid.play().catch(()=>{});
+			  } else if(wp.type === 'photo' || wp.type === 'custom'){
 			    fillEl.style.backgroundImage = `url('${wp.url}')`;
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
@@ -4860,6 +4950,28 @@
 			    fillEl.style.animationDuration = (wp.dur||20) + 's';
 			  }
 			}
+			// Pausa el <video> del fondo que quedó atrás tras el crossfade, para no
+			// tener dos videos reproduciéndose a la vez (gasta batería y calienta
+			// el dispositivo sin motivo, ya que ese fondo ya no se ve).
+			function _wpPauseInactiveVideos(activeFillId){
+			  ['wp-fill-a','wp-fill-b'].forEach(id=>{
+			    if(id===activeFillId) return;
+			    const el = document.getElementById(id);
+			    const v = el && el.querySelector('video');
+			    if(v) v.pause();
+			  });
+			}
+			// Si el usuario cambia de pestaña/app, pausa el video de fondo activo
+			// (no aporta nada seguir decodificando video si no se ve) y retoma solo
+			// el de la capa visible al volver (la otra capa ya estaba pausada a propósito).
+			document.addEventListener('visibilitychange', ()=>{
+			  if(document.hidden){
+			    document.querySelectorAll('.wallpaper-fill video').forEach(v=>v.pause());
+			  }else{
+			    const v=document.querySelector('.wallpaper-layer.active .wallpaper-fill video');
+			    if(v) v.play().catch(()=>{});
+			  }
+			});
 			function setWallpaper(id){
 			  const wp = WALLPAPERS.find(w=>w.id===id);
 			  if(!wp) return;
@@ -4879,6 +4991,8 @@
 			  const card = document.getElementById('wpcard-' + id);
 			  if(card) card.classList.add('active');
 			  isDynamicBgEnabled = false;
+			  try{ localStorage.removeItem('dynamic_bg_enabled'); }catch(e){}
+			  setTimeout(()=>_wpPauseInactiveVideos('wp-fill-'+nextLayer), 1900);
 			}
 
 			// Generador de fondos "infinito": crea un gradiente animado al azar cada
@@ -4898,6 +5012,7 @@
 			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
 			  isDynamicBgEnabled = false;
 			  if(save!==false){ try{ localStorage.setItem('saved_wallpaper_custom', JSON.stringify(wp)); localStorage.removeItem('saved_wallpaper'); }catch(e){} }
+			  setTimeout(()=>_wpPauseInactiveVideos('wp-fill-'+nextLayer), 1900);
 			}
 			// El movimiento del fondo se controla con los botones Ken Burns / Quieto /
 			// Natural (setMotionMode). Limpiamos cualquier resto del antiguo modo
@@ -4914,7 +5029,15 @@
 			    card.setAttribute('data-tags', wp.tags);
 			    card.onclick = ()=>setWallpaper(wp.id);
 			    const fill = document.createElement('div');
-			    if(wp.type === 'photo' || wp.type === 'custom'){
+			    if(wp.type === 'video'){
+			      fill.className = 'wp-fill';
+			      const v = document.createElement('video');
+			      v.src = wp.url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+			      v.setAttribute('webkit-playsinline','true');
+			      v.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+			      fill.appendChild(v);
+			      v.play().catch(()=>{});
+			    } else if(wp.type === 'photo' || wp.type === 'custom'){
 			      fill.className = 'wp-fill';
 			      fill.style.backgroundImage = `url('${wp.url}')`;
 			      fill.style.backgroundSize = 'cover';
@@ -4947,6 +5070,7 @@
 			let isDynamicBgEnabled = false;
 			function setDynamicBg(){
 			  isDynamicBgEnabled = true;
+			  try{ localStorage.setItem('dynamic_bg_enabled','1'); }catch(e){}
 			  applyDynamicBackground();
 			}
 			function applyDynamicBackground(){
@@ -4958,7 +5082,11 @@
 			  else if(h>=17 && h<20) id='sunset';
 			  else id='photo-northern';
 			  setWallpaper(id);
-			  isDynamicBgEnabled = true; // keep flag true after setWallpaper resets it
+			  // setWallpaper() apaga el modo dinámico porque normalmente lo llama una
+			  // elección manual — acá lo volvemos a encender porque el cambio vino del
+			  // propio reloj dinámico, no del usuario eligiendo un fondo fijo.
+			  isDynamicBgEnabled = true;
+			  try{ localStorage.setItem('dynamic_bg_enabled','1'); }catch(e){}
 			}
 
 			/* ===================== CLOCK STYLE ENGINE ===================== */
@@ -10527,54 +10655,115 @@
 			    }
 			  };
 
-			  // --- clear error ---
-			  window.loginClearError = function(){
-			    const el = document.getElementById('login-error');
-			    if(el){ el.style.display='none'; el.innerText=''; }
+			  // --- vistas: elegir / iniciar sesión / crear cuenta ---
+			  window.loginClearErrors = function(){
+			    ['login-error-signin','login-error-signup'].forEach(id=>{
+			      const el = document.getElementById(id);
+			      if(el){ el.style.display='none'; el.innerText=''; }
+			    });
+			  };
+			  // Alias por compatibilidad con marcado antiguo que aún pudiera llamarlo.
+			  window.loginClearError = window.loginClearErrors;
+
+			  function _loginSetView(view){
+			    const views = {chooser:'login-view-chooser', signin:'login-view-signin', signup:'login-view-signup'};
+			    Object.entries(views).forEach(([key,id])=>{
+			      const el = document.getElementById(id);
+			      if(el) el.style.display = (key===view) ? 'flex' : 'none';
+			    });
+			    loginClearErrors();
+			  }
+			  window.loginShowChooser = function(){ _loginSetView('chooser'); };
+			  window.loginShowSignIn = function(){
+			    _loginSetView('signin');
+			    setTimeout(()=>{ const el=document.getElementById('signin-username'); if(el) el.focus(); },50);
+			  };
+			  window.loginShowSignUp = function(){
+			    _loginSetView('signup');
+			    setTimeout(()=>{ const el=document.getElementById('signup-username'); if(el) el.focus(); },50);
 			  };
 
-			  // --- login submit ---
-			  window.loginSubmit = function(){
-			    try{
-			      const usernameEl = document.getElementById('login-username');
-			      const passwordEl = document.getElementById('login-password');
-			      const emailEl    = document.getElementById('login-email');
-			      const errEl      = document.getElementById('login-error');
+			  function _loginFinish(username){
+			    saveSession(username);
+			    const overlay = document.getElementById('login-overlay');
+			    if(overlay) overlay.style.display = 'none';
+			    if(typeof window.updateProfileBtn === 'function') window.updateProfileBtn();
+			    if(typeof window.showWelcomePill === 'function') window.showWelcomePill(username);
+			  }
 
-			      const username = (usernameEl ? usernameEl.value : '').trim() || 'Invitado';
+			  // --- invitado: entra al instante, sin formulario ---
+			  window.loginAsGuest = function(){
+			    try{
+			      const username = 'Invitado';
+			      const users = getUsers();
+			      if(!users[username]){
+			        users[username] = { password:'', email:'', created: Date.now() };
+			        saveUsers(users);
+			      }
+			      _loginFinish(username);
+			    }catch(err){
+			      console.error('Error entrando como invitado:', err);
+			    }
+			  };
+
+			  // --- iniciar sesión: solo cuentas ya existentes ---
+			  window.loginSubmitSignIn = function(){
+			    try{
+			      const usernameEl = document.getElementById('signin-username');
+			      const passwordEl = document.getElementById('signin-password');
+			      const errEl      = document.getElementById('login-error-signin');
+
+			      const username = (usernameEl ? usernameEl.value : '').trim();
+			      const password = passwordEl ? passwordEl.value : '';
+
+			      if(!username){
+			        if(errEl){ errEl.innerText='Escribe tu nombre de usuario.'; errEl.style.display='block'; }
+			        return;
+			      }
+			      const users = getUsers();
+			      if(!users[username]){
+			        if(errEl){ errEl.innerText='No existe esa cuenta. Probá "Crear cuenta".'; errEl.style.display='block'; }
+			        return;
+			      }
+			      if(users[username].password && users[username].password !== btoa(password)){
+			        if(errEl){ errEl.innerText='Contraseña incorrecta.'; errEl.style.display='block'; }
+			        return;
+			      }
+			      _loginFinish(username);
+			    } catch(err) {
+			      console.error('Error en inicio de sesión:', err);
+			      const errEl = document.getElementById('login-error-signin');
+			      if(errEl){ errEl.innerText = 'Error interno: ' + err.message; errEl.style.display = 'block'; }
+			    }
+			  };
+
+			  // --- crear cuenta: solo nombres de usuario nuevos ---
+			  window.loginSubmitSignUp = function(){
+			    try{
+			      const usernameEl = document.getElementById('signup-username');
+			      const passwordEl = document.getElementById('signup-password');
+			      const emailEl    = document.getElementById('signup-email');
+			      const errEl      = document.getElementById('login-error-signup');
+
+			      const username = (usernameEl ? usernameEl.value : '').trim();
 			      const password = passwordEl ? passwordEl.value : '';
 			      const email    = (emailEl ? emailEl.value : '').trim();
 
-			      const users = getUsers();
-
-			      if(users[username]){
-			        // La contraseña es opcional: solo se exige si la cuenta ya tiene una guardada.
-			        if(users[username].password){
-			          if(password && users[username].password !== btoa(password)){
-			            if(errEl){ errEl.innerText='Contraseña incorrecta.'; errEl.style.display='block'; }
-			            return;
-			          }
-			        } else if(password){
-			          users[username].password = btoa(password);
-			        }
-			        if(email) users[username].email = email;
-			        saveUsers(users);
-			      } else {
-			        users[username] = { password: password ? btoa(password) : '', email: email, created: Date.now() };
-			        saveUsers(users);
+			      if(!username){
+			        if(errEl){ errEl.innerText='Elegí un nombre de usuario.'; errEl.style.display='block'; }
+			        return;
 			      }
-
-			      saveSession(username);
-
-			      const overlay = document.getElementById('login-overlay');
-			      if(overlay) overlay.style.display = 'none';
-
-			      if(typeof window.updateProfileBtn === 'function') window.updateProfileBtn();
-			      if(typeof window.showWelcomePill === 'function') window.showWelcomePill(username);
-
+			      const users = getUsers();
+			      if(users[username]){
+			        if(errEl){ errEl.innerText='Ese nombre ya existe. Probá "Iniciar sesión".'; errEl.style.display='block'; }
+			        return;
+			      }
+			      users[username] = { password: password ? btoa(password) : '', email: email, created: Date.now() };
+			      saveUsers(users);
+			      _loginFinish(username);
 			    } catch(err) {
-			      console.error('Error en login:', err);
-			      const errEl = document.getElementById('login-error');
+			      console.error('Error creando cuenta:', err);
+			      const errEl = document.getElementById('login-error-signup');
 			      if(errEl){ errEl.innerText = 'Error interno: ' + err.message; errEl.style.display = 'block'; }
 			    }
 			  };
@@ -10623,10 +10812,10 @@
 			    document.getElementById('profile-modal').style.display='none';
 			    updateProfileBtn();
 			    document.getElementById('login-overlay').style.display='flex';
-			    document.getElementById('login-username').value='';
-			    document.getElementById('login-password').value='';
-			    document.getElementById('login-email').value='';
-			    loginClearError();
+			    ['signin-username','signin-password','signup-username','signup-password','signup-email'].forEach(id=>{
+			      const el=document.getElementById(id); if(el) el.value='';
+			    });
+			    loginShowChooser();
 			  };
 
 			  // --- welcome pill ---
@@ -11468,6 +11657,7 @@
 			// uno por id; si no hay nada guardado, el default.
 			(function restoreWallpaper(){
 			  try{
+			    if(localStorage.getItem('dynamic_bg_enabled')==='1'){ setDynamicBg(); return; }
 			    const custom=JSON.parse(localStorage.getItem('saved_wallpaper_custom')||'null');
 			    if(custom && custom.type){ _applyCustomWallpaper(custom); return; }
 			    const sw=localStorage.getItem('saved_wallpaper');
