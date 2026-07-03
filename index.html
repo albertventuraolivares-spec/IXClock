@@ -7081,7 +7081,33 @@
 			  if(/Macintosh/.test(ua) && navigator.maxTouchPoints>1) return true;
 			  return false;
 			}
-			function _benchIdentifyDevice(){
+			// Mide la tasa de refresco real de la pantalla contando fotogramas de
+			// requestAnimationFrame durante un intervalo corto. Sirve para distinguir
+			// modelos que comparten exactamente la misma resolución de píxeles: los
+			// iPad Pro tienen pantalla ProMotion a 120 Hz, mientras que el iPad Air y
+			// el iPad normal son de 60 Hz. Es la única señal que el navegador expone
+			// que diferencia "Pro" de "Air" cuando el panel mide igual.
+			function _benchSampleRefreshRate(durationMs){
+			  durationMs=durationMs||450;
+			  return new Promise(resolve=>{
+			    let frames=0,start=null;
+			    function step(ts){
+			      if(start===null) start=ts;
+			      frames++;
+			      if(ts-start<durationMs){ requestAnimationFrame(step); }
+			      else{ resolve(frames/((ts-start)/1000)); }
+			    }
+			    requestAnimationFrame(step);
+			  });
+			}
+			// No existe ninguna API web que exponga el nombre exacto del chip (Apple
+			// nunca lo publica al navegador, por diseño, para privacidad). Esta
+			// función solo puede ADIVINAR a partir de: resolución real de pantalla,
+			// tasa de refresco (ProMotion 120 Hz = línea "Pro") y núcleos de CPU.
+			// Cuando dos o más chips comparten exactamente esas mismas señales
+			// (por ejemplo M1/M2/M3 en el iPad Air, que nunca cambiaron de panel),
+			// se muestra el rango honesto en vez de inventar un modelo concreto.
+			function _benchIdentifyDevice(hz){
 			  const ua=navigator.userAgent;
 			  const cores=navigator.hardwareConcurrency||0;
 			  const w=window.screen.width,h=window.screen.height;
@@ -7089,35 +7115,57 @@
 			  const pw=Math.round(w*dpr),ph=Math.round(h*dpr);
 			  const gpu=_benchGetGPU();
 			  const gpuR=gpu.renderer.toLowerCase();
+			  // La medición de Hz puede salir ruidosa (pestaña recién abierta, poca
+			  // batería, "Modo de bajo consumo", o un entorno sin compositor real).
+			  // Cualquier valor fuera de un rango físicamente posible se descarta en
+			  // vez de usarse para decidir Pro vs Air con falsa confianza.
+			  const validHz = hz!=null && hz>=24 && hz<=180;
+			  const proMotion = validHz && hz>=90;
+			  // Tolerancia pequeña a propósito: algunos pares de modelos reales solo
+			  // se diferencian por 16-32 px en un eje (p.ej. iPad Pro 13" M4 = 2752x2064
+			  // vs iPad Pro 12.9"/Air 13" = 2732x2048), así que un margen amplio
+			  // confundiría un modelo con otro.
+			  const near=(a,b,tol)=>Math.abs(a-b)<=tol;
+			  const matches=(rw,rh,tol)=>(near(pw,rw,tol)&&near(ph,rh,tol))||(near(pw,rh,tol)&&near(ph,rw,tol));
 			  let model='',chip='',arch='',fab='',gpuName='',npu='';
 			  if(_benchIsIPad(ua)){
 			    model='iPad';
-			    // Identify iPad model by screen resolution + cores + GPU hints
-			    if(pw>=2732||ph>=2732){
-			      // 12.9" iPad Pro
-			      if(cores>=8){
-			        if(/gpu\s*15/i.test(gpuR)||gpuR.includes('a17')){model='iPad Pro 12.9" (6.a gen, M2)';chip='Apple M2';arch='ARMv9-A';fab='5 nm (TSMC N5P)';gpuName='Apple M2 GPU (10 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';}
-			        else{model='iPad Pro 12.9" (5.a gen, M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
-			      }else{model='iPad Pro 12.9"';chip='Apple A12X/A12Z Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
-			    }else if((pw>=2388||ph>=2388)&&(pw<=2420&&ph<=2420)){
-			      // 11" iPad Pro
-			      if(cores>=8){
-			        if(/gpu\s*15/i.test(gpuR)||gpuR.includes('a17')){model='iPad Pro 11" (4.a gen, M2)';chip='Apple M2';arch='ARMv9-A';fab='5 nm (TSMC N5P)';gpuName='Apple M2 GPU (10 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';}
-			        else{model='iPad Pro 11" (M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
-			      }else{model='iPad Pro 11"';chip='Apple A12X Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
-			    }else if(pw>=2360||ph>=2360){
-			      model='iPad Air (5.a gen, M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';
-			    }else if((pw>=2266||ph>=2266)&&(pw<=2270||ph<=2270)){
+			    if(matches(2752,2064,8)){
+			      // iPad Pro 13" (M4, 2024) — OLED, resolución exclusiva de este modelo
+			      model='iPad Pro 13" (M4)';chip='Apple M4';arch='ARMv9.2-A';fab='3 nm (TSMC N3E)';gpuName='Apple M4 GPU (hasta 10 núcleos)';npu='Neural Engine 16 núcleos (38 TOPS)';
+			    }else if(matches(2420,1668,8)){
+			      // iPad Pro 11" (M4, 2024) — OLED, resolución exclusiva de este modelo
+			      model='iPad Pro 11" (M4)';chip='Apple M4';arch='ARMv9.2-A';fab='3 nm (TSMC N3E)';gpuName='Apple M4 GPU (hasta 10 núcleos)';npu='Neural Engine 16 núcleos (38 TOPS)';
+			    }else if(matches(2732,2048,10)){
+			      // Esta resolución la comparten el iPad Pro 12.9" (3.a-6.a gen) y el
+			      // iPad Air 13" (M2/M3) — se distinguen por la tasa de refresco:
+			      // Pro = ProMotion 120 Hz, Air = 60 Hz. Si no se pudo medir la tasa
+			      // con confianza, se muestran ambas posibilidades.
+			      if(!validHz){
+			        model='iPad Pro 12.9" o iPad Air 13"';chip='Apple M1, M2 o M3 (no se pudo medir la tasa de refresco)';arch='ARMv8.5-A o superior';fab='5 nm / 3 nm (TSMC)';gpuName='Apple GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';
+			      }else if(proMotion){
+			        if(cores>=8){model='iPad Pro 12.9" (5.a o 6.a gen)';chip='Apple M1 o M2';arch='ARMv8.5-A / ARMv9-A';fab='5 nm (TSMC)';gpuName='Apple M1/M2 GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';}
+			        else{model='iPad Pro 12.9" (3.a o 4.a gen)';chip='Apple A12X o A12Z Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X/A12Z GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
+			      }else{
+			        model='iPad Air 13" (M2 o M3)';chip='Apple M2 o M3';arch='ARMv9-A';fab='5 nm / 3 nm (TSMC)';gpuName='Apple M2/M3 GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';
+			      }
+			    }else if(matches(2388,1668,10)){
+			      // iPad Pro 11" (1.a-4.a gen), siempre ProMotion 120 Hz
+			      if(cores>=8){model='iPad Pro 11" (3.a o 4.a gen)';chip='Apple M1 o M2';arch='ARMv8.5-A / ARMv9-A';fab='5 nm (TSMC)';gpuName='Apple M1/M2 GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';}
+			      else{model='iPad Pro 11" (1.a o 2.a gen)';chip='Apple A12X Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A12X GPU (7 núcleos)';npu='Neural Engine 8 núcleos';}
+			    }else if(matches(2360,1640,10)){
+			      // Esta resolución la comparten el iPad Air 11"/10.9" (M1/M2/M3) y el
+			      // iPad de gama normal (A14) — se distinguen por núcleos de CPU
+			      // (los chips M llevan 8, el A14 lleva 6).
+			      if(cores>=8){model='iPad Air 11" (5.a-7.a gen)';chip='Apple M1, M2 o M3';arch='ARMv8.5-A / ARMv9-A';fab='5 nm / 3 nm (TSMC)';gpuName='Apple M-series GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';}
+			      else{model='iPad (10.a gen) o iPad Air (4.a gen)';chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm (TSMC N5)';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
+			    }else if(matches(2266,1488,10)){
 			      model='iPad mini (6.a gen)';chip='Apple A15 Bionic';arch='ARMv8.6-A';fab='5 nm (TSMC N5P)';gpuName='Apple A15 GPU (5 núcleos)';npu='Neural Engine 16 núcleos (15.8 TOPS)';
-			    }else if(pw>=2160||ph>=2160){
-			      model='iPad (10.a gen)';chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm (TSMC N5)';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';
-			    }else if(pw>=2048||ph>=2048){
-			      if(cores>=8){model='iPad Air (M1)';chip='Apple M1';arch='ARMv8.5-A';fab='5 nm';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
-			      else if(cores>=6){model='iPad Air (4.a gen)';chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
-			      else{model='iPad';chip='Apple A13 Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A13 GPU (4 núcleos)';npu='Neural Engine 8 núcleos';}
+			    }else if(matches(2160,1620,15)){
+			      model='iPad (9.a gen)';chip='Apple A13 Bionic';arch='ARMv8.3-A';fab='7 nm';gpuName='Apple A13 GPU (4 núcleos)';npu='Neural Engine 8 núcleos';
 			    }
-			    if(!chip&&cores>=8){chip='Apple M1';arch='ARMv8.5-A';fab='5 nm (TSMC N5)';gpuName='Apple M1 GPU (8 núcleos)';npu='Neural Engine 16 núcleos (11 TOPS)';}
-			    else if(!chip&&cores>=6){chip='Apple A14 Bionic';arch='ARMv8.4-A';fab='5 nm';gpuName='Apple A14 GPU (4 núcleos)';npu='Neural Engine 16 núcleos';}
+			    if(!chip&&cores>=8){model='iPad (chip serie M)';chip='Apple M1, M2, M3 o M4';arch='ARMv8.5-A o superior';fab='5 nm / 3 nm (TSMC)';gpuName='Apple GPU (8-10 núcleos)';npu='Neural Engine 16 núcleos';}
+			    else if(!chip&&cores>=6){chip='Apple A13/A14 Bionic';arch='ARMv8.3-A / ARMv8.4-A';fab='7 nm / 5 nm';gpuName='Apple GPU';npu='Neural Engine';}
 			    else if(!chip){chip='Apple A-series';arch='ARM64';fab='';gpuName='Apple GPU';npu='Neural Engine';}
 			  }else if(/iPhone/.test(ua)){
 			    model='iPhone';
@@ -7158,11 +7206,15 @@
 			  }
 			  return{model,chip,arch,fab,gpuName,gpuVendor:gpu.vendor,npu,cores};
 			}
-			function _benchDeviceInfo(){
+			async function _benchDeviceInfo(){
 			  const info=document.getElementById('bench-device-info');
 			  if(!info)return;
+			  info.innerHTML='<div style="opacity:.5;">Detectando modelo (midiendo pantalla)…</div>';
+			  const hz=await _benchSampleRefreshRate();
+			  const info2=document.getElementById('bench-device-info');
+			  if(!info2)return; // modal se cerró mientras medíamos
 			  const ua=navigator.userAgent;
-			  const d=_benchIdentifyDevice();
+			  const d=_benchIdentifyDevice(hz);
 			  const cores=navigator.hardwareConcurrency||'?';
 			  const mem=navigator.deviceMemory?navigator.deviceMemory+' GB':'N/A';
 			  const sw=window.screen.width,sh=window.screen.height;
@@ -7206,7 +7258,10 @@
 			  const touch=navigator.maxTouchPoints||0;
 			  // Build rows
 			  const row=(label,val)=>`<span style="opacity:.5;white-space:nowrap;">${label}</span><span style="word-break:break-word;">${val||'N/A'}</span>`;
-			  info.innerHTML=`
+			  const hzValid = hz!=null && hz>=24 && hz<=180;
+			  const hzLabel = hzValid ? (hz>=90?Math.round(hz)+' Hz (ProMotion)':Math.round(hz)+' Hz') : (hz!=null?'No se pudo medir con fiabilidad':'');
+			  const isAmbiguous = /\bo\b/.test(d.chip); // "M1 o M2" etc: no hay forma de saberlo con certeza desde el navegador
+			  info2.innerHTML=`
 			    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;">
 			      ${row('Modelo',d.model)}
 			      ${row('Procesador','<b style=\"color:#ff9500\">'+d.chip+'</b>')}
@@ -7219,6 +7274,7 @@
 			      ${d.npu?row('NPU / Neural Engine','<b style=\"color:#bf5af2\">'+d.npu+'</b>'):''}
 			      ${row('Gráficos API',webglVer)}
 			      ${row('Pantalla',sw+'x'+sh+' puntos ('+pw+'x'+ph+' px @ '+dpr+'x)')}
+			      ${hzLabel?row('Tasa de refresco',hzLabel):''}
 			      ${row('Prof. color',window.screen.colorDepth+' bits')}
 			      ${row('Sistema',os)}
 			      ${row('Navegador',browser)}
@@ -7227,7 +7283,9 @@
 			      ${row('Conexión',conn)}
 			      ${row('Táctil',touch>0?touch+' puntos de contacto':'No táctil')}
 			      ${row('Idioma',navigator.language||'?')}
-			    </div>`;
+			    </div>
+			    ${isAmbiguous?'<div style="margin-top:8px;padding:8px 10px;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.25);border-radius:10px;font-size:10px;color:rgba(255,255,255,.6);">ℹ️ Apple no expone a los navegadores el nombre exacto del chip, así que cuando dos modelos comparten pantalla y núcleos no se puede distinguir con certeza cuál es. Se muestra el rango real de posibilidades.</div>':''}
+			  `;
 			}
 			let _benchRunning=false;
 			async function _benchRun(){
