@@ -131,6 +131,11 @@
 			  0%{background-position:0% 50%;}
 			  100%{background-position:100% 50%;}
 			}
+			/* Fondo de video de YouTube: el iframe se sobredimensiona y centra para
+			   cubrir toda la pantalla sin franjas negras (equivalente a object-fit:
+			   cover, que un iframe no soporta). pointer-events:none para que los
+			   toques pasen a la app y no al reproductor. */
+			.wp-yt-iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:max(100%,177.78vh);height:max(100%,56.25vw);border:none;pointer-events:none;}
 			#brightness-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;background:#000;opacity:0;transition:opacity .3s ease;}
 
 			/* ===== LIQUID GLASS -- iOS 27 style ===== */
@@ -1747,6 +1752,21 @@
 							placeholder="Buscar fondos del mundo (tokio, ártico, neón...)"
 							type="text"
 						/>
+					</div>
+					<!-- Fondo en movimiento desde YouTube: pega cualquier enlace -->
+					<div class="shrink-0 mb-3" style="display:flex;gap:6px;">
+						<input
+							id="yt-wallpaper-url"
+							type="text"
+							autocomplete="off"
+							placeholder="🎬 Pega un enlace de YouTube como fondo…"
+							style="flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 14px;color:#fff;font-size:11px;outline:none;"
+							onkeydown="if(event.key==='Enter')setYoutubeWallpaperFromInput()"
+						/>
+						<button
+							onclick="setYoutubeWallpaperFromInput()"
+							style="padding:8px 14px;border-radius:999px;background:linear-gradient(135deg,#ff0000,#ff5e3a);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;"
+						>▶ Usar</button>
 					</div>
 					<div
 						class="custom-scrollbar pr-1"
@@ -4389,7 +4409,6 @@
 			onclick="openProfileModal()"
 			title="Mi perfil"
 			style="display:none;position:fixed;top:1.2rem;right:1.2rem;z-index:900;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 4px 16px rgba(10,132,255,0.45);font-family:var(--sf-pro);"
-			id="profile-btn"
 		>
 			?
 		</button>
@@ -4618,6 +4637,9 @@
 			  {id:'ph-northern-lights2',name:'Aurora Rosa',tags:'photo aurora pink northern lights iceland',type:'photo',url:'https://images.unsplash.com/photo-1579033461380-adb47c3eb938?q=80&w=3840&auto=format&fit=crop'},
 			  // --- Fondos en video (loop real, no foto) ---
 			  {id:'vid-lago-como',name:'Lago di Como (video)',tags:'video lake italy lago como varenna aerial drone real motion',type:'video',url:'videos/lago-como-varenna.mp4'},
+			  // --- Fondos en movimiento desde YouTube (necesitan internet) ---
+			  {id:'yt-live-paisaje',name:'Paisaje en vivo 24/7 📺',tags:'video youtube live directo paisaje nature movimiento relax',type:'youtube',videoId:'TfDnf1oVm04'},
+			  {id:'yt-lofi',name:'Lofi Girl 24/7 🎧',tags:'video youtube live directo lofi anime music movimiento',type:'youtube',videoId:'jfKfPfyJRdk'},
 			];
 
 			// Generador de fondos por tema: crea cientos de variaciones de gradientes
@@ -4944,8 +4966,20 @@
 			  fillEl.className = 'wallpaper-fill';
 			  fillEl.style.animation = '';
 			  fillEl.style.backgroundImage = '';
-			  fillEl.innerHTML = ''; // limpia cualquier <video> de un fondo anterior
-			  if(wp.type === 'video'){
+			  fillEl.innerHTML = ''; // limpia cualquier <video>/<iframe> de un fondo anterior
+			  if(wp.type === 'youtube'){
+			    // Video/directo de YouTube como fondo, vía el embed oficial (iframe).
+			    // mute=1 + playsinline son obligatorios para que iOS permita el
+			    // autoplay; enablejsapi=1 permite pausarlo por postMessage cuando la
+			    // pestaña se oculta. Requiere internet: es un stream, no un archivo.
+			    const ifr = document.createElement('iframe');
+			    ifr.className = 'wp-yt-iframe';
+			    ifr.setAttribute('allow','autoplay; encrypted-media');
+			    ifr.src = 'https://www.youtube-nocookie.com/embed/'+wp.videoId
+			      +'?autoplay=1&mute=1&controls=0&loop=1&playlist='+wp.videoId
+			      +'&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&enablejsapi=1';
+			    fillEl.appendChild(ifr);
+			  } else if(wp.type === 'video'){
 			    const vid = document.createElement('video');
 			    vid.src = wp.url;
 			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
@@ -4966,13 +5000,25 @@
 			// Pausa el <video> del fondo que quedó atrás tras el crossfade, para no
 			// tener dos videos reproduciéndose a la vez (gasta batería y calienta
 			// el dispositivo sin motivo, ya que ese fondo ya no se ve).
-			function _wpPauseInactiveVideos(activeFillId){
-			  ['wp-fill-a','wp-fill-b'].forEach(id=>{
-			    if(id===activeFillId) return;
-			    const el = document.getElementById(id);
-			    const v = el && el.querySelector('video');
-			    if(v) v.pause();
-			  });
+			function _wpYtCommand(ifr, func){
+			  try{ ifr.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:''}),'*'); }catch(e){}
+			}
+			// Tras el crossfade, pausa/quita el video de la capa que quedó tapada.
+			// Se decide QUÉ capa está activa recién cuando el temporizador dispara
+			// (no al programarlo): si el usuario cambia de fondo dos veces seguidas,
+			// un temporizador viejo con la capa "capturada" de antes borraría el
+			// video del fondo NUEVO. Por lo mismo, cada cambio cancela el anterior.
+			let _wpCleanupTimer=null;
+			function _wpScheduleInactiveCleanup(){
+			  clearTimeout(_wpCleanupTimer);
+			  _wpCleanupTimer=setTimeout(()=>{
+			    document.querySelectorAll('.wallpaper-layer').forEach(layer=>{
+			      if(layer.classList.contains('active')) return;
+			      const v=layer.querySelector('video');
+			      if(v) v.pause();
+			      layer.querySelectorAll('iframe.wp-yt-iframe').forEach(f=>f.remove());
+			    });
+			  },1900);
 			}
 			// Si el usuario cambia de pestaña/app, pausa el video de fondo activo
 			// (no aporta nada seguir decodificando video si no se ve) y retoma solo
@@ -4980,9 +5026,12 @@
 			document.addEventListener('visibilitychange', ()=>{
 			  if(document.hidden){
 			    document.querySelectorAll('.wallpaper-fill video').forEach(v=>v.pause());
+			    document.querySelectorAll('.wallpaper-fill iframe.wp-yt-iframe').forEach(f=>_wpYtCommand(f,'pauseVideo'));
 			  }else{
 			    const v=document.querySelector('.wallpaper-layer.active .wallpaper-fill video');
 			    if(v) v.play().catch(()=>{});
+			    const yt=document.querySelector('.wallpaper-layer.active .wallpaper-fill iframe.wp-yt-iframe');
+			    if(yt) _wpYtCommand(yt,'playVideo');
 			  }
 			});
 			function setWallpaper(id){
@@ -5005,7 +5054,7 @@
 			  if(card) card.classList.add('active');
 			  isDynamicBgEnabled = false;
 			  try{ localStorage.removeItem('dynamic_bg_enabled'); }catch(e){}
-			  setTimeout(()=>_wpPauseInactiveVideos('wp-fill-'+nextLayer), 1900);
+			  _wpScheduleInactiveCleanup();
 			}
 
 			// Generador de fondos "infinito": crea un gradiente animado al azar cada
@@ -5025,7 +5074,26 @@
 			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
 			  isDynamicBgEnabled = false;
 			  if(save!==false){ try{ localStorage.setItem('saved_wallpaper_custom', JSON.stringify(wp)); localStorage.removeItem('saved_wallpaper'); }catch(e){} }
-			  setTimeout(()=>_wpPauseInactiveVideos('wp-fill-'+nextLayer), 1900);
+			  _wpScheduleInactiveCleanup();
+			}
+			// Acepta cualquier formato de enlace de YouTube (watch?v=, youtu.be,
+			// /live/, /shorts/, /embed/) o el ID de 11 caracteres directamente.
+			function parseYoutubeId(input){
+			  const v=(input||'').trim();
+			  if(!v) return null;
+			  if(/^[\w-]{11}$/.test(v)) return v;
+			  const m=v.match(/(?:youtube\.com\/(?:watch\?.*?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+			  return m ? m[1] : null;
+			}
+			function setYoutubeWallpaperFromInput(){
+			  const inp=document.getElementById('yt-wallpaper-url');
+			  const id=parseYoutubeId(inp && inp.value);
+			  if(!id){
+			    if(inp){ inp.style.borderColor='#ff453a'; inp.placeholder='Enlace no válido — copia el link del video'; setTimeout(()=>{ inp.style.borderColor=''; },1500); }
+			    return;
+			  }
+			  _applyCustomWallpaper({ id:'yt-'+id, name:'YouTube', tags:'video youtube movimiento', type:'youtube', videoId:id });
+			  if(inp) inp.value='';
 			}
 			// El movimiento del fondo se controla con los botones Ken Burns / Quieto /
 			// Natural (setMotionMode). Limpiamos cualquier resto del antiguo modo
@@ -5042,7 +5110,14 @@
 			    card.setAttribute('data-tags', wp.tags);
 			    card.onclick = ()=>setWallpaper(wp.id);
 			    const fill = document.createElement('div');
-			    if(wp.type === 'video'){
+			    if(wp.type === 'youtube'){
+			      // Miniatura oficial del video como tarjeta (no se incrusta el
+			      // reproductor en la galería: serían decenas de iframes a la vez).
+			      fill.className = 'wp-fill';
+			      fill.style.backgroundImage = `url('https://img.youtube.com/vi/${wp.videoId}/mqdefault.jpg')`;
+			      fill.style.backgroundSize = 'cover';
+			      fill.style.backgroundPosition = 'center';
+			    } else if(wp.type === 'video'){
 			      fill.className = 'wp-fill';
 			      const v = document.createElement('video');
 			      v.src = wp.url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
@@ -11746,6 +11821,143 @@
 			  }catch(e){}
 			  setClockStyleById('minimal');
 			})();
+			/* ===================== BATERÍA (nivel + tiempo estimado de carga) =====================
+			   Usa la Battery Status API (navigator.getBattery). IMPORTANTE Y HONESTO:
+			   Safari en iPhone/iPad NO tiene esta API — Apple la quitó de WebKit por
+			   privacidad, así que ninguna página web puede leer la batería en iOS.
+			   El widget funciona completo en Chrome/Edge/Android/PC; en el iPad
+			   muestra la explicación en lugar de inventar un número. */
+			let _battObj=null, _battSamples=[];
+			function _battRecord(){
+			  if(!_battObj) return;
+			  _battSamples.push({t:Date.now(), level:_battObj.level, charging:_battObj.charging});
+			  if(_battSamples.length>240) _battSamples.shift();
+			}
+			function _battFmtTime(sec){
+			  if(sec==null || !isFinite(sec) || sec<0) return null;
+			  const m=Math.round(sec/60);
+			  if(m<1) return 'menos de 1 min';
+			  const h=Math.floor(m/60), mm=m%60;
+			  return h ? (h+' h '+(mm? mm+' min':'')).trim() : mm+' min';
+			}
+			function _battEstimates(){
+			  const b=_battObj; if(!b) return null;
+			  const lvl=b.level;
+			  let t100=null, t80=null, fuente=null;
+			  if(b.charging && lvl<1){
+			    if(isFinite(b.chargingTime) && b.chargingTime>0){
+			      // El navegador reporta segundos hasta el 100%; el tiempo al 80% se
+			      // estima proporcionalmente sobre lo que falta.
+			      t100=b.chargingTime;
+			      t80=lvl>=0.8 ? 0 : b.chargingTime*(0.8-lvl)/(1-lvl);
+			      fuente='reportado por el sistema';
+			    }else{
+			      // El sistema no lo reporta: se mide la velocidad real observando
+			      // cuánto subió el nivel en los últimos minutos.
+			      const cutoff=Date.now()-20*60000;
+			      const s=_battSamples.filter(x=>x.charging && x.t>=cutoff);
+			      if(s.length>=2){
+			        const first=s[0], last=s[s.length-1];
+			        const dt=(last.t-first.t)/1000, dl=last.level-first.level;
+			        if(dt>=90 && dl>0.002){
+			          const rate=dl/dt;
+			          t100=(1-lvl)/rate;
+			          t80=lvl>=0.8 ? 0 : (0.8-lvl)/rate;
+			          fuente='medido por la app';
+			        }
+			      }
+			    }
+			  }
+			  return {lvl, charging:b.charging, t80, t100, fuente};
+			}
+			function _battUpdatePill(){
+			  const pct=document.getElementById('battery-pill-pct');
+			  if(!pct) return;
+			  if(!_battObj){ pct.textContent='N/D'; return; }
+			  pct.textContent=Math.round(_battObj.level*100)+'%'+(_battObj.charging?' ⚡':'');
+			  const panel=document.getElementById('battery-panel-modal');
+			  if(panel && panel.style.display==='flex') _battRenderPanel();
+			}
+			function _battRenderPanel(){
+			  const body=document.getElementById('battery-panel-body');
+			  if(!body) return;
+			  if(!navigator.getBattery){
+			    body.innerHTML=`
+			      <div style="font-size:42px;text-align:center;margin-bottom:10px;">🔋❓</div>
+			      <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.75);">
+			        <b style="color:#fff;">Tu iPad no deja que las páginas web lean la batería.</b><br><br>
+			        Apple quitó esa función de Safari a propósito, por privacidad — ninguna página web (esta ni ninguna otra) puede ver el nivel de batería en iPhone/iPad. No es un fallo de IXClocK.<br><br>
+			        💡 Para verlo en tu iPad: mirá el % de la esquina superior, o agregá el <b>widget de Baterías</b> de iOS a la pantalla de inicio.<br><br>
+			        En Chrome de Android o en una computadora, este medidor sí muestra el nivel y el tiempo estimado de carga al 80% y al 100%.
+			      </div>`;
+			    return;
+			  }
+			  const est=_battEstimates();
+			  if(!est){ body.innerHTML='<div style="text-align:center;opacity:.6;font-size:13px;">Leyendo batería…</div>'; return; }
+			  const pctNum=Math.round(est.lvl*100);
+			  const barColor=pctNum>=50?'#30d158':pctNum>=20?'#ff9500':'#ff3b30';
+			  const row=(label,val)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;"><span style="opacity:.55;">${label}</span><span style="font-weight:700;text-align:right;">${val}</span></div>`;
+			  let t80Txt, t100Txt;
+			  if(!est.charging){ t80Txt=t100Txt='— (conectá el cargador)'; }
+			  else if(est.lvl>=1){ t80Txt=t100Txt='Ya está al 100% ✅'; }
+			  else{
+			    t80Txt = est.lvl>=0.8 ? 'Ya superó el 80% ✅' : (_battFmtTime(est.t80) ? '≈ '+_battFmtTime(est.t80) : 'Calculando… dejalo conectado 2-3 min');
+			    t100Txt = _battFmtTime(est.t100) ? '≈ '+_battFmtTime(est.t100) : 'Calculando… dejalo conectado 2-3 min';
+			  }
+			  body.innerHTML=`
+			    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+			      <div style="flex:1;height:18px;background:rgba(255,255,255,.08);border-radius:9px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">
+			        <div style="height:100%;width:${pctNum}%;background:${barColor};border-radius:9px;transition:width .6s ease;"></div>
+			      </div>
+			      <div style="font-size:22px;font-weight:900;color:#fff;min-width:70px;text-align:right;">${pctNum}%${est.charging?' ⚡':''}</div>
+			    </div>
+			    ${row('Estado', est.charging ? '⚡ Cargando' : '🔌 Sin cargador')}
+			    ${row('Tiempo hasta el 80%', t80Txt)}
+			    ${row('Tiempo hasta el 100%', t100Txt)}
+			    ${est.fuente ? row('Estimación', est.fuente) : ''}
+			    <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,.45);line-height:1.5;">ℹ️ La carga se vuelve más lenta cerca del 100% (el dispositivo lo hace a propósito para cuidar la batería), así que el tiempo real al 100% puede ser un poco mayor que la estimación.</div>`;
+			}
+			function openBatteryPanel(){
+			  let modal=document.getElementById('battery-panel-modal');
+			  if(!modal){
+			    modal=document.createElement('div');
+			    modal.id='battery-panel-modal';
+			    modal.style.cssText='position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px;';
+			    modal.innerHTML=`
+			      <div style="width:100%;max-width:360px;background:rgba(28,28,32,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);overflow:hidden;">
+			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;">
+			          <div style="font-size:16px;font-weight:800;color:#fff;">🔋 Batería</div>
+			          <button onclick="document.getElementById('battery-panel-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			        </div>
+			        <div id="battery-panel-body" style="padding:16px 20px 20px;color:#fff;"></div>
+			      </div>`;
+			    modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.style.display='none'; });
+			    document.body.appendChild(modal);
+			  }
+			  modal.style.display='flex';
+			  _battRenderPanel();
+			}
+			(function initBatteryWidget(){
+			  const pill=document.createElement('button');
+			  pill.id='battery-pill';
+			  pill.title='Batería y tiempo de carga';
+			  pill.style.cssText='position:fixed;top:1.35rem;right:72px;z-index:895;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;background:rgba(20,20,26,.55);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:#fff;font-size:12px;font-weight:800;cursor:pointer;';
+			  pill.innerHTML='🔋 <span id="battery-pill-pct">…</span>';
+			  pill.onclick=openBatteryPanel;
+			  document.body.appendChild(pill);
+			  if(navigator.getBattery){
+			    navigator.getBattery().then(b=>{
+			      _battObj=b; _battRecord(); _battUpdatePill();
+			      ['levelchange','chargingchange','chargingtimechange'].forEach(ev=>{
+			        b.addEventListener(ev, ()=>{ _battRecord(); _battUpdatePill(); });
+			      });
+			      setInterval(()=>{ _battRecord(); _battUpdatePill(); }, 60000);
+			    }).catch(()=>{ _battUpdatePill(); });
+			  }else{
+			    _battUpdatePill();
+			  }
+			})();
+
 			/* ===================== CONMUTADOR DE APPS (multitarea estilo OS) =====================
 			   Gesto: tocar con 3 dedos a la vez (como el "3-finger tap" de un sistema
 			   operativo real) abre un panel con las apps abiertas recientemente, para
