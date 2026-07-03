@@ -182,14 +182,16 @@
 			/* Settings gear toggle (from dashboard 1) */
 			/* Left sidebar = true overlay drawer (fully closes, no leftover slivers) */
 			#left-sidebar{
-			  position:fixed;top:0;left:0;bottom:0;width:340px;z-index:50;
+			  /* Igual que .btn-settings: por encima de cualquier app (z-index hasta
+			     9600) para poder abrir Personalizar sin cerrar lo que tengas abierto. */
+			  position:fixed;top:0;left:0;bottom:0;width:340px;z-index:9698;
 			  border-radius:0;
 			  transform:translateX(-110%);
 			  transition:transform .42s cubic-bezier(.2,.8,.2,1);
 			}
 			#left-sidebar.open{transform:translateX(0);}
 			#sidebar-backdrop{
-			  position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.35);
+			  position:fixed;inset:0;z-index:9697;background:rgba(0,0,0,.35);
 			  opacity:0;pointer-events:none;transition:opacity .3s ease;
 			}
 			#sidebar-backdrop.show{opacity:1;pointer-events:auto;}
@@ -435,7 +437,12 @@
 			.note-row .note-snippet{text-overflow:ellipsis;overflow:hidden;}
 			.notes-search-bar{background:rgba(118,118,128,.24);border-radius:10px;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.6);}
 			.btn-settings{
-			  position:absolute;top:22px;left:22px;z-index:60;width:46px;height:46px;border-radius:50%;
+			  /* z-index alto a propósito: los modales de apps (navegador, GarageBand,
+			     mapas, emulador, etc.) usan hasta z-index:9600, y antes el botón de
+			     configuración (z-index:60) quedaba tapado por completo en cuanto
+			     abrías cualquier app, sin forma de volver a Personalizar sin cerrarla
+			     primero. Ahora queda por encima de toda app, como el botón Home. */
+			  position:fixed;top:22px;left:22px;z-index:9700;width:46px;height:46px;border-radius:50%;
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;
 			  transition:transform .3s ease,background .2s ease;
 			}
@@ -4193,6 +4200,12 @@
 					>
 						👤 Continuar como invitado
 					</button>
+					<button
+						onclick="openLoginHelp()"
+						style="width:100%;padding:0.6rem;border-radius:0.9rem;background:transparent;color:#0a84ff;font-weight:700;font-size:0.8rem;border:none;cursor:pointer;letter-spacing:0.02em;"
+					>
+						❓ Ver ayuda antes de entrar
+					</button>
 				</div>
 
 				<!-- VISTA: iniciar sesión -->
@@ -5420,7 +5433,11 @@
 			}
 
 			/* ===================== TABS / SIDEBAR ===================== */
-			let isSidebarVisible = true;
+			// Arranca en false porque el panel arranca visualmente cerrado (sin la
+			// clase .open); si arrancaba en true, el primer clic del botón de
+			// configuración lo pasaba a false sin abrir nada (quitaba una clase que
+			// nunca estuvo puesta) y recién el segundo clic abría el panel.
+			let isSidebarVisible = false;
 			function toggleSidebar(){
 			  isSidebarVisible = !isSidebarVisible;
 			  document.getElementById('left-sidebar').classList.toggle('open', isSidebarVisible);
@@ -10844,6 +10861,58 @@
 			  }
 			})();
 
+			/* ===== AYUDA / GUÍA (accesible desde la pantalla de bienvenida, antes
+			   de iniciar sesión, para saber dónde está todo antes de entrar) ===== */
+			function openLoginHelp(){
+			  let modal=document.getElementById('login-help-modal');
+			  if(!modal){
+			    modal=document.createElement('div');
+			    modal.id='login-help-modal';
+			    modal.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:16px;';
+			    modal.addEventListener('click',(e)=>{ if(e.target===modal) closeLoginHelp(); });
+			    document.body.appendChild(modal);
+			  }
+			  modal.innerHTML=`
+			    <div style="width:100%;max-width:420px;max-height:86vh;background:rgba(28,28,32,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
+			      <div style="padding:18px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;">
+			        <div style="font-size:17px;font-weight:800;color:#fff;">❓ Guía rápida de IXClocK</div>
+			        <button onclick="closeLoginHelp()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			      </div>
+			      <div style="overflow-y:auto;padding:16px 20px 20px;font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;">
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">⚙️ Botón de configuración</div>
+			          El círculo con el engranaje, arriba a la izquierda, abre <b>Personalizar</b>: fondos de pantalla, estilos de reloj, cuenta, e información de la app. Se ve desde cualquier app que tengas abierta, no hace falta cerrarla primero.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
+			          Ahí están Navegador, Juegos, GarageBand, Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ Siri</div>
+			          Tocá el orbe para hablarle. Mantenelo presionado 4 segundos para que se abra directo la barra de búsqueda.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎵 Reproductor (iPod)</div>
+			          Es una ventana flotante: se puede arrastrar tomándola desde arriba. El control de volumen está adentro.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖐️ Conmutador de apps</div>
+			          Tocá la pantalla con 3 dedos a la vez (como en una tablet real) para ver las apps que abriste hace poco y saltar entre ellas rápido.
+			        </div>
+			        <div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💾 Tus datos</div>
+			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app.
+			        </div>
+			      </div>
+			    </div>
+			  `;
+			  modal.style.display='flex';
+			}
+			function closeLoginHelp(){
+			  const modal=document.getElementById('login-help-modal');
+			  if(modal) modal.style.display='none';
+			}
+
 			/* ===== RADIO PANEL TOGGLE ===== */
 			let _radioPanelOpen = false;
 			function toggleRadioPanel(){
@@ -11677,6 +11746,104 @@
 			  }catch(e){}
 			  setClockStyleById('minimal');
 			})();
+			/* ===================== CONMUTADOR DE APPS (multitarea estilo OS) =====================
+			   Gesto: tocar con 3 dedos a la vez (como el "3-finger tap" de un sistema
+			   operativo real) abre un panel con las apps abiertas recientemente, para
+			   saltar entre ellas sin tener que cerrar la actual y volver a buscarla. */
+			const APP_SWITCHER_REGISTRY = [
+			  {id:'browser', name:'Navegador', icon:'🌐', fn:'openBrowser'},
+			  {id:'garageband', name:'GarageBand', icon:'🎹', fn:'openGarageBand'},
+			  {id:'maps', name:'Mapas', icon:'🗺️', fn:'openAppleMaps'},
+			  {id:'games', name:'Juegos', icon:'🎮', fn:'toggleGamesPanel'},
+			  {id:'emulator', name:'Emulador', icon:'🕹️', fn:'openEmuMenu'},
+			  {id:'vpn', name:'VPN', icon:'🛡️', fn:'openVpnModal'},
+			  {id:'benchmark', name:'IXBench', icon:'🔥', fn:'openBenchmark'},
+			  {id:'music', name:'Apps de Música', icon:'🎵', fn:'openMusicAppsModal'},
+			];
+			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
+			function _trackAppOpen(id){
+			  const meta=APP_SWITCHER_REGISTRY.find(a=>a.id===id);
+			  if(!meta) return;
+			  _recentApps=_recentApps.filter(a=>a.id!==id);
+			  _recentApps.unshift({id:meta.id, name:meta.name, icon:meta.icon, ts:Date.now()});
+			  if(_recentApps.length>8) _recentApps.length=8;
+			}
+			(function _wireAppSwitcherTracking(){
+			  APP_SWITCHER_REGISTRY.forEach(app=>{
+			    const orig=window[app.fn];
+			    if(typeof orig!=='function') return;
+			    window[app.fn]=function(...args){
+			      _trackAppOpen(app.id);
+			      return orig.apply(this,args);
+			    };
+			  });
+			})();
+			function openAppSwitcher(){
+			  let modal=document.getElementById('app-switcher-modal');
+			  if(!modal){
+			    modal=document.createElement('div');
+			    modal.id='app-switcher-modal';
+			    modal.style.cssText='position:fixed;inset:0;z-index:9750;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:24px;';
+			    modal.addEventListener('click',(e)=>{ if(e.target===modal) closeAppSwitcher(); });
+			    document.body.appendChild(modal);
+			  }
+			  if(!_recentApps.length){
+			    modal.innerHTML=`
+			      <div style="text-align:center;color:#fff;">
+			        <div style="font-size:40px;margin-bottom:10px;">🕐</div>
+			        <div style="font-size:15px;font-weight:800;margin-bottom:4px;">Sin apps recientes</div>
+			        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px;">Todavía no abriste ninguna app en esta sesión.</div>
+			        <button onclick="closeAppSwitcher()" style="padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
+			      </div>`;
+			    modal.style.display='flex';
+			    return;
+			  }
+			  modal.innerHTML=`
+			    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px;">Apps abiertas recientemente</div>
+			    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:640px;" id="app-switcher-grid"></div>
+			    <button onclick="closeAppSwitcher()" style="margin-top:24px;padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
+			  `;
+			  const grid=modal.querySelector('#app-switcher-grid');
+			  _recentApps.forEach(a=>{
+			    const card=document.createElement('button');
+			    card.style.cssText='width:120px;height:150px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;color:#fff;';
+			    card.innerHTML=`<div style="font-size:38px;">${a.icon}</div><div style="font-size:12px;font-weight:700;text-align:center;padding:0 8px;">${a.name}</div>`;
+			    const reg=APP_SWITCHER_REGISTRY.find(x=>x.id===a.id);
+			    card.onclick=()=>{ closeAppSwitcher(); const fn=reg && window[reg.fn]; if(fn) fn(); };
+			    grid.appendChild(card);
+			  });
+			  modal.style.display='flex';
+			}
+			function closeAppSwitcher(){
+			  const modal=document.getElementById('app-switcher-modal');
+			  if(modal) modal.style.display='none';
+			}
+			// Gesto: tocar con 3 dedos a la vez y soltar rápido (no arrastrar) = abrir
+			// el conmutador de apps, igual que el multitasking de un sistema real.
+			let _threeFingerTapStart=null;
+			document.addEventListener('touchstart', (e)=>{
+			  if(e.touches.length===3){
+			    _threeFingerTapStart={ time:Date.now(), pts:[...e.touches].map(t=>({x:t.clientX,y:t.clientY})) };
+			  } else if(e.touches.length>3){
+			    _threeFingerTapStart=null; // más de 3 dedos: no es el gesto
+			  }
+			}, {passive:true});
+			document.addEventListener('touchmove', (e)=>{
+			  if(!_threeFingerTapStart || e.touches.length!==3) return;
+			  const moved=[...e.touches].some((t,i)=>{
+			    const p=_threeFingerTapStart.pts[i]; if(!p) return false;
+			    return Math.hypot(t.clientX-p.x, t.clientY-p.y) > 24;
+			  });
+			  if(moved) _threeFingerTapStart=null; // se movió: es un gesto de arrastre, no un toque
+			}, {passive:true});
+			document.addEventListener('touchend', (e)=>{
+			  if(_threeFingerTapStart && e.touches.length===0){
+			    const elapsed=Date.now()-_threeFingerTapStart.time;
+			    if(elapsed<500) openAppSwitcher();
+			  }
+			  if(e.touches.length===0) _threeFingerTapStart=null;
+			}, {passive:true});
+
 			setInterval(updateClockAndDate, 1000);
 			updateClockAndDate();
 			generateHourlyForecast();
@@ -12183,6 +12350,31 @@
 			let _browserZoomIdx=1;
 			function saveBrowserFavorites(){ try{ localStorage.setItem('ix_browser_favorites', JSON.stringify(_browserFavorites)); }catch(e){} }
 			function getActiveTab(){ return _browserTabs.find(t=>t.id===_activeTabId) || null; }
+			// Guarda qué pestañas están abiertas (solo url/título/fijada — el iframe
+			// en sí no se puede serializar) para que al cerrar la app y volver a
+			// abrirla el navegador in-app siga donde estabas, no en blanco.
+			function _browserSaveTabsState(){
+			  try{
+			    const tabs=_browserTabs.filter(t=>t.url).map(t=>({url:t.url, title:t.title, pinned:!!t.pinned}));
+			    const activeIndex=Math.max(0,_browserTabs.findIndex(t=>t.id===_activeTabId));
+			    localStorage.setItem('ix_browser_tabs', JSON.stringify({tabs, activeIndex}));
+			  }catch(e){}
+			}
+			function _browserRestoreTabsState(){
+			  try{
+			    const state=JSON.parse(localStorage.getItem('ix_browser_tabs')||'null');
+			    if(!state || !Array.isArray(state.tabs) || !state.tabs.length) return false;
+			    state.tabs.forEach(t=>{
+			      browserNewTab(t.url||undefined);
+			      const tab=getActiveTab();
+			      if(tab) tab.pinned=!!t.pinned;
+			    });
+			    renderBrowserTabBar();
+			    const idx=Math.min(state.activeIndex||0, _browserTabs.length-1);
+			    if(_browserTabs[idx]) browserSwitchTab(_browserTabs[idx].id);
+			    return true;
+			  }catch(e){ return false; }
+			}
 			function openBrowser(){
 			  let modal=document.getElementById('browser-modal');
 			  if(modal){modal.style.display='flex';return;}
@@ -12215,7 +12407,7 @@
 			    const menu=document.getElementById('browser-options-menu');
 			    if(menu && menu.style.display==='block' && !menu.contains(e.target) && !e.target.closest('[onclick="browserToggleOptionsMenu()"]')) menu.style.display='none';
 			  });
-			  browserNewTab();
+			  if(!_browserRestoreTabsState()) browserNewTab();
 			  renderBrowserFavBar();
 			  setTimeout(()=>document.getElementById('browser-url')?.focus(),150);
 			}
@@ -12277,22 +12469,25 @@
 			  const pane=document.getElementById('browser-pane-'+id);
 			  if(pane) pane.remove();
 			  _browserTabs.splice(idx,1);
-			  if(_browserTabs.length===0){ browserNewTab(); return; }
+			  if(_browserTabs.length===0){ browserNewTab(); _browserSaveTabsState(); return; }
 			  if(_activeTabId===id){ _activeTabId=_browserTabs[Math.max(0,idx-1)].id; }
 			  renderBrowserTabBar();
 			  browserShowActiveTabPane();
 			  updateBrowserToolbarState();
+			  _browserSaveTabsState();
 			}
 			function browserSwitchTab(id){
 			  _activeTabId=id;
 			  renderBrowserTabBar();
 			  browserShowActiveTabPane();
 			  updateBrowserToolbarState();
+			  _browserSaveTabsState();
 			}
 			function browserTogglePinActiveTab(){
 			  const tab=getActiveTab(); if(!tab) return;
 			  tab.pinned=!tab.pinned;
 			  renderBrowserTabBar();
+			  _browserSaveTabsState();
 			}
 			function renderBrowserTabBar(){
 			  const bar=document.getElementById('browser-tabbar');
@@ -12346,6 +12541,7 @@
 			function browserUpdateTabTitle(tab, url){
 			  try{ tab.title=new URL(url).hostname.replace(/^www\./,''); }catch(e){ tab.title=url; }
 			  renderBrowserTabBar();
+			  _browserSaveTabsState();
 			}
 			function browserNavigate(input){
 			  const url=browserNormalizeUrl(input);
