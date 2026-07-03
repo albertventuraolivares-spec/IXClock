@@ -3226,6 +3226,7 @@
 					</div>
 				</div>
 				<div style="display:flex;align-items:center;gap:8px;">
+					<button id="emu-menu-genre" onclick="emuCycleMenuMusic()" title="Cambiar género" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:0 12px;height:36px;border-radius:18px;cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.03em;white-space:nowrap;">8-BIT CHIPTUNE</button>
 					<button id="emu-menu-music" onclick="emuToggleMenuMusic()" title="Música" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;">🎵</button>
 					<button onclick="closeEmuMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 				</div>
@@ -9239,28 +9240,54 @@
 			  // abre directo el selector de ROM para que se sienta "entrar a jugar"
 			  setTimeout(()=>{ const inp=document.getElementById('emu-rom-input'); if(inp) inp.click(); }, 350);
 			}
-			// Música de fondo original (arpegio suave generado con Web Audio, sin
-			// copyright). Se puede activar/desactivar con el botón 🎵.
+			// Música de fondo 100% original, compuesta y generada en el momento con
+			// Web Audio (sin copyright, no son canciones existentes): tres estilos
+			// retro a elegir con el botón de género — 8-bit Chiptune, 16-bit
+			// Synthwave y Retrowave Demoscene. Se activa/desactiva con el botón 🎵.
+			const EMU_MUSIC_TRACKS = [
+			  { id:'chiptune', name:'8-BIT CHIPTUNE', wave:'square', step:0.155,
+			    bass:[130.81,130.81,146.83,130.81, 174.61,174.61,196.00,174.61],
+			    lead:[523.25,659.25,523.25,783.99, 659.25,523.25,659.25,880.00,
+			          493.88,587.33,493.88,698.46, 587.33,493.88,587.33,783.99] },
+			  { id:'synthwave16', name:'16-BIT SYNTHWAVE', wave:'sawtooth', step:0.24,
+			    bass:[110.00,110.00,130.81,146.83, 98.00,98.00,116.54,130.81],
+			    lead:[440.00,523.25,659.25,523.25, 493.88,587.33,698.46,587.33] },
+			  { id:'retrowave', name:'RETROWAVE DEMOSCENE', wave:'triangle', step:0.2,
+			    bass:[98.00,98.00,98.00,116.54, 87.31,87.31,87.31,103.83],
+			    lead:[392.00,466.16,392.00,587.33, 349.23,415.30,349.23,523.25] }
+			];
+			let _emuMusicTrackIdx = parseInt(localStorage.getItem('emu_music_track')||'0',10) || 0;
 			function emuStartMenuMusic(){
 			  if(!_emuMenuMusicOn) return; // arranca solo si el usuario la activó
 			  emuStopMenuMusic();
 			  try{
 			    const ctx=getAudioCtx(); if(!ctx) return;
-			    const notes=[261.63,329.63,392,523.25,392,329.63];
+			    const track=EMU_MUSIC_TRACKS[_emuMusicTrackIdx]||EMU_MUSIC_TRACKS[0];
 			    let i=0;
-			    const gain=ctx.createGain(); gain.gain.value=0.06; gain.connect(ctx.destination);
+			    const gain=ctx.createGain(); gain.gain.value=0.05; gain.connect(ctx.destination);
 			    _emuMenuMusic={ctx,gain,timer:null};
 			    const step=()=>{
-			      const o=ctx.createOscillator(); o.type='triangle';
-			      o.frequency.value=notes[i%notes.length];
+			      const n=track.lead.length;
+			      const lead=track.lead[i%n];
+			      const bass=track.bass[i%track.bass.length];
+			      const o=ctx.createOscillator(); o.type=track.wave;
+			      o.frequency.value=lead;
 			      const g=ctx.createGain(); g.gain.setValueAtTime(0,ctx.currentTime);
-			      g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.05);
-			      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-			      o.connect(g); g.connect(gain); o.start(); o.stop(ctx.currentTime+0.55);
+			      g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.04);
+			      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+track.step*0.9);
+			      o.connect(g); g.connect(gain); o.start(); o.stop(ctx.currentTime+track.step);
+			      if(i%2===0){
+			        const bo=ctx.createOscillator(); bo.type=track.wave==='square'?'square':'triangle';
+			        bo.frequency.value=bass/2;
+			        const bg=ctx.createGain(); bg.gain.setValueAtTime(0,ctx.currentTime);
+			        bg.gain.linearRampToValueAtTime(0.7,ctx.currentTime+0.04);
+			        bg.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+track.step*1.7);
+			        bo.connect(bg); bg.connect(gain); bo.start(); bo.stop(ctx.currentTime+track.step*1.8);
+			      }
 			      i++;
 			    };
 			    step();
-			    _emuMenuMusic.timer=setInterval(step,420);
+			    _emuMenuMusic.timer=setInterval(step,track.step*1000);
 			  }catch(e){}
 			}
 			function emuStopMenuMusic(){
@@ -9272,6 +9299,14 @@
 			  if(btn){ btn.style.background=_emuMenuMusicOn?'rgba(48,209,88,.3)':'rgba(255,255,255,.1)'; btn.textContent=_emuMenuMusicOn?'🎵':'🔇'; }
 			  if(_emuMenuMusicOn) emuStartMenuMusic(); else emuStopMenuMusic();
 			}
+			function emuCycleMenuMusic(){
+			  _emuMusicTrackIdx=(_emuMusicTrackIdx+1)%EMU_MUSIC_TRACKS.length;
+			  localStorage.setItem('emu_music_track', String(_emuMusicTrackIdx));
+			  const btn=document.getElementById('emu-menu-genre');
+			  if(btn) btn.textContent=EMU_MUSIC_TRACKS[_emuMusicTrackIdx].name;
+			  if(_emuMenuMusicOn) emuStartMenuMusic(); // reinicia con el nuevo estilo
+			}
+			(function(){ const b=document.getElementById('emu-menu-genre'); if(b) b.textContent=EMU_MUSIC_TRACKS[_emuMusicTrackIdx].name; })();
 
 			let _activeGameId = null;
 			let _activeGameCleanup = null;
