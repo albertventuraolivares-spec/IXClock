@@ -131,9 +131,6 @@
 			  0%{background-position:0% 50%;}
 			  100%{background-position:100% 50%;}
 			}
-			/* Opción: fondo totalmente quieto (clase en body) */
-			body.wp-still .wallpaper-fill,
-			body.wp-still .wallpaper-fill.fill-anim{animation:none !important;background-size:cover !important;background-position:center !important;}
 			#brightness-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;background:#000;opacity:0;transition:opacity .3s ease;}
 
 			/* ===== LIQUID GLASS -- iOS 27 style ===== */
@@ -1726,11 +1723,6 @@
 							type="text"
 						/>
 					</div>
-					<div class="shrink-0 mb-2" style="display:flex;gap:6px;">
-					<button onclick="setRandomWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#ff007f,#7928ca,#00f0ff);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🎲 Aleatorio</button>
-					<button onclick="setRandomPhotoWallpaper()" style="flex:1;padding:9px;border-radius:12px;background:linear-gradient(135deg,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:11px;cursor:pointer;">🖼️ Foto real infinita</button>
-				</div>
-				<button id="wp-motion-btn" onclick="toggleWallpaperMotion()" class="shrink-0 mb-3" style="width:100%;padding:8px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-weight:700;font-size:11px;cursor:pointer;">🎥 Movimiento: Natural</button>
 					<div
 						class="custom-scrollbar pr-1"
 						id="wallpaper-grid-wrap"
@@ -1758,7 +1750,6 @@
 							type="text"
 						/>
 					</div>
-					<button onclick="setRandomClockStyle()" class="shrink-0 mb-3" style="width:100%;padding:9px;border-radius:12px;background:linear-gradient(135deg,#5e5ce6,#0a84ff);border:none;color:#fff;font-weight:800;font-size:12px;cursor:pointer;">🎲 Estilo de reloj aleatorio infinito</button>
 					<div class="custom-scrollbar pr-1">
 						<div
 							class="grid grid-cols-3 gap-2"
@@ -4609,44 +4600,10 @@
 			  isDynamicBgEnabled = false;
 			  if(save!==false){ try{ localStorage.setItem('saved_wallpaper_custom', JSON.stringify(wp)); localStorage.removeItem('saved_wallpaper'); }catch(e){} }
 			}
-			// Movimiento del fondo: natural (sutil) o quieto. Se guarda.
-			function toggleWallpaperMotion(){
-			  const still = !document.body.classList.contains('wp-still');
-			  document.body.classList.toggle('wp-still', still);
-			  try{ localStorage.setItem('wp_still', still ? '1' : '0'); }catch(e){}
-			  const btn=document.getElementById('wp-motion-btn');
-			  if(btn) btn.textContent = still ? '🎥 Movimiento: Quieto' : '🎥 Movimiento: Natural';
-			}
-			(function restoreWallpaperMotion(){
-			  try{
-			    if(localStorage.getItem('wp_still')==='1'){
-			      document.body.classList.add('wp-still');
-			      const apply=()=>{ const b=document.getElementById('wp-motion-btn'); if(b) b.textContent='🎥 Movimiento: Quieto'; };
-			      document.addEventListener('DOMContentLoaded',apply); apply();
-			    }
-			  }catch(e){}
-			})();
-			function setRandomWallpaper(){
-			  const rnd = (a,b)=>a+Math.random()*(b-a);
-			  const h1 = Math.floor(rnd(0,360));
-			  const h2 = (h1 + Math.floor(rnd(30,180))) % 360;
-			  const h3 = (h2 + Math.floor(rnd(30,180))) % 360;
-			  const colors = [
-			    `hsl(${h1},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
-			    `hsl(${h2},${rnd(55,90)|0}%,${rnd(35,60)|0}%)`,
-			    `hsl(${h3},${rnd(55,90)|0}%,${rnd(30,55)|0}%)`
-			  ];
-			  _applyCustomWallpaper({ id:'random-'+Date.now(), name:'Aleatorio', tags:'random', type:'gradient',
-			    colors, angle:Math.floor(rnd(0,360)), dur:Math.floor(rnd(10,26)) });
-			}
-
-			// Fotos reales ilimitadas desde Lorem Picsum (gratis, sin clave, licencia
-			// libre). Cada llamada trae una foto distinta: prácticamente infinitas.
-			function setRandomPhotoWallpaper(){
-			  const seed = Date.now() + '-' + Math.floor(Math.random()*1e6);
-			  const url = `https://picsum.photos/seed/${seed}/1920/1080`;
-			  _applyCustomWallpaper({ id:'photo-random-'+seed, name:'Foto real', tags:'random photo', type:'photo', url });
-			}
+			// El movimiento del fondo se controla con los botones Ken Burns / Quieto /
+			// Natural (setMotionMode). Limpiamos cualquier resto del antiguo modo
+			// "wp-still" para que "Natural" vuelva a animarse.
+			try{ document.body.classList.remove('wp-still'); localStorage.removeItem('wp_still'); }catch(e){}
 
 			function renderWallpaperGrid(){
 			  const grid = document.getElementById('wallpaper-grid');
@@ -4878,28 +4835,6 @@
 			  const btn = document.getElementById('clockbtn-' + id);
 			  if(btn) btn.classList.add('active');
 			}
-			// Generador "infinito" de estilos de reloj: combina fuente + grosor +
-			// color + efecto al azar. Miles de millones de combinaciones sin listar
-			// medio millón de entradas fijas.
-			const _RND_FONTS = ["'Inter',sans-serif","'Orbitron',sans-serif","'Playfair Display',serif","'VT323',monospace","'Outfit',sans-serif","'Bebas Neue',cursive","'Space Grotesk',sans-serif","'JetBrains Mono',monospace","'Oswald',sans-serif","'Righteous',cursive","'Syncopate',sans-serif","'Rajdhani',sans-serif","'Marcellus',serif","'Cormorant Garamond',serif","'Lora',serif","'Dancing Script',cursive","'Lexend Deca',sans-serif","'Bebas Neue',cursive"];
-			const _RND_EXTRAS = ['','upper','italic','glow-cyan','glow-green','glow-gold','long-shadow','stroke'];
-			function setRandomClockStyle(){
-			  const rnd = (a,b)=>a+Math.random()*(b-a);
-			  const pick = arr=>arr[Math.floor(Math.random()*arr.length)];
-			  const hue = Math.floor(rnd(0,360));
-			  const style = {
-			    id:'random-clock', name:'Aleatorio', tags:'random',
-			    ff: pick(_RND_FONTS),
-			    fw: pick([200,300,400,500,600,700,800,900]),
-			    ls: (Math.random()<0.5?'-':'') + (rnd(0,3)|0) + 'px',
-			    color: `hsl(${hue},${rnd(60,95)|0}%,${rnd(55,75)|0}%)`,
-			    grad:'none',
-			    extra: pick(_RND_EXTRAS)
-			  };
-			  applyClockStyle(style);
-			  document.querySelectorAll('.clock-style-btn').forEach(b=>b.classList.remove('active'));
-			}
-
 			function renderClockGrid(){
 			  const grid = document.getElementById('clock-style-grid');
 			  grid.innerHTML = '';
@@ -10011,7 +9946,7 @@
 			  });
 			}
 			document.head.insertAdjacentHTML('beforeend','<style>@keyframes natureBreath{0%,100%{background-size:120% 120%;}50%{background-size:128% 128%;}}</style>');
-			(function(){const m=localStorage.getItem('motion_mode')||'kenburns';const bm={kenburns:'motion-ken',still:'motion-still',nature:'motion-nature'};const b=document.getElementById(bm[m]);if(b){document.querySelectorAll('#motion-ken,#motion-still,#motion-nature').forEach(x=>x.classList.remove('active'));b.classList.add('active');}})();
+			(function(){const m=localStorage.getItem('motion_mode')||'kenburns';const bm={kenburns:'motion-ken',still:'motion-still',nature:'motion-nature'};const apply=()=>{const b=document.getElementById(bm[m]);setMotionMode(m,b);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();})();
 
 			/* ===== AI PROVIDER ===== */
 			/* ===== TRADUCCIÓN DE INTERFAZ — Pollinations AI en lotes ===== */
