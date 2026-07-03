@@ -531,18 +531,20 @@
 			.ica-timer-picker::after{display:none;}
 			.ica-picker-col{
 			  width:70px;height:200px;overflow:hidden;position:relative;
+			  perspective:500px;
 			  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
 			  mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
 			}
 			.ica-picker-col .scroll{
 			  position:absolute;top:0;left:0;width:100%;
+			  transform-style:preserve-3d;
 			  transition:transform .3s cubic-bezier(.23,1,.32,1);
 			}
 			.ica-picker-col .item{
 			  height:40px;display:flex;align-items:center;justify-content:center;
 			  font-size:22px;font-weight:300;opacity:.4;transition:opacity .2s,transform .2s;
 			}
-			.ica-picker-col .item.selected{opacity:1;font-weight:500;transform:scale(1.1);}
+			.ica-picker-col .item.selected{opacity:1;font-weight:500;}
 			.ica-picker-label{font-size:13px;opacity:.5;margin:0 4px;align-self:center;}
 			.ica-timer-opts{
 			  display:flex;flex-direction:column;gap:1px;
@@ -720,7 +722,7 @@
 
 		<style id="hide-old-dock-btns">
 			/* Hide old fixed-bottom buttons — now all in top dock */
-			#notes-btn, #calc-btn, #alarm-btn, #siri-btn, #siri-text-btn,
+			#notes-btn, #calc-btn, #alarm-btn, #siri-btn, #siri-text-btn, #dt-btn,
 			button[onclick="toggleIOSClockApp()"][style*="position:fixed"],
 			button[onclick="toggleCalcPanel()"][style*="position:fixed"],
 			button[onclick="toggleNotesPanel()"][style*="position:fixed"] {
@@ -783,8 +785,8 @@
 		<!-- Reloj -->
 		<button
 			class="dock-btn"
-			onclick="toggleAlarmPanel()"
-			title="Reloj · Alarma"
+			onclick="toggleIOSClockApp()"
+			title="Reloj"
 			style="background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.4);"
 		>
 			<svg width="40" height="40" viewBox="0 0 40 40">
@@ -861,6 +863,22 @@
 					stroke-linecap="round"
 				/>
 				<circle cx="20" cy="21" r="1.6" fill="#ff9500" />
+			</svg>
+		</button>
+		<!-- Dispositivos (MacTracker) -->
+		<button
+			class="dock-btn dock-secondary"
+			onclick="toggleDeviceTracker()"
+			title="Dispositivos"
+			style="background:#1c1c1e;box-shadow:0 3px 12px rgba(0,0,0,.5);"
+		>
+			<svg width="40" height="40" viewBox="0 0 40 40">
+				<rect width="40" height="40" rx="9" fill="#1c1c1e" />
+				<rect x="7" y="9" width="17" height="12" rx="1.6" fill="none" stroke="#0a84ff" stroke-width="1.6" />
+				<rect x="13" y="22.5" width="5" height="1.8" rx=".9" fill="#0a84ff" />
+				<rect x="22" y="14" width="8" height="14" rx="1.8" fill="#1c1c1e" stroke="#30d158" stroke-width="1.6" />
+				<circle cx="26" cy="25.5" r="1" fill="#30d158" />
+				<rect x="9" y="26" width="9" height="6" rx="1.4" fill="none" stroke="#ff9f0a" stroke-width="1.4" />
 			</svg>
 		</button>
 		<!-- Calculadora -->
@@ -3736,8 +3754,8 @@
 						</div>
 					</div>
 					<div class="ica-sw-pager">
-						<div class="dot active" id="ica-sw-dot0"></div>
-						<div class="dot" id="ica-sw-dot1"></div>
+						<div class="dot active" id="ica-sw-dot0" onclick="icaSwSetPage(0)" style="cursor:pointer;padding:4px;"></div>
+						<div class="dot" id="ica-sw-dot1" onclick="icaSwSetPage(1)" style="cursor:pointer;padding:4px;"></div>
 					</div>
 					<div class="ica-sw-btns">
 						<button class="ica-sw-btn" id="ica-sw-lap" onclick="icaSwLap()">Vuelta</button>
@@ -4118,11 +4136,11 @@
 		<!-- ================= CALENDARIO (Apple-style + IA) ================= -->
 
 		<!-- ================= NOTES BUTTON ================= -->
-		<b<button id="dt-btn" onclick="toggleDeviceTracker()" title="Dispositivos"
+		<button id="dt-btn" onclick="toggleDeviceTracker()" title="Dispositivos"
 			style="position:fixed;bottom:26px;left:calc(50% + 74px);z-index:70;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(10,132,255,.3);transition:transform .2s ease;overflow:hidden;padding:0;background:#1c1c1e;">
 			<span style="font-size:26px;">📱</span>
 		</button>
-		utton
+		<button
 			id="notes-btn"
 			onclick="toggleNotesPanel()"
 			title="Notas"
@@ -4873,115 +4891,115 @@
 			  // Categorías: Mansiones, Fútbol, Tecnología, Juegos, Playa, Animales, Anime, Abstracto, Coches, Espacio
 			  // Los type:'video' intentan cargar el MP4 directo; si falla, muestran la animación canvas de fallback.
 			  // --- Mansiones y Lujo ---
-			  {id:'lw-mansion-1',name:'Mansión de Lujo Moderna',tags:'luxury mansion modern lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Modern-Luxury-Mansion.mp4',fallbackAnim:'lava'},
-			  {id:'lw-mansion-2',name:'Villa con Piscina Interior',tags:'luxury pool villa indoor lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Indoor-Pool-Villa.mp4',fallbackAnim:'lava'},
-			  {id:'lw-mansion-3',name:'Habitación Lluviosa Acogedora',tags:'cozy rain room lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Cozy-Rainy-Room.mp4',fallbackAnim:'rain'},
-			  {id:'lw-mansion-4',name:'Casa Moderna en el Bosque',tags:'modern house forest lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Modern-House-In-The-Forest.mp4',fallbackAnim:'fireflies'},
-			  {id:'lw-mansion-5',name:'Penthouse de Lujo',tags:'luxury penthouse view lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Luxury-Penthouse-View.mp4',fallbackAnim:'lava'},
-			  {id:'lw-mansion-6',name:'Arquitectura Moderna',tags:'modern architecture building design canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a2a3a,#2d4a5a)',thumb:'linear-gradient(135deg,#1a2a3a,#2d4a5a)'},
-			  {id:'lw-mansion-7',name:'Interior Lujoso',tags:'luxury home interior design canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#1a0a00,#3d2000)',thumb:'linear-gradient(135deg,#2a1500,#4d3000)'},
-			  {id:'lw-mansion-8',name:'Diseño Blueprint',tags:'blueprint design architect canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#001030,#002060)',thumb:'linear-gradient(135deg,#001030,#002060)'},
-			  {id:'lw-mansion-9',name:'Smart Home Tech',tags:'smart home technology futuristic canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
-			  {id:'lw-mansion-10',name:'Piscina Mansión',tags:'swimming pool mansion luxury canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003050,#001428)',thumb:'linear-gradient(135deg,#003050,#001428)'},
+			  {id:'lw-mansion-1',page:'https://mylivewallpapers.com/lifestyle/modern-luxury-mansion-live-wallpaper/',name:'Mansión de Lujo Moderna',tags:'luxury mansion modern lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Modern-Luxury-Mansion.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-2',page:'https://mylivewallpapers.com/lifestyle/indoor-pool-villa-live-wallpaper/',name:'Villa con Piscina Interior',tags:'luxury pool villa indoor lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Indoor-Pool-Villa.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-3',page:'https://mylivewallpapers.com/lifestyle/cozy-rainy-room-live-wallpaper/',name:'Habitación Lluviosa Acogedora',tags:'cozy rain room lifestyle video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Lifestyle/Cozy-Rainy-Room.mp4',fallbackAnim:'rain'},
+			  {id:'lw-mansion-4',page:'https://moewalls.com/lifestyle/modern-house-in-the-forest-live-wallpaper/',name:'Casa Moderna en el Bosque',tags:'modern house forest lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Modern-House-In-The-Forest.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-mansion-5',page:'https://moewalls.com/lifestyle/luxury-penthouse-view-live-wallpaper/',name:'Penthouse de Lujo',tags:'luxury penthouse view lifestyle video',type:'video',url:'https://moewalls.com/wp-content/uploads/Lifestyle/Luxury-Penthouse-View.mp4',fallbackAnim:'lava'},
+			  {id:'lw-mansion-6',page:'https://pixabay.com/videos/search/modern%20architecture/',name:'Arquitectura Moderna',tags:'modern architecture building design canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a2a3a,#2d4a5a)',thumb:'linear-gradient(135deg,#1a2a3a,#2d4a5a)'},
+			  {id:'lw-mansion-7',page:'https://pixabay.com/videos/search/luxury%20home%20interior/',name:'Interior Lujoso',tags:'luxury home interior design canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#1a0a00,#3d2000)',thumb:'linear-gradient(135deg,#2a1500,#4d3000)'},
+			  {id:'lw-mansion-8',page:'https://pixabay.com/videos/search/blueprint%20design/',name:'Diseño Blueprint',tags:'blueprint design architect canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#001030,#002060)',thumb:'linear-gradient(135deg,#001030,#002060)'},
+			  {id:'lw-mansion-9',page:'https://pixabay.com/videos/search/smart%20home%20technology/',name:'Smart Home Tech',tags:'smart home technology futuristic canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
+			  {id:'lw-mansion-10',page:'https://pixabay.com/videos/search/swimming%20pool%20mansion/',name:'Piscina Mansión',tags:'swimming pool mansion luxury canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003050,#001428)',thumb:'linear-gradient(135deg,#003050,#001428)'},
 			  // --- Fútbol y Deportes ---
-			  {id:'lw-football-1',name:'Messi Copa del Mundo',tags:'messi world cup football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Lionel-Messi-World-Cup.mp4',fallbackAnim:'particles'},
-			  {id:'lw-football-2',name:'Cristiano Ronaldo Neón',tags:'ronaldo neon football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Cristiano-Ronaldo-Neon.mp4',fallbackAnim:'particles'},
-			  {id:'lw-football-3',name:'Neymar Jr PSG',tags:'neymar psg football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Neymar-Jr-Psg.mp4',fallbackAnim:'particles'},
-			  {id:'lw-football-4',name:'Estadio Champions League',tags:'champions league stadium football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Champions-League-Stadium.mp4',fallbackAnim:'particles'},
-			  {id:'lw-football-5',name:'Balón en Llamas',tags:'soccer ball fire football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Soccer-Ball-On-Fire.mp4',fallbackAnim:'fire'},
-			  {id:'lw-football-6',name:'Luces del Estadio',tags:'football stadium lights sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a1a0a,#001500)',thumb:'linear-gradient(135deg,#0a1a0a,#002000)'},
-			  {id:'lw-football-7',name:'Regates de Fútbol',tags:'soccer dribbling football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#001a00,#003000)',thumb:'linear-gradient(135deg,#001a00,#003000)'},
-			  {id:'lw-football-8',name:'Centrocampista',tags:'midfielder soccer football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a1a,#001020)',thumb:'linear-gradient(135deg,#0a0a1a,#001020)'},
-			  {id:'lw-football-9',name:'Entrenamiento Fútbol',tags:'football training sports pitch canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
-			  {id:'lw-football-10',name:'Balón en el Césped',tags:'soccer ball grass football sports canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#6baa3d,#1a4d1a)',thumb:'linear-gradient(135deg,#4a8a2d,#1a4d1a)'},
+			  {id:'lw-football-1',page:'https://mylivewallpapers.com/sports/lionel-messi-world-cup-live-wallpaper/',name:'Messi Copa del Mundo',tags:'messi world cup football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Lionel-Messi-World-Cup.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-2',page:'https://mylivewallpapers.com/sports/cristiano-ronaldo-neon-live-wallpaper/',name:'Cristiano Ronaldo Neón',tags:'ronaldo neon football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Cristiano-Ronaldo-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-3',page:'https://mylivewallpapers.com/sports/neymar-jr-psg-live-wallpaper/',name:'Neymar Jr PSG',tags:'neymar psg football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Neymar-Jr-Psg.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-4',page:'https://mylivewallpapers.com/sports/champions-league-stadium-live-wallpaper/',name:'Estadio Champions League',tags:'champions league stadium football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Champions-League-Stadium.mp4',fallbackAnim:'particles'},
+			  {id:'lw-football-5',page:'https://mylivewallpapers.com/sports/soccer-ball-on-fire-live-wallpaper/',name:'Balón en Llamas',tags:'soccer ball fire football sports video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Sports/Soccer-Ball-On-Fire.mp4',fallbackAnim:'fire'},
+			  {id:'lw-football-6',page:'https://pixabay.com/videos/search/football%20stadium%20lights/',name:'Luces del Estadio',tags:'football stadium lights sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a1a0a,#001500)',thumb:'linear-gradient(135deg,#0a1a0a,#002000)'},
+			  {id:'lw-football-7',page:'https://pixabay.com/videos/search/soccer%20dribbling/',name:'Regates de Fútbol',tags:'soccer dribbling football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#001a00,#003000)',thumb:'linear-gradient(135deg,#001a00,#003000)'},
+			  {id:'lw-football-8',page:'https://pixabay.com/videos/search/midfielder%20soccer/',name:'Centrocampista',tags:'midfielder soccer football sports canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a1a,#001020)',thumb:'linear-gradient(135deg,#0a0a1a,#001020)'},
+			  {id:'lw-football-9',page:'https://pixabay.com/videos/search/football%20training/',name:'Entrenamiento Fútbol',tags:'football training sports pitch canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
+			  {id:'lw-football-10',page:'https://pixabay.com/videos/search/soccer%20ball%20grass/',name:'Balón en el Césped',tags:'soccer ball grass football sports canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#6baa3d,#1a4d1a)',thumb:'linear-gradient(135deg,#4a8a2d,#1a4d1a)'},
 			  // --- Tecnología y Mac ---
-			  {id:'lw-tech-1',name:'macOS Monterey Abstracto',tags:'macos monterey abstract technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Monterey-Abstract.mp4',fallbackAnim:'lava'},
-			  {id:'lw-tech-2',name:'macOS Big Sur Fluido',tags:'macos big sur fluid technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Big-Sur-Fluid.mp4',fallbackAnim:'lava'},
-			  {id:'lw-tech-3',name:'Apple M1 Chip Glow',tags:'apple m1 chip glow technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Apple-M1-Chip-Glow.mp4',fallbackAnim:'particles'},
-			  {id:'lw-tech-4',name:'Circuito Neón',tags:'circuit board neon technology video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Technology/Circuit-Board-Neon.mp4',fallbackAnim:'matrix'},
-			  {id:'lw-tech-5',name:'Interfaz Hacker',tags:'hacker screen interface technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Hacker-Screen-Interface.mp4',fallbackAnim:'matrix'},
-			  {id:'lw-tech-6',name:'Pantalla MacBook',tags:'macbook screen loop technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a0a1a,#1a1a3a)',thumb:'linear-gradient(135deg,#0a0a1a,#1a1a3a)'},
-			  {id:'lw-tech-7',name:'iPad Tecnología',tags:'ipad tablet technology canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
-			  {id:'lw-tech-8',name:'Procesador Chip',tags:'processor chip technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#000500,#001a00)',thumb:'linear-gradient(135deg,#000500,#001a00)'},
-			  {id:'lw-tech-9',name:'Sala de Servidores',tags:'server room tech data center canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#050510,#0a0a20)',thumb:'linear-gradient(135deg,#050510,#0a0a20)'},
-			  {id:'lw-tech-10',name:'Apple Abstracto',tags:'apple device abstract technology canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200010,#400020)'},
+			  {id:'lw-tech-1',page:'https://moewalls.com/technology/macos-monterey-abstract-live-wallpaper/',name:'macOS Monterey Abstracto',tags:'macos monterey abstract technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Monterey-Abstract.mp4',fallbackAnim:'lava'},
+			  {id:'lw-tech-2',page:'https://moewalls.com/technology/macos-big-sur-fluid-live-wallpaper/',name:'macOS Big Sur Fluido',tags:'macos big sur fluid technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Macos-Big-Sur-Fluid.mp4',fallbackAnim:'lava'},
+			  {id:'lw-tech-3',page:'https://moewalls.com/technology/apple-m1-chip-glow-live-wallpaper/',name:'Apple M1 Chip Glow',tags:'apple m1 chip glow technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Apple-M1-Chip-Glow.mp4',fallbackAnim:'particles'},
+			  {id:'lw-tech-4',page:'https://mylivewallpapers.com/technology/circuit-board-neon-live-wallpaper/',name:'Circuito Neón',tags:'circuit board neon technology video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Technology/Circuit-Board-Neon.mp4',fallbackAnim:'matrix'},
+			  {id:'lw-tech-5',page:'https://moewalls.com/technology/hacker-screen-interface-live-wallpaper/',name:'Interfaz Hacker',tags:'hacker screen interface technology video',type:'video',url:'https://moewalls.com/wp-content/uploads/Technology/Hacker-Screen-Interface.mp4',fallbackAnim:'matrix'},
+			  {id:'lw-tech-6',page:'https://pixabay.com/videos/search/macbook%20screen%20loop/',name:'Pantalla MacBook',tags:'macbook screen loop technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a0a1a,#1a1a3a)',thumb:'linear-gradient(135deg,#0a0a1a,#1a1a3a)'},
+			  {id:'lw-tech-7',page:'https://pixabay.com/videos/search/ipad%20tablet%20technology/',name:'iPad Tecnología',tags:'ipad tablet technology canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000818,#001030)',thumb:'linear-gradient(135deg,#000818,#001030)'},
+			  {id:'lw-tech-8',page:'https://pixabay.com/videos/search/processor%20chip/',name:'Procesador Chip',tags:'processor chip technology canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#000500,#001a00)',thumb:'linear-gradient(135deg,#000500,#001a00)'},
+			  {id:'lw-tech-9',page:'https://pixabay.com/videos/search/server%20room%20tech/',name:'Sala de Servidores',tags:'server room tech data center canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#050510,#0a0a20)',thumb:'linear-gradient(135deg,#050510,#0a0a20)'},
+			  {id:'lw-tech-10',page:'https://pixabay.com/videos/search/apple%20device%20abstract/',name:'Apple Abstracto',tags:'apple device abstract technology canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200010,#400020)'},
 			  // --- Juegos ---
-			  {id:'lw-games-1',name:'Roblox Doors',tags:'roblox doors games horror video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Roblox-Doors.mp4',fallbackAnim:'particles'},
-			  {id:'lw-games-2',name:'Cyberpunk 2077 Neón',tags:'cyberpunk 2077 neon games video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Cyberpunk-2077-Neon.mp4',fallbackAnim:'particles'},
-			  {id:'lw-games-3',name:'GTA 5 Los Santos',tags:'gta 5 los santos games city video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Gta-5-Los-Santos.mp4',fallbackAnim:'rain'},
-			  {id:'lw-games-4',name:'Steam Deck Abstracto',tags:'steam deck abstract games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Steam-Deck-Abstract.mp4',fallbackAnim:'particles'},
-			  {id:'lw-games-5',name:'Sala Arcade Retro',tags:'retro arcade room games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Retro-Arcade-Room.mp4',fallbackAnim:'particles'},
-			  {id:'lw-games-6',name:'Roblox Gaming',tags:'roblox gaming games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300060)',thumb:'linear-gradient(135deg,#1a0030,#300060)'},
-			  {id:'lw-games-7',name:'Biblioteca Steam',tags:'steam game library games canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a1020,#152040)',thumb:'linear-gradient(135deg,#0a1020,#152040)'},
-			  {id:'lw-games-8',name:'Arena Esports',tags:'esports arena games competition canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0d0020,#1a0040)',thumb:'linear-gradient(135deg,#0d0020,#1a0040)'},
-			  {id:'lw-games-9',name:'Mando Videojuegos',tags:'video game controller games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#100818,#200830)',thumb:'linear-gradient(135deg,#100818,#200830)'},
-			  {id:'lw-games-10',name:'Mundo 3D Gaming',tags:'3d game environment games canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000010,#000830)',thumb:'linear-gradient(135deg,#000010,#000830)'},
+			  {id:'lw-games-1',page:'https://mylivewallpapers.com/games/roblox-doors-live-wallpaper/',name:'Roblox Doors',tags:'roblox doors games horror video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Roblox-Doors.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-2',page:'https://mylivewallpapers.com/games/cyberpunk-2077-neon-live-wallpaper/',name:'Cyberpunk 2077 Neón',tags:'cyberpunk 2077 neon games video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Cyberpunk-2077-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-3',page:'https://mylivewallpapers.com/games/gta-5-los-santos-live-wallpaper/',name:'GTA 5 Los Santos',tags:'gta 5 los santos games city video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Games/Gta-5-Los-Santos.mp4',fallbackAnim:'rain'},
+			  {id:'lw-games-4',page:'https://moewalls.com/games/steam-deck-abstract-live-wallpaper/',name:'Steam Deck Abstracto',tags:'steam deck abstract games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Steam-Deck-Abstract.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-5',page:'https://moewalls.com/games/retro-arcade-room-live-wallpaper/',name:'Sala Arcade Retro',tags:'retro arcade room games video',type:'video',url:'https://moewalls.com/wp-content/uploads/Games/Retro-Arcade-Room.mp4',fallbackAnim:'particles'},
+			  {id:'lw-games-6',page:'https://pixabay.com/videos/search/roblox%20gaming/',name:'Roblox Gaming',tags:'roblox gaming games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300060)',thumb:'linear-gradient(135deg,#1a0030,#300060)'},
+			  {id:'lw-games-7',page:'https://pixabay.com/videos/search/steam%20game%20library/',name:'Biblioteca Steam',tags:'steam game library games canvas',type:'canvas',anim:'matrix',bg:'linear-gradient(180deg,#0a1020,#152040)',thumb:'linear-gradient(135deg,#0a1020,#152040)'},
+			  {id:'lw-games-8',page:'https://pixabay.com/videos/search/esports%20arena/',name:'Arena Esports',tags:'esports arena games competition canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0d0020,#1a0040)',thumb:'linear-gradient(135deg,#0d0020,#1a0040)'},
+			  {id:'lw-games-9',page:'https://pixabay.com/videos/search/video%20game%20controller/',name:'Mando Videojuegos',tags:'video game controller games canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#100818,#200830)',thumb:'linear-gradient(135deg,#100818,#200830)'},
+			  {id:'lw-games-10',page:'https://pixabay.com/videos/search/3d%20game%20environment/',name:'Mundo 3D Gaming',tags:'3d game environment games canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000010,#000830)',thumb:'linear-gradient(135deg,#000010,#000830)'},
 			  // --- Playa y Naturaleza ---
-			  {id:'lw-beach-1',name:'Olas Tropicales',tags:'tropical beach waves nature video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Tropical-Beach-Waves.mp4',fallbackAnim:'ocean'},
-			  {id:'lw-beach-2',name:'Resort Maldivas',tags:'maldives ocean resort nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Maldives-Ocean-Resort.mp4',fallbackAnim:'ocean'},
-			  {id:'lw-beach-3',name:'Palmeras al Atardecer',tags:'sunset palm trees nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Sunset-Palm-Trees.mp4',fallbackAnim:'clouds'},
-			  {id:'lw-beach-4',name:'Playa Relajante al Atardecer',tags:'relaxing beach sunset nature video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Relaxing-Beach-Sunset.mp4',fallbackAnim:'clouds'},
-			  {id:'lw-beach-5',name:'Agua de Piscina',tags:'swimming pool water nature relax video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Swimming-Pool-Water.mp4',fallbackAnim:'ocean'},
-			  {id:'lw-beach-6',name:'Resort de Playa',tags:'beach resort tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
-			  {id:'lw-beach-7',name:'Olas en la Arena',tags:'ocean waves sand beach canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004080,#002040)',thumb:'linear-gradient(135deg,#004080,#002040)'},
-			  {id:'lw-beach-8',name:'Tumbona en la Playa',tags:'lounge chair beach relax canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#ff7e5f,#003060)',thumb:'linear-gradient(135deg,#ff7e5f,#003060)'},
-			  {id:'lw-beach-9',name:'Isla Tropical Drone',tags:'tropical island drone aerial canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#006080,#003040)',thumb:'linear-gradient(135deg,#006080,#003040)'},
-			  {id:'lw-beach-10',name:'Mar Caribe Loop',tags:'caribbean sea loop tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#00b4d8,#003060)',thumb:'linear-gradient(135deg,#00b4d8,#003060)'},
+			  {id:'lw-beach-1',page:'https://mylivewallpapers.com/nature/tropical-beach-waves-live-wallpaper/',name:'Olas Tropicales',tags:'tropical beach waves nature video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Tropical-Beach-Waves.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-2',page:'https://mylivewallpapers.com/nature/maldives-ocean-resort-live-wallpaper/',name:'Resort Maldivas',tags:'maldives ocean resort nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Maldives-Ocean-Resort.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-3',page:'https://mylivewallpapers.com/nature/sunset-palm-trees-live-wallpaper/',name:'Palmeras al Atardecer',tags:'sunset palm trees nature beach video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Nature/Sunset-Palm-Trees.mp4',fallbackAnim:'clouds'},
+			  {id:'lw-beach-4',page:'https://moewalls.com/nature/relaxing-beach-sunset-live-wallpaper/',name:'Playa Relajante al Atardecer',tags:'relaxing beach sunset nature video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Relaxing-Beach-Sunset.mp4',fallbackAnim:'clouds'},
+			  {id:'lw-beach-5',page:'https://moewalls.com/nature/swimming-pool-water-live-wallpaper/',name:'Agua de Piscina',tags:'swimming pool water nature relax video',type:'video',url:'https://moewalls.com/wp-content/uploads/Nature/Swimming-Pool-Water.mp4',fallbackAnim:'ocean'},
+			  {id:'lw-beach-6',page:'https://pixabay.com/videos/search/beach%20resort/',name:'Resort de Playa',tags:'beach resort tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#003060,#001428)',thumb:'linear-gradient(135deg,#003060,#001428)'},
+			  {id:'lw-beach-7',page:'https://pixabay.com/videos/search/ocean%20waves%20sand/',name:'Olas en la Arena',tags:'ocean waves sand beach canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004080,#002040)',thumb:'linear-gradient(135deg,#004080,#002040)'},
+			  {id:'lw-beach-8',page:'https://pixabay.com/videos/search/lounge%20chair%20beach/',name:'Tumbona en la Playa',tags:'lounge chair beach relax canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#ff7e5f,#003060)',thumb:'linear-gradient(135deg,#ff7e5f,#003060)'},
+			  {id:'lw-beach-9',page:'https://pixabay.com/videos/search/tropical%20island%20drone/',name:'Isla Tropical Drone',tags:'tropical island drone aerial canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#006080,#003040)',thumb:'linear-gradient(135deg,#006080,#003040)'},
+			  {id:'lw-beach-10',page:'https://pixabay.com/videos/search/caribbean%20sea%20loop/',name:'Mar Caribe Loop',tags:'caribbean sea loop tropical canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#00b4d8,#003060)',thumb:'linear-gradient(135deg,#00b4d8,#003060)'},
 			  // --- Animales y Perros ---
-			  {id:'lw-animals-1',name:'Cachorro Golden Retriever',tags:'golden retriever puppy animals dogs video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Cute-Golden-Retriever-Puppy.mp4',fallbackAnim:'fireflies'},
-			  {id:'lw-animals-2',name:'Perro Durmiendo Lofi',tags:'sleeping dog lofi animals video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Sleeping-Dog-Lofi.mp4',fallbackAnim:'fireflies'},
-			  {id:'lw-animals-3',name:'Husky en la Nieve',tags:'husky snow animals dogs winter video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Husky-Snow.mp4',fallbackAnim:'snow'},
-			  {id:'lw-animals-4',name:'Estanque de Peces Koi',tags:'koi fish pond animals water video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Koi-Fish-Pond.mp4',fallbackAnim:'river'},
-			  {id:'lw-animals-5',name:'Shiba Inu Cyberpunk',tags:'shiba inu cyberpunk animals neon video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Shiba-Inu-Cyberpunk.mp4',fallbackAnim:'particles'},
-			  {id:'lw-animals-6',name:'Perro Corriendo',tags:'dog running animals canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
-			  {id:'lw-animals-7',name:'Mascota en Casa',tags:'pet dog home animals canvas',type:'canvas',anim:'fireflies',bg:'linear-gradient(180deg,#1a1000,#2a1800)',thumb:'linear-gradient(135deg,#2a1800,#3a2800)'},
-			  {id:'lw-animals-8',name:'Cachorro Jugando',tags:'puppy playing animals dogs canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#1a2a1a,#2a4a2a)',thumb:'linear-gradient(135deg,#1a2a1a,#2a4a2a)'},
-			  {id:'lw-animals-9',name:'Golden Retriever',tags:'golden retriever animals dogs canvas',type:'canvas',anim:'leaves',bg:'linear-gradient(180deg,#2a1a00,#4a3000)',thumb:'linear-gradient(135deg,#3a2000,#5a3800)'},
-			  {id:'lw-animals-10',name:'Perro en la Playa',tags:'dog beach animals ocean canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004060,#002030)',thumb:'linear-gradient(135deg,#004060,#002030)'},
+			  {id:'lw-animals-1',page:'https://mylivewallpapers.com/animals/cute-golden-retriever-puppy-live-wallpaper/',name:'Cachorro Golden Retriever',tags:'golden retriever puppy animals dogs video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Cute-Golden-Retriever-Puppy.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-animals-2',page:'https://mylivewallpapers.com/animals/sleeping-dog-lofi-live-wallpaper/',name:'Perro Durmiendo Lofi',tags:'sleeping dog lofi animals video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Sleeping-Dog-Lofi.mp4',fallbackAnim:'fireflies'},
+			  {id:'lw-animals-3',page:'https://mylivewallpapers.com/animals/husky-snow-live-wallpaper/',name:'Husky en la Nieve',tags:'husky snow animals dogs winter video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Animals/Husky-Snow.mp4',fallbackAnim:'snow'},
+			  {id:'lw-animals-4',page:'https://moewalls.com/animals/koi-fish-pond-live-wallpaper/',name:'Estanque de Peces Koi',tags:'koi fish pond animals water video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Koi-Fish-Pond.mp4',fallbackAnim:'river'},
+			  {id:'lw-animals-5',page:'https://moewalls.com/animals/shiba-inu-cyberpunk-live-wallpaper/',name:'Shiba Inu Cyberpunk',tags:'shiba inu cyberpunk animals neon video',type:'video',url:'https://moewalls.com/wp-content/uploads/Animals/Shiba-Inu-Cyberpunk.mp4',fallbackAnim:'particles'},
+			  {id:'lw-animals-6',page:'https://pixabay.com/videos/search/dog%20running/',name:'Perro Corriendo',tags:'dog running animals canvas',type:'canvas',anim:'grass',bg:'linear-gradient(180deg,#87ceeb,#2d5a1b)',thumb:'linear-gradient(135deg,#5a9a30,#87ceeb)'},
+			  {id:'lw-animals-7',page:'https://pixabay.com/videos/search/pet%20dog%20home/',name:'Mascota en Casa',tags:'pet dog home animals canvas',type:'canvas',anim:'fireflies',bg:'linear-gradient(180deg,#1a1000,#2a1800)',thumb:'linear-gradient(135deg,#2a1800,#3a2800)'},
+			  {id:'lw-animals-8',page:'https://pixabay.com/videos/search/puppy%20playing/',name:'Cachorro Jugando',tags:'puppy playing animals dogs canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#1a2a1a,#2a4a2a)',thumb:'linear-gradient(135deg,#1a2a1a,#2a4a2a)'},
+			  {id:'lw-animals-9',page:'https://pixabay.com/videos/search/golden%20retriever%20video/',name:'Golden Retriever',tags:'golden retriever animals dogs canvas',type:'canvas',anim:'leaves',bg:'linear-gradient(180deg,#2a1a00,#4a3000)',thumb:'linear-gradient(135deg,#3a2000,#5a3800)'},
+			  {id:'lw-animals-10',page:'https://pixabay.com/videos/search/dog%20beach/',name:'Perro en la Playa',tags:'dog beach animals ocean canvas',type:'canvas',anim:'ocean',bg:'linear-gradient(180deg,#004060,#002030)',thumb:'linear-gradient(135deg,#004060,#002030)'},
 			  // --- Anime y Memes ---
-			  {id:'lw-anime-1',name:'Skibidi Toilet Dance',tags:'skibidi toilet dance memes funny video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Funny/Skibidi-Toilet-Dance.mp4',fallbackAnim:'particles'},
-			  {id:'lw-anime-2',name:'Demon Slayer Zenitsu',tags:'demon slayer zenitsu anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Demon-Slayer-Zenitsu.mp4',fallbackAnim:'aurora'},
-			  {id:'lw-anime-3',name:'Jujutsu Kaisen Gojo',tags:'jujutsu kaisen gojo anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Jujutsu-Kaisen-Gojo.mp4',fallbackAnim:'aurora'},
-			  {id:'lw-anime-4',name:'Ghibli Tren Fantasma',tags:'ghibli spirited away train anime video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Ghibli-Spirited-Away-Train.mp4',fallbackAnim:'rain'},
-			  {id:'lw-anime-5',name:'Lofi Girl Estudiando',tags:'lofi girl studying anime chill video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Lofi-Girl-Studying.mp4',fallbackAnim:'rain'},
-			  {id:'lw-anime-6',name:'Animación Subscribe',tags:'youtube subscribe animation memes canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#200000,#400000)',thumb:'linear-gradient(135deg,#300000,#500000)'},
-			  {id:'lw-anime-7',name:'Animación 3D Loop',tags:'3d animation loop abstract canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0020,#200040)',thumb:'linear-gradient(135deg,#0a0020,#200040)'},
-			  {id:'lw-anime-8',name:'Fondo Cartoon',tags:'cartoon background animated canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#87ceeb,#4a90d9)',thumb:'linear-gradient(135deg,#87ceeb,#4a90d9)'},
-			  {id:'lw-anime-9',name:'Fondo Meme',tags:'meme background video funny canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300050)',thumb:'linear-gradient(135deg,#1a0030,#300050)'},
-			  {id:'lw-anime-10',name:'Fondo VTuber',tags:'vtuber background anime stream canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
+			  {id:'lw-anime-1',page:'https://mylivewallpapers.com/funny/skibidi-toilet-dance-live-wallpaper/',name:'Skibidi Toilet Dance',tags:'skibidi toilet dance memes funny video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Funny/Skibidi-Toilet-Dance.mp4',fallbackAnim:'particles'},
+			  {id:'lw-anime-2',page:'https://mylivewallpapers.com/anime/demon-slayer-zenitsu-live-wallpaper/',name:'Demon Slayer Zenitsu',tags:'demon slayer zenitsu anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Demon-Slayer-Zenitsu.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-anime-3',page:'https://mylivewallpapers.com/anime/jujutsu-kaisen-gojo-live-wallpaper/',name:'Jujutsu Kaisen Gojo',tags:'jujutsu kaisen gojo anime video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Anime/Jujutsu-Kaisen-Gojo.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-anime-4',page:'https://moewalls.com/anime/ghibli-spirited-away-train-live-wallpaper/',name:'Ghibli Tren Fantasma',tags:'ghibli spirited away train anime video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Ghibli-Spirited-Away-Train.mp4',fallbackAnim:'rain'},
+			  {id:'lw-anime-5',page:'https://moewalls.com/anime/lofi-girl-studying-live-wallpaper/',name:'Lofi Girl Estudiando',tags:'lofi girl studying anime chill video',type:'video',url:'https://moewalls.com/wp-content/uploads/Anime/Lofi-Girl-Studying.mp4',fallbackAnim:'rain'},
+			  {id:'lw-anime-6',page:'https://pixabay.com/videos/search/youtube%20subscribe%20animation/',name:'Animación Subscribe',tags:'youtube subscribe animation memes canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#200000,#400000)',thumb:'linear-gradient(135deg,#300000,#500000)'},
+			  {id:'lw-anime-7',page:'https://pixabay.com/videos/search/3d%20animation%20loop/',name:'Animación 3D Loop',tags:'3d animation loop abstract canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0020,#200040)',thumb:'linear-gradient(135deg,#0a0020,#200040)'},
+			  {id:'lw-anime-8',page:'https://pixabay.com/videos/search/cartoon%20background/',name:'Fondo Cartoon',tags:'cartoon background animated canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#87ceeb,#4a90d9)',thumb:'linear-gradient(135deg,#87ceeb,#4a90d9)'},
+			  {id:'lw-anime-9',page:'https://pixabay.com/videos/search/meme%20background%20video/',name:'Fondo Meme',tags:'meme background video funny canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#1a0030,#300050)',thumb:'linear-gradient(135deg,#1a0030,#300050)'},
+			  {id:'lw-anime-10',page:'https://pixabay.com/videos/search/vtuber%20background/',name:'Fondo VTuber',tags:'vtuber background anime stream canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
 			  // --- Abstracto ---
-			  {id:'lw-abstract-1',name:'Colores Fluidos',tags:'fluid colors abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Fluid-Colors.mp4',fallbackAnim:'lava'},
-			  {id:'lw-abstract-2',name:'Partículas Materia Oscura',tags:'dark matter particles abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Dark-Matter-Particles.mp4',fallbackAnim:'particles'},
-			  {id:'lw-abstract-3',name:'Metal Líquido Loop',tags:'liquid metal loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Liquid-Metal-Loop.mp4',fallbackAnim:'lava'},
-			  {id:'lw-abstract-4',name:'Ondas Neón Grid',tags:'neon waves grid abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Neon-Waves-Grid.mp4',fallbackAnim:'particles'},
-			  {id:'lw-abstract-5',name:'Túnel Infinito Loop',tags:'infinite tunnel loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Infinite-Tunnel-Loop.mp4',fallbackAnim:'stars'},
-			  {id:'lw-abstract-6',name:'Luces Neón Loop',tags:'neon lights loop abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
-			  {id:'lw-abstract-7',name:'Fluido Abstracto 4K',tags:'abstract fluid 4k canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200005,#400010)'},
-			  {id:'lw-abstract-8',name:'Partículas de Fondo',tags:'particles background abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000020,#001040)',thumb:'linear-gradient(135deg,#000020,#001040)'},
-			  {id:'lw-abstract-9',name:'Formas Geométricas',tags:'geometric shapes loop abstract canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
-			  {id:'lw-abstract-10',name:'Animación Fractal',tags:'fractal animation abstract canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000208,#00071a)',thumb:'linear-gradient(135deg,#000208,#001520)'},
+			  {id:'lw-abstract-1',page:'https://mylivewallpapers.com/abstract/fluid-colors-live-wallpaper/',name:'Colores Fluidos',tags:'fluid colors abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Fluid-Colors.mp4',fallbackAnim:'lava'},
+			  {id:'lw-abstract-2',page:'https://mylivewallpapers.com/abstract/dark-matter-particles-live-wallpaper/',name:'Partículas Materia Oscura',tags:'dark matter particles abstract video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Abstract/Dark-Matter-Particles.mp4',fallbackAnim:'particles'},
+			  {id:'lw-abstract-3',page:'https://moewalls.com/abstract/liquid-metal-loop-live-wallpaper/',name:'Metal Líquido Loop',tags:'liquid metal loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Liquid-Metal-Loop.mp4',fallbackAnim:'lava'},
+			  {id:'lw-abstract-4',page:'https://moewalls.com/abstract/neon-waves-grid-live-wallpaper/',name:'Ondas Neón Grid',tags:'neon waves grid abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Neon-Waves-Grid.mp4',fallbackAnim:'particles'},
+			  {id:'lw-abstract-5',page:'https://moewalls.com/abstract/infinite-tunnel-loop-live-wallpaper/',name:'Túnel Infinito Loop',tags:'infinite tunnel loop abstract video',type:'video',url:'https://moewalls.com/wp-content/uploads/Abstract/Infinite-Tunnel-Loop.mp4',fallbackAnim:'stars'},
+			  {id:'lw-abstract-6',page:'https://pixabay.com/videos/search/neon%20lights%20loop/',name:'Luces Neón Loop',tags:'neon lights loop abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000018,#001030)',thumb:'linear-gradient(135deg,#000018,#001030)'},
+			  {id:'lw-abstract-7',page:'https://pixabay.com/videos/search/abstract%20fluid%204k/',name:'Fluido Abstracto 4K',tags:'abstract fluid 4k canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0d0003,#150005)',thumb:'linear-gradient(135deg,#200005,#400010)'},
+			  {id:'lw-abstract-8',page:'https://pixabay.com/videos/search/particles%20background/',name:'Partículas de Fondo',tags:'particles background abstract canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#000020,#001040)',thumb:'linear-gradient(135deg,#000020,#001040)'},
+			  {id:'lw-abstract-9',page:'https://pixabay.com/videos/search/geometric%20shapes%20loop/',name:'Formas Geométricas',tags:'geometric shapes loop abstract canvas',type:'canvas',anim:'butterflies',bg:'linear-gradient(180deg,#0a0020,#1a0040)',thumb:'linear-gradient(135deg,#0a0020,#1a0040)'},
+			  {id:'lw-abstract-10',page:'https://pixabay.com/videos/search/fractal%20animation/',name:'Animación Fractal',tags:'fractal animation abstract canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000208,#00071a)',thumb:'linear-gradient(135deg,#000208,#001520)'},
 			  // --- Coches ---
-			  {id:'lw-cars-1',name:'Nissan GTR R34 Neón',tags:'nissan gtr r34 neon cars jdm video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Nissan-Gtr-R34-Neon.mp4',fallbackAnim:'rain'},
-			  {id:'lw-cars-2',name:'Porsche 911 Lluvia',tags:'porsche 911 rain cars luxury video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Porsche-911-Rain.mp4',fallbackAnim:'rain'},
-			  {id:'lw-cars-3',name:'JDM Street Racing',tags:'jdm street racing cars night video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Jdm-Street-Racing.mp4',fallbackAnim:'rain'},
-			  {id:'lw-cars-4',name:'McLaren P1 Neón',tags:'mclaren p1 neon cars supercar video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Mclaren-P1-Neon.mp4',fallbackAnim:'particles'},
-			  {id:'lw-cars-5',name:'DeLorean Cyberpunk',tags:'cyberpunk delorean cars retro video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Cyberpunk-Delorean.mp4',fallbackAnim:'particles'},
-			  {id:'lw-cars-6',name:'Deportivo en Carretera',tags:'sports car driving cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#050510,#0a0a1a)',thumb:'linear-gradient(135deg,#050515,#101025)'},
-			  {id:'lw-cars-7',name:'Interior Auto Lujo',tags:'luxury car interior cars canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0500,#1a0a00)',thumb:'linear-gradient(135deg,#1a0a00,#2a1500)'},
-			  {id:'lw-cars-8',name:'Supercar Ciudad Noche',tags:'supercar night city cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#0a0510,#140a1a)',thumb:'linear-gradient(135deg,#0a0510,#140a1a)'},
-			  {id:'lw-cars-9',name:'Drift Humo',tags:'drift car smoke cars canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a1a1a,#333333)',thumb:'linear-gradient(135deg,#1a1a1a,#333333)'},
-			  {id:'lw-cars-10',name:'Motor Mecánica',tags:'engine mechanic cars canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a0a,#1a1a1a)',thumb:'linear-gradient(135deg,#0a0a0a,#1a1a1a)'},
+			  {id:'lw-cars-1',page:'https://mylivewallpapers.com/cars/nissan-gtr-r34-neon-live-wallpaper/',name:'Nissan GTR R34 Neón',tags:'nissan gtr r34 neon cars jdm video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Nissan-Gtr-R34-Neon.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-2',page:'https://mylivewallpapers.com/cars/porsche-911-rain-live-wallpaper/',name:'Porsche 911 Lluvia',tags:'porsche 911 rain cars luxury video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Cars/Porsche-911-Rain.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-3',page:'https://moewalls.com/cars/jdm-street-racing-live-wallpaper/',name:'JDM Street Racing',tags:'jdm street racing cars night video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Jdm-Street-Racing.mp4',fallbackAnim:'rain'},
+			  {id:'lw-cars-4',page:'https://moewalls.com/cars/mclaren-p1-neon-live-wallpaper/',name:'McLaren P1 Neón',tags:'mclaren p1 neon cars supercar video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Mclaren-P1-Neon.mp4',fallbackAnim:'particles'},
+			  {id:'lw-cars-5',page:'https://moewalls.com/cars/cyberpunk-delorean-live-wallpaper/',name:'DeLorean Cyberpunk',tags:'cyberpunk delorean cars retro video',type:'video',url:'https://moewalls.com/wp-content/uploads/Cars/Cyberpunk-Delorean.mp4',fallbackAnim:'particles'},
+			  {id:'lw-cars-6',page:'https://pixabay.com/videos/search/sports%20car%20driving/',name:'Deportivo en Carretera',tags:'sports car driving cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#050510,#0a0a1a)',thumb:'linear-gradient(135deg,#050515,#101025)'},
+			  {id:'lw-cars-7',page:'https://pixabay.com/videos/search/luxury%20car%20interior/',name:'Interior Auto Lujo',tags:'luxury car interior cars canvas',type:'canvas',anim:'lava',bg:'linear-gradient(180deg,#0a0500,#1a0a00)',thumb:'linear-gradient(135deg,#1a0a00,#2a1500)'},
+			  {id:'lw-cars-8',page:'https://pixabay.com/videos/search/supercar%20night%20city/',name:'Supercar Ciudad Noche',tags:'supercar night city cars canvas',type:'canvas',anim:'rain',bg:'linear-gradient(180deg,#0a0510,#140a1a)',thumb:'linear-gradient(135deg,#0a0510,#140a1a)'},
+			  {id:'lw-cars-9',page:'https://pixabay.com/videos/search/drift%20car%20smoke/',name:'Drift Humo',tags:'drift car smoke cars canvas',type:'canvas',anim:'clouds',bg:'linear-gradient(180deg,#1a1a1a,#333333)',thumb:'linear-gradient(135deg,#1a1a1a,#333333)'},
+			  {id:'lw-cars-10',page:'https://pixabay.com/videos/search/engine%20mechanic/',name:'Motor Mecánica',tags:'engine mechanic cars canvas',type:'canvas',anim:'particles',bg:'linear-gradient(180deg,#0a0a0a,#1a1a1a)',thumb:'linear-gradient(135deg,#0a0a0a,#1a1a1a)'},
 			  // --- Espacio ---
-			  {id:'lw-space-1',name:'Agujero Negro Gargantúa',tags:'black hole gargantua space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Black-Hole-Gargantua.mp4',fallbackAnim:'stars'},
-			  {id:'lw-space-2',name:'Vía Láctea Timelapse',tags:'milky way timelapse space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Milky-Way-Timelapse.mp4',fallbackAnim:'stars'},
-			  {id:'lw-space-3',name:'Nubes de Nebulosa Loop',tags:'nebula clouds loop space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Nebula-Clouds-Loop.mp4',fallbackAnim:'aurora'},
-			  {id:'lw-space-4',name:'Estación Orbital Cyber',tags:'cyber station orbit space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Cyber-Station-Orbit.mp4',fallbackAnim:'stars'},
-			  {id:'lw-space-5',name:'Vista Superficie Lunar',tags:'moon surface view space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Moon-Surface-View.mp4',fallbackAnim:'stars'},
-			  {id:'lw-space-6',name:'Galaxia Estrellas Loop',tags:'galaxy stars loop space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000005,#000820)',thumb:'linear-gradient(135deg,#000010,#001040)'},
-			  {id:'lw-space-7',name:'Astronauta Espacio',tags:'astronaut space cosmos canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#000510)',thumb:'linear-gradient(135deg,#000000,#000510)'},
-			  {id:'lw-space-8',name:'Planeta Tierra Órbita',tags:'planet earth orbit space canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000005,#001020)',thumb:'linear-gradient(135deg,#000005,#001020)'},
-			  {id:'lw-space-9',name:'Nave Sci-Fi',tags:'sci-fi spaceship space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000008,#000420)',thumb:'linear-gradient(135deg,#000008,#000420)'},
-			  {id:'lw-space-10',name:'Animación Agujero Negro',tags:'black hole animation space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#0a0005)',thumb:'linear-gradient(135deg,#000000,#100010)'}
+			  {id:'lw-space-1',page:'https://mylivewallpapers.com/space/black-hole-gargantua-live-wallpaper/',name:'Agujero Negro Gargantúa',tags:'black hole gargantua space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Black-Hole-Gargantua.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-2',page:'https://mylivewallpapers.com/space/milky-way-timelapse-live-wallpaper/',name:'Vía Láctea Timelapse',tags:'milky way timelapse space video',type:'video',url:'https://mylivewallpapers.com/wp-content/uploads/Space/Milky-Way-Timelapse.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-3',page:'https://moewalls.com/space/nebula-clouds-loop-live-wallpaper/',name:'Nubes de Nebulosa Loop',tags:'nebula clouds loop space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Nebula-Clouds-Loop.mp4',fallbackAnim:'aurora'},
+			  {id:'lw-space-4',page:'https://moewalls.com/space/cyber-station-orbit-live-wallpaper/',name:'Estación Orbital Cyber',tags:'cyber station orbit space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Cyber-Station-Orbit.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-5',page:'https://moewalls.com/space/moon-surface-view-live-wallpaper/',name:'Vista Superficie Lunar',tags:'moon surface view space video',type:'video',url:'https://moewalls.com/wp-content/uploads/Space/Moon-Surface-View.mp4',fallbackAnim:'stars'},
+			  {id:'lw-space-6',page:'https://pixabay.com/videos/search/galaxy%20stars%20loop/',name:'Galaxia Estrellas Loop',tags:'galaxy stars loop space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000005,#000820)',thumb:'linear-gradient(135deg,#000010,#001040)'},
+			  {id:'lw-space-7',page:'https://pixabay.com/videos/search/astronaut%20space/',name:'Astronauta Espacio',tags:'astronaut space cosmos canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#000510)',thumb:'linear-gradient(135deg,#000000,#000510)'},
+			  {id:'lw-space-8',page:'https://pixabay.com/videos/search/planet%20earth%20orbit/',name:'Planeta Tierra Órbita',tags:'planet earth orbit space canvas',type:'canvas',anim:'aurora',bg:'linear-gradient(180deg,#000005,#001020)',thumb:'linear-gradient(135deg,#000005,#001020)'},
+			  {id:'lw-space-9',page:'https://pixabay.com/videos/search/sci-fi%20spaceship/',name:'Nave Sci-Fi',tags:'sci-fi spaceship space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000008,#000420)',thumb:'linear-gradient(135deg,#000008,#000420)'},
+			  {id:'lw-space-10',page:'https://pixabay.com/videos/search/black%20hole%20animation/',name:'Animación Agujero Negro',tags:'black hole animation space canvas',type:'canvas',anim:'stars',bg:'linear-gradient(180deg,#000000,#0a0005)',thumb:'linear-gradient(135deg,#000000,#100010)'}
 			];
 
 
@@ -5171,6 +5189,101 @@
 
 			/* ===================== WALLPAPER ENGINE ===================== */
 			let activeLayer = 'a';
+			// ===== Resolución de video real de wallpapers =====
+			// Los links del usuario son PÁGINAS (mylivewallpapers/moewalls/pixabay). En el sitio
+			// desplegado usamos el proxy de Netlify para leer la página y extraer el MP4 real.
+			const _WP_PROXY = '/.netlify/functions/proxy?url=';
+			async function _resolveWpVideo(wp){
+			  if(!wp.page) return null;
+			  const cacheKey = 'wpv_' + wp.id;
+			  try{ const c = localStorage.getItem(cacheKey); if(c) return c; }catch(e){}
+			  if(location.protocol === 'file:') return null;
+			  try{
+			    const r = await fetch(_WP_PROXY + encodeURIComponent(wp.page));
+			    if(!r.ok) return null;
+			    const doc = await r.text();
+			    let m = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i)
+			         || doc.match(/content=["']([^"']+\.mp4[^"']*)["'][^>]*property=["']og:video/i)
+			         || doc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/i)
+			         || doc.match(/https?:\/\/cdn\.pixabay\.com\/video\/[^"'\s\\]+\.mp4[^"'\s\\]*/i)
+			         || doc.match(/["'](https?:\/\/[^"'\s]+\.mp4[^"'\s]*)["']/i);
+			    let u = m ? (m[1] || m[0]) : null;
+			    if(!u) return null;
+			    u = u.replace(/&amp;/g,'&').replace(/\\\//g,'/');
+			    if(u.indexOf('http') !== 0){ try{ u = new URL(u, wp.page).href; }catch(e){ return null; } }
+			    try{ localStorage.setItem(cacheKey, u); }catch(e){}
+			    return u;
+			  }catch(e){ return null; }
+			}
+			function _wpShowCanvasFallback(fillEl, wp){
+			  if(fillEl.querySelector('canvas')) return;
+			  const anim = wp.fallbackAnim || wp.anim;
+			  if(!(anim && typeof _canvasAnimators !== 'undefined' && _canvasAnimators[anim])) return;
+			  if(wp.bg) fillEl.style.backgroundImage = wp.bg;
+			  const cvs = document.createElement('canvas');
+			  cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+			  cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+			  fillEl.appendChild(cvs);
+			  fillEl._canvasHandle = _canvasAnimators[anim](cvs);
+			}
+			// Escalera de intentos: URL directa → MP4 real extraído de la página → mismo MP4 vía proxy → canvas
+			function _wpAttachVideo(fillEl, wp, directUrl){
+			  const vid = document.createElement('video');
+			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
+			  vid.setAttribute('webkit-playsinline','true');
+			  vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+			  let stage = directUrl ? 0 : 1; // sin URL directa, empieza resolviendo la página
+			  let resolvedUrl = null;
+			  const fail = async function(){
+			    if(stage === 0){
+			      stage = 1;
+			      resolvedUrl = await _resolveWpVideo(wp);
+			      if(resolvedUrl && resolvedUrl !== vid.src){ vid.src = resolvedUrl; vid.play().catch(()=>{}); return; }
+			    }
+			    if(stage === 1){
+			      stage = 2;
+			      const target = resolvedUrl || directUrl;
+			      if(target && location.protocol !== 'file:'){
+			        vid.src = _WP_PROXY + encodeURIComponent(target);
+			        vid.play().catch(()=>{});
+			        return;
+			      }
+			    }
+			    try{ localStorage.removeItem('wpv_' + wp.id); }catch(e){}
+			    vid.remove();
+			    _wpShowCanvasFallback(fillEl, wp);
+			  };
+			  vid.onerror = fail;
+			  fillEl.appendChild(vid);
+			  if(stage === 0){
+			    vid.src = directUrl;
+			    vid.play().catch(()=>{});
+			  } else {
+			    _resolveWpVideo(wp).then(u=>{
+			      if(u){ stage = 1; resolvedUrl = u; vid.src = u; vid.play().catch(()=>{}); }
+			      else { vid.remove(); _wpShowCanvasFallback(fillEl, wp); }
+			    });
+			  }
+			}
+			// Mejora un fondo canvas a video real (pixabay) cuando la página lo permite
+			function _wpUpgradeCanvasToVideo(fillEl, wp){
+			  _resolveWpVideo(wp).then(u=>{
+			    if(!u || !fillEl.isConnected) return;
+			    const vid = document.createElement('video');
+			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
+			    vid.setAttribute('webkit-playsinline','true');
+			    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
+			    let proxied = false;
+			    vid.onerror = function(){
+			      if(!proxied){ proxied = true; vid.src = _WP_PROXY + encodeURIComponent(u); vid.play().catch(()=>{}); return; }
+			      try{ localStorage.removeItem('wpv_' + wp.id); }catch(e){}
+			      vid.remove(); // el canvas sigue animando debajo
+			    };
+			    vid.src = u;
+			    fillEl.appendChild(vid);
+			    vid.play().catch(()=>{});
+			  });
+			}
 			function applyWallpaperToFill(fillEl, wp){
 			  // Stop any running canvas animation before reusing the fill element
 			  if(fillEl._canvasHandle){ try{fillEl._canvasHandle.stop();}catch(e){} fillEl._canvasHandle=null; }
@@ -5191,25 +5304,7 @@
 			      +'&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&enablejsapi=1';
 			    fillEl.appendChild(ifr);
 			  } else if(wp.type === 'video'){
-			    const vid = document.createElement('video');
-			    vid.src = wp.url;
-			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
-			    vid.setAttribute('webkit-playsinline','true');
-			    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-			    vid.onerror = function(){
-			      const anim = wp.fallbackAnim;
-			      if(anim && typeof _canvasAnimators !== 'undefined' && _canvasAnimators[anim]){
-			        vid.remove();
-			        const cvs = document.createElement('canvas');
-			        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
-			        fillEl.appendChild(cvs);
-			        const h = _canvasAnimators[anim](cvs);
-			        fillEl._canvasHandle = h;
-			      }
-			    };
-			    fillEl.appendChild(vid);
-			    vid.play().catch(()=>{});
+			    _wpAttachVideo(fillEl, wp, wp.url || null);
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
 			    fillEl.style.backgroundImage = `url('${wp.url}')`;
 			    fillEl.style.backgroundSize = 'cover';
@@ -5223,6 +5318,8 @@
 			    fillEl.appendChild(cvs);
 			    const animator = typeof _canvasAnimators !== 'undefined' && _canvasAnimators[wp.anim];
 			    if(animator){ const h = animator(cvs); fillEl._canvasHandle = h; }
+			    // Si esta entrada tiene página de origen (pixabay, etc.), intenta subir a video real
+			    if(wp.page && location.protocol !== 'file:'){ _wpUpgradeCanvasToVideo(fillEl, wp); }
 			  } else {
 			    fillEl.style.backgroundImage = `linear-gradient(${wp.angle||135}deg, ${(wp.colors||['#000','#111']).join(',')})`;
 			    fillEl.classList.add('fill-anim');
@@ -5806,12 +5903,19 @@
 			      fill.style.backgroundPosition = 'center';
 			    } else if(wp.type === 'video'){
 			      fill.className = 'wp-fill';
-			      const v = document.createElement('video');
-			      v.src = wp.url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
-			      v.setAttribute('webkit-playsinline','true');
-			      v.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-			      fill.appendChild(v);
-			      v.play().catch(()=>{});
+			      fill.style.backgroundImage = wp.thumb || wp.bg || 'linear-gradient(135deg,#1a1a2e,#16213e)';
+			      fill.style.backgroundSize = 'cover';
+			      let vSrc = wp.url;
+			      try{ const c = localStorage.getItem('wpv_' + wp.id); if(c) vSrc = c; }catch(e){}
+			      if(vSrc){
+			        const v = document.createElement('video');
+			        v.src = vSrc; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+			        v.setAttribute('webkit-playsinline','true');
+			        v.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+			        v.onerror = ()=>{ v.remove(); };
+			        fill.appendChild(v);
+			        v.play().catch(()=>{});
+			      }
 			    } else if(wp.type === 'canvas'){
 			      fill.className = 'wp-fill';
 			      fill.style.backgroundImage = wp.thumb || wp.bg || 'linear-gradient(135deg,#000,#111)';
@@ -14763,22 +14867,29 @@
 			  const min=Math.floor(lapTime/60000),sec=Math.floor((lapTime%60000)/1000),cs=Math.floor((lapTime%1000)/10);
 			  lapsEl.innerHTML = '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;"><span>Vuelta '+_icaSwLaps.length+'</span><span>'+String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')+'.'+String(cs).padStart(2,'0')+'</span></div>' + lapsEl.innerHTML;
 			}
-			// Swipe between digital/analog
+			// Swipe entre digital/analógico (táctil y ratón) + puntos clicables
+			function icaSwSetPage(n){
+			  _icaSwPage = n;
+			  document.getElementById('ica-sw-digital').style.display = n===0?'block':'none';
+			  document.getElementById('ica-sw-analog').style.display = n===1?'block':'none';
+			  document.getElementById('ica-sw-dot0').classList.toggle('active',n===0);
+			  document.getElementById('ica-sw-dot1').classList.toggle('active',n===1);
+			}
 			(function(){
 			  const pages = document.getElementById('ica-sw-pages');
 			  if(!pages) return;
-			  let startX=0;
+			  let startX=0, mouseDown=false;
 			  pages.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;},{passive:true});
 			  pages.addEventListener('touchend',e=>{
 			    const dx = e.changedTouches[0].clientX - startX;
-			    if(Math.abs(dx)>50){
-			      _icaSwPage = dx<0 ? 1 : 0;
-			      document.getElementById('ica-sw-digital').style.display = _icaSwPage===0?'block':'none';
-			      document.getElementById('ica-sw-analog').style.display = _icaSwPage===1?'block':'none';
-			      document.getElementById('ica-sw-dot0').classList.toggle('active',_icaSwPage===0);
-			      document.getElementById('ica-sw-dot1').classList.toggle('active',_icaSwPage===1);
-			    }
+			    if(Math.abs(dx)>50) icaSwSetPage(dx<0 ? 1 : 0);
 			  },{passive:true});
+			  pages.addEventListener('mousedown',e=>{mouseDown=true;startX=e.clientX;});
+			  pages.addEventListener('mouseup',e=>{
+			    if(!mouseDown) return; mouseDown=false;
+			    const dx = e.clientX - startX;
+			    if(Math.abs(dx)>50) icaSwSetPage(dx<0 ? 1 : 0);
+			  });
 			})();
 			// Build analog face
 			(function(){
@@ -14803,6 +14914,16 @@
 
 			// --- Timer ---
 			let _icaTimerInterval=null, _icaTimerRemaining=0;
+			// Efecto de ruleta 3D: los números se curvan como en el picker de iOS
+			function _icaPickerApply3D(scroll, val){
+			  scroll.querySelectorAll('.item[data-v]').forEach(it=>{
+			    const d = parseInt(it.dataset.v) - val;
+			    const a = Math.max(-80, Math.min(80, d*22));
+			    it.style.transform = 'rotateX('+(-a)+'deg) translateZ(8px)' + (d===0?' scale(1.1)':'');
+			    it.style.opacity = Math.abs(d)>3 ? '0' : String(1 - Math.abs(d)*0.26);
+			    it.classList.toggle('selected', d===0);
+			  });
+			}
 			function icaInitPickers(){
 			  ['ica-pick-h','ica-pick-m','ica-pick-s'].forEach(id=>{
 			    const col = document.getElementById(id);
@@ -14823,31 +14944,25 @@
 			    for(let p=0;p<2;p++){const d=document.createElement('div');d.className='item';d.textContent='';scroll.appendChild(d);}
 			    col.appendChild(scroll);
 			    scroll.style.transform = 'translateY(-'+(val*40)+'px)';
+			    _icaPickerApply3D(scroll, val);
+			    const applyVal = (newVal)=>{
+			      newVal = Math.max(0,Math.min(max,newVal));
+			      currentVal = newVal;
+			      col.dataset.val = newVal;
+			      scroll.style.transform = 'translateY(-'+(newVal*40)+'px)';
+			      _icaPickerApply3D(scroll, newVal);
+			    };
 			    // Touch scroll
 			    let startY=0, startT=0, currentVal=val;
 			    col.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;startT=currentVal;},{passive:true});
 			    col.addEventListener('touchmove',e=>{
 			      const dy = startY - e.touches[0].clientY;
-			      let newVal = Math.round(startT + dy/40);
-			      newVal = Math.max(0,Math.min(max,newVal));
-			      currentVal = newVal;
-			      col.dataset.val = newVal;
-			      scroll.style.transform = 'translateY(-'+(newVal*40)+'px)';
-			      scroll.querySelectorAll('.item[data-v]').forEach(it=>{
-			        it.classList.toggle('selected', parseInt(it.dataset.v)===newVal);
-			      });
+			      applyVal(Math.round(startT + dy/40));
 			    },{passive:true});
 			    // Mouse wheel
 			    col.addEventListener('wheel',e=>{
 			      e.preventDefault();
-			      let newVal = currentVal + (e.deltaY>0?1:-1);
-			      newVal = Math.max(0,Math.min(max,newVal));
-			      currentVal = newVal;
-			      col.dataset.val = newVal;
-			      scroll.style.transform = 'translateY(-'+(newVal*40)+'px)';
-			      scroll.querySelectorAll('.item[data-v]').forEach(it=>{
-			        it.classList.toggle('selected', parseInt(it.dataset.v)===newVal);
-			      });
+			      applyVal(currentVal + (e.deltaY>0?1:-1));
 			    });
 			  });
 			}
