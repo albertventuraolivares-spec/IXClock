@@ -1280,10 +1280,12 @@
 			<svg width="40" height="40" viewBox="0 0 40 40">
 				<rect width="40" height="40" rx="9" fill="url(#benchGrad)"/>
 				<defs><linearGradient id="benchGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff3b30"/><stop offset="100%" stop-color="#ff6b35"/></linearGradient></defs>
-				<circle cx="20" cy="22" r="10" fill="none" stroke="#fff" stroke-width="2"/>
-				<path d="M20 22 L20 14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-				<path d="M20 22 L26 18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-				<text x="20" y="35" text-anchor="middle" fill="#fff" font-size="6" font-weight="700">BENCH</text>
+				<path d="M11 24a9 9 0 1 1 18 0" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+				<circle cx="20" cy="24" r="2.6" fill="#fff"/>
+				<path d="M20 24 L25.5 17.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+				<circle cx="11" cy="24" r="1.6" fill="#fff"/>
+				<circle cx="29" cy="24" r="1.6" fill="#fff"/>
+				<circle cx="20" cy="14" r="1.6" fill="#fff"/>
 			</svg>
 		</button>
 		<!-- Juegos -->
@@ -7068,6 +7070,17 @@
 			  const d=g.getExtension('WEBGL_debug_renderer_info');
 			  return{renderer:d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'WebGL',vendor:d?g.getParameter(d.UNMASKED_VENDOR_WEBGL):''};}catch(e){return{renderer:'N/A',vendor:'N/A'};}
 			}
+			// Desde iPadOS 13, Safari envía por defecto un User-Agent de escritorio
+			// que dice "Macintosh" (no "iPad"), para que las webs muestren la
+			// versión de escritorio. Un Mac real no tiene pantalla táctil
+			// (maxTouchPoints===0); un iPad con ese UA de "Mac" sí la tiene
+			// (normalmente 5). Así se distingue un iPad real de un Mac real
+			// aunque el navegador diga "Macintosh" en ambos casos.
+			function _benchIsIPad(ua){
+			  if(/iPad/.test(ua)) return true;
+			  if(/Macintosh/.test(ua) && navigator.maxTouchPoints>1) return true;
+			  return false;
+			}
 			function _benchIdentifyDevice(){
 			  const ua=navigator.userAgent;
 			  const cores=navigator.hardwareConcurrency||0;
@@ -7077,7 +7090,7 @@
 			  const gpu=_benchGetGPU();
 			  const gpuR=gpu.renderer.toLowerCase();
 			  let model='',chip='',arch='',fab='',gpuName='',npu='';
-			  if(/iPad/.test(ua)){
+			  if(_benchIsIPad(ua)){
 			    model='iPad';
 			    // Identify iPad model by screen resolution + cores + GPU hints
 			    if(pw>=2732||ph>=2732){
