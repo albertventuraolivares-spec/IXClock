@@ -6539,19 +6539,23 @@
 			  };
 			}
 			const streamPlayer = document.getElementById('stream-audio-player');
-			/* ── iPod: volume boost (Web Audio GainNode) + drag ──
-			   En Safari/WebKit, conectar un stream en vivo cross-origin a un
-			   GainNode a veces deja de responder a cambios de gain.value aunque
-			   el audio siga sonando (el control "se mueve pero no cambia nada").
-			   Para el rango normal (0-100%) se usa el volumen nativo del <audio>,
-			   que sí es 100% confiable. El GainNode solo se activa para el boost
-			   por encima de 100% (ahí no hay otra forma de superar el volumen
-			   nativo). Una vez activado, Web Audio desconecta la salida nativa
-			   del elemento para siempre, así que de ahí en más todo pasa por el
-			   GainNode, incluso si se vuelve a bajar de 100%. */
-			let _ipodVolPct=70, _ipodGainNode=null, _ipodMediaSrc=null, _ipodUsingGain=false;
+			/* ── iPod: control de volumen (Web Audio GainNode) + drag ──
+			   En iOS/iPadOS, Safari IGNORA por completo streamPlayer.volume (Apple
+			   reserva el volumen por software a los botones físicos) — el GainNode
+			   de Web Audio es la ÚNICA forma confiable de controlarlo ahí.
+			   createMediaElementSource() solo se puede llamar UNA VEZ por elemento
+			   <audio> en toda su vida: si la primera llamada falla (p.ej. algún
+			   navegador la rechaza para audio cross-origin sin cabeceras CORS), el
+			   elemento queda "tocado" para siempre y cualquier reintento vuelve a
+			   fallar exactamente igual. _ipodGainFailed evita esos reintentos
+			   condenados (spamear la consola de errores sin lograr nada) y, pase lo
+			   que pase con el GainNode, el volumen nativo se mantiene sincronizado
+			   igual como último recurso — no cuesta nada tenerlo puesto por si el
+			   dispositivo/navegador sí lo respeta. */
+			let _ipodVolPct=70, _ipodGainNode=null, _ipodMediaSrc=null, _ipodUsingGain=false, _ipodGainFailed=false;
 			function _ipodSetupGain(){
-			  const actx=getAudioCtx(); if(!actx||_ipodGainNode) return _ipodGainNode;
+			  const actx=getAudioCtx();
+			  if(!actx || _ipodGainNode || _ipodGainFailed) return _ipodGainNode;
 			  try{
 			    if(actx.state==='suspended') actx.resume();
 			    _ipodGainNode=actx.createGain();
@@ -6560,24 +6564,24 @@
 			    _ipodMediaSrc=actx.createMediaElementSource(streamPlayer);
 			    _ipodMediaSrc.connect(_ipodGainNode);
 			    _ipodUsingGain=true;
-			  }catch(e){ _ipodGainNode=null; _ipodMediaSrc=null; _ipodUsingGain=false; }
+			  }catch(e){
+			    console.warn('IXClocK: no se pudo activar el control de volumen del iPod (Web Audio); queda solo el volumen nativo como respaldo.', e && e.message);
+			    _ipodGainNode=null; _ipodMediaSrc=null; _ipodUsingGain=false; _ipodGainFailed=true;
+			  }
 			  return _ipodGainNode;
 			}
 			function setIpodVolume(val){
 			  val=parseInt(val)||0; _ipodVolPct=val;
 			  const lbl=document.getElementById('ipod-vol-pct');
 			  if(lbl) lbl.textContent=val+'%';
-			  // En iOS/iPad, streamPlayer.volume se IGNORA por completo (Apple solo
-			  // permite volumen por botones físicos). La ÚNICA forma de controlar el
-			  // volumen por software es el GainNode de Web Audio → siempre lo usamos.
 			  const gn=_ipodSetupGain();
+			  // Siempre se sincroniza el volumen nativo también (aunque el GainNode
+			  // esté activo): en teoría queda "silenciado" por Web Audio, pero es
+			  // gratis tenerlo correcto por si el navegador no lo ignora del todo.
+			  try{ streamPlayer.volume=Math.min(val/100,1.0); }catch(e){}
 			  if(gn){
 			    const actx=getAudioCtx(); if(actx && actx.state==='suspended') actx.resume();
 			    gn.gain.value=val/100;
-			    try{ streamPlayer.volume=1.0; }catch(e){}
-			  }else{
-			    // Sin Web Audio (muy raro): intento el nativo por si acaso.
-			    try{ streamPlayer.volume=Math.min(val/100,1.0); }catch(e){}
 			  }
 			}
 			function _ipodSetupDrag(){
@@ -6617,7 +6621,7 @@
 			    streamPlayer.loop = false; // all radio stations are live streams, no loop
 			    streamPlayer.src = st.url;
 			    _ipodSetupGain();
-			    streamPlayer.volume = _ipodUsingGain ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
+			    streamPlayer.volume = Math.min(_ipodVolPct/100, 1.0);
 			    streamPlayer.load();
 			    if(btn) btn.classList.add('station-loading');
 			    setupStreamFallback(streamPlayer, st);
@@ -6807,7 +6811,7 @@
 			  streamPlayer.loop = true;
 			  streamPlayer.src = _localAudioObjectUrl;
 			  _ipodSetupGain();
-			  streamPlayer.volume = _ipodUsingGain ? 1.0 : Math.min(_ipodVolPct/100, 1.0);
+			  streamPlayer.volume = Math.min(_ipodVolPct/100, 1.0);
 			  streamPlayer.load();
 			  streamPlayer.play().then(()=>{
 			    isPlaying = true;
