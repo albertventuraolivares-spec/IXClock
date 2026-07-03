@@ -561,6 +561,65 @@
 			.ica-timer-recent{margin-top:20px;}
 			.ica-timer-recent h3{font-size:13px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
 
+			/* ===== DEVICE TRACKER (MacTracker-style) ===== */
+			#device-tracker-app{
+			  position:fixed;inset:0;z-index:9500;
+			  background:#000;color:#fff;
+			  display:flex;flex-direction:column;
+			  opacity:0;pointer-events:none;transform:translateY(100%);
+			  transition:opacity .3s ease,transform .3s ease;
+			  font-family:var(--sf-pro);
+			}
+			#device-tracker-app.open{opacity:1;pointer-events:auto;transform:translateY(0);}
+			.dt-sidebar{
+			  width:100%;padding:10px 16px;overflow-x:auto;
+			  display:flex;gap:8px;flex-shrink:0;
+			  border-bottom:1px solid rgba(255,255,255,.08);
+			}
+			.dt-cat-btn{
+			  padding:8px 14px;border-radius:20px;white-space:nowrap;
+			  font-size:12px;font-weight:600;cursor:pointer;
+			  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+			  color:rgba(255,255,255,.7);transition:all .2s;flex-shrink:0;
+			}
+			.dt-cat-btn.active{background:rgba(10,132,255,.2);border-color:rgba(10,132,255,.5);color:#0a84ff;}
+			.dt-search{
+			  margin:12px 16px 8px;padding:10px 14px;border-radius:12px;
+			  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+			  color:#fff;font-size:14px;outline:none;width:calc(100% - 32px);
+			}
+			.dt-list{flex:1;overflow-y:auto;padding:0 16px 90px;}
+			.dt-item{
+			  display:flex;align-items:center;gap:12px;
+			  padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;
+			}
+			.dt-item:hover{background:rgba(255,255,255,.03);}
+			.dt-item-icon{font-size:28px;width:44px;text-align:center;}
+			.dt-item-info{flex:1;}
+			.dt-item-name{font-size:15px;font-weight:500;}
+			.dt-item-sub{font-size:12px;opacity:.4;margin-top:2px;}
+			.dt-item-year{font-size:12px;opacity:.3;}
+			.dt-detail{
+			  position:absolute;inset:0;background:#000;z-index:2;
+			  display:none;flex-direction:column;overflow-y:auto;padding:0 16px 40px;
+			}
+			.dt-detail.open{display:flex;}
+			.dt-detail-header{
+			  display:flex;align-items:center;gap:10px;padding:60px 0 20px;
+			  position:sticky;top:0;background:#000;z-index:1;
+			}
+			.dt-detail-back{
+			  background:none;border:none;color:#0a84ff;font-size:14px;cursor:pointer;
+			}
+			.dt-spec-group{margin-bottom:16px;}
+			.dt-spec-group h3{font-size:11px;opacity:.4;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:8px;}
+			.dt-spec-row{
+			  display:flex;justify-content:space-between;padding:8px 0;
+			  border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;
+			}
+			.dt-spec-row span:first-child{opacity:.6;}
+
+
 			.alarm-del:hover{opacity:1;}
 			.alarm-add-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);}
 			#alarm-ringing-overlay{
@@ -3658,6 +3717,10 @@
 					<button class="ica-sleep-block .ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
 				</div>
 				<div id="ica-alarms-list" style="display:flex;flex-direction:column;"></div>
+				<div style="margin-top:20px;">
+					<div style="font-size:13px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Historial</div>
+					<div id="ica-alarm-history" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div>
+				</div>
 			</div>
 			<!-- === VIEW: Cronómetro === -->
 			<div class="ica-view" id="ica-view-stopwatch">
@@ -3736,6 +3799,25 @@
 			</div>
 		</div>
 
+
+
+		<!-- ================= DEVICE TRACKER (MacTracker-style) ================= -->
+		<div id="device-tracker-app">
+			<button class="ica-close-btn" onclick="toggleDeviceTracker()" style="z-index:10;">✕</button>
+			<div style="padding:60px 16px 10px;">
+				<h1 style="font-size:30px;font-weight:700;margin:0;">Dispositivos</h1>
+				<p style="font-size:12px;opacity:.4;margin-top:4px;">Todos los dispositivos Apple, Windows, Android y Linux</p>
+			</div>
+			<div class="dt-sidebar" id="dt-categories"></div>
+			<input class="dt-search" placeholder="Buscar dispositivo..." oninput="dtSearch(this.value)" id="dt-search-input" />
+			<div class="dt-list" id="dt-list"></div>
+			<div class="dt-detail" id="dt-detail">
+				<div class="dt-detail-header">
+					<button class="dt-detail-back" onclick="dtCloseDetail()">← Atrás</button>
+				</div>
+				<div id="dt-detail-content"></div>
+			</div>
+		</div>
 
 <!-- ================= CALCULADORA iPhone-style ================= -->
 		<button id="calc-btn" onclick="toggleCalcPanel()" title="Calculadora">
@@ -3986,29 +4068,61 @@
 				id="calc-math"
 				style="display:none;padding:10px 14px 14px;flex-direction:column;gap:8px;flex:1;min-height:0;"
 			>
-				<textarea
-					id="math-input"
-					placeholder="Escribe una ecuación: y = x^2 + 3&#10;2x + y = 8&#10;x^2 + y^2 = 25"
-					style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-size:12px;font-family:'JetBrains Mono',monospace;padding:10px;outline:none;resize:none;min-height:80px;"
-					oninput="evalMathNote()"
-				></textarea>
-				<div
-					id="math-result"
-					style="font-size:12px;font-family:'JetBrains Mono',monospace;opacity:.8;min-height:24px;color:#30d158;"
-				></div>
-				<canvas
-					id="math-canvas"
-					width="310"
-					height="180"
-					style="background:rgba(0,0,0,.25);border-radius:14px;width:100%;display:none;"
-				></canvas>
+				<!-- Start menu -->
+				<div id="math-start" style="display:flex;flex-direction:column;gap:10px;">
+					<div style="text-align:center;padding:10px 0 6px;">
+						<div style="font-size:28px;margin-bottom:4px;">📝</div>
+						<div style="font-size:15px;font-weight:700;">Notas Matemáticas</div>
+						<div style="font-size:11px;opacity:.5;margin-top:4px;">Escribe ecuaciones, grafica funciones y resuelve problemas</div>
+					</div>
+					<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+						<button onclick="mathStartNew()" style="padding:12px;border-radius:12px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.3);color:#0a84ff;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva nota</button>
+						<button onclick="mathShowHistory()" style="padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Historial</button>
+					</div>
+					<div style="font-size:10px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Ejemplos</div>
+					<div style="display:flex;flex-direction:column;gap:4px;" id="math-examples">
+						<div onclick="mathLoadExample('y = x^2 - 4')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">y = x^2 - 4</div>
+						<div onclick="mathLoadExample('y = sin(x) * 2')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">y = sin(x) * 2</div>
+						<div onclick="mathLoadExample('a = 5\nb = 3\nc = a^2 + b^2')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">a = 5, b = 3, c = a^2 + b^2</div>
+					</div>
+					<div style="font-size:10px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Notas guardadas</div>
+					<div id="math-saved-list" style="display:flex;flex-direction:column;gap:4px;max-height:100px;overflow-y:auto;"></div>
+				</div>
+				<!-- Workspace (hidden initially) -->
+				<div id="math-workspace" style="display:none;flex-direction:column;gap:8px;flex:1;">
+					<div style="display:flex;align-items:center;gap:6px;">
+						<button onclick="mathBackToMenu()" style="background:none;border:none;color:#0a84ff;font-size:12px;cursor:pointer;">← Menú</button>
+						<div style="flex:1;"></div>
+						<button onclick="mathSaveNote()" style="background:none;border:none;color:#30d158;font-size:11px;font-weight:600;cursor:pointer;">Guardar</button>
+					</div>
+					<textarea
+						id="math-input"
+						placeholder="Escribe una ecuación: y = x^2 + 3&#10;2x + y = 8&#10;x^2 + y^2 = 25"
+						style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-size:12px;font-family:'JetBrains Mono',monospace;padding:10px;outline:none;resize:none;min-height:80px;"
+						oninput="evalMathNote()"
+					></textarea>
+					<div
+						id="math-result"
+						style="font-size:12px;font-family:'JetBrains Mono',monospace;opacity:.8;min-height:24px;color:#30d158;white-space:pre-wrap;"
+					></div>
+					<canvas
+						id="math-canvas"
+						width="310"
+						height="180"
+						style="background:rgba(0,0,0,.25);border-radius:14px;width:100%;display:none;"
+					></canvas>
+				</div>
 			</div>
 		</div>
 
 		<!-- ================= CALENDARIO (Apple-style + IA) ================= -->
 
 		<!-- ================= NOTES BUTTON ================= -->
-		<button
+		<b<button id="dt-btn" onclick="toggleDeviceTracker()" title="Dispositivos"
+			style="position:fixed;bottom:26px;left:calc(50% + 74px);z-index:70;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(10,132,255,.3);transition:transform .2s ease;overflow:hidden;padding:0;background:#1c1c1e;">
+			<span style="font-size:26px;">📱</span>
+		</button>
+		utton
 			id="notes-btn"
 			onclick="toggleNotesPanel()"
 			title="Notas"
@@ -14769,6 +14883,189 @@
 			  el.innerHTML = recents.map(r=>'<div style="padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:14px;">'+r+'</div>').join('');
 			}
 			icaRenderRecents();
+
+			
+
+			/* ===== MATH NOTES START MENU LOGIC ===== */
+			function mathStartNew(){
+			  document.getElementById('math-start').style.display='none';
+			  document.getElementById('math-workspace').style.display='flex';
+			  document.getElementById('math-input').value='';
+			  document.getElementById('math-result').textContent='';
+			  const c=document.getElementById('math-canvas');if(c)c.style.display='none';
+			}
+			function mathBackToMenu(){
+			  document.getElementById('math-start').style.display='flex';
+			  document.getElementById('math-workspace').style.display='none';
+			  mathRenderSaved();
+			}
+			function mathLoadExample(expr){
+			  document.getElementById('math-start').style.display='none';
+			  document.getElementById('math-workspace').style.display='flex';
+			  document.getElementById('math-input').value=expr.replace(/\\n/g,'\n');
+			  evalMathNote();
+			}
+			function mathSaveNote(){
+			  const input=document.getElementById('math-input').value;
+			  if(!input.trim()) return;
+			  const saved=JSON.parse(localStorage.getItem('math_notes')||'[]');
+			  saved.unshift({text:input,date:new Date().toLocaleDateString()});
+			  if(saved.length>20)saved.pop();
+			  localStorage.setItem('math_notes',JSON.stringify(saved));
+			  mathRenderSaved();
+			}
+			function mathShowHistory(){
+			  mathRenderSaved();
+			}
+			function mathRenderSaved(){
+			  const el=document.getElementById('math-saved-list');
+			  const saved=JSON.parse(localStorage.getItem('math_notes')||'[]');
+			  if(!saved.length){el.innerHTML='<div style="font-size:11px;opacity:.3;">Sin notas guardadas</div>';return;}
+			  el.innerHTML=saved.map((n,i)=>
+			    '<div onclick="mathLoadSaved('+i+')" style="padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:\'JetBrains Mono\',monospace;cursor:pointer;opacity:.7;display:flex;justify-content:space-between;"><span>'+n.text.split('\n')[0].substring(0,25)+'</span><span style=\"opacity:.4\">'+n.date+'</span></div>'
+			  ).join('');
+			}
+			function mathLoadSaved(i){
+			  const saved=JSON.parse(localStorage.getItem('math_notes')||'[]');
+			  if(saved[i]) mathLoadExample(saved[i].text);
+			}
+			mathRenderSaved();
+
+			/* ===== ALARM HISTORY ===== */
+			function icaAddToHistory(time, label){
+			  const hist=JSON.parse(localStorage.getItem('ica_alarm_history')||'[]');
+			  hist.unshift({time:time,label:label,date:new Date().toLocaleDateString()});
+			  if(hist.length>20)hist.pop();
+			  localStorage.setItem('ica_alarm_history',JSON.stringify(hist));
+			  icaRenderHistory();
+			}
+			function icaRenderHistory(){
+			  const el=document.getElementById('ica-alarm-history');
+			  if(!el) return;
+			  const hist=JSON.parse(localStorage.getItem('ica_alarm_history')||'[]');
+			  if(!hist.length){el.innerHTML='<div style="font-size:12px;opacity:.3;">Sin historial</div>';return;}
+			  el.innerHTML=hist.map(h=>
+			    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;"><div><span style=\"font-size:15px;font-weight:300\">'+h.time+'</span> <span style=\"font-size:11px;opacity:.5\">'+h.label+'</span></div><span style=\"font-size:10px;opacity:.3\">'+h.date+'</span></div>'
+			  ).join('');
+			}
+			icaRenderHistory();
+
+			/* ===== DEVICE TRACKER (MacTracker-style) ===== */
+			function toggleDeviceTracker(){
+			  document.getElementById('device-tracker-app').classList.toggle('open');
+			}
+			const DT_DEVICES = [
+			  // Apple - Mac
+			  {cat:'Apple',sub:'Mac',name:'MacBook Air M4',year:2025,icon:'💻',specs:{Chip:'Apple M4',RAM:'16-24 GB',Pantalla:'13.6" Liquid Retina',Almacenamiento:'256 GB - 2 TB',Batería:'18 horas',Peso:'1.24 kg',Puerto:'MagSafe, 2x Thunderbolt, Audio'}},
+			  {cat:'Apple',sub:'Mac',name:'MacBook Pro 14" M4 Pro',year:2025,icon:'💻',specs:{Chip:'Apple M4 Pro',RAM:'24-48 GB',Pantalla:'14.2" Liquid Retina XDR',Almacenamiento:'512 GB - 4 TB',Batería:'17 horas',Peso:'1.55 kg',Puerto:'3x Thunderbolt 4, HDMI, SD, MagSafe'}},
+			  {cat:'Apple',sub:'Mac',name:'MacBook Pro 16" M4 Max',year:2025,icon:'💻',specs:{Chip:'Apple M4 Max',RAM:'48-128 GB',Pantalla:'16.2" Liquid Retina XDR',Almacenamiento:'1-8 TB',Batería:'22 horas',Peso:'2.14 kg',Puerto:'3x Thunderbolt 5, HDMI, SD, MagSafe'}},
+			  {cat:'Apple',sub:'Mac',name:'Mac Mini M4',year:2024,icon:'🖥️',specs:{Chip:'Apple M4',RAM:'16-32 GB',Pantalla:'Ext. hasta 6K',Almacenamiento:'256 GB - 2 TB',Conectividad:'Wi-Fi 6E, Bluetooth 5.3',Puerto:'2x USB-C, USB-A, HDMI, Ethernet'}},
+			  {cat:'Apple',sub:'Mac',name:'Mac Studio M4 Ultra',year:2025,icon:'🖥️',specs:{Chip:'Apple M4 Ultra',RAM:'64-192 GB',Pantalla:'Ext. hasta 8K',Almacenamiento:'1-8 TB',Puerto:'6x Thunderbolt 5, 2x USB-A, HDMI, SD, Ethernet'}},
+			  {cat:'Apple',sub:'Mac',name:'Mac Pro M2 Ultra',year:2023,icon:'🖥️',specs:{Chip:'Apple M2 Ultra',RAM:'64-192 GB',Almacenamiento:'1-8 TB SSD',Ranuras:'7 ranuras PCIe Gen 4',Puerto:'8x Thunderbolt 4, 2x HDMI, 2x USB-A'}},
+			  {cat:'Apple',sub:'Mac',name:'iMac M4',year:2024,icon:'🖥️',specs:{Chip:'Apple M4',RAM:'16-32 GB',Pantalla:'24" 4.5K Retina',Almacenamiento:'256 GB - 2 TB',Colores:'7 colores',Peso:'4.48 kg'}},
+			  // Apple - iPhone
+			  {cat:'Apple',sub:'iPhone',name:'iPhone 16 Pro Max',year:2024,icon:'📱',specs:{Chip:'A18 Pro',RAM:'8 GB',Pantalla:'6.9" Super Retina XDR OLED',Almacenamiento:'256 GB - 1 TB',Cámara:'48MP + 12MP UW + 12MP Tele 5x',Batería:'4685 mAh','5G':'Sub-6 + mmWave'}},
+			  {cat:'Apple',sub:'iPhone',name:'iPhone 16 Pro',year:2024,icon:'📱',specs:{Chip:'A18 Pro',RAM:'8 GB',Pantalla:'6.3" Super Retina XDR',Almacenamiento:'128 GB - 1 TB',Cámara:'48MP + 48MP UW + 12MP Tele',Batería:'3582 mAh'}},
+			  {cat:'Apple',sub:'iPhone',name:'iPhone 16',year:2024,icon:'📱',specs:{Chip:'A18',RAM:'8 GB',Pantalla:'6.1" Super Retina XDR',Almacenamiento:'128-512 GB',Cámara:'48MP + 12MP UW',Batería:'3561 mAh'}},
+			  {cat:'Apple',sub:'iPhone',name:'iPhone SE 4',year:2025,icon:'📱',specs:{Chip:'A18',RAM:'8 GB',Pantalla:'6.1" OLED',Almacenamiento:'128-256 GB',Cámara:'48MP',Precio:'Desde $429'}},
+			  // Apple - iPad
+			  {cat:'Apple',sub:'iPad',name:'iPad Pro M4 13"',year:2024,icon:'📱',specs:{Chip:'Apple M4',RAM:'16 GB',Pantalla:'13" Ultra Retina XDR OLED',Almacenamiento:'256 GB - 2 TB',Peso:'579 g',Grosor:'5.1 mm',Face_ID:'Sí'}},
+			  {cat:'Apple',sub:'iPad',name:'iPad Air M3 13"',year:2025,icon:'📱',specs:{Chip:'Apple M3',RAM:'8 GB',Pantalla:'13" Liquid Retina',Almacenamiento:'128 GB - 1 TB',Peso:'617 g',Puerto:'USB-C, soporte Thunderbolt'}},
+			  {cat:'Apple',sub:'iPad',name:'iPad Mini A17 Pro',year:2024,icon:'📱',specs:{Chip:'A17 Pro',RAM:'8 GB',Pantalla:'8.3" Liquid Retina',Almacenamiento:'128-512 GB',Peso:'293 g',Apple_Pencil:'Pro'}},
+			  // Apple - Watch
+			  {cat:'Apple',sub:'Watch',name:'Apple Watch Ultra 2',year:2024,icon:'⌚',specs:{Chip:'S9 SiP',Pantalla:'49mm OLED siempre activa',Material:'Titanio',Batería:'Hasta 36 horas',Resistencia:'100m, EN13319',GPS:'L1 + L5 de doble frecuencia'}},
+			  {cat:'Apple',sub:'Watch',name:'Apple Watch Series 10',year:2024,icon:'⌚',specs:{Chip:'S10 SiP',Pantalla:'46mm OLED LTPO3',Material:'Aluminio/Titanio',Batería:'Hasta 18 horas',Sensores:'ECG, SpO2, temperatura'}},
+			  // Apple - AirPods
+			  {cat:'Apple',sub:'Audio',name:'AirPods Pro 2',year:2024,icon:'🎧',specs:{Chip:'H2',ANC:'Sí, adaptativo',Audio:'Spatial Audio, Lossless',Batería:'6h (30h con estuche)',Puerto:'USB-C, carga inalámbrica',Protección:'IP54'}},
+			  {cat:'Apple',sub:'Audio',name:'AirPods Max 2',year:2024,icon:'🎧',specs:{Chip:'H2',ANC:'Sí',Audio:'Spatial Audio, Hi-Res',Batería:'20 horas',Puerto:'USB-C',Material:'Aluminio anodizado + acero'}},
+			  // Windows
+			  {cat:'Windows',sub:'Laptop',name:'Surface Laptop 7',year:2024,icon:'💻',specs:{CPU:'Snapdragon X Elite/Plus',RAM:'16-64 GB',Pantalla:'13.8"/15" PixelSense Flow',Almacenamiento:'256 GB - 1 TB',Batería:'Hasta 22 horas',SO:'Windows 11 + Copilot'}},
+			  {cat:'Windows',sub:'Laptop',name:'Dell XPS 14 (9440)',year:2024,icon:'💻',specs:{CPU:'Intel Core Ultra 7/9',RAM:'16-64 GB LPDDR5x',Pantalla:'14.5" OLED 3.2K 120Hz',Almacenamiento:'512 GB - 2 TB',GPU:'Intel Arc / RTX 4050',Peso:'1.68 kg'}},
+			  {cat:'Windows',sub:'Laptop',name:'Lenovo ThinkPad X1 Carbon Gen 12',year:2024,icon:'💻',specs:{CPU:'Intel Core Ultra 7',RAM:'16-64 GB',Pantalla:'14" 2.8K OLED',Almacenamiento:'256 GB - 2 TB',Batería:'57 Wh',Peso:'1.08 kg'}},
+			  {cat:'Windows',sub:'Laptop',name:'HP Spectre x360 14',year:2024,icon:'💻',specs:{CPU:'Intel Core Ultra 7',RAM:'16-32 GB',Pantalla:'14" 2.8K OLED Touch',Almacenamiento:'512 GB - 2 TB',Batería:'Hasta 17 horas',Convertible:'Sí, 360°'}},
+			  {cat:'Windows',sub:'Laptop',name:'ASUS ROG Zephyrus G16',year:2024,icon:'💻',specs:{CPU:'Intel Core i9-14900HX',GPU:'NVIDIA RTX 4090',RAM:'32 GB DDR5',Pantalla:'16" QHD+ 240Hz OLED',Almacenamiento:'2 TB NVMe',Peso:'1.85 kg'}},
+			  {cat:'Windows',sub:'Desktop',name:'Surface Studio 2+',year:2023,icon:'🖥️',specs:{CPU:'Intel Core i7-11370H',GPU:'NVIDIA RTX 3060',RAM:'32 GB',Pantalla:'28" PixelSense Touch',Almacenamiento:'1 TB SSD',Resolución:'4500x3000'}},
+			  {cat:'Windows',sub:'Tablet',name:'Surface Pro 11',year:2024,icon:'📱',specs:{CPU:'Snapdragon X Elite',RAM:'16-32 GB',Pantalla:'13" PixelSense Flow OLED 120Hz',Almacenamiento:'256 GB - 1 TB',Batería:'Hasta 14 horas',Peso:'895 g'}},
+			  {cat:'Windows',sub:'Gaming',name:'Xbox Series X',year:2020,icon:'🎮',specs:{CPU:'AMD Zen 2 8-core',GPU:'12 TFLOPS RDNA 2',RAM:'16 GB GDDR6',Almacenamiento:'1 TB SSD',Resolución:'Hasta 4K 120fps',Ray_Tracing:'Sí'}},
+			  // Android
+			  {cat:'Android',sub:'Samsung',name:'Samsung Galaxy S25 Ultra',year:2025,icon:'📱',specs:{CPU:'Snapdragon 8 Elite',RAM:'12 GB',Pantalla:'6.9" QHD+ Dynamic AMOLED 2X 120Hz',Almacenamiento:'256 GB - 1 TB',Cámara:'200MP + 50MP UW + 10MP Tele + 50MP Tele',Batería:'5000 mAh'}},
+			  {cat:'Android',sub:'Samsung',name:'Samsung Galaxy Z Fold 6',year:2024,icon:'📱',specs:{CPU:'Snapdragon 8 Gen 3',RAM:'12 GB',Pantalla:'7.6" + 6.3" Dynamic AMOLED 2X',Almacenamiento:'256-512 GB',Cámara:'50MP + 12MP + 10MP',Plegable:'Sí'}},
+			  {cat:'Android',sub:'Samsung',name:'Samsung Galaxy Tab S10 Ultra',year:2024,icon:'📱',specs:{CPU:'MediaTek Dimensity 9300+',RAM:'12-16 GB',Pantalla:'14.6" Dynamic AMOLED 2X 120Hz',Almacenamiento:'256 GB - 1 TB',S_Pen:'Incluido',Batería:'11200 mAh'}},
+			  {cat:'Android',sub:'Google',name:'Google Pixel 9 Pro',year:2024,icon:'📱',specs:{CPU:'Tensor G4',RAM:'16 GB',Pantalla:'6.3" Super Actua LTPO OLED 120Hz',Almacenamiento:'128-512 GB',Cámara:'50MP + 48MP UW + 48MP Tele 5x',IA:'Gemini Nano on-device'}},
+			  {cat:'Android',sub:'Google',name:'Google Pixel 9 Pro Fold',year:2024,icon:'📱',specs:{CPU:'Tensor G4',RAM:'16 GB',Pantalla:'8" + 6.3" Super Actua OLED',Almacenamiento:'256-512 GB',Cámara:'48MP + 10.5MP UW + 10.8MP Tele',Plegable:'Sí'}},
+			  {cat:'Android',sub:'OnePlus',name:'OnePlus 13',year:2025,icon:'📱',specs:{CPU:'Snapdragon 8 Elite',RAM:'12-24 GB',Pantalla:'6.82" LTPO AMOLED 120Hz',Almacenamiento:'256-512 GB',Cámara:'50MP LYT-808 + 50MP UW + 50MP Tele',Carga:'100W + 50W wireless'}},
+			  {cat:'Android',sub:'Xiaomi',name:'Xiaomi 15 Pro',year:2025,icon:'📱',specs:{CPU:'Snapdragon 8 Elite',RAM:'12-16 GB',Pantalla:'6.73" LTPO AMOLED 120Hz',Almacenamiento:'256-512 GB',Cámara:'50MP + 50MP UW + 50MP Tele',Carga:'90W + 50W wireless'}},
+			  {cat:'Android',sub:'Wearables',name:'Samsung Galaxy Watch Ultra',year:2024,icon:'⌚',specs:{CPU:'Exynos W1000',RAM:'2 GB',Pantalla:'1.5" Super AMOLED',OS:'Wear OS 5',Batería:'590 mAh',Resistencia:'10 ATM, MIL-STD-810H'}},
+			  // Linux
+			  {cat:'Linux',sub:'Laptop',name:'System76 Lemur Pro',year:2024,icon:'💻',specs:{CPU:'Intel Core Ultra 7',RAM:'8-64 GB DDR5',Pantalla:'14.1" 1080p',Almacenamiento:'250 GB - 8 TB',Batería:'Hasta 14 horas',OS:'Pop!_OS 22.04 / Ubuntu'}},
+			  {cat:'Linux',sub:'Laptop',name:'Framework Laptop 16',year:2024,icon:'💻',specs:{CPU:'AMD Ryzen 7 7840HS',GPU:'AMD RX 7700S (modular)',RAM:'Hasta 64 GB DDR5',Pantalla:'16" 2560x1600 165Hz',Modular:'Sí, todo reemplazable',OS:'Fedora / cualquier distro'}},
+			  {cat:'Linux',sub:'Laptop',name:'Tuxedo InfinityBook Pro 14',year:2024,icon:'💻',specs:{CPU:'Intel Core Ultra 7',RAM:'Hasta 96 GB',Pantalla:'14" 2.8K OLED',Almacenamiento:'Hasta 4 TB NVMe',Batería:'99 Wh',OS:'TUXEDO OS / Ubuntu'}},
+			  {cat:'Linux',sub:'SBC',name:'Raspberry Pi 5',year:2023,icon:'🖥️',specs:{CPU:'Broadcom BCM2712 (Cortex-A76)',RAM:'4-8 GB LPDDR4X',GPU:'VideoCore VII',Conectividad:'Wi-Fi 5, BT 5.0, 2x USB 3, 2x USB 2',GPIO:'40 pines',Precio:'$60-$80'}},
+			  {cat:'Linux',sub:'Server',name:'Dell PowerEdge R760',year:2023,icon:'🖥️',specs:{CPU:'2x Intel Xeon 4th Gen',RAM:'Hasta 4 TB DDR5',Almacenamiento:'Hasta 24x NVMe',Red:'Hasta 100GbE',Factor:'2U Rack',OS:'RHEL, Ubuntu, SLES'}},
+			  {cat:'Linux',sub:'Desktop',name:'System76 Thelio Mira',year:2024,icon:'🖥️',specs:{CPU:'Intel Core i9-14900K',GPU:'Hasta NVIDIA RTX 4090',RAM:'Hasta 128 GB DDR5',Almacenamiento:'Hasta 44 TB',OS:'Pop!_OS',Diseño:'Open hardware, madera + aluminio'}},
+			  {cat:'Linux',sub:'Handheld',name:'Steam Deck OLED',year:2023,icon:'🎮',specs:{CPU:'AMD APU (Zen 2 + RDNA 2)',RAM:'16 GB LPDDR5',Pantalla:'7.4" 1280x800 OLED HDR 90Hz',Almacenamiento:'512 GB - 1 TB',Batería:'Hasta 12 horas',OS:'SteamOS 3 (Arch Linux)'}},
+			];
+			let _dtCurrentCat = 'Apple';
+			function dtInit(){
+			  const cats = [...new Set(DT_DEVICES.map(d=>d.cat))];
+			  const catEl = document.getElementById('dt-categories');
+			  catEl.innerHTML = cats.map(c=>
+			    '<button class="dt-cat-btn'+(c===_dtCurrentCat?' active':'')+'" onclick="dtSelectCat(\''+c+'\')">'+c+'</button>'
+			  ).join('');
+			  dtRenderList();
+			}
+			function dtSelectCat(cat){
+			  _dtCurrentCat = cat;
+			  document.querySelectorAll('.dt-cat-btn').forEach(b=>b.classList.toggle('active',b.textContent===cat));
+			  document.getElementById('dt-search-input').value='';
+			  dtRenderList();
+			}
+			function dtRenderList(filter=''){
+			  const list = document.getElementById('dt-list');
+			  let devices = DT_DEVICES.filter(d=>d.cat===_dtCurrentCat);
+			  if(filter) devices = DT_DEVICES.filter(d=>d.name.toLowerCase().includes(filter.toLowerCase()));
+			  const grouped = {};
+			  devices.forEach(d=>{
+			    const key = d.sub||'Otro';
+			    if(!grouped[key]) grouped[key]=[];
+			    grouped[key].push(d);
+			  });
+			  let html = '';
+			  Object.keys(grouped).forEach(group=>{
+			    html += '<div style="font-size:11px;opacity:.4;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:16px 0 6px;">'+group+'</div>';
+			    grouped[group].forEach((d,i)=>{
+			      const idx = DT_DEVICES.indexOf(d);
+			      html += '<div class="dt-item" onclick="dtShowDetail('+idx+')">'
+			        +'<div class="dt-item-icon">'+d.icon+'</div>'
+			        +'<div class="dt-item-info"><div class="dt-item-name">'+d.name+'</div><div class="dt-item-sub">'+d.cat+' · '+d.sub+'</div></div>'
+			        +'<div class="dt-item-year">'+d.year+'</div>'
+			        +'</div>';
+			    });
+			  });
+			  list.innerHTML = html || '<div style="padding:40px;text-align:center;opacity:.3;">No se encontraron dispositivos</div>';
+			}
+			function dtSearch(q){
+			  dtRenderList(q);
+			}
+			function dtShowDetail(idx){
+			  const d = DT_DEVICES[idx];
+			  const detail = document.getElementById('dt-detail');
+			  const content = document.getElementById('dt-detail-content');
+			  let html = '<div style="text-align:center;padding:20px 0;"><div style="font-size:60px;">'+d.icon+'</div>'
+			    +'<h2 style="font-size:22px;font-weight:700;margin:10px 0 4px;">'+d.name+'</h2>'
+			    +'<div style="font-size:13px;opacity:.4;">'+d.cat+' · '+d.sub+' · '+d.year+'</div></div>';
+			  html += '<div class="dt-spec-group"><h3>Especificaciones</h3>';
+			  Object.keys(d.specs).forEach(key=>{
+			    html += '<div class="dt-spec-row"><span>'+key.replace(/_/g,' ')+'</span><span>'+d.specs[key]+'</span></div>';
+			  });
+			  html += '</div>';
+			  content.innerHTML = html;
+			  detail.classList.add('open');
+			}
+			function dtCloseDetail(){
+			  document.getElementById('dt-detail').classList.remove('open');
+			}
+			dtInit();
 
 			</script>
 
