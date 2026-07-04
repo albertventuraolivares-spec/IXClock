@@ -5914,7 +5914,8 @@
 			// No depende del proxy de Netlify: funciona aunque el sitio origen
 			// bloquee a los servidores de Netlify (Cloudflare, etc.).
 			function _wpShotUrl(wp, w){
-			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.page) + '?w=' + (w || 640);
+			  // Captura alta para incluir la zona del video (queda bajo la cabecera de la página)
+			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.page) + '?w=' + (w || 800) + '&h=1200';
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
@@ -5926,8 +5927,10 @@
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
 			      if(t && job.fill.isConnected !== false){
-			        // og:image real por encima; la captura mshots queda debajo como respaldo
+			        // og:image real por encima; la captura mshots queda debajo como respaldo,
+			        // encuadrada hacia la zona del video (bajo la cabecera de la página)
 			        job.fill.style.backgroundImage = 'url("' + _WP_PROXY + encodeURIComponent(t) + '"), url("' + _wpShotUrl(job.wp) + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
+			        job.fill.style.backgroundPosition = 'center, center 42%, center';
 			      }
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
@@ -5961,8 +5964,10 @@
 			      try{ const c = localStorage.getItem('wpm2_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
 			      if(cachedThumb){
 			        fill.style.backgroundImage = 'url("' + _WP_PROXY + encodeURIComponent(cachedThumb) + '"), url("' + _wpShotUrl(wp) + '"), ' + grad;
+			        fill.style.backgroundPosition = 'center, center 42%, center';
 			      } else if(location.protocol !== 'file:' && wp.page){
 			        fill.style.backgroundImage = 'url("' + _wpShotUrl(wp) + '"), ' + grad;
+			        fill.style.backgroundPosition = 'center 42%, center';
 			        _wpThumbQueue.push({ wp: wp, fill: fill });
 			      } else {
 			        fill.style.backgroundImage = grad;
