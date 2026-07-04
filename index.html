@@ -3778,13 +3778,13 @@
 					<span class="ica-picker-label">s</span>
 				</div>
 				<div class="ica-timer-opts">
-					<div class="ica-timer-opt">
+					<div class="ica-timer-opt" onclick="icaPickTimerLabel()" style="cursor:pointer;">
 						<span>Etiqueta</span>
-						<span>Timer <span style="opacity:.3;">›</span></span>
+						<span><span id="ica-timer-label-val">Timer</span> <span style="opacity:.3;">›</span></span>
 					</div>
-					<div class="ica-timer-opt">
+					<div class="ica-timer-opt" onclick="icaPickTimerTone()" style="cursor:pointer;">
 						<span>Al finalizar</span>
-						<span>Radial <span style="opacity:.3;">›</span></span>
+						<span><span id="ica-timer-tone-val">Radial</span> <span style="opacity:.3;">›</span></span>
 					</div>
 				</div>
 				<div class="ica-timer-btns">
@@ -6309,7 +6309,31 @@
 			// nunca estuvo puesta) y recién el segundo clic abría el panel.
 			let isSidebarVisible = false;
 			let _settingsHideTimer = null;
+			// El botón de configuración solo puede aparecer en la pantalla de inicio:
+			// si cualquier app o panel está abierto encima, no se muestra.
+			const _HOME_OPEN_PANELS = ['ios-clock-app','device-tracker-app','calc-panel','notes-panel','alarm-panel','ai-chat-panel','translator-panel','tv-panel','games-panel','siri-fs'];
+			const _HOME_DISPLAY_PANELS = ['bench-modal','apple-maps-modal','browser-modal','garageband-modal','compass-modal','cloud-modal','emu-modal','login-overlay'];
+			function _isHomeScreen(){
+			  for(const id of _HOME_OPEN_PANELS){
+			    const el = document.getElementById(id);
+			    if(el && el.classList.contains('open')) return false;
+			  }
+			  for(const id of _HOME_DISPLAY_PANELS){
+			    const el = document.getElementById(id);
+			    if(el && getComputedStyle(el).display !== 'none') return false;
+			  }
+			  return true;
+			}
+			// Si se abre una app con el botón visible, ocúltalo al momento
+			setInterval(()=>{
+			  if(isSidebarVisible) return;
+			  if(!_isHomeScreen()){
+			    const btn = document.querySelector('.btn-settings');
+			    if(btn) btn.classList.remove('visible');
+			  }
+			}, 700);
 			function _showSettingsBtn(){
+			  if(!_isHomeScreen()) return;
 			  const btn = document.querySelector('.btn-settings');
 			  if(!btn) return;
 			  btn.classList.add('visible');
@@ -11204,29 +11228,68 @@
 			    }
 			  });
 			}
+			/* ===== Tonos de alarma estilo iOS (sintetizados con Web Audio) ===== */
+			const ALARM_TONES = [
+			  {id:'radial',     name:'Radial',     wave:'sine',     notes:[988,1319,988,1319,0,988,1319,0],    dur:0.11, gap:0.03, vol:.3},
+			  {id:'apex',       name:'Apex',       wave:'triangle', notes:[659,880,1046,880,659,0,0,0],        dur:0.13, gap:0.03, vol:.3},
+			  {id:'ascendente', name:'Ascendente', wave:'sine',     notes:[523,587,659,740,830,932,1046,0],    dur:0.16, gap:0.02, vol:.28},
+			  {id:'playa',      name:'Playa',      wave:'sine',     notes:[440,554,659,554,440,0,330,0],       dur:0.22, gap:0.05, vol:.25},
+			  {id:'cristales',  name:'Cristales',  wave:'sine',     notes:[1568,1319,1760,1568,0,2093,1760,0], dur:0.14, gap:0.05, vol:.22},
+			  {id:'circuito',   name:'Circuito',   wave:'square',   notes:[880,0,880,0,1175,0,880,0],          dur:0.09, gap:0.04, vol:.16},
+			  {id:'campana',    name:'Campana',    wave:'sine',     notes:[830,0,0,0,830,0,0,0],               dur:0.55, gap:0.1,  vol:.3},
+			  {id:'clasico',    name:'Clásico',    wave:'square',   notes:[880,880,880,880,0,0,0,0],           dur:0.3,  gap:0.06, vol:.22},
+			];
+			// Reproduce un tono en bucle; devuelve la función para pararlo
+			function playAlarmTone(toneId){
+			  const tone = ALARM_TONES.find(t=>t.id===toneId) || ALARM_TONES[0];
+			  const ctx = getAudioCtx();
+			  if(ctx.state==='suspended') ctx.resume();
+			  let stopped = false, idx = 0;
+			  function step(){
+			    if(stopped) return;
+			    const f = tone.notes[idx % tone.notes.length]; idx++;
+			    if(f > 0){
+			      const osc = ctx.createOscillator(), g = ctx.createGain();
+			      osc.type = tone.wave; osc.frequency.value = f;
+			      osc.connect(g); g.connect(ctx.destination);
+			      const t0 = ctx.currentTime;
+			      g.gain.setValueAtTime(0.0001,t0);
+			      g.gain.linearRampToValueAtTime(tone.vol,t0+0.02);
+			      g.gain.exponentialRampToValueAtTime(0.0001,t0+tone.dur);
+			      osc.start(t0); osc.stop(t0+tone.dur+0.05);
+			    }
+			    setTimeout(step, (tone.dur+tone.gap)*1000);
+			  }
+			  step();
+			  return ()=>{ stopped = true; };
+			}
+			function icaToneName(toneId){
+			  const t = ALARM_TONES.find(x=>x.id===toneId);
+			  return t ? t.name : 'Radial';
+			}
+			// Selector por prompt numerado; hace una vista previa del tono elegido
+			function icaPromptTone(current){
+			  const list = ALARM_TONES.map((t,i)=>(i+1)+'. '+t.name).join('\n');
+			  const cur = ALARM_TONES.findIndex(t=>t.id===current);
+			  const ans = prompt('Tono de alarma:\n'+list, String(cur>=0?cur+1:1));
+			  if(!ans) return null;
+			  const n = parseInt(ans)-1;
+			  if(n>=0 && n<ALARM_TONES.length){
+			    try{ const stop = playAlarmTone(ALARM_TONES[n].id); setTimeout(stop, 1600); }catch(e){}
+			    return ALARM_TONES[n].id;
+			  }
+			  return null;
+			}
 			function ringAlarm(alarm){
 			  ringingAlarmId = alarm.id;
 			  document.getElementById('ring-icon').innerText = '⏰';
 			  document.getElementById('ring-time').innerText = fmtAMPM(alarm.hour, alarm.minute);
 			  document.getElementById('ring-label').innerText = alarm.label;
 			  document.getElementById('alarm-ringing-overlay').classList.add('show');
-			  playRingingSound();
+			  playRingingSound(alarm.tone);
 			}
-			function playRingingSound(){
-			  if(getAudioCtx().state==='suspended') getAudioCtx().resume();
-			  let stopped = false;
-			  function beep(){
-			    if(stopped) return;
-			    const osc = getAudioCtx().createOscillator(), g = getAudioCtx().createGain();
-			    osc.type='square'; osc.frequency.value=880;
-			    osc.connect(g); g.connect(getAudioCtx().destination);
-			    const t0 = getAudioCtx().currentTime;
-			    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.25,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.35);
-			    osc.start(t0); osc.stop(t0+0.4);
-			    setTimeout(beep, 700);
-			  }
-			  beep();
-			  ringingAudioStop = ()=>{ stopped = true; };
+			function playRingingSound(toneId){
+			  ringingAudioStop = playAlarmTone(toneId);
 			}
 			function stopRinging(){
 			  if(ringingAudioStop) ringingAudioStop();
@@ -14780,7 +14843,7 @@
 			    const ampm = +h >= 12 ? 'p.\u202fm.' : 'a.\u202fm.';
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
-			      +'<div class="ica-alarm-label">'+a.label+'</div></div>'
+			      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+a.label+' · '+icaToneName(a.tone)+' ›</div></div>'
 			      +'<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
 			      +'</div>';
 			  }).join('');
@@ -14794,7 +14857,16 @@
 			  const t = prompt('Hora (formato 24h, ej: 7:30):','7:00');
 			  if(!t) return;
 			  const label = prompt('Etiqueta:','Alarma') || 'Alarma';
-			  _icaAlarms.push({time:t,label:label,on:true});
+			  const tone = icaPromptTone('radial') || 'radial';
+			  _icaAlarms.push({time:t,label:label,on:true,tone:tone});
+			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			  icaRenderAlarms();
+			}
+			// Cambiar el tono de una alarma existente tocando su etiqueta
+			function icaChangeAlarmTone(i){
+			  const tone = icaPromptTone(_icaAlarms[i].tone);
+			  if(!tone) return;
+			  _icaAlarms[i].tone = tone;
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
 			  icaRenderAlarms();
 			}
@@ -14810,6 +14882,25 @@
 			  }
 			}
 			icaRenderAlarms();
+			// Comprobador: hace sonar las alarmas de la app Reloj con su tono elegido
+			let _icaLastFired = null;
+			setInterval(()=>{
+			  const now = new Date();
+			  const key = now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
+			  if(_icaLastFired === key) return;
+			  _icaAlarms.forEach(a=>{
+			    if(!a.on) return;
+			    const [h,m] = a.time.split(':').map(Number);
+			    if(h===now.getHours() && m===now.getMinutes()){
+			      _icaLastFired = key;
+			      ringAlarm({hour:h, minute:m, label:a.label, tone:a.tone});
+			      if(typeof icaAddToHistory==='function'){
+			        const h12 = ((h%12)||12), ampm = h>=12?'p. m.':'a. m.';
+			        icaAddToHistory(h12+':'+String(m).padStart(2,'0')+' '+ampm, a.label);
+			      }
+			    }
+			  });
+			}, 5000);
 
 			// --- Stopwatch ---
 			let _icaSwRunning=false, _icaSwStart=0, _icaSwElapsed=0, _icaSwRaf=null, _icaSwLaps=[];
@@ -14914,6 +15005,31 @@
 
 			// --- Timer ---
 			let _icaTimerInterval=null, _icaTimerRemaining=0;
+			let _icaTimerLabel = localStorage.getItem('ica_timer_label') || 'Timer';
+			let _icaTimerTone = localStorage.getItem('ica_timer_tone') || 'radial';
+			function icaPickTimerLabel(){
+			  const v = prompt('Etiqueta del temporizador:', _icaTimerLabel);
+			  if(!v) return;
+			  _icaTimerLabel = v;
+			  localStorage.setItem('ica_timer_label', v);
+			  const el = document.getElementById('ica-timer-label-val');
+			  if(el) el.textContent = v;
+			}
+			function icaPickTimerTone(){
+			  const tone = icaPromptTone(_icaTimerTone);
+			  if(!tone) return;
+			  _icaTimerTone = tone;
+			  localStorage.setItem('ica_timer_tone', tone);
+			  const el = document.getElementById('ica-timer-tone-val');
+			  if(el) el.textContent = icaToneName(tone);
+			}
+			// Restaurar etiqueta/tono guardados en las celdas
+			(function(){
+			  const l = document.getElementById('ica-timer-label-val');
+			  if(l) l.textContent = _icaTimerLabel;
+			  const t = document.getElementById('ica-timer-tone-val');
+			  if(t) t.textContent = icaToneName(_icaTimerTone);
+			})();
 			// Efecto de ruleta 3D: los números se curvan como en el picker de iOS
 			function _icaPickerApply3D(scroll, val){
 			  scroll.querySelectorAll('.item[data-v]').forEach(it=>{
@@ -14975,7 +15091,7 @@
 			  if(_icaTimerRemaining<=0) return;
 			  // Save to recents
 			  const recents = JSON.parse(localStorage.getItem('ica_timer_recents')||'[]');
-			  const label = h+'h '+m+'m '+s+'s';
+			  const label = _icaTimerLabel+' — '+h+'h '+m+'m '+s+'s';
 			  if(!recents.includes(label)){recents.unshift(label);if(recents.length>5)recents.pop();}
 			  localStorage.setItem('ica_timer_recents',JSON.stringify(recents));
 			  icaRenderRecents();
@@ -14984,8 +15100,8 @@
 			    _icaTimerRemaining--;
 			    if(_icaTimerRemaining<=0){
 			      clearInterval(_icaTimerInterval);_icaTimerInterval=null;
-			      try{new Audio('data:audio/wav;base64,UklGRl9vT19teleXAQBAABAAEARAAEARAABAAQAAAJkZmF0YUB').play();}catch(e){}
-			      alert('Timer finalizado!');
+			      const now = new Date();
+			      ringAlarm({hour:now.getHours(), minute:now.getMinutes(), label:_icaTimerLabel, tone:_icaTimerTone});
 			    }
 			  },1000);
 			}
