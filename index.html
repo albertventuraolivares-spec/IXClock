@@ -6204,7 +6204,7 @@
 			  };
 			  WALLPAPERS.forEach(wp=>{
 			    const isStill = wp.type === 'gradient' || wp.type === 'photo';
-			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento — tu lista'); _motionHeaderDone = true; }
+			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento'); _motionHeaderDone = true; }
 			    if(isStill && !_stillHeaderDone){ _mkHeader('🖼️ Quietos — fotos y degradados'); _stillHeaderDone = true; }
 			    const card = document.createElement('div');
 			    card.className = 'wallpaper-card';
