@@ -5398,6 +5398,13 @@
 			    vid.play().catch(()=>{});
 			  });
 			}
+			// Reescala los iframes 4K de YouTube al girar el iPad / cambiar el tamaño
+			window.addEventListener('resize', ()=>{
+			  const sc = Math.max(window.innerWidth/3840, window.innerHeight/2160);
+			  document.querySelectorAll('iframe[data-yt4k]').forEach(f=>{
+			    f.style.transform = 'translate(-50%,-50%) scale('+sc+')';
+			  });
+			}, {passive:true});
 			function applyWallpaperToFill(fillEl, wp){
 			  // Stop any running canvas animation before reusing the fill element
 			  if(fillEl._canvasHandle){ try{fillEl._canvasHandle.stop();}catch(e){} fillEl._canvasHandle=null; }
@@ -5410,12 +5417,23 @@
 			    // mute=1 + playsinline son obligatorios para que iOS permita el
 			    // autoplay; enablejsapi=1 permite pausarlo por postMessage cuando la
 			    // pestaña se oculta. Requiere internet: es un stream, no un archivo.
+			    // CALIDAD: YouTube elige la resolución según el tamaño del reproductor,
+			    // así que el iframe se crea a 3840x2160 reales y se escala para caber
+			    // en pantalla — YouTube sirve 4K (o el máximo que tenga el video).
 			    const ifr = document.createElement('iframe');
 			    ifr.className = 'wp-yt-iframe';
 			    ifr.setAttribute('allow','autoplay; encrypted-media');
+			    ifr.setAttribute('width','3840');
+			    ifr.setAttribute('height','2160');
+			    ifr.setAttribute('data-yt4k','1');
+			    const sc = Math.max(window.innerWidth/3840, window.innerHeight/2160);
+			    ifr.style.cssText = 'position:absolute;top:50%;left:50%;width:3840px;height:2160px;'
+			      + 'transform:translate(-50%,-50%) scale('+sc+');transform-origin:center center;'
+			      + 'border:none;pointer-events:none;';
 			    ifr.src = 'https://www.youtube-nocookie.com/embed/'+wp.videoId
 			      +'?autoplay=1&mute=1&controls=0&loop=1&playlist='+wp.videoId
-			      +'&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&enablejsapi=1';
+			      +'&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&enablejsapi=1'
+			      +'&vq=hd2160&hd=1';
 			    fillEl.appendChild(ifr);
 			  } else if(wp.type === 'video'){
 			    _wpAttachVideo(fillEl, wp, wp.url || null);
