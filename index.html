@@ -5236,6 +5236,12 @@
 			  sv.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) cand.push(m[1]); });
 			  const ov = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i);
 			  if(ov) cand.push(ov[1]);
+			  // Botones de descarga 4K/UHD que no terminan en .mp4 (p. ej. motionbgs /dl/4k/...):
+			  // el <video> sigue la redirección al archivo real
+			  (doc.match(/href=["']([^"']*\/(?:dl|download)\/[^"']*)["']/gi) || []).forEach(s=>{
+			    const m = s.match(/href=["']([^"']+)["']/i);
+			    if(m && /4k|uhd|2160/i.test(m[1])) cand.push(m[1]);
+			  });
 			  let baseHost = '';
 			  try{ baseHost = new URL(baseUrl).hostname.replace(/^www\./,''); }catch(e){}
 			  const fixedAll = cand.map(fix).filter(Boolean);
