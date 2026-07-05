@@ -6155,6 +6155,28 @@
 			  // Resolución alta para que la miniatura se vea nítida en pantallas Retina.
 			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.alt || wp.page) + '?w=' + (w || 800) + '&h=600';
 			}
+			// Portada oficial del wallpaper en la tarjeta; si no carga, captura mshots
+			function _wpAddCardPoster(fill, wp, thumbUrl){
+			  const og = document.createElement('img');
+			  og.referrerPolicy = 'no-referrer';
+			  og.loading = 'lazy'; og.decoding = 'async';
+			  og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
+			  og.onerror = ()=>{ og.remove(); _wpAddCardShot(fill, wp); };
+			  og.src = thumbUrl;
+			  fill.appendChild(og);
+			}
+			// Plan B: captura de la página con zoom hacia la zona del video
+			function _wpAddCardShot(fill, wp){
+			  if(fill.querySelector('img[data-shot]')) return;
+			  const shot = document.createElement('img');
+			  shot.setAttribute('data-shot','1');
+			  shot.referrerPolicy = 'no-referrer';
+			  shot.loading = 'lazy'; shot.decoding = 'async';
+			  shot.style.cssText = 'position:absolute;width:240%;left:-70%;top:-42%;z-index:1;';
+			  shot.onerror = ()=>{ shot.remove(); };
+			  shot.src = _wpShotUrl(wp);
+			  fill.appendChild(shot);
+			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
 			let _wpThumbWorkers = 0;
@@ -6164,16 +6186,9 @@
 			    const job = _wpThumbQueue.shift();
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
-			      if(t && job.fill.isConnected !== false){
-			        // Portada oficial (og:image) por encima de la captura de página
-			        const og = document.createElement('img');
-			        og.referrerPolicy = 'no-referrer';
-			        og.loading = 'lazy'; og.decoding = 'async';
-			        og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
-			        og.onerror = ()=>{ og.remove(); };
-			        og.src = t;
-			        job.fill.appendChild(og);
-			      }
+			      if(job.fill.isConnected === false) return;
+			      if(t){ _wpAddCardPoster(job.fill, job.wp, t); }
+			      else { _wpAddCardShot(job.fill, job.wp); }
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
@@ -6210,25 +6225,12 @@
 			      fill.style.overflow = 'hidden';
 			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			      if(location.protocol !== 'file:' && wp.page){
-			        // Captura de la página con zoom hacia la zona del video
-			        // (recorta la cabecera del sitio, que queda fuera del encuadre)
-			        const shot = document.createElement('img');
-			        shot.referrerPolicy = 'no-referrer';
-			        shot.loading = 'lazy'; shot.decoding = 'async';
-			        shot.style.cssText = 'position:absolute;width:240%;left:-70%;top:-42%;z-index:1;';
-			        shot.onerror = ()=>{ shot.remove(); };
-			        shot.src = _wpShotUrl(wp);
-			        fill.appendChild(shot);
+			        // Imagen principal: la portada oficial del wallpaper (og:image).
+			        // La captura mshots solo entra como plan B si la portada falla.
 			        let cachedThumb = null;
 			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
 			        if(cachedThumb){
-			          const og = document.createElement('img');
-			          og.referrerPolicy = 'no-referrer';
-			        og.loading = 'lazy'; og.decoding = 'async';
-			          og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
-			          og.onerror = ()=>{ og.remove(); };
-			          og.src = cachedThumb;
-			          fill.appendChild(og);
+			          _wpAddCardPoster(fill, wp, cachedThumb);
 			        } else {
 			          _wpThumbQueue.push({ wp: wp, fill: fill });
 			        }
