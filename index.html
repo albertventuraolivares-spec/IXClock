@@ -5302,45 +5302,75 @@
 			  fillEl.appendChild(cvs);
 			  fillEl._canvasHandle = _canvasAnimators[anim](cvs);
 			}
-			// Escalera de intentos: URL directa → MP4 real extraído de la página → mismo MP4 vía proxy → canvas
+			// Extrae el video de UNA página concreta (para el rescate explícito con alt)
+			const _wpAltVideoCache = {};
+			async function _wpVideoFromUrl(pageUrl){
+			  if(pageUrl in _wpAltVideoCache) return _wpAltVideoCache[pageUrl];
+			  try{
+			    const doc = await _wpFetchPageText(pageUrl);
+			    const meta = _wpExtract(doc, pageUrl);
+			    return _wpAltVideoCache[pageUrl] = (meta && meta.video) || null;
+			  }catch(e){ return _wpAltVideoCache[pageUrl] = null; }
+			}
+			// Escalera de intentos: URL directa → video del enlace del usuario → video de la
+			// página de rescate (alt) → cada uno vía proxy → animación canvas como último recurso
 			function _wpAttachVideo(fillEl, wp, directUrl){
 			  const vid = document.createElement('video');
 			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			  vid.setAttribute('webkit-playsinline','true');
 			  vid.referrerPolicy = 'no-referrer';
 			  vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-			  let stage = directUrl ? 0 : 1; // sin URL directa, empieza resolviendo la página
-			  let resolvedUrl = null;
-			  const fail = async function(){
-			    if(stage === 0){
-			      stage = 1;
-			      resolvedUrl = await _resolveWpVideo(wp);
-			      if(resolvedUrl && resolvedUrl !== vid.src){ vid.src = resolvedUrl; vid.play().catch(()=>{}); return; }
-			    }
-			    if(stage === 1){
-			      stage = 2;
-			      const target = resolvedUrl || directUrl;
-			      if(target && location.protocol !== 'file:'){
-			        vid.src = _WP_PROXY + encodeURIComponent(target);
-			        vid.play().catch(()=>{});
+			  const providers = [
+			    async ()=> directUrl,
+			    async ()=>{ const m = await _fetchWpMeta(wp); return m && m.video; },
+			    async ()=> wp.alt ? _wpVideoFromUrl(wp.alt) : null,
+			  ];
+			  const tried = [];
+			  let p = 0, proxyIdx = 0, done = false, watchdog = null;
+			  function giveUp(){
+			    if(done) return; done = true;
+			    clearTimeout(watchdog);
+			    try{ localStorage.removeItem('wpm3_' + wp.id); }catch(e){}
+			    vid.remove();
+			    _wpShowCanvasFallback(fillEl, wp);
+			  }
+			  async function tryNext(){
+			    if(done) return;
+			    clearTimeout(watchdog);
+			    while(p < providers.length){
+			      let u = null;
+			      try{ u = await providers[p++](); }catch(e){}
+			      if(u && tried.indexOf(u) === -1){
+			        tried.push(u);
+			        vid.src = u; vid.play().catch(()=>{});
+			        watchdog = setTimeout(()=>{ if(!done && vid.readyState < 3) tryNext(); }, 12000);
 			        return;
 			      }
 			    }
-			    try{ localStorage.removeItem('wpv_' + wp.id); localStorage.removeItem('wpm3_' + wp.id); }catch(e){}
-			    vid.remove();
-			    _wpShowCanvasFallback(fillEl, wp);
-			  };
-			  vid.onerror = fail;
-			  fillEl.appendChild(vid);
-			  if(stage === 0){
-			    vid.src = directUrl;
-			    vid.play().catch(()=>{});
-			  } else {
-			    _resolveWpVideo(wp).then(u=>{
-			      if(u){ stage = 1; resolvedUrl = u; vid.src = u; vid.play().catch(()=>{}); }
-			      else { vid.remove(); _wpShowCanvasFallback(fillEl, wp); }
-			    });
+			    // Fase proxy: reintenta cada candidato a través del proxy de Netlify
+			    if(location.protocol !== 'file:' && proxyIdx < tried.length){
+			      const u = tried[proxyIdx++];
+			      vid.src = _WP_PROXY + encodeURIComponent(u);
+			      vid.play().catch(()=>{});
+			      watchdog = setTimeout(()=>{ if(!done && vid.readyState < 3) tryNext(); }, 12000);
+			      return;
+			    }
+			    giveUp();
 			  }
+			  vid.onerror = tryNext;
+			  vid.onplaying = function(){
+			    if(done) return;
+			    clearTimeout(watchdog);
+			    // Guarda el que sí funcionó para que la próxima vez cargue a la primera
+			    try{
+			      const key = 'wpm3_' + wp.id;
+			      const c = JSON.parse(localStorage.getItem(key) || '{}');
+			      const raw = tried[tried.length - 1] || vid.currentSrc;
+			      if(raw && c.video !== raw){ c.video = raw; localStorage.setItem(key, JSON.stringify(c)); }
+			    }catch(e){}
+			  };
+			  fillEl.appendChild(vid);
+			  tryNext();
 			}
 			// Mejora un fondo canvas a video real (pixabay) cuando la página lo permite
 			function _wpUpgradeCanvasToVideo(fillEl, wp){
