@@ -4896,7 +4896,7 @@
 			  {id:'lw-mansion-3',name:'3. Luxury Winter Cabin',tags:'luxury winter cabin mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/luxury-homes/luxury-winter-cabin-live-wallpaper/',fallbackAnim:'rain',bg:'linear-gradient(180deg,hsl(275,45%,16%),hsl(315,55%,7%))',thumb:'linear-gradient(135deg,hsl(275,45%,16%),hsl(315,55%,7%))'},
 			  {id:'lw-mansion-4',name:'4. Rainy Night House',tags:'rainy night house mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/rainy-night-house-live-wallpaper/',fallbackAnim:'fireflies',bg:'linear-gradient(180deg,hsl(53,45%,16%),hsl(93,55%,7%))',thumb:'linear-gradient(135deg,hsl(53,45%,16%),hsl(93,55%,7%))'},
 			  {id:'lw-mansion-5',name:'5. Cozy Cabin Living Room',tags:'cozy cabin living room mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/cozy-cabin-living-room-live-wallpaper/',fallbackAnim:'lava',bg:'linear-gradient(180deg,hsl(190,45%,16%),hsl(230,55%,7%))',thumb:'linear-gradient(135deg,hsl(190,45%,16%),hsl(230,55%,7%))'},
-			  {id:'lw-mansion-6',name:'6. Fireplace',tags:'fireplace mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/fireplace-live-wallpaper/',fallbackAnim:'clouds',bg:'linear-gradient(180deg,hsl(328,45%,16%),hsl(8,55%,7%))',thumb:'linear-gradient(135deg,hsl(328,45%,16%),hsl(8,55%,7%))'},
+			  {id:'lw-mansion-6',name:'6. Lofi Cozy House',tags:'lofi cozy house mansiones y lujo moewalls video',type:'video',page:'https://moewalls.com/lifestyle/lofi-cozy-house-live-wallpaper/',fallbackAnim:'fireflies',bg:'linear-gradient(180deg,hsl(327,45%,16%),hsl(7,55%,7%))',thumb:'linear-gradient(135deg,hsl(327,45%,16%),hsl(7,55%,7%))'},
 			  {id:'lw-mansion-7',name:'7. Bedroom with Fireplace',tags:'bedroom with fireplace mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/bedroom-with-fireplace-live-wallpaper/',fallbackAnim:'rain',bg:'linear-gradient(180deg,hsl(105,45%,16%),hsl(145,55%,7%))',thumb:'linear-gradient(135deg,hsl(105,45%,16%),hsl(145,55%,7%))'},
 			  {id:'lw-mansion-8',name:'8. Apartment Night Rain',tags:'apartment night rain mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/apartment-night-rain-live-wallpaper/',fallbackAnim:'fireflies',bg:'linear-gradient(180deg,hsl(243,45%,16%),hsl(283,55%,7%))',thumb:'linear-gradient(135deg,hsl(243,45%,16%),hsl(283,55%,7%))'},
 			  {id:'lw-mansion-9',name:'9. Living Room Chill',tags:'living room chill mansiones y lujo mylivewallpapers video',type:'video',page:'https://mylivewallpapers.com/lifestyle/living-room-chill-live-wallpaper/',fallbackAnim:'lava',bg:'linear-gradient(180deg,hsl(20,45%,16%),hsl(60,55%,7%))',thumb:'linear-gradient(135deg,hsl(20,45%,16%),hsl(60,55%,7%))'},
@@ -5194,20 +5194,40 @@
 			// desplegado usamos el proxy de Netlify para leer la página y extraer el MP4 real.
 			const _WP_PROXY = '/.netlify/functions/proxy?url=';
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
+			// Cadena de proxies para leer la página origen desde el navegador del usuario.
+			// Si Cloudflare bloquea al servidor de Netlify, se intenta con proxies públicos.
+			async function _wpFetchPageText(pageUrl){
+			  const sources = [];
+			  if(location.protocol !== 'file:') sources.push(_WP_PROXY + encodeURIComponent(pageUrl));
+			  sources.push('https://api.allorigins.win/raw?url=' + encodeURIComponent(pageUrl));
+			  sources.push('https://corsproxy.io/?url=' + encodeURIComponent(pageUrl));
+			  sources.push('https://r.jina.ai/' + pageUrl);
+			  for(const src of sources){
+			    try{
+			      const ctl = new AbortController();
+			      const timer = setTimeout(()=>ctl.abort(), 9000);
+			      const r = await fetch(src, { signal: ctl.signal });
+			      clearTimeout(timer);
+			      if(!r.ok) continue;
+			      const txt = await r.text();
+			      // Una página real trae contenido; los bloqueos devuelven páginas cortas
+			      if(txt && txt.length > 800 && !/max challenge|attention required|access denied/i.test(txt.slice(0,2000))) return txt;
+			    }catch(e){ /* siguiente proxy */ }
+			  }
+			  return null;
+			}
 			const _wpMetaPending = {};
 			const _wpMetaFailed = {};
 			async function _fetchWpMeta(wp){
 			  if(!wp.page) return null;
 			  const cacheKey = 'wpm2_' + wp.id;
 			  try{ const c = localStorage.getItem(cacheKey); if(c) return JSON.parse(c); }catch(e){}
-			  if(location.protocol === 'file:') return null;
 			  if(_wpMetaFailed[wp.id]) return null; // ya falló en esta sesión, no insistir
 			  if(_wpMetaPending[wp.id]) return _wpMetaPending[wp.id];
 			  _wpMetaPending[wp.id] = (async ()=>{
 			    try{
-			      const r = await fetch(_WP_PROXY + encodeURIComponent(wp.page));
-			      if(!r.ok){ _wpMetaFailed[wp.id] = true; return null; }
-			      const doc = await r.text();
+			      const doc = await _wpFetchPageText(wp.page);
+			      if(!doc){ _wpMetaFailed[wp.id] = true; return null; }
 			      const fix = (u)=>{
 			        if(!u) return null;
 			        u = u.replace(/&amp;/g,'&').replace(/\\\//g,'/');
@@ -5257,6 +5277,7 @@
 			  const vid = document.createElement('video');
 			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			  vid.setAttribute('webkit-playsinline','true');
+			  vid.referrerPolicy = 'no-referrer';
 			  vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
 			  let stage = directUrl ? 0 : 1; // sin URL directa, empieza resolviendo la página
 			  let resolvedUrl = null;
@@ -5298,6 +5319,7 @@
 			    const vid = document.createElement('video');
 			    vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			    vid.setAttribute('webkit-playsinline','true');
+			  vid.referrerPolicy = 'no-referrer';
 			    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
 			    let proxied = false;
 			    vid.onerror = function(){
@@ -5914,8 +5936,8 @@
 			// No depende del proxy de Netlify: funciona aunque el sitio origen
 			// bloquee a los servidores de Netlify (Cloudflare, etc.).
 			function _wpShotUrl(wp, w){
-			  // Captura alta para incluir la zona del video (queda bajo la cabecera de la página)
-			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.page) + '?w=' + (w || 800) + '&h=1200';
+			  // Viewport de escritorio: el video del wallpaper ocupa la parte central
+			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.page) + '?w=' + (w || 1200) + '&h=900';
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
@@ -5927,10 +5949,13 @@
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
 			      if(t && job.fill.isConnected !== false){
-			        // og:image real por encima; la captura mshots queda debajo como respaldo,
-			        // encuadrada hacia la zona del video (bajo la cabecera de la página)
-			        job.fill.style.backgroundImage = 'url("' + _WP_PROXY + encodeURIComponent(t) + '"), url("' + _wpShotUrl(job.wp) + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
-			        job.fill.style.backgroundPosition = 'center, center 42%, center';
+			        // Portada oficial (og:image) por encima de la captura de página
+			        const og = document.createElement('img');
+			        og.referrerPolicy = 'no-referrer';
+			        og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
+			        og.onerror = ()=>{ og.remove(); };
+			        og.src = t;
+			        job.fill.appendChild(og);
 			      }
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
@@ -5954,23 +5979,30 @@
 			      fill.style.backgroundPosition = 'center';
 			    } else if(wp.type === 'video'){
 			      fill.className = 'wp-fill';
-			      fill.style.backgroundSize = 'cover';
-			      fill.style.backgroundPosition = 'center';
-			      // Miniatura real: captura mshots de la página original al instante
-			      // (no depende del proxy), y por encima la portada og:image si se
-			      // consigue extraer. El degradado queda de último respaldo.
-			      const grad = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
-			      let cachedThumb = null;
-			      try{ const c = localStorage.getItem('wpm2_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
-			      if(cachedThumb){
-			        fill.style.backgroundImage = 'url("' + _WP_PROXY + encodeURIComponent(cachedThumb) + '"), url("' + _wpShotUrl(wp) + '"), ' + grad;
-			        fill.style.backgroundPosition = 'center, center 42%, center';
-			      } else if(location.protocol !== 'file:' && wp.page){
-			        fill.style.backgroundImage = 'url("' + _wpShotUrl(wp) + '"), ' + grad;
-			        fill.style.backgroundPosition = 'center 42%, center';
-			        _wpThumbQueue.push({ wp: wp, fill: fill });
-			      } else {
-			        fill.style.backgroundImage = grad;
+			      fill.style.position = 'relative';
+			      fill.style.overflow = 'hidden';
+			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
+			      if(location.protocol !== 'file:' && wp.page){
+			        // Captura de la página con zoom hacia la zona del video
+			        // (recorta la cabecera del sitio, que queda fuera del encuadre)
+			        const shot = document.createElement('img');
+			        shot.referrerPolicy = 'no-referrer';
+			        shot.style.cssText = 'position:absolute;width:240%;left:-70%;top:-42%;z-index:1;';
+			        shot.onerror = ()=>{ shot.remove(); };
+			        shot.src = _wpShotUrl(wp);
+			        fill.appendChild(shot);
+			        let cachedThumb = null;
+			        try{ const c = localStorage.getItem('wpm2_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
+			        if(cachedThumb){
+			          const og = document.createElement('img');
+			          og.referrerPolicy = 'no-referrer';
+			          og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
+			          og.onerror = ()=>{ og.remove(); };
+			          og.src = cachedThumb;
+			          fill.appendChild(og);
+			        } else {
+			          _wpThumbQueue.push({ wp: wp, fill: fill });
+			        }
 			      }
 			    } else if(wp.type === 'canvas'){
 			      fill.className = 'wp-fill';
