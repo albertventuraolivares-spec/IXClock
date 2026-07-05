@@ -5229,16 +5229,32 @@
 			    if(u.indexOf('http') !== 0){ try{ u = new URL(u, baseUrl).href; }catch(e){ return null; } }
 			    return u;
 			  };
-			  let mv = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i)
-			        || doc.match(/content=["']([^"']+\.mp4[^"']*)["'][^>]*property=["']og:video/i)
-			        || doc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/i)
-			        || doc.match(/https?:\/\/cdn\.pixabay\.com\/video\/[^"'\s\\]+\.mp4[^"'\s\\]*/i)
-			        || doc.match(/["'(](https?:\/\/[^"'\s)]+\.mp4[^"'\s)]*)["')]/i);
+			  // Reúne TODOS los .mp4 de la página y elige el de mayor calidad (4K primero)
+			  const cand = [];
+			  (doc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(u=>cand.push(u));
+			  const sv = doc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/gi) || [];
+			  sv.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) cand.push(m[1]); });
+			  const ov = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i);
+			  if(ov) cand.push(ov[1]);
+			  let baseHost = '';
+			  try{ baseHost = new URL(baseUrl).hostname.replace(/^www\./,''); }catch(e){}
+			  const fixedAll = cand.map(fix).filter(Boolean);
+			  // Prioriza archivos del propio sitio o de sus CDNs conocidos
+			  let pool = fixedAll.filter(u=>{
+			    try{
+			      const h = new URL(u).hostname;
+			      return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
+			    }catch(e){ return false; }
+			  });
+			  if(!pool.length) pool = fixedAll;
+			  const qScore = u => /2160|4k|uhd/i.test(u) ? 3 : /1440|2k(?!\d)/i.test(u) ? 2 : /1080|fhd/i.test(u) ? 1 : 0;
+			  pool.sort((a,b)=>qScore(b)-qScore(a));
+			  const video = pool[0] || null;
 			  let mt = doc.match(/property=["']og:image(?::url|:secure_url)?["'][^>]*content=["']([^"']+)["']/i)
 			        || doc.match(/content=["']([^"']+)["'][^>]*property=["']og:image/i)
 			        || doc.match(/name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
 			        || doc.match(/https?:\/\/cdn\.pixabay\.com\/[^"'\s\\]+\.(?:jpg|jpeg|png|webp)[^"'\s\\]*/i);
-			  const meta = { video: fix(mv ? (mv[1] || mv[0]) : null), thumb: fix(mt ? (mt[1] || mt[0]) : null) };
+			  const meta = { video: video, thumb: fix(mt ? (mt[1] || mt[0]) : null) };
 			  if(!meta.video && !meta.thumb) return null;
 			  return meta;
 			}
@@ -5950,8 +5966,9 @@
 			// No depende del proxy de Netlify: funciona aunque el sitio origen
 			// bloquee a los servidores de Netlify (Cloudflare, etc.).
 			function _wpShotUrl(wp, w){
-			  // Captura de la página verificada (alt) — nunca un 404 del enlace original
-			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.alt || wp.page) + '?w=' + (w || 1200) + '&h=900';
+			  // Captura de la página verificada (alt) — nunca un 404 del enlace original.
+			  // Resolución alta para que la miniatura se vea nítida en pantallas Retina.
+			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.alt || wp.page) + '?w=' + (w || 1600) + '&h=1200';
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
