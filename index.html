@@ -5337,7 +5337,7 @@
 			  for(const src of sources){
 			    try{
 			      const ctl = new AbortController();
-			      const timer = setTimeout(()=>ctl.abort(), 9000);
+			      const timer = setTimeout(()=>ctl.abort(), 5000);
 			      const r = await fetch(src, { signal: ctl.signal });
 			      clearTimeout(timer);
 			      if(!r.ok) continue;
@@ -6182,13 +6182,13 @@
 			let _wpThumbWorkers = 0;
 			function _wpPumpThumbs(){
 			  if(location.protocol === 'file:') return;
-			  while(_wpThumbWorkers < 3 && _wpThumbQueue.length){
+			  // 6 a la vez para la mejora de portada oficial en segundo plano
+			  // (la captura ya se ve de inmediato, esto solo la reemplaza si llega antes de tocarla)
+			  while(_wpThumbWorkers < 6 && _wpThumbQueue.length){
 			    const job = _wpThumbQueue.shift();
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
-			      if(job.fill.isConnected === false) return;
-			      if(t){ _wpAddCardPoster(job.fill, job.wp, t); }
-			      else { _wpAddCardShot(job.fill, job.wp); }
+			      if(t && job.fill.isConnected !== false) _wpAddCardPoster(job.fill, job.wp, t);
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
@@ -6225,13 +6225,16 @@
 			      fill.style.overflow = 'hidden';
 			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			      if(location.protocol !== 'file:' && wp.page){
-			        // Imagen principal: la portada oficial del wallpaper (og:image).
-			        // La captura mshots solo entra como plan B si la portada falla.
+			        // La captura de la página se ve DE INMEDIATO (es solo una <img>, no
+			        // depende de fetch/proxy). La portada oficial (og:image) es una mejora
+			        // que llega después, en segundo plano, y la sustituye si aparece antes
+			        // de que el usuario ya haya visto/elegido la tarjeta.
 			        let cachedThumb = null;
 			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
 			        if(cachedThumb){
 			          _wpAddCardPoster(fill, wp, cachedThumb);
 			        } else {
+			          _wpAddCardShot(fill, wp);
 			          _wpThumbQueue.push({ wp: wp, fill: fill });
 			        }
 			      }
