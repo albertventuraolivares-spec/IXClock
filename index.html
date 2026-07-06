@@ -5458,7 +5458,8 @@
 			            const key = 'wpm3_' + wp.id;
 			            const c = JSON.parse(localStorage.getItem(key) || '{}');
 			            c.thumb = m2.thumb;
-			            if(!c.video && m2.video) c.video = m2.video;
+			            // El video fresco reemplaza al cacheado: cura URLs malas antiguas
+			            if(m2.video) c.video = m2.video;
 			            localStorage.setItem(key, JSON.stringify(c));
 			          }catch(e){}
 			          return m2.thumb;
@@ -6205,6 +6206,7 @@
 			// fotograma en un canvas pequeño. Si el CDN lo permite (CORS), se guarda
 			// como JPEG en localStorage y las próximas veces es instantáneo.
 			const _wpStats = { frames: 0, errores: 0, timeouts: 0, portadas: 0, ultimo: '—' };
+			const _wpReextracted = {};
 			const _wpFrameQueue = [];
 			let _wpFrameBusy = false;
 			const _wpPersistTried = {};
@@ -6281,7 +6283,20 @@
 			    }catch(e){ /* guardado imposible (CORS): la tarjeta ya muestra el canvas */ }
 			    finish();
 			  };
-			  v.onerror = ()=>{ clearTimeout(watchdog); _wpStats.errores++; _wpStats.ultimo = job.wp.id.replace('lw-','') + ': error de video'; finish(); };
+			  v.onerror = ()=>{
+			    clearTimeout(watchdog);
+			    _wpStats.errores++;
+			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': error de video';
+			    // URL de video mala (cacheada de una extracción antigua): borra el dato
+			    // y re-extrae por red con la lógica actual (rechaza 404, usa rescate)
+			    if(!job.persist && !_wpReextracted[job.wp.id]){
+			      _wpReextracted[job.wp.id] = true;
+			      try{ localStorage.removeItem('wpm3_' + job.wp.id); }catch(e){}
+			      _wpThumbQueue.push({ wp: job.wp, fill: job.fill });
+			      setTimeout(_wpPumpThumbs, 120);
+			    }
+			    finish();
+			  };
 			  v.onloadedmetadata = ()=>{
 			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){}
 			  };
