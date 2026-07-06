@@ -5325,6 +5325,9 @@
 			// Los links del usuario son PÁGINAS (mylivewallpapers/moewalls/pixabay). En el sitio
 			// desplegado usamos el proxy de Netlify para leer la página y extraer el MP4 real.
 			const _WP_PROXY = '/.netlify/functions/proxy?url=';
+			// Purga las cachés de versiones anteriores (contenían videos/imágenes
+			// equivocados extraídos de páginas 404 en las primeras versiones)
+			try{ Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpf_)/.test(k)) localStorage.removeItem(k); }); }catch(e){}
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
 			// Cadena de proxies para leer la página origen desde el navegador del usuario.
 			// Si Cloudflare bloquea al servidor de Netlify, se intenta con proxies públicos.
@@ -5413,7 +5416,7 @@
 			}
 			async function _fetchWpMeta(wp){
 			  if(!wp.page && !wp.alt) return null;
-			  const cacheKey = 'wpm3_' + wp.id;
+			  const cacheKey = 'wpm4_' + wp.id;
 			  try{ const c = localStorage.getItem(cacheKey); if(c) return JSON.parse(c); }catch(e){}
 			  if(_wpMetaFailed[wp.id]) return null; // ya falló en esta sesión, no insistir
 			  if(_wpMetaPending[wp.id]) return _wpMetaPending[wp.id];
@@ -5455,7 +5458,7 @@
 			        const m2 = _wpExtract(doc, src);
 			        if(m2 && m2.thumb){
 			          try{
-			            const key = 'wpm3_' + wp.id;
+			            const key = 'wpm4_' + wp.id;
 			            const c = JSON.parse(localStorage.getItem(key) || '{}');
 			            c.thumb = m2.thumb;
 			            // El video fresco reemplaza al cacheado: cura URLs malas antiguas
@@ -5508,7 +5511,7 @@
 			  function giveUp(){
 			    if(done) return; done = true;
 			    clearTimeout(watchdog);
-			    try{ localStorage.removeItem('wpm3_' + wp.id); }catch(e){}
+			    try{ localStorage.removeItem('wpm4_' + wp.id); }catch(e){}
 			    vid.remove();
 			    _wpShowCanvasFallback(fillEl, wp);
 			  }
@@ -5541,7 +5544,7 @@
 			    clearTimeout(watchdog);
 			    // Guarda el que sí funcionó para que la próxima vez cargue a la primera
 			    try{
-			      const key = 'wpm3_' + wp.id;
+			      const key = 'wpm4_' + wp.id;
 			      const c = JSON.parse(localStorage.getItem(key) || '{}');
 			      const raw = tried[tried.length - 1] || vid.currentSrc;
 			      if(raw && c.video !== raw){ c.video = raw; localStorage.setItem(key, JSON.stringify(c)); }
@@ -5562,7 +5565,7 @@
 			    let proxied = false;
 			    vid.onerror = function(){
 			      if(!proxied){ proxied = true; vid.src = _WP_PROXY + encodeURIComponent(u); vid.play().catch(()=>{}); return; }
-			      try{ localStorage.removeItem('wpv_' + wp.id); localStorage.removeItem('wpm3_' + wp.id); }catch(e){}
+			      try{ localStorage.removeItem('wpv_' + wp.id); localStorage.removeItem('wpm4_' + wp.id); }catch(e){}
 			      vid.remove(); // el canvas sigue animando debajo
 			    };
 			    vid.src = u;
@@ -6236,7 +6239,7 @@
 			  };
 			  if(!job.fill.isConnected){ settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return; }
 			  // La tarjeta ya tiene su fotograma (otro trabajo llegó antes): no repetir
-			  if(!job.persist && (job.fill.querySelector('canvas[data-frame]') || localStorage.getItem('wpf_' + job.wp.id))){
+			  if(!job.persist && (job.fill.querySelector('canvas[data-frame]') || localStorage.getItem('wpf4_' + job.wp.id))){
 			    settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return;
 			  }
 			  v.muted = true; v.playsInline = true; v.preload = 'auto';
@@ -6261,7 +6264,7 @@
 			      if(job.persist){
 			        // Intento de guardado: solo vale si el canvas no quedó contaminado
 			        const dataUrl = cvs.toDataURL('image/jpeg', 0.62); // lanza si está contaminado
-			        localStorage.setItem('wpf_' + job.wp.id, dataUrl);
+			        localStorage.setItem('wpf4_' + job.wp.id, dataUrl);
 			        job.fill.style.backgroundImage = 'url("' + dataUrl + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
 			        job.fill.style.backgroundSize = 'cover';
 			        job.fill.style.backgroundPosition = 'center';
@@ -6275,7 +6278,7 @@
 			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
 			        job.fill.appendChild(cvs);
 			        // Extra: intenta una vez la versión guardable (CORS) al final de la cola
-			        if(!_wpPersistTried[job.wp.id] && !localStorage.getItem('wpf_' + job.wp.id)){
+			        if(!_wpPersistTried[job.wp.id] && !localStorage.getItem('wpf4_' + job.wp.id)){
 			          _wpPersistTried[job.wp.id] = true;
 			          _wpFrameQueue.push({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, persist: true });
 			        }
@@ -6291,7 +6294,7 @@
 			    // y re-extrae por red con la lógica actual (rechaza 404, usa rescate)
 			    if(!job.persist && !_wpReextracted[job.wp.id]){
 			      _wpReextracted[job.wp.id] = true;
-			      try{ localStorage.removeItem('wpm3_' + job.wp.id); }catch(e){}
+			      try{ localStorage.removeItem('wpm4_' + job.wp.id); }catch(e){}
 			      // Limpia también las marcas de sesión que bloquearían el reintento
 			      delete _wpMetaFailed[job.wp.id];
 			      delete _wpThumbRetried[job.wp.id];
@@ -6350,7 +6353,7 @@
 			  ]).then(r=>{ svc = r.join(' · '); });
 			  setInterval(()=>{
 			    let metas = 0, frames = 0;
-			    try{ metas = Object.keys(localStorage).filter(k=>k.indexOf('wpm3_')===0).length; frames = Object.keys(localStorage).filter(k=>k.indexOf('wpf_')===0).length; }catch(e){}
+			    try{ metas = Object.keys(localStorage).filter(k=>k.indexOf('wpm4_')===0).length; frames = Object.keys(localStorage).filter(k=>k.indexOf('wpf4_')===0).length; }catch(e){}
 			    el.textContent = 'v2 · ' + (svc || 'comprobando…') + ' — videos: ' + metas + ' · dibujados: ' + _wpStats.frames + ' (+' + frames + ' guardados) · portadas: ' + _wpStats.portadas + ' · errores: ' + _wpStats.errores + ' · agotados: ' + _wpStats.timeouts + ' · cola: ' + _wpFrameQueue.length + ' · último: ' + _wpStats.ultimo;
 			  }, 2000);
 			}
@@ -6369,7 +6372,7 @@
 			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
 			      // Y además el fotograma del video: la vía que seguro funciona
 			      let mv = null;
-			      try{ const c = localStorage.getItem('wpm3_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
+			      try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
 			      if(mv) _wpQueueFrame(job.fill, job.wp, mv);
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
@@ -6413,8 +6416,8 @@
 			        // 2) portada extraída en caché, 3) sacar fotograma del video en caché,
 			        // 4) extraer por red y luego repetir 2-3.
 			        let frameCached = null, meta = null;
-			        try{ frameCached = localStorage.getItem('wpf_' + wp.id); }catch(e){}
-			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
+			        try{ frameCached = localStorage.getItem('wpf4_' + wp.id); }catch(e){}
+			        try{ const c = localStorage.getItem('wpm4_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
 			        if(frameCached){
 			          fill.style.backgroundImage = 'url("' + frameCached + '"), ' + (wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
 			          fill.style.backgroundSize = 'cover';
