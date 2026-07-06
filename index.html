@@ -6292,6 +6292,9 @@
 			    if(!job.persist && !_wpReextracted[job.wp.id]){
 			      _wpReextracted[job.wp.id] = true;
 			      try{ localStorage.removeItem('wpm3_' + job.wp.id); }catch(e){}
+			      // Limpia también las marcas de sesión que bloquearían el reintento
+			      delete _wpMetaFailed[job.wp.id];
+			      delete _wpThumbRetried[job.wp.id];
 			      _wpThumbQueue.push({ wp: job.wp, fill: job.fill });
 			      setTimeout(_wpPumpThumbs, 120);
 			    }
