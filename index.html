@@ -5391,7 +5391,23 @@
 			        || doc.match(/content=["']([^"']+)["'][^>]*property=["']og:image/i)
 			        || doc.match(/name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
 			        || doc.match(/https?:\/\/cdn\.pixabay\.com\/[^"'\s\\]+\.(?:jpg|jpeg|png|webp)[^"'\s\\]*/i);
-			  const meta = { video: video, thumb: fix(mt ? (mt[1] || mt[0]) : null) };
+			  let thumb = fix(mt ? (mt[1] || mt[0]) : null);
+			  if(!thumb){
+			    // Sin etiqueta og:image (p. ej. la página llegó como texto/markdown vía
+			    // r.jina.ai): busca cualquier imagen del propio sitio en el contenido
+			    const imgs = (doc.match(/https?:\/\/[^"'\s\\)>]+\.(?:jpg|jpeg|png|webp)[^"'\s\\)>]*/gi) || []).map(fix).filter(Boolean);
+			    let ipool = imgs.filter(u=>{
+			      try{
+			        const h = new URL(u).hostname;
+			        return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
+			      }catch(e){ return false; }
+			    });
+			    if(!ipool.length) ipool = imgs;
+			    const iq = u => /wp-content\/uploads|poster|thumb|preview|cover|\/media\//i.test(u) ? 1 : 0;
+			    ipool.sort((a,b)=>iq(b)-iq(a));
+			    thumb = ipool.find(u=>!/logo|icon|favicon|avatar|sprite|emoji/i.test(u)) || null;
+			  }
+			  const meta = { video: video, thumb: thumb };
 			  if(!meta.video && !meta.thumb) return null;
 			  return meta;
 			}
@@ -5424,8 +5440,32 @@
 			  const meta = await _fetchWpMeta(wp);
 			  return meta && meta.video || null;
 			}
-						async function _resolveWpThumb(wp){
+			const _wpThumbRetried = {};
+			async function _resolveWpThumb(wp){
 			  const meta = await _fetchWpMeta(wp);
+			  if(meta && meta.thumb) return meta.thumb;
+			  // Meta cacheado con video pero SIN portada (extracción antigua): reintenta
+			  // una vez por sesión con la extracción mejorada y actualiza la caché
+			  if(!_wpThumbRetried[wp.id]){
+			    _wpThumbRetried[wp.id] = true;
+			    for(const src of [wp.page, wp.alt]){
+			      if(!src) continue;
+			      try{
+			        const doc = await _wpFetchPageText(src);
+			        const m2 = _wpExtract(doc, src);
+			        if(m2 && m2.thumb){
+			          try{
+			            const key = 'wpm3_' + wp.id;
+			            const c = JSON.parse(localStorage.getItem(key) || '{}');
+			            c.thumb = m2.thumb;
+			            if(!c.video && m2.video) c.video = m2.video;
+			            localStorage.setItem(key, JSON.stringify(c));
+			          }catch(e){}
+			          return m2.thumb;
+			        }
+			      }catch(e){}
+			    }
+			  }
 			  return meta && meta.thumb || null;
 			}
 			function _wpShowCanvasFallback(fillEl, wp){
