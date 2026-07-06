@@ -6206,8 +6206,12 @@
 			// como JPEG en localStorage y las próximas veces es instantáneo.
 			const _wpFrameQueue = [];
 			let _wpFrameBusy = false;
-			function _wpQueueFrame(fill, wp, videoUrl, noCors){
-			  _wpFrameQueue.push({ fill: fill, wp: wp, videoUrl: videoUrl, noCors: !!noCors });
+			const _wpPersistTried = {};
+			function _wpQueueFrame(fill, wp, videoUrl){
+			  // SIN CORS por defecto: con CORS los CDNs de wallpapers rechazan la carga
+			  // (y en iOS puede colgarse sin error). Sin CORS el fotograma SIEMPRE se
+			  // puede mostrar; guardar es un extra que se intenta aparte una sola vez.
+			  _wpFrameQueue.push({ fill: fill, wp: wp, videoUrl: videoUrl, persist: false });
 			  // Diferido: durante el render de la galería la tarjeta aún no está
 			  // insertada en el DOM; si el pump corre síncrono la descarta por
 			  // "desconectada" y el fotograma no se dibuja nunca.
@@ -6231,12 +6235,12 @@
 			  v.muted = true; v.playsInline = true; v.preload = 'auto';
 			  v.setAttribute('webkit-playsinline','true');
 			  v.referrerPolicy = 'no-referrer';
-			  if(!job.noCors) v.crossOrigin = 'anonymous';
+			  if(job.persist) v.crossOrigin = 'anonymous'; // solo el intento de guardado usa CORS
 			  // iOS a veces no decodifica ningún fotograma hasta que el video "corre":
 			  // el elemento vive oculto en el DOM y se le da un play() mudo de arranque.
 			  v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;';
 			  document.body.appendChild(v);
-			  const watchdog = setTimeout(finish, 12000);
+			  const watchdog = setTimeout(finish, 10000);
 			  const tryDraw = ()=>{
 			    if(drawn || settled) return;
 			    if(v.readyState < 2 || !v.videoWidth) return;
@@ -6247,31 +6251,30 @@
 			      const cvs = document.createElement('canvas');
 			      cvs.width = w; cvs.height = h;
 			      cvs.getContext('2d').drawImage(v, 0, 0, w, h);
-			      let stored = false;
-			      if(!job.noCors){
-			        try{
-			          const dataUrl = cvs.toDataURL('image/jpeg', 0.62);
-			          localStorage.setItem('wpf_' + job.wp.id, dataUrl);
-			          job.fill.style.backgroundImage = 'url("' + dataUrl + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
-			          job.fill.style.backgroundSize = 'cover';
-			          job.fill.style.backgroundPosition = 'center';
-			          stored = true;
-			        }catch(e){ /* canvas contaminado: el CDN no manda CORS */ }
-			      }
-			      if(!stored){
-			        // No se puede guardar, pero SÍ mostrar: canvas en vivo en la tarjeta
+			      if(job.persist){
+			        // Intento de guardado: solo vale si el canvas no quedó contaminado
+			        const dataUrl = cvs.toDataURL('image/jpeg', 0.62); // lanza si está contaminado
+			        localStorage.setItem('wpf_' + job.wp.id, dataUrl);
+			        job.fill.style.backgroundImage = 'url("' + dataUrl + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
+			        job.fill.style.backgroundSize = 'cover';
+			        job.fill.style.backgroundPosition = 'center';
+			        const old = job.fill.querySelector('canvas[data-frame]');
+			        if(old) old.remove();
+			      } else {
+			        // Mostrar SIEMPRE: canvas en vivo en la tarjeta
+			        cvs.setAttribute('data-frame','1');
 			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
 			        job.fill.appendChild(cvs);
+			        // Extra: intenta una vez la versión guardable (CORS) al final de la cola
+			        if(!_wpPersistTried[job.wp.id] && !localStorage.getItem('wpf_' + job.wp.id)){
+			          _wpPersistTried[job.wp.id] = true;
+			          _wpFrameQueue.push({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, persist: true });
+			        }
 			      }
-			    }catch(e){}
+			    }catch(e){ /* guardado imposible (CORS): la tarjeta ya muestra el canvas */ }
 			    finish();
 			  };
-			  v.onerror = ()=>{
-			    clearTimeout(watchdog);
-			    // Con CORS puede fallar aunque el video exista; reintenta sin CORS
-			    if(!job.noCors) _wpFrameQueue.unshift({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, noCors: true });
-			    finish();
-			  };
+			  v.onerror = ()=>{ clearTimeout(watchdog); finish(); };
 			  v.onloadedmetadata = ()=>{
 			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){}
 			  };
