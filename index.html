@@ -6256,6 +6256,19 @@
 			    if(v.readyState < 2 || !v.videoWidth) return;
 			    drawn = true;
 			    clearTimeout(watchdog);
+			    // FILTRO 4K: la resolución REAL decodificada del video manda (no el nombre
+			    // del archivo). Si el lado mayor no llega a ~4K (3840), se elimina la
+			    // tarjeta: el usuario solo quiere fondos 4K.
+			    const big = Math.max(v.videoWidth, v.videoHeight);
+			    const is4K = big >= 3200; // 4K=3840, deja pasar cerca de 4K; descarta 1440p(2560) y 1080p(1920)
+			    try{ localStorage.setItem('wp4k_' + job.wp.id, is4K ? '1' : '0'); }catch(e){}
+			    if(!is4K){
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + big + 'p < 4K, eliminado';
+			      const card = job.fill.closest('.wallpaper-card');
+			      if(card) card.remove();
+			      finish();
+			      return;
+			    }
 			    try{
 			      const w = 360, h = Math.max(1, Math.round(w * v.videoHeight / v.videoWidth));
 			      const cvs = document.createElement('canvas');
@@ -6389,7 +6402,9 @@
 			  };
 			  WALLPAPERS.forEach(wp=>{
 			    const isStill = wp.type === 'gradient' || wp.type === 'photo';
-			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento'); _motionHeaderDone = true; }
+			    // Fondos en movimiento ya comprobados como NO-4K: no se muestran
+			    if(!isStill){ try{ if(localStorage.getItem('wp4k_' + wp.id) === '0') return; }catch(e){} }
+			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento · 4K'); _motionHeaderDone = true; }
 			    if(isStill && !_stillHeaderDone){ _mkHeader('🖼️ Quietos — fotos y degradados'); _stillHeaderDone = true; }
 			    const card = document.createElement('div');
 			    card.className = 'wallpaper-card';
