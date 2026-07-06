@@ -6155,39 +6155,50 @@
 			  // Resolución alta para que la miniatura se vea nítida en pantallas Retina.
 			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.alt || wp.page) + '?w=' + (w || 800) + '&h=600';
 			}
-			// Portada oficial del wallpaper en la tarjeta; si no carga, captura mshots.
-			// SIN loading=lazy: Safari de iOS no dispara la carga perezosa de imágenes
-			// dentro de paneles que arrancan ocultos (la galería se construye cerrada).
-			// La portada pasa por wsrv.nl (redimensionador público) a 480px para que
-			// 100 tarjetas no agoten la memoria de la pestaña.
-			function _wpAddCardPoster(fill, wp, thumbUrl){
-			  const og = document.createElement('img');
-			  og.referrerPolicy = 'no-referrer';
-			  og.decoding = 'async';
-			  og.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;';
-			  og.onerror = ()=>{ og.remove(); _wpAddCardShot(fill, wp); };
-			  og.src = 'https://wsrv.nl/?url=' + encodeURIComponent(thumbUrl) + '&w=480&output=webp';
-			  fill.appendChild(og);
+			// Imágenes de la tarjeta como CAPAS DE FONDO CSS (no <img>): es el método
+			// que demostró funcionar en Safari de iPad. Capas: portada oficial
+			// (redimensionada a 480px por wsrv.nl) encima, captura mshots debajo
+			// (escalada y encuadrada hacia la zona del video), degradado al final.
+			// Si una capa no carga, simplemente se ve la de abajo.
+			function _wpSetCardImages(fill, wp, thumbUrl){
+			  const grad = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
+			  const layers = [], sizes = [], poss = [];
+			  if(thumbUrl){
+			    layers.push('url("https://wsrv.nl/?url=' + encodeURIComponent(thumbUrl) + '&w=480&output=webp")');
+			    sizes.push('cover'); poss.push('center');
+			  }
+			  if(wp.alt || wp.page){
+			    layers.push('url("' + _wpShotUrl(wp) + '")');
+			    sizes.push('240% auto'); poss.push('50% 32%');
+			  }
+			  layers.push(grad); sizes.push('cover'); poss.push('center');
+			  fill.style.backgroundImage = layers.join(', ');
+			  fill.style.backgroundSize = sizes.join(', ');
+			  fill.style.backgroundPosition = poss.join(', ');
+			  fill.style.backgroundRepeat = 'no-repeat';
 			}
-			// Plan B: captura de la página con zoom hacia la zona del video
-			function _wpAddCardShot(fill, wp){
-			  if(fill.querySelector('img[data-shot]')) return;
-			  const shot = document.createElement('img');
-			  shot.setAttribute('data-shot','1');
-			  shot.referrerPolicy = 'no-referrer';
-			  shot.decoding = 'async';
-			  shot.style.cssText = 'position:absolute;width:240%;left:-70%;top:-42%;z-index:1;';
-			  shot.onerror = ()=>{
-			    // mshots puede estar generando la captura; reintenta una vez a los 12s
-			    if(!shot.dataset.retried){
-			      shot.dataset.retried = '1';
-			      setTimeout(()=>{ if(shot.isConnected) shot.src = _wpShotUrl(wp) + '&r=1'; }, 12000);
-			    } else {
-			      shot.remove();
-			    }
-			  };
-			  shot.src = _wpShotUrl(wp);
-			  fill.appendChild(shot);
+			// Autodiagnóstico visible: comprueba si los dos servicios de miniaturas
+			// cargan en ESTE dispositivo y lo muestra arriba de la galería.
+			function _wpImgSelfTest(){
+			  if(location.protocol === 'file:') return;
+			  const grid = document.getElementById('wallpaper-grid');
+			  if(!grid || document.getElementById('wp-selftest')) return;
+			  const el = document.createElement('div');
+			  el.id = 'wp-selftest';
+			  el.style.cssText = 'grid-column:1/-1;font-size:11px;opacity:.5;padding:2px 2px 0;';
+			  el.textContent = 'Comprobando servicios de miniaturas…';
+			  grid.insertBefore(el, grid.firstChild);
+			  const test = (name, url)=>new Promise(res=>{
+			    const i = new Image();
+			    const t = setTimeout(()=>res(name+': lento ⚠️'), 15000);
+			    i.onload = ()=>{ clearTimeout(t); res(name+': ✓'); };
+			    i.onerror = ()=>{ clearTimeout(t); res(name+': ✗'); };
+			    i.src = url;
+			  });
+			  Promise.all([
+			    test('capturas', 'https://s0.wp.com/mshots/v1/' + encodeURIComponent('https://mylivewallpapers.com/') + '?w=100'),
+			    test('portadas', 'https://wsrv.nl/?url=' + encodeURIComponent('https://mylivewallpapers.com/favicon.ico') + '&w=32')
+			  ]).then(r=>{ el.textContent = 'Servicios de miniaturas — ' + r.join(' · '); });
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
@@ -6200,7 +6211,7 @@
 			    const job = _wpThumbQueue.shift();
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
-			      if(t && job.fill.isConnected !== false) _wpAddCardPoster(job.fill, job.wp, t);
+			      if(t && job.fill.isConnected !== false) _wpSetCardImages(job.fill, job.wp, t);
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
@@ -6237,18 +6248,12 @@
 			      fill.style.overflow = 'hidden';
 			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			      if(location.protocol !== 'file:' && wp.page){
-			        // La captura de la página se ve DE INMEDIATO (es solo una <img>, no
-			        // depende de fetch/proxy). La portada oficial (og:image) es una mejora
-			        // que llega después, en segundo plano, y la sustituye si aparece antes
-			        // de que el usuario ya haya visto/elegido la tarjeta.
+			        // La captura mshots se ve de inmediato como capa de fondo CSS; la
+			        // portada oficial llega en segundo plano y se pone encima.
 			        let cachedThumb = null;
 			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
-			        if(cachedThumb){
-			          _wpAddCardPoster(fill, wp, cachedThumb);
-			        } else {
-			          _wpAddCardShot(fill, wp);
-			          _wpThumbQueue.push({ wp: wp, fill: fill });
-			        }
+			        _wpSetCardImages(fill, wp, cachedThumb);
+			        if(!cachedThumb) _wpThumbQueue.push({ wp: wp, fill: fill });
 			      }
 			    } else if(wp.type === 'canvas'){
 			      fill.className = 'wp-fill';
@@ -13004,6 +13009,7 @@
 
 			renderWallpaperGrid();
 			_wpPumpThumbs();
+			_wpImgSelfTest();
 			renderClockGrid();
 			renderColorPalette();
 			renderTextColorPalette();
