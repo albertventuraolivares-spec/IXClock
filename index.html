@@ -6208,7 +6208,10 @@
 			let _wpFrameBusy = false;
 			function _wpQueueFrame(fill, wp, videoUrl, noCors){
 			  _wpFrameQueue.push({ fill: fill, wp: wp, videoUrl: videoUrl, noCors: !!noCors });
-			  _wpPumpFrames();
+			  // Diferido: durante el render de la galería la tarjeta aún no está
+			  // insertada en el DOM; si el pump corre síncrono la descarta por
+			  // "desconectada" y el fotograma no se dibuja nunca.
+			  setTimeout(_wpPumpFrames, 60);
 			}
 			function _wpPumpFrames(){
 			  if(_wpFrameBusy || !_wpFrameQueue.length) return;
