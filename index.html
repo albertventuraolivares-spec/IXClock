@@ -6162,19 +6162,17 @@
 			// Si una capa no carga, simplemente se ve la de abajo.
 			function _wpSetCardImages(fill, wp, thumbUrl){
 			  const grad = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
-			  const layers = [], sizes = [], poss = [];
-			  if(thumbUrl){
-			    layers.push('url("https://wsrv.nl/?url=' + encodeURIComponent(thumbUrl) + '&w=480&output=webp")');
-			    sizes.push('cover'); poss.push('center');
+			  if(!thumbUrl){
+			    fill.style.backgroundImage = grad;
+			    return;
 			  }
-			  if(wp.alt || wp.page){
-			    layers.push('url("' + _wpShotUrl(wp) + '")');
-			    sizes.push('240% auto'); poss.push('50% 32%');
-			  }
-			  layers.push(grad); sizes.push('cover'); poss.push('center');
-			  fill.style.backgroundImage = layers.join(', ');
-			  fill.style.backgroundSize = sizes.join(', ');
-			  fill.style.backgroundPosition = poss.join(', ');
+			  // La portada del wallpaper, directa desde el CDN del sitio (el mismo
+			  // servidor del que ya se reproducen los videos). Capa wsrv (miniatura
+			  // ligera 480px) encima; si wsrv no responde, se ve la portada directa.
+			  const direct = thumbUrl.replace(/"/g, '%22');
+			  fill.style.backgroundImage = 'url("https://wsrv.nl/?url=' + encodeURIComponent(thumbUrl) + '&w=480&output=webp"), url("' + direct + '"), ' + grad;
+			  fill.style.backgroundSize = 'cover';
+			  fill.style.backgroundPosition = 'center';
 			  fill.style.backgroundRepeat = 'no-repeat';
 			}
 			// Autodiagnóstico visible: comprueba si los dos servicios de miniaturas
