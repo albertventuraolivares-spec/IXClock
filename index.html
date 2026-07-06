@@ -6214,32 +6214,33 @@
 			  if(_wpFrameBusy || !_wpFrameQueue.length) return;
 			  _wpFrameBusy = true;
 			  const job = _wpFrameQueue.shift();
-			  let settled = false;
+			  let settled = false, drawn = false;
 			  const v = document.createElement('video');
 			  const finish = ()=>{
 			    if(settled) return; settled = true;
+			    try{ v.pause(); }catch(e){}
 			    try{ v.removeAttribute('src'); v.load(); }catch(e){}
+			    if(v.parentNode) v.remove();
 			    _wpFrameBusy = false;
 			    setTimeout(_wpPumpFrames, 80);
 			  };
 			  if(!job.fill.isConnected){ settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return; }
 			  v.muted = true; v.playsInline = true; v.preload = 'auto';
+			  v.setAttribute('webkit-playsinline','true');
 			  v.referrerPolicy = 'no-referrer';
 			  if(!job.noCors) v.crossOrigin = 'anonymous';
-			  const watchdog = setTimeout(finish, 20000);
-			  v.onerror = ()=>{
-			    clearTimeout(watchdog);
-			    // Con CORS puede fallar aunque el video exista; reintenta sin CORS
-			    if(!job.noCors) _wpFrameQueue.unshift({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, noCors: true });
-			    finish();
-			  };
-			  v.onloadedmetadata = ()=>{
-			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){ clearTimeout(watchdog); finish(); }
-			  };
-			  v.onseeked = ()=>{
+			  // iOS a veces no decodifica ningún fotograma hasta que el video "corre":
+			  // el elemento vive oculto en el DOM y se le da un play() mudo de arranque.
+			  v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;';
+			  document.body.appendChild(v);
+			  const watchdog = setTimeout(finish, 12000);
+			  const tryDraw = ()=>{
+			    if(drawn || settled) return;
+			    if(v.readyState < 2 || !v.videoWidth) return;
+			    drawn = true;
 			    clearTimeout(watchdog);
 			    try{
-			      const w = 360, h = Math.max(1, Math.round(w * (v.videoHeight || 9*40) / (v.videoWidth || 16*40)));
+			      const w = 360, h = Math.max(1, Math.round(w * v.videoHeight / v.videoWidth));
 			      const cvs = document.createElement('canvas');
 			      cvs.width = w; cvs.height = h;
 			      cvs.getContext('2d').drawImage(v, 0, 0, w, h);
@@ -6262,7 +6263,20 @@
 			    }catch(e){}
 			    finish();
 			  };
+			  v.onerror = ()=>{
+			    clearTimeout(watchdog);
+			    // Con CORS puede fallar aunque el video exista; reintenta sin CORS
+			    if(!job.noCors) _wpFrameQueue.unshift({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, noCors: true });
+			    finish();
+			  };
+			  v.onloadedmetadata = ()=>{
+			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){}
+			  };
+			  v.onseeked = tryDraw;
+			  v.oncanplay = tryDraw;
+			  v.ontimeupdate = tryDraw;
 			  v.src = job.videoUrl;
+			  v.play().catch(()=>{});
 			}
 			function _wpSetCardImages(fill, wp, thumbUrl){
 			  const grad = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
