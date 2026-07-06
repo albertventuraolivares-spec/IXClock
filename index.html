@@ -6200,6 +6200,70 @@
 			// (redimensionada a 480px por wsrv.nl) encima, captura mshots debajo
 			// (escalada y encuadrada hacia la zona del video), degradado al final.
 			// Si una capa no carga, simplemente se ve la de abajo.
+			// ===== Miniaturas desde el propio VIDEO (lo único 100% fiable) =====
+			// Carga el video de la tarjeta uno por uno, salta a ~0.7s y dibuja ese
+			// fotograma en un canvas pequeño. Si el CDN lo permite (CORS), se guarda
+			// como JPEG en localStorage y las próximas veces es instantáneo.
+			const _wpFrameQueue = [];
+			let _wpFrameBusy = false;
+			function _wpQueueFrame(fill, wp, videoUrl, noCors){
+			  _wpFrameQueue.push({ fill: fill, wp: wp, videoUrl: videoUrl, noCors: !!noCors });
+			  _wpPumpFrames();
+			}
+			function _wpPumpFrames(){
+			  if(_wpFrameBusy || !_wpFrameQueue.length) return;
+			  _wpFrameBusy = true;
+			  const job = _wpFrameQueue.shift();
+			  let settled = false;
+			  const v = document.createElement('video');
+			  const finish = ()=>{
+			    if(settled) return; settled = true;
+			    try{ v.removeAttribute('src'); v.load(); }catch(e){}
+			    _wpFrameBusy = false;
+			    setTimeout(_wpPumpFrames, 80);
+			  };
+			  if(!job.fill.isConnected){ settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return; }
+			  v.muted = true; v.playsInline = true; v.preload = 'auto';
+			  v.referrerPolicy = 'no-referrer';
+			  if(!job.noCors) v.crossOrigin = 'anonymous';
+			  const watchdog = setTimeout(finish, 20000);
+			  v.onerror = ()=>{
+			    clearTimeout(watchdog);
+			    // Con CORS puede fallar aunque el video exista; reintenta sin CORS
+			    if(!job.noCors) _wpFrameQueue.unshift({ fill: job.fill, wp: job.wp, videoUrl: job.videoUrl, noCors: true });
+			    finish();
+			  };
+			  v.onloadedmetadata = ()=>{
+			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){ clearTimeout(watchdog); finish(); }
+			  };
+			  v.onseeked = ()=>{
+			    clearTimeout(watchdog);
+			    try{
+			      const w = 360, h = Math.max(1, Math.round(w * (v.videoHeight || 9*40) / (v.videoWidth || 16*40)));
+			      const cvs = document.createElement('canvas');
+			      cvs.width = w; cvs.height = h;
+			      cvs.getContext('2d').drawImage(v, 0, 0, w, h);
+			      let stored = false;
+			      if(!job.noCors){
+			        try{
+			          const dataUrl = cvs.toDataURL('image/jpeg', 0.62);
+			          localStorage.setItem('wpf_' + job.wp.id, dataUrl);
+			          job.fill.style.backgroundImage = 'url("' + dataUrl + '"), ' + (job.wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
+			          job.fill.style.backgroundSize = 'cover';
+			          job.fill.style.backgroundPosition = 'center';
+			          stored = true;
+			        }catch(e){ /* canvas contaminado: el CDN no manda CORS */ }
+			      }
+			      if(!stored){
+			        // No se puede guardar, pero SÍ mostrar: canvas en vivo en la tarjeta
+			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
+			        job.fill.appendChild(cvs);
+			      }
+			    }catch(e){}
+			    finish();
+			  };
+			  v.src = job.videoUrl;
+			}
 			function _wpSetCardImages(fill, wp, thumbUrl){
 			  const grad = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			  if(!thumbUrl){
@@ -6235,7 +6299,8 @@
 			  });
 			  Promise.all([
 			    test('capturas', 'https://s0.wp.com/mshots/v1/' + encodeURIComponent('https://mylivewallpapers.com/') + '?w=100'),
-			    test('portadas', 'https://wsrv.nl/?url=' + encodeURIComponent('https://mylivewallpapers.com/favicon.ico') + '&w=32')
+			    test('portadas', 'https://wsrv.nl/?url=' + encodeURIComponent('https://mylivewallpapers.com/favicon.ico') + '&w=32'),
+			    _wpFetchPageText('https://mylivewallpapers.com/').then(t=>'páginas: ' + (t ? '✓' : '✗')).catch(()=>'páginas: ✗')
 			  ]).then(r=>{ el.textContent = 'Servicios de miniaturas — ' + r.join(' · '); });
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
@@ -6249,7 +6314,12 @@
 			    const job = _wpThumbQueue.shift();
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
-			      if(t && job.fill.isConnected !== false) _wpSetCardImages(job.fill, job.wp, t);
+			      if(job.fill.isConnected === false) return;
+			      if(t) _wpSetCardImages(job.fill, job.wp, t);
+			      // Y además el fotograma del video: la vía que seguro funciona
+			      let mv = null;
+			      try{ const c = localStorage.getItem('wpm3_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
+			      if(mv) _wpQueueFrame(job.fill, job.wp, mv);
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
@@ -6286,12 +6356,26 @@
 			      fill.style.overflow = 'hidden';
 			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			      if(location.protocol !== 'file:' && wp.page){
-			        // La captura mshots se ve de inmediato como capa de fondo CSS; la
-			        // portada oficial llega en segundo plano y se pone encima.
-			        let cachedThumb = null;
-			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) cachedThumb = (JSON.parse(c)||{}).thumb; }catch(e){}
-			        _wpSetCardImages(fill, wp, cachedThumb);
-			        if(!cachedThumb) _wpThumbQueue.push({ wp: wp, fill: fill });
+			        // Orden de fiabilidad: 1) fotograma ya guardado del video (instantáneo),
+			        // 2) portada extraída en caché, 3) sacar fotograma del video en caché,
+			        // 4) extraer por red y luego repetir 2-3.
+			        let frameCached = null, meta = null;
+			        try{ frameCached = localStorage.getItem('wpf_' + wp.id); }catch(e){}
+			        try{ const c = localStorage.getItem('wpm3_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
+			        if(frameCached){
+			          fill.style.backgroundImage = 'url("' + frameCached + '"), ' + (wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
+			          fill.style.backgroundSize = 'cover';
+			          fill.style.backgroundPosition = 'center';
+			        } else if(meta && meta.thumb){
+			          _wpSetCardImages(fill, wp, meta.thumb);
+			          if(meta.video) _wpQueueFrame(fill, wp, meta.video); // por si la portada tampoco pinta
+			        } else if(meta && meta.video){
+			          _wpSetCardImages(fill, wp, null);
+			          _wpQueueFrame(fill, wp, meta.video);
+			        } else {
+			          _wpSetCardImages(fill, wp, null);
+			          _wpThumbQueue.push({ wp: wp, fill: fill });
+			        }
 			      }
 			    } else if(wp.type === 'canvas'){
 			      fill.className = 'wp-fill';
