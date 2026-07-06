@@ -6232,6 +6232,10 @@
 			    setTimeout(_wpPumpFrames, 80);
 			  };
 			  if(!job.fill.isConnected){ settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return; }
+			  // La tarjeta ya tiene su fotograma (otro trabajo llegó antes): no repetir
+			  if(!job.persist && (job.fill.querySelector('canvas[data-frame]') || localStorage.getItem('wpf_' + job.wp.id))){
+			    settled = true; _wpFrameBusy = false; setTimeout(_wpPumpFrames, 10); return;
+			  }
 			  v.muted = true; v.playsInline = true; v.preload = 'auto';
 			  v.setAttribute('webkit-playsinline','true');
 			  v.referrerPolicy = 'no-referrer';
@@ -6392,6 +6396,8 @@
 			        } else if(meta && meta.video){
 			          _wpSetCardImages(fill, wp, null);
 			          _wpQueueFrame(fill, wp, meta.video);
+			          // Y también reintenta la portada por red (con la extracción mejorada)
+			          _wpThumbQueue.push({ wp: wp, fill: fill });
 			        } else {
 			          _wpSetCardImages(fill, wp, null);
 			          _wpThumbQueue.push({ wp: wp, fill: fill });
