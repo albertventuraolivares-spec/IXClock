@@ -6385,7 +6385,9 @@
 			      fill.style.backgroundPosition = 'center';
 			    } else if(wp.type === 'video'){
 			      fill.className = 'wp-fill';
-			      fill.style.position = 'relative';
+			      // OJO: no tocar position — .wp-fill es position:absolute;inset:0 y
+			      // cambiarla a relative la colapsa a altura 0 (todo lo pintado dentro
+			      // queda invisible). Absoluta ya sirve de ancla para el canvas interior.
 			      fill.style.overflow = 'hidden';
 			      fill.style.backgroundImage = wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)';
 			      if(location.protocol !== 'file:' && wp.page){
