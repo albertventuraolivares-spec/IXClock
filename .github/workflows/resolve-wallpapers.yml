@@ -1,5 +1,9 @@
 name: Resolve wallpapers
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/ixclock-html-page-jhfqhc]
+    paths: ['scripts/resolve-trigger.txt']
 permissions:
   contents: write
 jobs:
