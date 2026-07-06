@@ -6204,6 +6204,7 @@
 			// Carga el video de la tarjeta uno por uno, salta a ~0.7s y dibuja ese
 			// fotograma en un canvas pequeño. Si el CDN lo permite (CORS), se guarda
 			// como JPEG en localStorage y las próximas veces es instantáneo.
+			const _wpStats = { frames: 0, errores: 0, timeouts: 0, portadas: 0, ultimo: '—' };
 			const _wpFrameQueue = [];
 			let _wpFrameBusy = false;
 			const _wpPersistTried = {};
@@ -6242,9 +6243,9 @@
 			  if(job.persist) v.crossOrigin = 'anonymous'; // solo el intento de guardado usa CORS
 			  // iOS a veces no decodifica ningún fotograma hasta que el video "corre":
 			  // el elemento vive oculto en el DOM y se le da un play() mudo de arranque.
-			  v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;';
+			  v.style.cssText = 'position:fixed;right:2px;bottom:2px;width:4px;height:4px;opacity:0.01;pointer-events:none;z-index:1;';
 			  document.body.appendChild(v);
-			  const watchdog = setTimeout(finish, 10000);
+			  const watchdog = setTimeout(()=>{ _wpStats.timeouts++; _wpStats.ultimo = job.wp.id.replace('lw-','') + ': tiempo agotado'; finish(); }, 10000);
 			  const tryDraw = ()=>{
 			    if(drawn || settled) return;
 			    if(v.readyState < 2 || !v.videoWidth) return;
@@ -6265,6 +6266,8 @@
 			        const old = job.fill.querySelector('canvas[data-frame]');
 			        if(old) old.remove();
 			      } else {
+			        _wpStats.frames++;
+			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': dibujado ✓';
 			        // Mostrar SIEMPRE: canvas en vivo en la tarjeta
 			        cvs.setAttribute('data-frame','1');
 			        cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;';
@@ -6278,7 +6281,7 @@
 			    }catch(e){ /* guardado imposible (CORS): la tarjeta ya muestra el canvas */ }
 			    finish();
 			  };
-			  v.onerror = ()=>{ clearTimeout(watchdog); finish(); };
+			  v.onerror = ()=>{ clearTimeout(watchdog); _wpStats.errores++; _wpStats.ultimo = job.wp.id.replace('lw-','') + ': error de video'; finish(); };
 			  v.onloadedmetadata = ()=>{
 			    try{ v.currentTime = Math.min(0.7, (v.duration || 1) * 0.25); }catch(e){}
 			  };
@@ -6321,11 +6324,17 @@
 			    i.onerror = ()=>{ clearTimeout(t); res(name+': ✗'); };
 			    i.src = url;
 			  });
+			  let svc = '';
 			  Promise.all([
 			    test('capturas', 'https://s0.wp.com/mshots/v1/' + encodeURIComponent('https://mylivewallpapers.com/') + '?w=100'),
 			    test('portadas', 'https://wsrv.nl/?url=' + encodeURIComponent('https://mylivewallpapers.com/favicon.ico') + '&w=32'),
 			    _wpFetchPageText('https://mylivewallpapers.com/').then(t=>'páginas: ' + (t ? '✓' : '✗')).catch(()=>'páginas: ✗')
-			  ]).then(r=>{ el.textContent = 'Servicios de miniaturas — ' + r.join(' · '); });
+			  ]).then(r=>{ svc = r.join(' · '); });
+			  setInterval(()=>{
+			    let metas = 0, frames = 0;
+			    try{ metas = Object.keys(localStorage).filter(k=>k.indexOf('wpm3_')===0).length; frames = Object.keys(localStorage).filter(k=>k.indexOf('wpf_')===0).length; }catch(e){}
+			    el.textContent = 'v2 · ' + (svc || 'comprobando…') + ' — videos: ' + metas + ' · dibujados: ' + _wpStats.frames + ' (+' + frames + ' guardados) · portadas: ' + _wpStats.portadas + ' · errores: ' + _wpStats.errores + ' · agotados: ' + _wpStats.timeouts + ' · cola: ' + _wpFrameQueue.length + ' · último: ' + _wpStats.ultimo;
+			  }, 2000);
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
 			const _wpThumbQueue = [];
@@ -6339,7 +6348,7 @@
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
 			      if(job.fill.isConnected === false) return;
-			      if(t) _wpSetCardImages(job.fill, job.wp, t);
+			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
 			      // Y además el fotograma del video: la vía que seguro funciona
 			      let mv = null;
 			      try{ const c = localStorage.getItem('wpm3_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
