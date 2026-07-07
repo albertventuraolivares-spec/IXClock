@@ -6266,17 +6266,9 @@
 			  document.body.appendChild(v);
 			  const watchdog = setTimeout(()=>{
 			    _wpStats.timeouts++;
-			    // Video colgado: si la página NO declaró 4K, no se pudo confirmar la
-			    // calidad -> se elimina (salvo que ya tenga una portada 4K confirmada).
-			    let declared = null;
-			    try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) declared = (JSON.parse(c)||{}).res; }catch(e){}
-			    if(!job.persist && (!declared || declared < 3200) && localStorage.getItem('wp4k_' + job.wp.id) !== '1'){
-			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin confirmar 4K, eliminado';
-			      const card = job.fill.closest('.wallpaper-card');
-			      if(card) card.remove();
-			    } else {
-			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': tiempo agotado';
-			    }
+			    // Video colgado = calidad DESCONOCIDA. NO se elimina: solo se borra
+			    // cuando hay prueba real de que es menor a 4K.
+			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': tiempo agotado (se conserva)';
 			    finish();
 			  }, 10000);
 			  const tryDraw = ()=>{
@@ -6330,20 +6322,10 @@
 			  v.onerror = ()=>{
 			    clearTimeout(watchdog);
 			    _wpStats.errores++;
-			    // Si la página YA declaró 4K (o el fotograma confirmó 4K antes), la
-			    // tarjeta se conserva aunque el video no cargue: es 4K de verdad, solo
-			    // que su video se colgó. Solo se elimina cuando la calidad no está
-			    // confirmada como 4K.
-			    let declared = null;
-			    try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) declared = (JSON.parse(c)||{}).res; }catch(e){}
-			    const es4K = (declared && declared >= 3200) || localStorage.getItem('wp4k_' + job.wp.id) === '1';
-			    if(!job.persist && !es4K){
-			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video 4K, eliminado';
-			      const card = job.fill.closest('.wallpaper-card');
-			      if(card) card.remove();
-			    } else {
-			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': video 4K falló (se conserva)';
-			    }
+			    // Error de video = calidad DESCONOCIDA. NO se elimina: la tarjeta se
+			    // queda (muestra su portada/degradado). Solo se borra con prueba real
+			    // de que es menor a 4K (resolución declarada o decodificada).
+			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': video no cargó (se conserva)';
 			    finish();
 			  };
 			  v.onloadedmetadata = ()=>{
@@ -6424,11 +6406,8 @@
 			      }
 			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
 			      if(mv){ _wpQueueFrame(job.fill, job.wp, mv); } // el fotograma reconfirma 4K real
-			      else {
-			        // El enlace del usuario no dio ningún video: se ELIMINA la tarjeta
-			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video, eliminado';
-			        if(card) card.remove();
-			      }
+			      // Sin video = DESCONOCIDO (red intermitente): NO se elimina; la tarjeta
+			      // se queda con su portada/degradado. Solo se borra con prueba de < 4K.
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
