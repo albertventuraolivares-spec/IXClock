@@ -5410,7 +5410,22 @@
 			    ipool.sort((a,b)=>iq(b)-iq(a));
 			    thumb = ipool.find(u=>!/logo|icon|favicon|avatar|sprite|emoji/i.test(u)) || null;
 			  }
-			  const meta = { video: video, thumb: thumb };
+			  // RESOLUCIÓN DECLARADA en la página (sin decodificar el video):
+			  // moewalls escribe "3840x2160", mylivewallpapers y otros ponen "4K"/"2160p",
+			  // y muchos nombres de archivo llevan la resolución. Se toma el lado mayor
+			  // más alto encontrado en el texto de la página + la URL del video elegido.
+			  let declaredMax = 0;
+			  const scanText = (video || '') + ' ' + doc;
+			  (scanText.match(/(\d{3,4})\s*[x×]\s*(\d{3,4})/g) || []).forEach(p=>{
+			    const m = p.match(/(\d{3,4})\s*[x×]\s*(\d{3,4})/);
+			    if(m){ const big = Math.max(+m[1], +m[2]); if(big <= 8000 && big > declaredMax) declaredMax = big; }
+			  });
+			  // Etiquetas de calidad sin dimensiones explícitas
+			  if(/\b(4k|uhd|2160p?)\b/i.test(scanText)) declaredMax = Math.max(declaredMax, 3840);
+			  else if(/\b(1440p|2k)\b/i.test(scanText)) declaredMax = Math.max(declaredMax, 2560);
+			  else if(/\b(1080p|fhd|full ?hd)\b/i.test(scanText)) declaredMax = Math.max(declaredMax, 1920);
+			  else if(/\b(720p|hd ready)\b/i.test(scanText)) declaredMax = Math.max(declaredMax, 1280);
+			  const meta = { video: video, thumb: thumb, res: declaredMax || null };
 			  if(!meta.video && !meta.thumb) return null;
 			  return meta;
 			}
@@ -6250,7 +6265,21 @@
 			  // el elemento vive oculto en el DOM y se le da un play() mudo de arranque.
 			  v.style.cssText = 'position:fixed;right:2px;bottom:2px;width:4px;height:4px;opacity:0.01;pointer-events:none;z-index:1;';
 			  document.body.appendChild(v);
-			  const watchdog = setTimeout(()=>{ _wpStats.timeouts++; _wpStats.ultimo = job.wp.id.replace('lw-','') + ': tiempo agotado'; finish(); }, 10000);
+			  const watchdog = setTimeout(()=>{
+			    _wpStats.timeouts++;
+			    // Video colgado: si la página NO declaró 4K, no se pudo confirmar la
+			    // calidad -> se elimina (salvo que ya tenga una portada 4K confirmada).
+			    let declared = null;
+			    try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) declared = (JSON.parse(c)||{}).res; }catch(e){}
+			    if(!job.persist && (!declared || declared < 3200) && localStorage.getItem('wp4k_' + job.wp.id) !== '1'){
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin confirmar 4K, eliminado';
+			      const card = job.fill.closest('.wallpaper-card');
+			      if(card) card.remove();
+			    } else {
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': tiempo agotado';
+			    }
+			    finish();
+			  }, 10000);
 			  const tryDraw = ()=>{
 			    if(drawn || settled) return;
 			    if(v.readyState < 2 || !v.videoWidth) return;
@@ -6302,13 +6331,19 @@
 			  v.onerror = ()=>{
 			    clearTimeout(watchdog);
 			    _wpStats.errores++;
-			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video, eliminado';
-			    // El enlace del usuario no da un video que funcione: se ELIMINA la
-			    // tarjeta (no se reemplaza por nada). No se persiste, por si fue un
-			    // fallo puntual de red: al reabrir vuelve a intentarse.
-			    if(!job.persist){
+			    // Si la página YA declaró 4K (o el fotograma confirmó 4K antes), la
+			    // tarjeta se conserva aunque el video no cargue: es 4K de verdad, solo
+			    // que su video se colgó. Solo se elimina cuando la calidad no está
+			    // confirmada como 4K.
+			    let declared = null;
+			    try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) declared = (JSON.parse(c)||{}).res; }catch(e){}
+			    const es4K = (declared && declared >= 3200) || localStorage.getItem('wp4k_' + job.wp.id) === '1';
+			    if(!job.persist && !es4K){
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video 4K, eliminado';
 			      const card = job.fill.closest('.wallpaper-card');
 			      if(card) card.remove();
+			    } else {
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': video 4K falló (se conserva)';
 			    }
 			    finish();
 			  };
@@ -6378,15 +6413,21 @@
 			    _wpThumbWorkers++;
 			    _resolveWpThumb(job.wp).then(t=>{
 			      if(job.fill.isConnected === false) return;
+			      let mv = null, res = null;
+			      try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c){ const j = JSON.parse(c); mv = j.video; res = j.res; } }catch(e){}
+			      const card = job.fill.closest('.wallpaper-card');
+			      // Resolución declarada en la página < 4K -> eliminar (sin decodificar video)
+			      if(res && res < 3200){
+			        try{ localStorage.setItem('wp4k_' + job.wp.id, '0'); }catch(e){}
+			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + res + 'p < 4K, eliminado';
+			        if(card) card.remove();
+			        return;
+			      }
 			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
-			      // El fotograma del video confirma resolución 4K y sirve de imagen
-			      let mv = null;
-			      try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
-			      if(mv){ _wpQueueFrame(job.fill, job.wp, mv); }
+			      if(mv){ _wpQueueFrame(job.fill, job.wp, mv); } // el fotograma reconfirma 4K real
 			      else {
 			        // El enlace del usuario no dio ningún video: se ELIMINA la tarjeta
 			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video, eliminado';
-			        const card = job.fill.closest('.wallpaper-card');
 			        if(card) card.remove();
 			      }
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
@@ -6435,6 +6476,8 @@
 			        let frameCached = null, meta = null;
 			        try{ frameCached = localStorage.getItem('wpf4_' + wp.id); }catch(e){}
 			        try{ const c = localStorage.getItem('wpm4_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
+			        // Resolución ya comprobada < 4K -> ni siquiera se crea la tarjeta
+			        if(meta && meta.res && meta.res < 3200){ try{ localStorage.setItem('wp4k_' + wp.id, '0'); }catch(e){} card.remove(); return; }
 			        if(frameCached){
 			          fill.style.backgroundImage = 'url("' + frameCached + '"), ' + (wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
 			          fill.style.backgroundSize = 'cover';
