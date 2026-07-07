@@ -6283,9 +6283,9 @@
 			    const is4K = big >= 3200; // 4K=3840, deja pasar cerca de 4K; descarta 1440p(2560) y 1080p(1920)
 			    try{ localStorage.setItem('wp4k_' + job.wp.id, is4K ? '1' : '0'); }catch(e){}
 			    if(!is4K){
-			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + big + 'p < 4K, eliminado';
-			      const card = job.fill.closest('.wallpaper-card');
-			      if(card) card.remove();
+			      // NO se elimina en vivo (desaparecer en pantalla es horrible). Se marca
+			      // y la próxima vez que abras Fondos no aparece. Ahora sigue mostrándose.
+			      _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + big + 'p < 4K (oculto la próxima vez)';
 			      finish();
 			      return;
 			    }
@@ -6397,11 +6397,11 @@
 			      let mv = null, res = null;
 			      try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c){ const j = JSON.parse(c); mv = j.video; res = j.res; } }catch(e){}
 			      const card = job.fill.closest('.wallpaper-card');
-			      // Resolución declarada en la página < 4K -> eliminar (sin decodificar video)
+			      // Resolución declarada en la página < 4K: se marca (se oculta la próxima
+			      // vez), pero NO se elimina en vivo delante del usuario.
 			      if(res && res < 3200){
 			        try{ localStorage.setItem('wp4k_' + job.wp.id, '0'); }catch(e){}
-			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + res + 'p < 4K, eliminado';
-			        if(card) card.remove();
+			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': ' + res + 'p < 4K (oculto la próxima vez)';
 			        return;
 			      }
 			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
