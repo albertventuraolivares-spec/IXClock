@@ -5415,7 +5415,7 @@
 			  return meta;
 			}
 			async function _fetchWpMeta(wp){
-			  if(!wp.page && !wp.alt) return null;
+			  if(!wp.page) return null;
 			  const cacheKey = 'wpm4_' + wp.id;
 			  try{ const c = localStorage.getItem(cacheKey); if(c) return JSON.parse(c); }catch(e){}
 			  if(_wpMetaFailed[wp.id]) return null; // ya falló en esta sesión, no insistir
@@ -5423,7 +5423,7 @@
 			  _wpMetaPending[wp.id] = (async ()=>{
 			    try{
 			      // 1º el enlace original del usuario; 2º la página verificada del mismo tema
-			      for(const src of [wp.page, wp.alt]){
+			      for(const src of [wp.page]){
 			        if(!src) continue;
 			        const doc = await _wpFetchPageText(src);
 			        const meta = _wpExtract(doc, src);
@@ -5451,7 +5451,7 @@
 			  // una vez por sesión con la extracción mejorada y actualiza la caché
 			  if(!_wpThumbRetried[wp.id]){
 			    _wpThumbRetried[wp.id] = true;
-			    for(const src of [wp.page, wp.alt]){
+			    for(const src of [wp.page]){
 			      if(!src) continue;
 			      try{
 			        const doc = await _wpFetchPageText(src);
@@ -5504,7 +5504,7 @@
 			  const providers = [
 			    async ()=> directUrl,
 			    async ()=>{ const m = await _fetchWpMeta(wp); return m && m.video; },
-			    async ()=> wp.alt ? _wpVideoFromUrl(wp.alt) : null,
+			  
 			  ];
 			  const tried = [];
 			  let p = 0, proxyIdx = 0, done = false, watchdog = null;
@@ -6197,7 +6197,7 @@
 			function _wpShotUrl(wp, w){
 			  // Captura de la página verificada (alt) — nunca un 404 del enlace original.
 			  // Resolución alta para que la miniatura se vea nítida en pantallas Retina.
-			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.alt || wp.page) + '?w=' + (w || 800) + '&h=600';
+			  return 'https://s0.wp.com/mshots/v1/' + encodeURIComponent(wp.page) + '?w=' + (w || 800) + '&h=600';
 			}
 			// Imágenes de la tarjeta como CAPAS DE FONDO CSS (no <img>): es el método
 			// que demostró funcionar en Safari de iPad. Capas: portada oficial
@@ -6302,17 +6302,13 @@
 			  v.onerror = ()=>{
 			    clearTimeout(watchdog);
 			    _wpStats.errores++;
-			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': error de video';
-			    // URL de video mala (cacheada de una extracción antigua): borra el dato
-			    // y re-extrae por red con la lógica actual (rechaza 404, usa rescate)
-			    if(!job.persist && !_wpReextracted[job.wp.id]){
-			      _wpReextracted[job.wp.id] = true;
-			      try{ localStorage.removeItem('wpm4_' + job.wp.id); }catch(e){}
-			      // Limpia también las marcas de sesión que bloquearían el reintento
-			      delete _wpMetaFailed[job.wp.id];
-			      delete _wpThumbRetried[job.wp.id];
-			      _wpThumbQueue.push({ wp: job.wp, fill: job.fill });
-			      setTimeout(_wpPumpThumbs, 120);
+			    _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video, eliminado';
+			    // El enlace del usuario no da un video que funcione: se ELIMINA la
+			    // tarjeta (no se reemplaza por nada). No se persiste, por si fue un
+			    // fallo puntual de red: al reabrir vuelve a intentarse.
+			    if(!job.persist){
+			      const card = job.fill.closest('.wallpaper-card');
+			      if(card) card.remove();
 			    }
 			    finish();
 			  };
@@ -6383,10 +6379,16 @@
 			    _resolveWpThumb(job.wp).then(t=>{
 			      if(job.fill.isConnected === false) return;
 			      if(t){ _wpStats.portadas++; _wpSetCardImages(job.fill, job.wp, t); }
-			      // Y además el fotograma del video: la vía que seguro funciona
+			      // El fotograma del video confirma resolución 4K y sirve de imagen
 			      let mv = null;
 			      try{ const c = localStorage.getItem('wpm4_' + job.wp.id); if(c) mv = (JSON.parse(c)||{}).video; }catch(e){}
-			      if(mv) _wpQueueFrame(job.fill, job.wp, mv);
+			      if(mv){ _wpQueueFrame(job.fill, job.wp, mv); }
+			      else {
+			        // El enlace del usuario no dio ningún video: se ELIMINA la tarjeta
+			        _wpStats.ultimo = job.wp.id.replace('lw-','') + ': sin video, eliminado';
+			        const card = job.fill.closest('.wallpaper-card');
+			        if(card) card.remove();
+			      }
 			    }).catch(()=>{}).finally(()=>{ _wpThumbWorkers--; _wpPumpThumbs(); });
 			  }
 			}
