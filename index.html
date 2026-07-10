@@ -3326,6 +3326,12 @@
 					⚽ Deportes y Mundiales
 				</button>
 				<button
+					onclick="searchTVFamous()"
+					style="padding:10px;border-radius:12px;background:rgba(10,132,255,.18);border:1px solid rgba(10,132,255,.4);color:#64b5ff;font-weight:700;font-size:12px;cursor:pointer;"
+				>
+					⭐ Famosos (Telemundo, FIFA, ESPN…)
+				</button>
+				<button
 					onclick="searchTV4K()"
 					style="padding:10px;border-radius:12px;background:rgba(175,130,255,.18);border:1px solid rgba(175,130,255,.4);color:#af82ff;font-weight:700;font-size:12px;cursor:pointer;"
 				>
@@ -5315,6 +5321,9 @@
 			.pill-clasico{background:rgba(255,255,255,.08);padding:8px 26px;border-radius:50px;border:1px solid rgba(255,255,255,.4);display:inline-block;}
 			.pill-vintage{background:rgba(60,40,20,.35);padding:10px 28px;border-radius:12px;border:4px double #c9a35c;display:inline-block;}
 			.pill-lcd{background:rgba(20,30,15,.55);padding:8px 22px;border-radius:8px;border:2px solid #5a7a1f;display:inline-block;}
+			.wallpaper-card.wp-loading{outline:2px solid #0a84ff;animation:wpLoadingPulse 1s ease-in-out infinite;}
+			@keyframes wpLoadingPulse{50%{outline-color:rgba(10,132,255,.2);}}
+			.wp-res-badge{position:absolute;right:6px;top:6px;z-index:3;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.6);color:#30d158;letter-spacing:.04em;pointer-events:none;}
 			`;
 			document.head.appendChild(extraCSS);
 
@@ -5325,8 +5334,16 @@
 			// desplegado usamos el proxy de Netlify para leer la página y extraer el MP4 real.
 			const _WP_PROXY = '/.netlify/functions/proxy?url=';
 			// Purga las cachés de versiones anteriores (contenían videos/imágenes
-			// equivocados extraídos de páginas 404 en las primeras versiones)
-			try{ Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpm4_|wpf_|wpf4_|wp4k_)/.test(k)) localStorage.removeItem(k); }); }catch(e){}
+			// equivocados extraídos de páginas 404 en las primeras versiones).
+			// Solo UNA vez por versión de catálogo: si se purgara en cada carga, los
+			// videos/fotogramas extraídos se perderían al recargar y las tarjetas
+			// tendrían que re-extraer todo desde cero (causa del "primer toque falla").
+			try{
+			  if(localStorage.getItem('wpCacheV') !== '5'){
+			    Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpm4_|wpf_|wpf4_|wp4k_|wpres_)/.test(k)) localStorage.removeItem(k); });
+			    localStorage.setItem('wpCacheV', '5');
+			  }
+			}catch(e){}
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
 			// Cadena de proxies para leer la página origen desde el navegador del usuario.
 			// Si Cloudflare bloquea al servidor de Netlify, se intenta con proxies públicos.
@@ -5509,7 +5526,8 @@
 			}
 			// Escalera de intentos: URL directa → video del enlace del usuario → video de la
 			// página de rescate (alt) → cada uno vía proxy → animación canvas como último recurso
-			function _wpAttachVideo(fillEl, wp, directUrl){
+			function _wpAttachVideo(fillEl, wp, directUrl, onReady){
+			  const _ready = (ok)=>{ if(_ready.done) return; _ready.done = true; if(onReady){ try{ onReady(ok); }catch(e){} } };
 			  const vid = document.createElement('video');
 			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			  vid.setAttribute('webkit-playsinline','true');
@@ -5528,6 +5546,7 @@
 			    try{ localStorage.removeItem('wpm4_' + wp.id); }catch(e){}
 			    vid.remove();
 			    _wpShowCanvasFallback(fillEl, wp);
+			    _ready(false);
 			  }
 			  async function tryNext(){
 			    if(done) return;
@@ -5554,6 +5573,7 @@
 			  }
 			  vid.onerror = tryNext;
 			  vid.onplaying = function(){
+			    _ready(true);
 			    if(done) return;
 			    clearTimeout(watchdog);
 			    // Guarda el que sí funcionó para que la próxima vez cargue a la primera
@@ -5594,7 +5614,7 @@
 			    f.style.transform = 'translate(-50%,-50%) scale('+sc+')';
 			  });
 			}, {passive:true});
-			function applyWallpaperToFill(fillEl, wp){
+			function applyWallpaperToFill(fillEl, wp, onReady){
 			  // Stop any running canvas animation before reusing the fill element
 			  if(fillEl._canvasHandle){ try{fillEl._canvasHandle.stop();}catch(e){} fillEl._canvasHandle=null; }
 			  fillEl.className = 'wallpaper-fill';
@@ -5625,7 +5645,7 @@
 			      +'&vq=hd2160&hd=1';
 			    fillEl.appendChild(ifr);
 			  } else if(wp.type === 'video'){
-			    _wpAttachVideo(fillEl, wp, wp.url || null);
+			    _wpAttachVideo(fillEl, wp, wp.url || null, onReady);
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
 			    fillEl.style.backgroundImage = `url('${wp.url}')`;
 			    fillEl.style.backgroundSize = 'cover';
@@ -6142,27 +6162,43 @@
 			  raf=requestAnimationFrame(draw);
 			  return{stop:()=>cancelAnimationFrame(raf)};
 			};
+			let _wpApplySeq = 0;
 			function setWallpaper(id){
 			  const wp = WALLPAPERS.find(w=>w.id===id);
 			  if(!wp) return;
+			  const seq = ++_wpApplySeq;
 			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
 			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
 			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
 			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
-			  applyWallpaperToFill(nextFillEl, wp);
-			  // reinicia el paneo continuo (efecto "video en loop") en la nueva capa
-			  nextLayerEl.style.animation = 'none';
-			  void nextLayerEl.offsetWidth;
-			  nextLayerEl.style.animation = '';
-			  nextLayerEl.classList.add('active');
-			  currLayerEl.classList.remove('active');
-			  activeLayer = nextLayer;
-			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
-			  const card = document.getElementById('wpcard-' + id);
-			  if(card) card.classList.add('active');
+			  const cardEl = document.getElementById('wpcard-' + id);
 			  isDynamicBgEnabled = false;
 			  try{ localStorage.removeItem('dynamic_bg_enabled'); }catch(e){}
-			  _wpScheduleInactiveCleanup();
+			  const doSwitch = ()=>{
+			    if(seq !== _wpApplySeq) return; // el usuario ya eligió otro fondo después
+			    nextLayerEl.style.animation = 'none';
+			    void nextLayerEl.offsetWidth;
+			    nextLayerEl.style.animation = '';
+			    nextLayerEl.classList.add('active');
+			    currLayerEl.classList.remove('active');
+			    activeLayer = nextLayer;
+			    document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active','wp-loading'));
+			    if(cardEl) cardEl.classList.add('active');
+			    _wpScheduleInactiveCleanup();
+			  };
+			  if(wp.type === 'video'){
+			    // ARREGLO "sale otro fondo": el fondo actual se queda hasta que el video
+			    // nuevo esté LISTO para reproducirse (o su respaldo). Sin saltos falsos.
+			    document.querySelectorAll('.wallpaper-card.wp-loading').forEach(c=>c.classList.remove('wp-loading'));
+			    if(cardEl) cardEl.classList.add('wp-loading');
+			    let done = false;
+			    const ready = ()=>{ if(done) return; done = true; doSwitch(); };
+			    applyWallpaperToFill(nextFillEl, wp, ready);
+			    setTimeout(ready, 25000); // red de seguridad
+			  } else {
+			    applyWallpaperToFill(nextFillEl, wp);
+			    doSwitch();
+			  }
 			}
 
 			// Generador de fondos "infinito": crea un gradiente animado al azar cada
@@ -6281,7 +6317,14 @@
 			    // tarjeta: el usuario solo quiere fondos 4K.
 			    const big = Math.max(v.videoWidth, v.videoHeight);
 			    const is4K = big >= 3200; // 4K=3840, deja pasar cerca de 4K; descarta 1440p(2560) y 1080p(1920)
-			    try{ localStorage.setItem('wp4k_' + job.wp.id, is4K ? '1' : '0'); }catch(e){}
+			    try{ localStorage.setItem('wp4k_' + job.wp.id, is4K ? '1' : '0'); localStorage.setItem('wpres_' + job.wp.id, String(big)); }catch(e){}
+			    // Actualiza la insignia de resolución de la tarjeta en vivo
+			    try{
+			      const cardB = job.fill.closest('.wallpaper-card');
+			      let rb = cardB && cardB.querySelector('.wp-res-badge');
+			      if(cardB && !rb){ rb = document.createElement('div'); rb.className='wp-res-badge'; cardB.appendChild(rb); }
+			      if(rb){ rb.textContent = big>=3200 ? '4K ✓' : big>=2400 ? '1440p' : big>=1800 ? '1080p' : big>=1100 ? '720p' : big+'px'; if(big<3200) rb.style.color='#ff9f0a'; }
+			    }catch(e){}
 			    if(!is4K){
 			      // NO se elimina en vivo (desaparecer en pantalla es horrible). Se marca
 			      // y la próxima vez que abras Fondos no aparece. Ahora sigue mostrándose.
@@ -6456,6 +6499,18 @@
 			        try{ const c = localStorage.getItem('wpm4_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
 			        // Resolución ya comprobada < 4K -> ni siquiera se crea la tarjeta
 			        if(meta && meta.res && meta.res < 3200){ try{ localStorage.setItem('wp4k_' + wp.id, '0'); }catch(e){} card.remove(); return; }
+			        // Insignia de resolución real (medida del video, o declarada por la página)
+			        (function(){
+			          let known = null;
+			          try{ const m = localStorage.getItem('wpres_' + wp.id); if(m) known = +m; }catch(e){}
+			          if(!known && meta && meta.res) known = meta.res;
+			          if(!known) return;
+			          const rb = document.createElement('div');
+			          rb.className = 'wp-res-badge';
+			          rb.textContent = known>=3200 ? '4K ✓' : known>=2400 ? '1440p' : known>=1800 ? '1080p' : known>=1100 ? '720p' : known+'px';
+			          if(known < 3200) rb.style.color = '#ff9f0a';
+			          card.appendChild(rb);
+			        })();
 			        if(frameCached){
 			          fill.style.backgroundImage = 'url("' + frameCached + '"), ' + (wp.thumb || 'linear-gradient(135deg,#1a1a2e,#16213e)');
 			          fill.style.backgroundSize = 'cover';
@@ -9384,6 +9439,7 @@
 			let _tvActiveSearchMode = 'country';
 			function tvSearchEnter(){
 			  if(_tvActiveSearchMode === 'all') return searchAllChannels();
+			  if(_tvActiveSearchMode === 'famous') return searchTVFamous();
 			  if(_tvActiveSearchMode === 'sports') return searchTVSports();
 			  if(_tvActiveSearchMode === '4k') return searchTV4K();
 			  return searchTVChannels();
@@ -9457,6 +9513,47 @@
 			  }
 			}
 
+			// Canales famosos del mundo: acceso directo sin buscar (Telemundo, FIFA,
+			// ESPN, Univision, CNN, cadenas de LatAm y más), sacados del catálogo
+			// completo de iptv-org y ordenados por relevancia.
+			const TV_FAMOUS = ['fifa','telemundo','univision','unimas','tudn','espn','fox sports','bein','tyc sports','dsports','directv sports','win sports','gol peru','gol tv','cnn','bbc','sky news','euronews','france 24','dw','al jazeera','abc news','nbc news','cbs news','bloomberg','red bull tv','nasa','las estrellas','canal 5','azteca','caracol','rcn','telefe','el trece','america tv','latina','ecuavisa','teleamazonas','telemicro','color vision','antena 7','tve','la 1','antena 3','telecinco','discovery','history','nat geo','national geographic','mtv','nickelodeon','cartoon network','telesur','ntn24','cgtn español'];
+			async function searchTVFamous(){
+			  _tvActiveSearchMode = 'famous';
+			  const results = document.getElementById('tv-results');
+			  if(!results) return;
+			  if(!_allChannelsCache){
+			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales famosos del mundo…</div>';
+			    try{
+			      const ctrl = new AbortController();
+			      const timer = setTimeout(()=>ctrl.abort(), 25000);
+			      const res = await fetch('https://iptv-org.github.io/iptv/index.m3u', {signal: ctrl.signal});
+			      clearTimeout(timer);
+			      if(!res.ok) throw new Error('not ok');
+			      let channels = parseM3U(await res.text()).filter(c=>c.url);
+			      if(location.protocol === 'https:'){
+			        channels = channels.map(c=> c.url.startsWith('http://') ? Object.assign({}, c, { url: HLS_PROXY_PFX + encodeURIComponent(c.url), viaProxy: true }) : c);
+			      }
+			      _allChannelsCache = channels;
+			    }catch(e){
+			      results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.6;font-size:12px;">⚠️ No se pudo cargar el catálogo. Revisa tu conexión e intenta de nuevo.</div>';
+			      return;
+			    }
+			  }
+			  const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
+			  let channels = _allChannelsCache.filter(c=>{
+			    const n = c.name.toLowerCase();
+			    return TV_FAMOUS.some(f=>n.includes(f));
+			  });
+			  if(q) channels = channels.filter(c=>c.name.toLowerCase().includes(q));
+			  channels.sort((a,b)=>{
+			    const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
+			    const ai = TV_FAMOUS.findIndex(f=>an.includes(f));
+			    const bi = TV_FAMOUS.findIndex(f=>bn.includes(f));
+			    if(ai !== bi) return ai - bi;
+			    return a.name.localeCompare(b.name);
+			  });
+			  renderTVResults(channels.slice(0, ALL_CHANNELS_RENDER_CAP));
+			}
 			async function searchTV4K(){
 			  _tvActiveSearchMode = '4k';
 			  const results = document.getElementById('tv-results');
@@ -11630,8 +11727,8 @@
 			    if(t){ translated = t; usedSource = 'Google'; }
 			  }catch(e){ console.error('Google Translate falló:', e); }
 
-			  // 2) Respaldo: MyMemory
-			  if(!translated){
+			  // 2) Respaldo: MyMemory (no acepta idioma "auto")
+			  if(!translated && from.value !== 'auto'){
 			    try{
 			      const langPair = from.value + '|' + to.value;
 			      const url = 'https://api.mymemory.translated.net/get?q=' +
@@ -11644,6 +11741,15 @@
 			        usedSource = 'MyMemory';
 			      }
 			    }catch(e){ console.error('MyMemory falló:', e); }
+			  }
+
+			  // 3) Respaldo final: Lingva (espejo libre de Google Translate, CORS abierto)
+			  if(!translated){
+			    try{
+			      const src = from.value || 'auto';
+			      const data = await fetchJSON('https://lingva.ml/api/v1/' + encodeURIComponent(src) + '/' + encodeURIComponent(to.value) + '/' + encodeURIComponent(slice), 9000);
+			      if(data && data.translation){ translated = data.translation; usedSource = 'Lingva'; }
+			    }catch(e){ console.error('Lingva falló:', e); }
 			  }
 
 			  if(translated){
@@ -14832,6 +14938,7 @@
 			    <div id="gb-status" style="padding:8px 16px;background:#0d0d0d;font-size:11px;color:#636366;flex-shrink:0;text-align:center;">Listo · Toca las teclas o pads para reproducir · ⏺ para grabar</div>
 			  `;
 			  document.body.appendChild(modal);
+			  gbBuildExtraViews(modal);
 			  gbInit();
 			}
 			function gbInit(){
@@ -15119,6 +15226,160 @@
 			}
 			function gbStop(){clearInterval(_gbLoop);document.getElementById('gb-status').textContent='⏹ Detenido';}
 			function gbClear(){_gbRecorded=[];document.getElementById('gb-status').textContent='Pista limpiada';}
+			// ===== Análisis GarageBand por sistema operativo de Apple =====
+			// iPadOS/iOS: instrumentos táctiles + LIVE LOOPS (cuadrícula de celdas en bucle).
+			// macOS: DAW multipista — vista de PISTAS con tomas, mute y mezcla en capas.
+			// (watchOS/tvOS no tienen GarageBand.) Esta app ofrece los tres modos.
+			function gbBuildExtraViews(modal){
+			  const header = modal.firstElementChild;
+			  const rightControls = header && header.lastElementChild;
+			  if(rightControls){
+			    const tabs = document.createElement('div');
+			    tabs.id = 'gb-views';
+			    tabs.style.cssText = 'display:flex;gap:4px;margin-right:6px;flex-shrink:0;';
+			    tabs.innerHTML = '<button class="gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" style="background:#ff6600;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🎹 Instrumentos</button>'
+			      + '<button class="gb-view-btn" data-v="loops" onclick="gbView(\'loops\')" style="background:#333;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🔁 Live Loops</button>'
+			      + '<button class="gb-view-btn" data-v="tracks" onclick="gbView(\'tracks\')" style="background:#333;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🎚️ Pistas</button>';
+			    rightControls.insertBefore(tabs, rightControls.firstChild);
+			  }
+			  const instArea = modal.querySelector('#gb-instrument');
+			  const loops = document.createElement('div');
+			  loops.id = 'gb-loops';
+			  loops.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:none;';
+			  instArea.after(loops);
+			  const tracks = document.createElement('div');
+			  tracks.id = 'gb-tracks';
+			  tracks.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:none;';
+			  loops.after(tracks);
+			  gbBuildLiveLoops(loops);
+			  gbRenderTracks();
+			}
+			function gbView(v){
+			  const map = { inst:'gb-instrument', loops:'gb-loops', tracks:'gb-tracks' };
+			  Object.keys(map).forEach(k=>{ const el = document.getElementById(map[k]); if(el) el.style.display = (k===v ? '' : 'none'); });
+			  document.querySelectorAll('.gb-view-btn').forEach(b=>{ b.style.background = (b.dataset.v===v ? '#ff6600' : '#333'); });
+			  if(v === 'tracks') gbRenderTracks();
+			}
+			// --- LIVE LOOPS (estilo iPadOS): 4 filas x 4 variaciones, en bucle al BPM ---
+			const GB_LL_COLORS = ['#30d158','#0a84ff','#ffd60a','#ff375f'];
+			const GB_LL_ROWS = [
+			  { name:'🥁 Batería', inst:'drum', cells:[
+			    [[0,'kick'],[4,'kick'],[8,'kick'],[12,'kick']],
+			    [[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare']],
+			    [[0,'kick'],[2,'hihat'],[4,'snare'],[6,'hihat'],[8,'kick'],[10,'hihat'],[12,'snare'],[14,'hihat']],
+			    [[0,'kick'],[3,'kick'],[4,'snare'],[7,'hihat'],[8,'kick'],[11,'kick'],[12,'snare'],[14,'snare']] ] },
+			  { name:'🎸 Bajo', inst:'bass', cells:[
+			    [[0,110],[8,110]],
+			    [[0,110],[4,146.83],[8,164.81],[12,146.83]],
+			    [[0,110],[2,110],[4,130.81],[6,130.81],[8,98],[10,98],[12,123.47],[14,123.47]],
+			    [[0,110],[6,164.81],[8,146.83],[14,98]] ] },
+			  { name:'🎹 Acordes', inst:'epiano', cells:[
+			    [[0,[220,277.18,329.63]]],
+			    [[0,[220,261.63,329.63]],[8,[196,246.94,293.66]]],
+			    [[0,[220,277.18,329.63]],[4,[246.94,311.13,369.99]],[8,[196,246.94,293.66]],[12,[220,277.18,329.63]]],
+			    [[0,[174.61,220,261.63]],[8,[164.81,207.65,246.94]]] ] },
+			  { name:'🎶 Melodía', inst:'synth', cells:[
+			    [[0,440],[4,523.25],[8,659.25],[12,523.25]],
+			    [[2,659.25],[6,587.33],[10,523.25],[14,493.88]],
+			    [[0,880],[2,659.25],[4,739.99],[6,659.25],[8,587.33],[10,523.25],[12,587.33],[14,659.25]],
+			    [[0,523.25],[8,698.46]] ] }
+			];
+			let _gbLLActive = {}, _gbLLTimer = null, _gbLLStep = 0;
+			function gbBuildLiveLoops(container){
+			  let s = '<div style="font-size:11px;opacity:.55;margin-bottom:10px;">LIVE LOOPS (estilo iPad) — toca una celda para activarla en bucle. Una celda por fila; varias filas suenan juntas al BPM de arriba.</div>';
+			  s += '<div style="display:grid;grid-template-columns:110px repeat(4,1fr);gap:8px;max-width:760px;">';
+			  GB_LL_ROWS.forEach(function(row, r){
+			    s += '<div style="display:flex;align-items:center;font-size:12px;font-weight:700;opacity:.8;">' + row.name + '</div>';
+			    row.cells.forEach(function(_, c){
+			      s += '<button id="gb-ll-' + r + '-' + c + '" onclick="gbLLToggle(' + r + ',' + c + ')" style="height:56px;border:1.5px solid ' + GB_LL_COLORS[c] + '55;border-radius:12px;cursor:pointer;background:' + GB_LL_COLORS[c] + '22;color:' + GB_LL_COLORS[c] + ';font-size:18px;">▶</button>';
+			    });
+			  });
+			  s += '</div><div style="margin-top:12px;"><button onclick="gbLLStopAll()" style="background:#333;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">⏹ Parar todo</button></div>';
+			  container.innerHTML = s;
+			}
+			function gbLLPaint(){
+			  GB_LL_ROWS.forEach(function(row, ri){ row.cells.forEach(function(_, ci){
+			    const b = document.getElementById('gb-ll-' + ri + '-' + ci);
+			    if(!b) return;
+			    const on = !!_gbLLActive[ri + '-' + ci];
+			    b.style.background = on ? GB_LL_COLORS[ci] : GB_LL_COLORS[ci] + '22';
+			    b.style.color = on ? '#000' : GB_LL_COLORS[ci];
+			    b.textContent = on ? '◼' : '▶';
+			  }); });
+			}
+			function gbLLToggle(r, c){
+			  const key = r + '-' + c;
+			  if(_gbLLActive[key]){ delete _gbLLActive[key]; }
+			  else{
+			    Object.keys(_gbLLActive).forEach(function(k){ if(k.indexOf(r + '-') === 0) delete _gbLLActive[k]; });
+			    _gbLLActive[key] = true;
+			  }
+			  gbLLPaint();
+			  const any = Object.keys(_gbLLActive).length > 0;
+			  if(any && !_gbLLTimer){
+			    _gbLLStep = 0;
+			    const tick = function(){
+			      Object.keys(_gbLLActive).forEach(function(k){
+			        const parts = k.split('-');
+			        const row = GB_LL_ROWS[+parts[0]];
+			        const patt = row && row.cells[+parts[1]];
+			        if(!patt) return;
+			        patt.forEach(function(ev){
+			          if(ev[0] !== _gbLLStep) return;
+			          const val = ev[1];
+			          if(row.inst === 'drum') gbPlayDrum(val, 0);
+			          else if(Array.isArray(val)) val.forEach(function(f){ gbPlayNote(f, row.inst); });
+			          else gbPlayNote(val, row.inst);
+			        });
+			      });
+			      _gbLLStep = (_gbLLStep + 1) % 16;
+			      _gbLLTimer = setTimeout(tick, (60000 / (parseInt(_gbBpm) || 120)) / 4);
+			    };
+			    tick();
+			  } else if(!any && _gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer = null; }
+			}
+			function gbLLStopAll(){
+			  _gbLLActive = {};
+			  if(_gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer = null; }
+			  gbLLPaint();
+			}
+			// --- PISTAS (estilo macOS): tomas grabadas que se mezclan en capas ---
+			let _gbTakes = [];
+			function gbSaveTake(){
+			  const s = document.getElementById('gb-status');
+			  if(!_gbRecorded.length){ if(s) s.textContent = 'No hay nada grabado: ⏺ graba algo en Instrumentos primero.'; return; }
+			  const t0 = _gbRecorded[0].time;
+			  _gbTakes.push({ name: 'Toma ' + (_gbTakes.length + 1) + ' · ' + _gbSelectedInstrument, muted: false, events: _gbRecorded.map(function(e){ return Object.assign({}, e, { at: e.time - t0 }); }) });
+			  gbRenderTracks();
+			  if(s) s.textContent = '💾 Toma guardada en Pistas (' + _gbTakes.length + ').';
+			}
+			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted = !_gbTakes[i].muted; gbRenderTracks(); } }
+			function gbDeleteTake(i){ _gbTakes.splice(i, 1); gbRenderTracks(); }
+			function gbPlayTake(i){
+			  const t = _gbTakes[i];
+			  if(!t) return;
+			  t.events.forEach(function(ev){
+			    setTimeout(function(){ ev.type === 'drum' ? gbPlayDrum(ev.drumType, ev.freq) : gbPlayNote(ev.freq, ev.type); }, ev.at);
+			  });
+			}
+			function gbPlayAllTakes(){ _gbTakes.forEach(function(t, i){ if(!t.muted) gbPlayTake(i); }); }
+			function gbRenderTracks(){
+			  const el = document.getElementById('gb-tracks');
+			  if(!el) return;
+			  let s = '<div style="font-size:11px;opacity:.55;margin-bottom:10px;">PISTAS (estilo Mac) — guarda tomas grabadas y mézclalas en capas. M silencia una pista.</div>';
+			  s += '<div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="gbSaveTake()" style="background:#ff6600;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">💾 Guardar toma actual</button><button onclick="gbPlayAllTakes()" style="background:#30d158;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">▶ Reproducir mezcla</button></div>';
+			  if(!_gbTakes.length){ s += '<div style="opacity:.4;font-size:12px;">Sin pistas todavía. Graba con ⏺ en Instrumentos y pulsa “Guardar toma actual”.</div>'; }
+			  _gbTakes.forEach(function(t, i){
+			    const dur = t.events.length ? Math.round(t.events[t.events.length - 1].at / 100) / 10 : 0;
+			    s += '<div style="display:flex;align-items:center;gap:10px;background:#242426;border-radius:10px;padding:10px 12px;margin-bottom:8px;">'
+			      + '<div style="flex:1;font-size:12px;font-weight:700;' + (t.muted ? 'opacity:.35;' : '') + '">' + t.name + ' <span style="opacity:.5;font-weight:400;">· ' + t.events.length + ' notas · ' + dur + 's</span></div>'
+			      + '<button onclick="gbPlayTake(' + i + ')" style="background:#30d158;border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">▶</button>'
+			      + '<button onclick="gbToggleMute(' + i + ')" style="background:' + (t.muted ? '#ff9f0a' : '#333') + ';border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:11px;font-weight:800;">M</button>'
+			      + '<button onclick="gbDeleteTake(' + i + ')" style="background:#333;border:none;color:#ff6961;width:28px;height:28px;border-radius:50%;cursor:pointer;">🗑</button>'
+			      + '</div>';
+			  });
+			  el.innerHTML = s;
+			}
 
 			/* ═══════════════════════════════════════════
 			   COMPASS (Brújula)
