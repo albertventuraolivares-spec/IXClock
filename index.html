@@ -164,7 +164,8 @@
 
 			.clock-display{text-shadow:0 10px 40px rgba(0,0,0,.5);transition:all .55s cubic-bezier(.16,1,.3,1);
 			  font-family:var(--clock-font-family);font-weight:var(--clock-font-weight);
-			  font-size:var(--clock-size);letter-spacing:var(--clock-letter-spacing);
+			  font-size:calc(var(--clock-size) * var(--clock-size-mult,1));letter-spacing:var(--clock-letter-spacing);
+			  transform:scaleY(var(--clock-stretch,1));transform-origin:center 72%;
 			  color:var(--clock-color);line-height:1;white-space:nowrap;cursor:pointer;}
 			.clock-display.has-gradient{background:var(--clock-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4));}
 
@@ -1892,6 +1893,32 @@
 					</div>
 				</div>
 
+				<!-- Opciones del Modo Fácil: color, fondo y tipo de números -->
+				<div id="easy-config" class="shrink-0" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🎨 Color del Modo Fácil</div>
+					<div id="easy-colors" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+						<button class="easy-color-sw" data-c="#bb2222" onclick="easySetColor('#bb2222')" style="width:34px;height:34px;border-radius:50%;background:#bb2222;border:3px solid #fff;cursor:pointer;"></button>
+						<button class="easy-color-sw" data-c="#30d158" onclick="easySetColor('#30d158')" style="width:34px;height:34px;border-radius:50%;background:#30d158;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" data-c="#0a84ff" onclick="easySetColor('#0a84ff')" style="width:34px;height:34px;border-radius:50%;background:#0a84ff;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" data-c="#ffd60a" onclick="easySetColor('#ffd60a')" style="width:34px;height:34px;border-radius:50%;background:#ffd60a;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" data-c="#ff9f0a" onclick="easySetColor('#ff9f0a')" style="width:34px;height:34px;border-radius:50%;background:#ff9f0a;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" data-c="#e8e8ec" onclick="easySetColor('#e8e8ec')" style="width:34px;height:34px;border-radius:50%;background:#e8e8ec;border:3px solid transparent;cursor:pointer;"></button>
+					</div>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🖼️ Fondo del Modo Fácil</div>
+					<div id="easy-bgs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+						<button class="easy-bg-btn btn-option" data-b="negro" onclick="easySetBg('negro')" style="font-size:10px;padding:6px 12px;">Negro</button>
+						<button class="easy-bg-btn btn-option" data-b="degradado" onclick="easySetBg('degradado')" style="font-size:10px;padding:6px 12px;">Degradado</button>
+						<button class="easy-bg-btn btn-option" data-b="fondo" onclick="easySetBg('fondo')" style="font-size:10px;padding:6px 12px;">Tu fondo de pantalla</button>
+					</div>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">⏰ Números del reloj</div>
+					<div id="easy-fonts" style="display:flex;gap:6px;flex-wrap:wrap;">
+						<button class="easy-font-btn btn-option" data-f="orbitron" onclick="easySetFont('orbitron')" style="font-size:10px;padding:6px 12px;">Digital</button>
+						<button class="easy-font-btn btn-option" data-f="classic" onclick="easySetFont('classic')" style="font-size:10px;padding:6px 12px;">Clásico</button>
+						<button class="easy-font-btn btn-option" data-f="thin" onclick="easySetFont('thin')" style="font-size:10px;padding:6px 12px;">Fino</button>
+						<button class="easy-font-btn btn-option" data-f="retro" onclick="easySetFont('retro')" style="font-size:10px;padding:6px 12px;">Retro</button>
+					</div>
+				</div>
+
 				<!-- AI Provider -->
 				<div class="shrink-0">
 					<div
@@ -2009,6 +2036,20 @@
 
 				<!-- TAB: CLOCKS -->
 				<div id="tab-clocks" class="flex-col hidden">
+					<!-- Tamaño y altura del reloj (como iOS: números más altos) -->
+					<div class="shrink-0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;margin-bottom:10px;">
+						<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+							<span style="font-size:11px;font-weight:800;opacity:.75;">📏 Tamaño del reloj</span>
+							<span id="clock-scale-label" style="font-size:11px;font-weight:700;color:#0a84ff;">100%</span>
+						</div>
+						<input type="range" min="60" max="220" value="100" id="clock-scale-slider" oninput="setClockScale(this.value)" style="width:100%;" />
+						<div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 4px;">
+							<span style="font-size:11px;font-weight:800;opacity:.75;">↕️ Altura de los números</span>
+							<span id="clock-stretch-label" style="font-size:11px;font-weight:700;color:#0a84ff;">100%</span>
+						</div>
+						<input type="range" min="100" max="200" value="100" id="clock-stretch-slider" oninput="setClockStretch(this.value)" style="width:100%;" />
+						<div style="font-size:9px;opacity:.4;margin-top:6px;">Como en iOS: estira los números del reloj hacia arriba</div>
+					</div>
 					<div class="relative mb-3 shrink-0">
 						<span
 							class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"
@@ -6650,16 +6691,40 @@
 			}
 			function applyDynamicBackground(){
 			  if(!isDynamicBgEnabled) return;
+			  // ANIMADO, como el fondo de Clima de Apple: cielo degradado según la
+			  // franja del día + animación viva; si hay datos de clima reales
+			  // (Open-Meteo), la lluvia/nieve/tormenta/niebla mandan sobre la hora.
 			  const h = new Date().getHours();
-			  let id;
-			  if(h>=5 && h<9) id='photo-mountain';
-			  else if(h>=9 && h<17) id='photo-ocean';
-			  else if(h>=17 && h<20) id='sunset';
-			  else id='photo-northern';
-			  setWallpaper(id);
-			  // setWallpaper() apaga el modo dinámico porque normalmente lo llama una
-			  // elección manual — acá lo volvemos a encender porque el cambio vino del
-			  // propio reloj dinámico, no del usuario eligiendo un fondo fijo.
+			  const night = (h >= 20 || h < 6);
+			  let bg, anim;
+			  if(h>=5 && h<9){ bg='linear-gradient(180deg,#2c3e67 0%,#b6656e 55%,#e8a06a 100%)'; anim='clouds'; }
+			  else if(h>=9 && h<17){ bg='linear-gradient(180deg,#2f6fb5 0%,#79aede 60%,#bcd8ee 100%)'; anim='clouds'; }
+			  else if(h>=17 && h<20){ bg='linear-gradient(180deg,#3b2d5e 0%,#b14a5e 55%,#f39a5b 100%)'; anim='clouds'; }
+			  else { bg='linear-gradient(180deg,#050b1c 0%,#0d1b3a 70%,#16264d 100%)'; anim='stars'; }
+			  try{
+			    const code = _lastWeatherRaw && _lastWeatherRaw.cur ? _lastWeatherRaw.cur.weathercode : null;
+			    if(code != null){
+			      if(code >= 95){ anim='rain'; bg='linear-gradient(180deg,#0b0f1c,#232a3d)'; }                     // tormenta
+			      else if((code>=51 && code<=67) || (code>=80 && code<=82)){                                        // lluvia
+			        anim='rain'; bg = night ? 'linear-gradient(180deg,#0a0e18,#1c2436)' : 'linear-gradient(180deg,#3a4a63,#6b7d97)';
+			      }
+			      else if(code>=71 && code<=86){                                                                     // nieve
+			        anim='snow'; bg = night ? 'linear-gradient(180deg,#0d1220,#26304a)' : 'linear-gradient(180deg,#8fa3bd,#cdd9e8)';
+			      }
+			      else if(code>=45 && code<=48){ anim='clouds'; bg='linear-gradient(180deg,#4a5568,#8494a8)'; }      // niebla
+			      else if(code===0 && night){ anim='stars'; }                                                        // despejado de noche
+			    }
+			  }catch(e){}
+			  const nextLayer = activeLayer === 'a' ? 'b' : 'a';
+			  const nextLayerEl = document.getElementById('wp-layer-' + nextLayer);
+			  const nextFillEl = document.getElementById('wp-fill-' + nextLayer);
+			  const currLayerEl = document.getElementById('wp-layer-' + activeLayer);
+			  applyWallpaperToFill(nextFillEl, { type:'canvas', anim: anim, bg: bg });
+			  nextLayerEl.style.animation='none'; void nextLayerEl.offsetWidth; nextLayerEl.style.animation='';
+			  nextLayerEl.classList.add('active'); currLayerEl.classList.remove('active');
+			  activeLayer = nextLayer;
+			  document.querySelectorAll('.wallpaper-card').forEach(c=>c.classList.remove('active'));
+			  if(typeof _wpScheduleInactiveCleanup === 'function') _wpScheduleInactiveCleanup();
 			  isDynamicBgEnabled = true;
 			  try{ localStorage.setItem('dynamic_bg_enabled','1'); }catch(e){}
 			}
@@ -12655,11 +12720,15 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">👴 Modo Fácil</div>
-			          El botón verde fijo <b>👴 MODO FÁCIL</b> (abajo a la derecha) abre un reloj de orientación gigante: hora, día, fecha, "ESTÁS EN CASA" y si es mañana/tarde/noche (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el interruptor <b>Modo Fácil</b> en configuración.
+			          El botón verde fijo <b>👴 MODO FÁCIL</b> (abajo a la derecha) abre un reloj de orientación gigante: hora, día, fecha, "ESTÁS EN CASA" y si es mañana/tarde/noche (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el interruptor <b>Modo Fácil</b> en configuración. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b> (negro, degradado o tu fondo de pantalla) y el <b>tipo de números</b> (Digital, Clásico, Fino, Retro).
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖼️ Fondos de pantalla</div>
-			          En Personalizar → Fondos. Los "En movimiento" son videos: cada tarjeta lleva una insignia con su resolución REAL medida (4K ✓ verde, o naranja si es menor). Con los chips <b>Todos / Solo 4K comprobados</b> eliges qué ver — nada se borra solo. La primera vez un fondo puede tardar en extraerse; después queda guardado y abre al instante. También puedes pegar un enlace de YouTube (se ve en su calidad máxima) o usar el Fondo Dinámico según la hora.
+			          En Personalizar → Fondos. Los "En movimiento" son videos: cada tarjeta lleva una insignia con su resolución REAL medida (4K ✓ verde, o naranja si es menor). Con los chips <b>Todos / Solo 4K comprobados</b> eliges qué ver — nada se borra solo. La primera vez un fondo puede tardar en extraerse; después queda guardado y abre al instante. También puedes pegar un enlace de YouTube (se ve en su calidad máxima). El <b>Fondo Dinámico</b> ahora es ANIMADO como el fondo de Clima de Apple: cielo según la hora (amanecer, día, atardecer, noche con estrellas) y si tu clima real trae lluvia, nieve, tormenta o niebla, el fondo lo muestra en movimiento.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">📏 Tamaño del reloj</div>
+			          En Personalizar → <b>Relojes</b> hay dos barras: <b>Tamaño del reloj</b> (60%–220%) y <b>Altura de los números</b> — esta última estira los dígitos hacia arriba, como deja hacer iOS en la pantalla de bloqueo. Se guardan solos.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 GarageBand</div>
@@ -13431,6 +13500,8 @@
 			  window._weatherLat=lat; window._weatherLon=lon;
 			  window._weatherFetchedAt=Date.now();
 			  _lastWeatherRaw={cur,daily,hourly};
+			  // El fondo dinámico usa el clima real: al llegar los datos, se refresca
+			  try{ if(isDynamicBgEnabled) applyDynamicBackground(); }catch(e){}
 			}
 
 			function reapplyWeatherDisplay(){
@@ -13509,6 +13580,27 @@
 			  }finally{
 			    setTimeout(()=>{ window._wpRestoring = false; }, 500);
 			  }
+			})();
+			/* Tamaño y altura del reloj (persisten y se restauran al abrir) */
+			function setClockScale(v){
+			  v = Math.max(60, Math.min(220, parseInt(v) || 100));
+			  document.documentElement.style.setProperty('--clock-size-mult', v / 100);
+			  try{ localStorage.setItem('clock_scale', v); }catch(e){}
+			  const l = document.getElementById('clock-scale-label'); if(l) l.textContent = v + '%';
+			  const s = document.getElementById('clock-scale-slider'); if(s && +s.value !== v) s.value = v;
+			}
+			function setClockStretch(v){
+			  v = Math.max(100, Math.min(200, parseInt(v) || 100));
+			  document.documentElement.style.setProperty('--clock-stretch', v / 100);
+			  try{ localStorage.setItem('clock_stretch', v); }catch(e){}
+			  const l = document.getElementById('clock-stretch-label'); if(l) l.textContent = v + '%';
+			  const s = document.getElementById('clock-stretch-slider'); if(s && +s.value !== v) s.value = v;
+			}
+			(function restoreClockSize(){
+			  try{
+			    const sc = localStorage.getItem('clock_scale'); if(sc) setClockScale(sc);
+			    const st = localStorage.getItem('clock_stretch'); if(st) setClockStretch(st);
+			  }catch(e){}
 			})();
 			// Restaurar estilo de reloj guardado, si existe.
 			(function restoreClockStyle(){
@@ -13972,8 +14064,36 @@
 			  const h24 = a.getHours();
 			  document.getElementById('easy-momento').textContent =
 			    (h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE';
-			  scr.style.color = (h24>=22 || h24<6) ? '#771111' : '#bb2222';
+			  // De noche se atenúa (como el archivo original), respetando el color elegido
+			  scr.style.filter = (h24>=22 || h24<6) ? 'brightness(.55)' : '';
 			}
+			/* Preferencias del Modo Fácil (color, fondo, números) — se editan en
+			   configuración y persisten. */
+			function _easyApplyPrefs(){
+			  const scr = document.getElementById('easy-screen');
+			  const c = localStorage.getItem('easy_color') || '#bb2222';
+			  const bgp = localStorage.getItem('easy_bg') || 'negro';
+			  const f = localStorage.getItem('easy_font') || 'orbitron';
+			  if(scr){
+			    scr.style.color = c;
+			    scr.style.background = bgp === 'degradado' ? 'linear-gradient(180deg,#0b1026,#1b1035 60%,#241435)'
+			                          : bgp === 'fondo' ? 'rgba(0,0,0,.45)' : '#000';
+			    const hora = document.getElementById('easy-hora');
+			    if(hora){
+			      hora.style.fontFamily = f === 'classic' ? "'Arial Black',Arial,sans-serif"
+			                             : f === 'thin' ? "'Inter',sans-serif"
+			                             : f === 'retro' ? "'VT323',monospace" : "'Orbitron',monospace";
+			      hora.style.fontWeight = f === 'thin' ? '200' : '700';
+			    }
+			  }
+			  // marca los botones elegidos en configuración
+			  document.querySelectorAll('.easy-color-sw').forEach(b=>{ b.style.borderColor = (b.dataset.c === c) ? '#fff' : 'transparent'; });
+			  document.querySelectorAll('.easy-bg-btn').forEach(b=>b.classList.toggle('active', b.dataset.b === bgp));
+			  document.querySelectorAll('.easy-font-btn').forEach(b=>b.classList.toggle('active', b.dataset.f === f));
+			}
+			function easySetColor(c){ try{ localStorage.setItem('easy_color', c); }catch(e){} _easyBuild(); _easyApplyPrefs(); }
+			function easySetBg(v){ try{ localStorage.setItem('easy_bg', v); }catch(e){} _easyBuild(); _easyApplyPrefs(); }
+			function easySetFont(v){ try{ localStorage.setItem('easy_font', v); }catch(e){} _easyBuild(); _easyApplyPrefs(); }
 			function _easyBuild(){
 			  if(document.getElementById('easy-screen')) return;
 			  const scr = document.createElement('div');
@@ -13983,7 +14103,7 @@
 			    + '<div id="easy-hora" style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
 			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
 			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
-			    + '<div style="width:55%;height:2px;background:#661111;margin:35px 0;"></div>'
+			    + '<div style="width:55%;height:2px;background:currentColor;opacity:.4;margin:35px 0;"></div>'
 			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;">ESTÁS EN CASA</div>'
 			    + '<div id="easy-momento" style="font-family:Verdana,sans-serif;font-size:clamp(1.2rem,3.2vw,2.2rem);margin-top:12px;"></div>'
 			    + '<button onclick="_easyOpenSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#c9c9ce;padding:12px 18px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:700;">⚙️ Ajustes</button>';
@@ -14014,6 +14134,7 @@
 			    fab.textContent = '👴 MODO FÁCIL';
 			    fab.style.display = on ? 'none' : 'block';
 			  }
+			  _easyApplyPrefs();
 			  if(on){ _easyTick(); if(!_easyTimer) _easyTimer = setInterval(_easyTick, 1000); }
 			  else if(_easyTimer){ clearInterval(_easyTimer); _easyTimer = null; }
 			  // Pill de configuración
