@@ -1,0 +1,8 @@
+{
+	"name": "ixclock",
+	"private": true,
+	"description": "IXClock — Universal OS Dashboard (sitio estático + funciones de Netlify)",
+	"dependencies": {
+		"@netlify/blobs": "^8.1.0"
+	}
+}

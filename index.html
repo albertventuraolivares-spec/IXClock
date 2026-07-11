@@ -2365,9 +2365,18 @@
 							<div style="font-size:10px;opacity:.5;">¿Cuántas estrellas le pondrías?</div>
 							<div id="opinion-stars-input" style="font-size:24px;letter-spacing:4px;cursor:pointer;"></div>
 							<textarea id="opinion-textarea" rows="4" placeholder="Escribe aquí tu opinión..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2 text-xs outline-none resize-none"></textarea>
+							<div style="font-size:9px;opacity:.45;">Al guardar, tu opinión se PUBLICA y todos los visitantes de IXClock podrán verla.</div>
 							<div class="flex gap-2">
-								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar</button>
+								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar y publicar</button>
 								<button class="btn-option flex-1" onclick="opinionCancelEdit()">Cancelar</button>
+							</div>
+						</div>
+						<div id="opinion-publish-status" style="font-size:10px;margin-top:4px;"></div>
+						<!-- Muro público: lo que opina la gente, visible para todos -->
+						<div style="border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:8px;">
+							<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🌍 Opiniones de todos</div>
+							<div id="public-opinions" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+								<div style="font-size:10px;opacity:.4;">Cargando opiniones…</div>
 							</div>
 						</div>
 					</div>
@@ -12499,6 +12508,58 @@
 			  saveOpinionStorage();
 			  renderOpinion();
 			  opinionCancelEdit();
+			  opinionPublish(); // además de guardarse aquí, se publica para todos
+			}
+			/* ===== Opiniones PÚBLICAS: se guardan en el servidor (Netlify Blobs)
+			   para que cualquier visitante de IXClock las vea ===== */
+			const _OPINIONS_URL = '/.netlify/functions/opinions';
+			async function opinionPublish(){
+			  const st = document.getElementById('opinion-publish-status');
+			  if(!userOpinion || !userOpinion.trim()) return;
+			  if(location.protocol === 'file:'){ if(st){ st.textContent='(sin conexión: guardada solo en este aparato)'; st.style.color='#ff9f0a'; } return; }
+			  if(st){ st.textContent='🌍 Publicando…'; st.style.color=''; }
+			  try{
+			    const name = localStorage.getItem('uos_session') || 'Anónimo';
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const r = await fetch(_OPINIONS_URL, {
+			      method:'POST', headers:{'content-type':'application/json'},
+			      body: JSON.stringify({ name: name, stars: userRating || 5, text: userOpinion }),
+			      signal: ctrl.signal
+			    });
+			    clearTimeout(timer);
+			    if(!r.ok) throw new Error('HTTP ' + r.status);
+			    if(st){ st.textContent='🌍 Publicada — todos pueden verla ✓'; st.style.color='#30d158'; }
+			    loadPublicOpinions();
+			  }catch(e){
+			    if(st){ st.textContent='⚠️ No se pudo publicar (se guardó solo en este aparato). Reintenta al rato.'; st.style.color='#ff9f0a'; }
+			  }
+			}
+			async function loadPublicOpinions(){
+			  const box = document.getElementById('public-opinions');
+			  if(!box || location.protocol === 'file:') return;
+			  try{
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const r = await fetch(_OPINIONS_URL, { signal: ctrl.signal });
+			    clearTimeout(timer);
+			    if(!r.ok) throw new Error('HTTP ' + r.status);
+			    const list = await r.json();
+			    if(!Array.isArray(list) || !list.length){
+			      box.innerHTML = '<div style="font-size:10px;opacity:.4;">Aún no hay opiniones publicadas. ¡Sé el primero!</div>';
+			      return;
+			    }
+			    box.innerHTML = list.map(o=>{
+			      const stars = '⭐'.repeat(Math.max(1, Math.min(5, parseInt(o.stars)||5)));
+			      return '<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:7px 9px;">'
+			        + '<div style="font-size:10px;">' + stars + ' <b>' + escapeHtml(String(o.name||'Anónimo').slice(0,40)) + '</b>'
+			        + ' <span style="opacity:.4;">· ' + escapeHtml(String(o.date||'')) + '</span></div>'
+			        + '<div style="font-size:11px;opacity:.85;margin-top:2px;white-space:pre-wrap;">' + escapeHtml(String(o.text||'').slice(0,500)) + '</div>'
+			        + '</div>';
+			    }).join('');
+			  }catch(e){
+			    box.innerHTML = '<div style="font-size:10px;opacity:.4;">No se pudieron cargar las opiniones (revisa tu conexión).</div>';
+			  }
 			}
 			function opinionDelete(){
 			  userOpinion = '';
@@ -12781,9 +12842,13 @@
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">📺 TV en vivo</div>
 			          En el panel de TV: elige país y "Ver canales", o usa <b>⚽ Deportes y Mundiales</b>, <b>⭐ Famosos</b> (Telemundo, FIFA+, ESPN, Univision y ~50 cadenas), <b>✨ Canales 4K/UHD</b> o "Ver todos" (~12.900 canales gratis de iptv-org). Escribe arriba para filtrar.
 			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💬 Mi Opinión (pública)</div>
+			          En Personalizar → Más está "Mi Opinión": pones estrellas y escribes lo que piensas, y al guardar <b>se publica para que todos los visitantes de IXClock la vean</b> en el muro "🌍 Opiniones de todos". Tu nombre de usuario acompaña la opinión.
+			        </div>
 			        <div>
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💾 Tus datos</div>
-			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app.
+			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app. La única excepción es tu opinión publicada, que sí es pública.
 			        </div>
 			      </div>
 			    </div>
@@ -13993,6 +14058,7 @@
 			loadAlarms();
 			loadNotes();
 			loadOpinion();
+			loadPublicOpinions();
 			setInterval(renderizarFeriados, 3600000);
 			setInterval(updateMoonPhase, 3600000);
 			document.getElementById('brightness-slider').oninput = e=>{
