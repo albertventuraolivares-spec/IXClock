@@ -12965,40 +12965,49 @@
 			  for(let i=0;i<todo.length;i+=SIZE){
 			    const chunk=todo.slice(i,i+SIZE);
 			    let chunkOk=false;
+			    // 1) PRIMERO Google (rápido y fiable): todo el bloque en paralelo.
+			    //    Antes iba primero la IA y si estaba caída tardaba 15s por bloque
+			    //    — parecía que "no se traduce".
 			    try{
-			      const res=await fj('https://api.pollinations.ai/v1/chat/completions',{
-			        method:'POST',headers:{'Content-Type':'application/json'},
-			        body:JSON.stringify({
-			          model:'openai-large',
-			          messages:[
-			            {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
-			            {role:'user',content:JSON.stringify(chunk)}
-			          ]
-			        })
-			      },15000);
-			      if(!res.ok) throw new Error('HTTP '+res.status);
-			      const data=await res.json();
-			      let txt=(data.choices?.[0]?.message?.content||'').trim();
-			      txt=txt.replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'').trim();
-			      const arr=JSON.parse(txt);
-			      if(Array.isArray(arr)&&arr.length===chunk.length){
+			      const ts=await Promise.all(chunk.map(gone));
+			      if(ts.some(t=>t)){
 			        chunk.forEach((orig,idx)=>{
-			          const t=(arr[idx]||'').trim();
+			          const t=ts[idx];
 			          if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
 			          else results[orig]=orig;
 			        });
 			        chunkOk=true;
 			      }
 			    }catch(e){}
+			    // 2) Respaldo: IA de Pollinations con el bloque entero
 			    if(!chunkOk){
-			      // Respaldo: Google traduce cada cadena del bloque en paralelo
-			      const ts=await Promise.all(chunk.map(gone));
-			      chunk.forEach((orig,idx)=>{
-			        const t=ts[idx];
-			        if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
-			        else results[orig]=orig;
-			      });
+			      try{
+			        const res=await fj('https://api.pollinations.ai/v1/chat/completions',{
+			          method:'POST',headers:{'Content-Type':'application/json'},
+			          body:JSON.stringify({
+			            model:'openai-large',
+			            messages:[
+			              {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
+			              {role:'user',content:JSON.stringify(chunk)}
+			            ]
+			          })
+			        },15000);
+			        if(!res.ok) throw new Error('HTTP '+res.status);
+			        const data=await res.json();
+			        let txt=(data.choices?.[0]?.message?.content||'').trim();
+			        txt=txt.replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'').trim();
+			        const arr=JSON.parse(txt);
+			        if(Array.isArray(arr)&&arr.length===chunk.length){
+			          chunk.forEach((orig,idx)=>{
+			            const t=(arr[idx]||'').trim();
+			            if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
+			            else results[orig]=orig;
+			          });
+			          chunkOk=true;
+			        }
+			      }catch(e){}
 			    }
+			    if(!chunkOk) chunk.forEach(s=>{ results[s]=s; });
 			    doneCount+=chunk.length;
 			    if(onProgress){ try{ onProgress(Math.min(doneCount,todo.length),todo.length); }catch(e){} }
 			  }
@@ -13038,6 +13047,7 @@
 
 			function _uiRoots(){
 			  return [
+			    document.getElementById('login-overlay'), // la bienvenida TAMBIÉN se traduce
 			    document.getElementById('left-sidebar'),
 			    document.getElementById('ai-chat-panel'),
 			    document.getElementById('translator-panel'),
