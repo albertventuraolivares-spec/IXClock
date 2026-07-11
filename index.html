@@ -13022,41 +13022,36 @@
 			}
 
 			function _uiNodes(root){
-			  const SKIP=new Set(['SCRIPT','STYLE','INPUT','TEXTAREA','SELECT','OPTION']);
+			  // Recorre SOLO nodos de texto reales (antes también generaba objetos
+			  // falsos por cada palabra de cada elemento anidado: trabajo duplicado
+			  // a lo bestia). Salta código, campos de escritura y los relojes.
 			  const nodes=[];
-			  const w=document.createTreeWalker(root,NodeFilter.SHOW_ALL,{
+			  if(!root) return nodes;
+			  if(root.nodeType===3){
+			    const el=root.parentElement;
+			    if(el && el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return nodes;
+			    if(_uiOK(root.textContent.trim())) nodes.push(root);
+			    return nodes;
+			  }
+			  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
 			    acceptNode(n){
-			      if(SKIP.has(n.nodeName))return NodeFilter.FILTER_REJECT;
+			      const el=n.parentElement;
+			      if(!el) return NodeFilter.FILTER_REJECT;
+			      if(el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return NodeFilter.FILTER_REJECT;
 			      return NodeFilter.FILTER_ACCEPT;
 			    }
 			  });
 			  let n;
 			  while((n=w.nextNode())){
-			    if(n.nodeType===3){
-			      if(_uiOK(n.textContent.trim()))nodes.push(n);
-			    }else if(n.nodeType===1){
-			      const text=n.textContent;
-			      if(!text)continue;
-			      text.trim().split(/\s+/).forEach(word=>{
-			        if(_uiOK(word))nodes.push({textContent:word});
-			      });
-			    }
+			    if(_uiOK(n.textContent.trim())) nodes.push(n);
 			  }
 			  return nodes;
 			}
 
 			function _uiRoots(){
-			  return [
-			    document.getElementById('login-overlay'), // la bienvenida TAMBIÉN se traduce
-			    document.getElementById('left-sidebar'),
-			    document.getElementById('ai-chat-panel'),
-			    document.getElementById('translator-panel'),
-			    document.getElementById('alarm-panel'),
-			    document.getElementById('notes-panel'),
-			    document.getElementById('top-dock'),
-			    document.querySelector('main'),
-			    document.querySelector('aside'),
-			  ].filter(Boolean);
+			  // TODO el cuerpo: cualquier app, panel o modal — exista ya o se cree
+			  // después (el observador de mutaciones traduce lo nuevo al aparecer)
+			  return [document.body].filter(Boolean);
 			}
 
 			async function _uiApply(nodes,lang){
@@ -13107,28 +13102,31 @@
 			  }
 			  if(lang!=='es'){
 			    let _t=null;const pending=new Set();
+			    let _tMax=null;
+			    const _uiFlush=async()=>{
+			      clearTimeout(_t); _t=null;
+			      clearTimeout(_tMax); _tMax=null;
+			      const fresh=[...pending].filter(n=>!_uiOriginals.has(n)&&n.parentNode);
+			      pending.clear();
+			      if(fresh.length)await _uiApply(fresh,_uiLang);
+			    };
 			    _uiObserver=new MutationObserver(muts=>{
 			      muts.forEach(m=>{m.addedNodes.forEach(nd=>{
-			        if(nd.nodeType===3){if(_uiOK(nd.textContent.trim()))pending.add(nd);}
-			        else if(nd.nodeType===1){_uiNodes(nd).forEach(n=>pending.add(n));}
+			        // _uiNodes también filtra ancestros (reloj, [data-notrans], campos)
+			        _uiNodes(nd).forEach(n=>pending.add(n));
 			      });});
 			      if(!pending.size)return;
 			      clearTimeout(_t);
-			      _t=setTimeout(async()=>{
-			        const fresh=[...pending].filter(n=>!_uiOriginals.has(n)&&n.parentNode);
-			        pending.clear();
-			        if(fresh.length)await _uiApply(fresh,_uiLang);
-			      },350);
+			      _t=setTimeout(_uiFlush,350);
+			      // TOPE MÁXIMO: si algo muta sin parar (el LCD de GarageBand late cada
+			      // 60ms), el temporizador de 350ms se reiniciaba eternamente y la
+			      // traducción jamás se disparaba. Con este tope SIEMPRE sale a los 900ms.
+			      if(!_tMax) _tMax=setTimeout(_uiFlush,900);
 			    });
-			    // Only watch floating panels — NOT main or aside (those update every second = flicker)
-			    [
-			      document.getElementById('alarm-panel'),
-			      document.getElementById('ai-chat-panel'),
-			      document.getElementById('notes-panel'),
-			      document.getElementById('translator-panel'),
-			    ].filter(Boolean).forEach(el=>{
-			      _uiObserver.observe(el,{childList:true,subtree:true});
-			    });
+			    // Se observa TODO el body: los modales que se crean después (GarageBand,
+			    // TV, batería, Modo Fácil…) se traducen solos al aparecer. Los relojes
+			    // no parpadean: sus números los rechaza _uiOK y el caché evita la red.
+			    _uiObserver.observe(document.body,{childList:true,subtree:true});
 			  }
 			}
 
@@ -14241,7 +14239,7 @@
 			  scr.id = 'easy-screen';
 			  scr.style.cssText = 'position:fixed;inset:0;z-index:2500;background:#000;color:#bb2222;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;';
 			  scr.innerHTML = ''
-			    + '<div id="easy-hora" style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
+			    + '<div id="easy-hora" data-notrans style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
 			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
 			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
 			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
