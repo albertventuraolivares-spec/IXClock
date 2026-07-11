@@ -5503,8 +5503,29 @@
 			  }
 			  return meta && meta.thumb || null;
 			}
+			// La mejor imagen conocida del PROPIO fondo (fotograma guardado del video,
+			// o su portada extraída). Se usa como póster mientras el video carga y como
+			// respaldo si falla: así nunca "sale otro fondo" distinto al elegido.
+			function _wpPosterFor(wp){
+			  try{
+			    const f = localStorage.getItem('wpf4_' + wp.id);
+			    if(f) return 'url("' + f + '")';
+			    const c = JSON.parse(localStorage.getItem('wpm4_' + wp.id) || '{}');
+			    if(c.thumb) return 'url("https://wsrv.nl/?url=' + encodeURIComponent(c.thumb) + '&w=1600&output=webp"), url("' + c.thumb + '")';
+			  }catch(e){}
+			  return null;
+			}
 			function _wpShowCanvasFallback(fillEl, wp){
 			  if(fillEl.querySelector('canvas')) return;
+			  // Si tenemos una imagen real de ESTE fondo, mejor eso que una animación
+			  // genérica (la animación era lo que el usuario veía como "otro fondo").
+			  const poster = _wpPosterFor(wp);
+			  if(poster){
+			    fillEl.style.backgroundImage = poster + (wp.bg ? ', ' + wp.bg : '');
+			    fillEl.style.backgroundSize = 'cover';
+			    fillEl.style.backgroundPosition = 'center';
+			    return;
+			  }
 			  const anim = wp.fallbackAnim || wp.anim;
 			  if(!(anim && typeof _canvasAnimators !== 'undefined' && _canvasAnimators[anim])) return;
 			  if(wp.bg) fillEl.style.backgroundImage = wp.bg;
@@ -5528,6 +5549,14 @@
 			// página de rescate (alt) → cada uno vía proxy → animación canvas como último recurso
 			function _wpAttachVideo(fillEl, wp, directUrl, onReady){
 			  const _ready = (ok)=>{ if(_ready.done) return; _ready.done = true; if(onReady){ try{ onReady(ok); }catch(e){} } };
+			  // Póster inmediato: la imagen del propio fondo debajo del video. Si el
+			  // video tarda o falla, se ve ESTE fondo en foto — no otro distinto.
+			  const _poster = _wpPosterFor(wp);
+			  if(_poster){
+			    fillEl.style.backgroundImage = _poster + (wp.bg ? ', ' + wp.bg : '');
+			    fillEl.style.backgroundSize = 'cover';
+			    fillEl.style.backgroundPosition = 'center';
+			  }
 			  const vid = document.createElement('video');
 			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
 			  vid.setAttribute('webkit-playsinline','true');
@@ -5583,6 +5612,24 @@
 			      const raw = tried[tried.length - 1] || vid.currentSrc;
 			      if(raw && c.video !== raw){ c.video = raw; localStorage.setItem(key, JSON.stringify(c)); }
 			    }catch(e){}
+			    // Mide la resolución REAL del fondo aplicado y actualiza la insignia
+			    // de su tarjeta + el diagnóstico. Es la prueba de si de verdad es 4K.
+			    setTimeout(function(){
+			      try{
+			        const big = Math.max(vid.videoWidth || 0, vid.videoHeight || 0);
+			        if(!big) return;
+			        localStorage.setItem('wpres_' + wp.id, String(big));
+			        localStorage.setItem('wp4k_' + wp.id, big >= 3200 ? '1' : '0');
+			        if(typeof _wpStats !== 'undefined') _wpStats.ultimo = 'aplicado ' + wp.id.replace('lw-','') + ': ' + vid.videoWidth + 'x' + vid.videoHeight + (big >= 3200 ? ' (4K ✓)' : ' (NO es 4K)');
+			        const cardB = document.getElementById('wpcard-' + wp.id);
+			        if(cardB){
+			          let rb = cardB.querySelector('.wp-res-badge');
+			          if(!rb){ rb = document.createElement('div'); rb.className = 'wp-res-badge'; cardB.appendChild(rb); }
+			          rb.textContent = big>=3200 ? '4K ✓' : big>=2400 ? '1440p' : big>=1800 ? '1080p' : big>=1100 ? '720p' : big+'px';
+			          rb.style.color = big>=3200 ? '#30d158' : '#ff9f0a';
+			        }
+			      }catch(e){}
+			    }, 400);
 			  };
 			  fillEl.appendChild(vid);
 			  tryNext();
@@ -6194,7 +6241,10 @@
 			    let done = false;
 			    const ready = ()=>{ if(done) return; done = true; doSwitch(); };
 			    applyWallpaperToFill(nextFillEl, wp, ready);
-			    setTimeout(ready, 25000); // red de seguridad
+			    // Si ya hay una imagen de ESTE fondo (fotograma/portada), se cambia al
+			    // instante: se ve la foto correcta y el video aparece encima al cargar.
+			    if(_wpPosterFor(wp)) ready();
+			    else setTimeout(ready, 25000); // red de seguridad
 			  } else {
 			    applyWallpaperToFill(nextFillEl, wp);
 			    doSwitch();
@@ -11743,13 +11793,31 @@
 			    }catch(e){ console.error('MyMemory falló:', e); }
 			  }
 
-			  // 3) Respaldo final: Lingva (espejo libre de Google Translate, CORS abierto)
+			  // 3) Respaldo: endpoint alternativo de Google (host distinto — a veces
+			  //    gtx está bloqueado en una red pero este no)
 			  if(!translated){
 			    try{
-			      const src = from.value || 'auto';
-			      const data = await fetchJSON('https://lingva.ml/api/v1/' + encodeURIComponent(src) + '/' + encodeURIComponent(to.value) + '/' + encodeURIComponent(slice), 9000);
-			      if(data && data.translation){ translated = data.translation; usedSource = 'Lingva'; }
-			    }catch(e){ console.error('Lingva falló:', e); }
+			      const url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=' +
+			                  encodeURIComponent(from.value) + '&tl=' + encodeURIComponent(to.value) +
+			                  '&q=' + encodeURIComponent(slice);
+			      const data = await fetchJSON(url, 7000);
+			      const t = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0][0] : data[0]) : null;
+			      if(t && typeof t === 'string'){ translated = t; usedSource = 'Google'; }
+			    }catch(e){ console.error('Google (alt) falló:', e); }
+			  }
+
+			  // 4) Respaldo final: espejos de Lingva (Google Translate libre, CORS
+			  //    abierto). lingva.ml se cae a menudo, por eso se prueban varios.
+			  if(!translated){
+			    const mirrors = ['https://lingva.ml','https://lingva.lunar.icu','https://translate.plausibility.cloud'];
+			    const src = from.value || 'auto';
+			    for(const m of mirrors){
+			      if(translated) break;
+			      try{
+			        const data = await fetchJSON(m + '/api/v1/' + encodeURIComponent(src) + '/' + encodeURIComponent(to.value) + '/' + encodeURIComponent(slice), 6000);
+			        if(data && data.translation){ translated = data.translation; usedSource = 'Lingva'; }
+			      }catch(e){ console.error('Lingva falló (' + m + '):', e); }
+			    }
 			  }
 
 			  if(translated){
@@ -11758,7 +11826,7 @@
 			    if(copyBtn) copyBtn.style.opacity = '1';
 			  }else{
 			    if(status){
-			      status.textContent = '❌ No se pudo traducir. Revisa tu conexión e intenta de nuevo.';
+			      status.textContent = '❌ Ningún servicio respondió (Google x2, MyMemory y 3 espejos de Lingva). Suele ser la conexión o un bloqueo de red; inténtalo de nuevo en unos segundos.';
 			      status.style.opacity = '1';
 			      status.style.color = '#ff6961';
 			    }
@@ -14891,54 +14959,95 @@
 			function openGarageBand(){
 			  let modal=document.getElementById('garageband-modal');
 			  if(modal){modal.style.display='flex';return;}
+			  if(!document.getElementById('gb-style')){
+			    const st=document.createElement('style');
+			    st.id='gb-style';
+			    st.textContent=''
+			      +'#garageband-modal{position:fixed;inset:0;z-index:5000;background:#161618;display:flex;flex-direction:column;font-family:-apple-system,sans-serif;color:#fff;user-select:none;-webkit-user-select:none;}'
+			      +'#gb-topbar{display:flex;align-items:center;gap:10px;padding:6px 12px;background:linear-gradient(180deg,#3a3a3c,#2b2b2d);border-bottom:1px solid #0a0a0a;flex-shrink:0;min-height:52px;}'
+			      +'.gb-tb-btn{background:linear-gradient(180deg,#4a4a4c,#38383a);border:1px solid #1c1c1e;color:#d8d8dc;width:36px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 rgba(255,255,255,.08) inset;}'
+			      +'.gb-tb-btn.on{background:linear-gradient(180deg,#0a84ff,#0060df);color:#fff;}'
+			      +'#gb-lcd{display:flex;align-items:stretch;background:#101211;border:1px solid #000;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.7) inset;padding:3px 10px;gap:12px;min-width:170px;}'
+			      +'.gb-lcd-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;}'
+			      +'.gb-lcd-num{font-size:19px;font-weight:600;color:#cfeadb;font-variant-numeric:tabular-nums;letter-spacing:.03em;}'
+			      +'.gb-lcd-lbl{font-size:8px;letter-spacing:.12em;color:#5f7a6c;text-transform:uppercase;}'
+			      +'.gb-lcd-mini{background:none;border:none;color:#5f7a6c;font-size:11px;cursor:pointer;padding:0 3px;}'
+			      +'#gb-browser{flex:1;overflow-y:auto;padding:26px 22px;}'
+			      +'.gb-card{background:radial-gradient(120% 120% at 30% 20%,#3c3c3f,#232325 70%);border:1px solid #454548;border-radius:16px;cursor:pointer;padding:22px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:transform .12s,border-color .12s;box-shadow:0 6px 18px rgba(0,0,0,.35);}'
+			      +'.gb-card:hover{transform:translateY(-3px) scale(1.02);border-color:#7a7a7e;}'
+			      +'.gb-card .i{font-size:46px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));}'
+			      +'.gb-card .n{font-size:13px;font-weight:700;}'
+			      +'.gb-card .d{font-size:10px;opacity:.45;text-align:center;}'
+			      +'.gb-chip{background:#3a3a3c;border:1px solid #1c1c1e;color:#d8d8dc;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;}'
+			      +'.gb-chip.on{background:linear-gradient(180deg,#5a5a5e,#48484c);color:#fff;border-color:#000;box-shadow:0 1px 0 rgba(255,255,255,.12) inset;}'
+			      +'.gb-key-w{position:absolute;background:linear-gradient(180deg,#fdfdfd 0%,#eee 84%,#d9d9db 100%);border:1px solid #a9a9ad;border-top:none;border-radius:0 0 7px 7px;cursor:pointer;box-shadow:0 3px 4px rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;font-size:10px;color:#8e8e93;font-weight:700;}'
+			      +'.gb-key-w.dn{background:linear-gradient(180deg,#cfd6e6 0%,#b9c2d8 100%);}'
+			      +'.gb-key-b{position:absolute;background:linear-gradient(180deg,#3c3c3e 0%,#111 18%,#000 100%);border-radius:0 0 5px 5px;cursor:pointer;z-index:2;box-shadow:0 3px 5px rgba(0,0,0,.6);}'
+			      +'.gb-key-b.dn{background:linear-gradient(180deg,#2e4a86 0%,#152647 100%);}'
+			      +'.gb-pad{background:radial-gradient(100% 100% at 50% 30%,#3d3d40,#252527);border:1px solid #48484a;border-radius:14px;color:#e8e8ec;cursor:pointer;padding:22px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:26px;box-shadow:0 4px 10px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.06) inset;transition:transform .06s;}'
+			      +'.gb-pad.dn{transform:scale(.96);background:radial-gradient(100% 100% at 50% 30%,#55555a,#333336);}'
+			      +'.gb-pad .l{font-size:11px;font-weight:700;opacity:.75;display:flex;align-items:center;gap:5px;}'
+			      +'.gb-pad .dot{width:7px;height:7px;border-radius:50%;}'
+			      +'.gb-strip{flex:1;display:flex;flex-direction:column;border-right:1px solid #000;min-width:0;cursor:pointer;}'
+			      +'.gb-strip-h{background:linear-gradient(180deg,#39393c,#2a2a2c);padding:12px 2px;text-align:center;font-size:15px;font-weight:800;border-bottom:1px solid #000;color:#e8e8ec;}'
+			      +'.gb-strip-h.dn{background:linear-gradient(180deg,#0a84ff,#0060df);}'
+			      +'.gb-seg{flex:1;border-bottom:1px solid #0f0f10;background:linear-gradient(180deg,#232325,#1c1c1e);position:relative;}'
+			      +'.gb-seg:after{content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:linear-gradient(90deg,transparent,#8e8e93,transparent);opacity:.5;}'
+			      +'.gb-seg.dn{background:linear-gradient(180deg,#3a3a44,#2b2b33);}'
+			      +'.gb-ll-cell{height:62px;border:none;border-radius:10px;cursor:pointer;font-size:19px;position:relative;transition:transform .08s;}'
+			      +'.gb-ll-cell.on{box-shadow:0 0 0 2px #fff,0 0 14px 2px rgba(255,255,255,.25);animation:gbCellPulse 1s ease-in-out infinite;}'
+			      +'@keyframes gbCellPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}'
+			      +'.gb-track-hdr{width:150px;flex-shrink:0;display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#333335,#28282a);border-right:1px solid #000;padding:0 8px;border-radius:8px 0 0 8px;}'
+			      +'.gb-ms{width:22px;height:22px;border-radius:5px;border:1px solid #1c1c1e;background:#3a3a3c;color:#c8c8cc;font-size:10px;font-weight:800;cursor:pointer;}'
+			      +'.gb-ms.mOn{background:#0a84ff;color:#fff;}'
+			      +'.gb-region{position:absolute;top:5px;bottom:5px;background:linear-gradient(180deg,#5dd97c,#2f9e4f);border:1px solid #1e7538;border-radius:6px;overflow:hidden;display:flex;align-items:center;padding:0 6px;gap:2px;box-shadow:0 2px 5px rgba(0,0,0,.35);}'
+			      +'.gb-region .bar{width:3px;background:rgba(0,40,10,.55);border-radius:2px;flex-shrink:0;}'
+			      +'@media (max-width:760px){#gb-lcd{min-width:130px;} .gb-card .i{font-size:36px;}}';
+			    document.head.appendChild(st);
+			  }
 			  modal=document.createElement('div');
 			  modal.id='garageband-modal';
-			  modal.style.cssText='position:fixed;inset:0;z-index:5000;background:#1a1a1a;display:flex;flex-direction:column;font-family:-apple-system,sans-serif;color:#fff;';
-			  modal.innerHTML=`
-			    <!-- Header -->
-			    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0d0d0d;border-bottom:1px solid #333;flex-shrink:0;">
-			      <div style="display:flex;align-items:center;gap:12px;">
-			        <span style="font-size:1.3rem;">🎸</span><span style="font-weight:800;font-size:15px;">GarageBand</span>
-			        <div style="display:flex;gap:4px;overflow-x:auto;max-width:60vw;padding-bottom:2px;">
-			          <button onclick="gbSelectInstrument('piano')" data-inst="piano" class="gb-inst-btn" style="background:#ff6600;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎹 Piano</button>
-			          <button onclick="gbSelectInstrument('epiano')" data-inst="epiano" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎹 E-Piano</button>
-			          <button onclick="gbSelectInstrument('organ')" data-inst="organ" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎛️ Órgano</button>
-			          <button onclick="gbSelectInstrument('guitar')" data-inst="guitar" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎸 Guitarra</button>
-			          <button onclick="gbSelectInstrument('strings')" data-inst="strings" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎻 Cuerdas</button>
-			          <button onclick="gbSelectInstrument('flute')" data-inst="flute" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🪈 Flauta</button>
-			          <button onclick="gbSelectInstrument('brass')" data-inst="brass" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎺 Metales</button>
-			          <button onclick="gbSelectInstrument('marimba')" data-inst="marimba" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎵 Marimba</button>
-			          <button onclick="gbSelectInstrument('musicbox')" data-inst="musicbox" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎶 Caja música</button>
-			          <button onclick="gbSelectInstrument('bell')" data-inst="bell" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🔔 Campanas</button>
-			          <button onclick="gbSelectInstrument('synth')" data-inst="synth" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎛️ Synth</button>
-			          <button onclick="gbSelectInstrument('bass')" data-inst="bass" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🎸 Bajo</button>
-			          <button onclick="gbSelectInstrument('drums')" data-inst="drums" class="gb-inst-btn" style="background:#333;border:none;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">🥁 Batería</button>
-			        </div>
-			      </div>
-			      <div style="display:flex;align-items:center;gap:8px;">
-			        <label style="font-size:11px;opacity:.6;">BPM</label>
-			        <input type="number" value="120" min="60" max="220" id="gb-bpm" oninput="_gbBpm=this.value" style="width:50px;background:#333;border:none;color:#fff;padding:4px;border-radius:6px;text-align:center;font-size:12px;">
-			        <button onclick="gbRecord()" id="gb-rec-btn" style="background:#ff453a;border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;" title="Grabar">⏺</button>
-			        <button onclick="gbPlay()" style="background:#30d158;border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;" title="Reproducir">▶</button>
-			        <button onclick="gbStop()" style="background:#636366;border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;" title="Detener">⏹</button>
-			        <button onclick="gbClear()" style="background:#333;border:none;color:#fff;padding:7px 12px;border-radius:10px;cursor:pointer;font-size:11px;">Limpiar</button>
-			        <button onclick="document.getElementById('garageband-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
-			      </div>
-			    </div>
-			    <!-- Waveform canvas -->
-			    <canvas id="gb-waveform" width="800" height="60" style="width:100%;height:60px;background:#0d0d0d;flex-shrink:0;"></canvas>
-			    <!-- Instrument area -->
-			    <div id="gb-instrument" style="flex:1;overflow-y:auto;padding:16px;">
-			      <div id="gb-piano-area"></div>
-			      <div id="gb-drums-area" style="display:none;"></div>
-			      <div id="gb-bass-area" style="display:none;"></div>
-			      <div id="gb-synth-area" style="display:none;"></div>
-			    </div>
-			    <!-- Status -->
-			    <div id="gb-status" style="padding:8px 16px;background:#0d0d0d;font-size:11px;color:#636366;flex-shrink:0;text-align:center;">Listo · Toca las teclas o pads para reproducir · ⏺ para grabar</div>
-			  `;
+			  modal.innerHTML=''
+			    +'<div id="gb-topbar">'
+			    +  '<button class="gb-tb-btn" onclick="gbView(\'browser\')" title="Explorador de sonidos" style="font-size:17px;">⊞</button>'
+			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">GarageBand</span></div>'
+			    +  '<div style="flex:1;"></div>'
+			    +  '<div style="display:flex;gap:6px;align-items:center;">'
+			    +    '<button class="gb-tb-btn" onclick="gbStop()" title="Ir al inicio">⏮</button>'
+			    +    '<button class="gb-tb-btn" id="gb-play-btn" onclick="gbPlay()" title="Reproducir" style="color:#6ee787;font-size:16px;">▶</button>'
+			    +    '<button class="gb-tb-btn" id="gb-rec-btn" onclick="gbRecord()" title="Grabar" style="color:#ff453a;font-size:13px;background:linear-gradient(180deg,#4a4a4c,#38383a);">⏺</button>'
+			    +  '</div>'
+			    +  '<div id="gb-lcd">'
+			    +    '<div class="gb-lcd-cell"><span class="gb-lcd-num" id="gb-lcd-beat">1.1</span><span class="gb-lcd-lbl">Compás</span></div>'
+			    +    '<div style="width:1px;background:#233026;margin:4px 0;"></div>'
+			    +    '<div class="gb-lcd-cell" style="flex-direction:row;gap:4px;align-items:center;">'
+			    +      '<button class="gb-lcd-mini" onclick="gbTempo(-4)">−</button>'
+			    +      '<div class="gb-lcd-cell"><span class="gb-lcd-num" id="gb-lcd-tempo" style="font-size:17px;">120</span><span class="gb-lcd-lbl">Tempo</span></div>'
+			    +      '<button class="gb-lcd-mini" onclick="gbTempo(4)">+</button>'
+			    +    '</div>'
+			    +  '</div>'
+			    +  '<button class="gb-tb-btn" id="gb-metro-btn" onclick="gbMetro()" title="Metrónomo">🎵</button>'
+			    +  '<div style="flex:1;"></div>'
+			    +  '<div style="display:flex;gap:6px;">'
+			    +    '<button class="gb-tb-btn gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" title="Instrumento">🎹</button>'
+			    +    '<button class="gb-tb-btn gb-view-btn" data-v="loops" onclick="gbView(\'loops\')" title="Live Loops">🔁</button>'
+			    +    '<button class="gb-tb-btn gb-view-btn" data-v="tracks" onclick="gbView(\'tracks\')" title="Pistas">🎚️</button>'
+			    +    '<button class="gb-tb-btn" onclick="document.getElementById(\'garageband-modal\').style.display=\'none\'" title="Cerrar">✕</button>'
+			    +  '</div>'
+			    +'</div>'
+			    +'<canvas id="gb-waveform" width="900" height="30" style="width:100%;height:30px;background:#0d0d0d;flex-shrink:0;border-bottom:1px solid #000;"></canvas>'
+			    +'<div id="gb-browser"></div>'
+			    +'<div id="gb-instrument" style="flex:1;overflow-y:auto;display:none;flex-direction:column;">'
+			    +  '<div id="gb-inst-bar" style="display:flex;gap:6px;align-items:center;padding:10px 14px;overflow-x:auto;flex-shrink:0;background:#1c1c1e;border-bottom:1px solid #000;"></div>'
+			    +  '<div id="gb-kb-wrap" style="display:none;flex:1;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg,#232325,#161618);"></div>'
+			    +  '<div id="gb-drums-area" style="display:none;"></div>'
+			    +  '<div id="gb-chord-area" style="display:none;flex:1;"></div>'
+			    +  '<div id="gb-synth-area" style="display:none;"></div>'
+			    +'</div>'
+			    +'<div id="gb-loops" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
+			    +'<div id="gb-tracks" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
+			    +'<div id="gb-status" style="padding:7px 16px;background:#0d0d0d;font-size:11px;color:#8e8e93;flex-shrink:0;text-align:center;border-top:1px solid #222;">Elige un instrumento en el explorador de sonidos</div>';
 			  document.body.appendChild(modal);
-			  gbBuildExtraViews(modal);
 			  gbInit();
 			}
 			function gbInit(){
@@ -14948,146 +15057,209 @@
 			    _gbAudioCtx = (typeof getAudioCtx==='function' ? getAudioCtx() : null) || new(window.AudioContext||window.webkitAudioContext)();
 			  }
 			  if(_gbAudioCtx && _gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
-			  gbBuildPiano();gbBuildDrums();gbBuildBass();gbBuildSynth();
-			  gbSelectInstrument('piano');
+			  gbBuildBrowser();
+			  gbBuildLiveLoops(document.getElementById('gb-loops'));
+			  gbView('browser');
 			  gbDrawWaveform();
+			  gbStartLCD();
 			}
-			// ── Piano ──
-			const GB_NOTES=['C3','D3','E3','F3','G3','A3','B3','C4','D4','E4','F4','G4','A4','B4','C5'];
-			const GB_SHARP_POS=[0.5,1.5,null,3.5,4.5,5.5,null,7.5,8.5,null,10.5,11.5,12.5,null];
-			const GB_FREQS={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25};
-			const GB_SHARP_FREQS={'C#3':138.59,'D#3':155.56,'F#3':185,'G#3':207.65,'A#3':233.08,'C#4':277.18,'D#4':311.13,'F#4':369.99,'G#4':415.3,'A#4':466.16,'C#5':554.37};
-			function gbBuildPiano(){
-			  const area=document.getElementById('gb-piano-area');
-			  area.style.cssText='position:relative;height:220px;margin:0 auto;max-width:800px;';
-			  const total=GB_NOTES.length;
-			  const ww=Math.min(800,window.innerWidth-40);
-			  const kw=ww/total;
-			  area.style.width=ww+'px';
-			  // White keys
-			  GB_NOTES.forEach((note,i)=>{
+			// ===== Explorador de sonidos (la pantalla de inicio del GarageBand de iPad) =====
+			const GB_BROWSER_CARDS=[
+			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'Piano, órgano, e-piano y 10 voces más'},
+			  {id:'drums',    icon:'🥁', n:'Batería',        d:'Pads de percusión para ritmos'},
+			  {id:'smartguitar',icon:'🎸', n:'Guitarra Smart', d:'Tiras de acordes: rasguea con un toque'},
+			  {id:'smartbass',  icon:'🎸', n:'Bajo Smart',     d:'Graves con acordes y notas sueltas'},
+			  {id:'smartstrings',icon:'🎻', n:'Cuerdas Smart',  d:'Orquesta de cuerdas por acordes'},
+			  {id:'synth',    icon:'🎛️', n:'Sintetizador',   d:'Ondas, ataque y filtros a tu gusto'},
+			  {id:'loops',    icon:'🔁', n:'Live Loops',     d:'Celdas en bucle · estilo iPadOS'},
+			  {id:'tracks',   icon:'🎚️', n:'Pistas',         d:'Multipista con tomas · estilo macOS'}
+			];
+			function gbBuildBrowser(){
+			  const el=document.getElementById('gb-browser');
+			  let s='<div style="font-size:19px;font-weight:800;margin-bottom:4px;">Explorador de sonidos</div>'
+			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Como en GarageBand: elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
+			    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:900px;">';
+			  GB_BROWSER_CARDS.forEach(function(c){
+			    s+='<div class="gb-card" onclick="gbOpenInstrument(\''+c.id+'\')"><span class="i">'+c.icon+'</span><span class="n">'+c.n+'</span><span class="d">'+c.d+'</span></div>';
+			  });
+			  el.innerHTML=s+'</div>';
+			}
+			function gbOpenInstrument(id){
+			  if(id==='loops'){ gbView('loops'); return; }
+			  if(id==='tracks'){ gbView('tracks'); return; }
+			  gbView('inst');
+			  ['gb-kb-wrap','gb-drums-area','gb-chord-area','gb-synth-area'].forEach(function(x){ document.getElementById(x).style.display='none'; });
+			  const bar=document.getElementById('gb-inst-bar');
+			  if(id==='keyboard'){
+			    document.getElementById('gb-kb-wrap').style.display='flex';
+			    gbBuildKeyboardBar(bar); gbBuildKeyboard();
+			    _gbSelectedInstrument=_gbMelodicVoice;
+			    document.getElementById('gb-status').textContent='🎹 Teclado · toca y desliza (glissando) · ⏺ para grabar';
+			  } else if(id==='drums'){
+			    document.getElementById('gb-drums-area').style.display='block';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Batería</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca los pads · ⏺ para grabar el ritmo</span>';
+			    gbBuildDrums(); _gbSelectedInstrument='drums';
+			    document.getElementById('gb-status').textContent='🥁 Batería · toca los pads';
+			  } else if(id==='smartguitar'||id==='smartbass'||id==='smartstrings'){
+			    document.getElementById('gb-chord-area').style.display='flex';
+			    const kind=id==='smartguitar'?'guitar':id==='smartbass'?'bass':'strings';
+			    const nm=id==='smartguitar'?'🎸 Guitarra Smart':id==='smartbass'?'🎸 Bajo Smart':'🎻 Cuerdas Smart';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">'+nm+'</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca el NOMBRE del acorde para rasguear · las líneas de abajo son notas sueltas</span>';
+			    gbBuildChords(kind); _gbSelectedInstrument=kind;
+			    document.getElementById('gb-status').textContent=nm+' · acordes con un toque, como en el iPad';
+			  } else if(id==='synth'){
+			    document.getElementById('gb-synth-area').style.display='block';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎛️ Sintetizador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Elige la onda y ajusta la envolvente</span>';
+			    gbBuildSynth(); _gbSelectedInstrument='synth';
+			    document.getElementById('gb-status').textContent='🎛️ Sintetizador listo';
+			  }
+			}
+			// ===== Teclado (piano realista con octavas, voces y glissando) =====
+			const GB_KB_VOICES=[['piano','Piano'],['epiano','E-Piano'],['organ','Órgano'],['guitar','Guitarra'],['strings','Cuerdas'],['flute','Flauta'],['brass','Metales'],['marimba','Marimba'],['musicbox','Caja música'],['bell','Campanas']];
+			let _gbMelodicVoice='piano';
+			let _gbOctave=0;
+			let _gbSynthWave='sawtooth';
+			const GB_WHITE=[['C3',130.81],['D3',146.83],['E3',164.81],['F3',174.61],['G3',196],['A3',220],['B3',246.94],['C4',261.63],['D4',293.66],['E4',329.63],['F4',349.23],['G4',392],['A4',440],['B4',493.88],['C5',523.25]];
+			const GB_BLACK=[[138.59,0.5],[155.56,1.5],[185,3.5],[207.65,4.5],[233.08,5.5],[277.18,7.5],[311.13,8.5],[369.99,10.5],[415.3,11.5],[466.16,12.5]];
+			let _gbGliss=false;
+			function gbBuildKeyboardBar(bar){
+			  let s='';
+			  GB_KB_VOICES.forEach(function(v){
+			    s+='<button class="gb-chip gb-voice-chip'+(v[0]===_gbMelodicVoice?' on':'')+'" data-v="'+v[0]+'" onclick="gbSelectInstrument(\''+v[0]+'\')">'+v[1]+'</button>';
+			  });
+			  s+='<div style="flex:1;"></div>';
+			  s+='<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="gb-chip" onclick="gbOctaveShift(-1)">Octava −</button><span id="gb-oct-lbl" style="font-size:11px;font-weight:800;opacity:.6;min-width:20px;text-align:center;">0</span><button class="gb-chip" onclick="gbOctaveShift(1)">Octava +</button></div>';
+			  bar.innerHTML=s;
+			}
+			function gbOctaveShift(d){
+			  _gbOctave=Math.max(-2,Math.min(2,_gbOctave+d));
+			  const l=document.getElementById('gb-oct-lbl'); if(l) l.textContent=(_gbOctave>0?'+':'')+_gbOctave;
+			}
+			function gbSelectInstrument(inst){
+			  _gbMelodicVoice=inst; _gbSelectedInstrument=inst;
+			  document.querySelectorAll('.gb-voice-chip').forEach(function(b){ b.classList.toggle('on', b.dataset.v===inst); });
+			}
+			function _gbKeyPlay(freq){ gbPlayNote(freq*Math.pow(2,_gbOctave),_gbMelodicVoice); }
+			function gbBuildKeyboard(){
+			  const wrap=document.getElementById('gb-kb-wrap');
+			  wrap.innerHTML='<div style="flex:1;min-height:26px;background:linear-gradient(180deg,#2c2c2e,#1e1e20);border-bottom:2px solid #000;box-shadow:0 -4px 12px rgba(0,0,0,.4) inset;"></div>'
+			    +'<div id="gb-kb-keys" style="position:relative;height:min(240px,34vh);margin:0;background:#0c0c0d;"></div>';
+			  const area=document.getElementById('gb-kb-keys');
+			  const ww=area.clientWidth||Math.min(1000,window.innerWidth);
+			  const kw=ww/GB_WHITE.length;
+			  GB_WHITE.forEach(function(w,i){
 			    const k=document.createElement('div');
-			    k.style.cssText=`position:absolute;left:${i*kw}px;width:${kw-2}px;height:200px;background:linear-gradient(180deg,#fff 0%,#e8e8e8 100%);border:1px solid #ccc;border-radius:0 0 8px 8px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:9px;color:#666;font-weight:700;transition:background .08s;`;
-			    k.textContent=note;
-			    k.addEventListener('mousedown',()=>gbPlayNote(GB_FREQS[note],_gbMelodicVoice));
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_FREQS[note],_gbMelodicVoice);},{passive:false});
-			    k.addEventListener('mousedown',()=>k.style.background='linear-gradient(180deg,#d0d8ff 0%,#b0b8ee 100%)');
-			    k.addEventListener('mouseup',()=>k.style.background='linear-gradient(180deg,#fff 0%,#e8e8e8 100%)');
+			    k.className='gb-key-w';
+			    k.style.cssText='left:'+(i*kw)+'px;width:'+(kw-1.5)+'px;top:0;bottom:0;';
+			    if(w[0][0]==='C') k.textContent=w[0];
+			    k.dataset.f=w[1];
 			    area.appendChild(k);
 			  });
-			  // Black keys
-			  const blackKeys=[['C#3',0.5],['D#3',1.5],['F#3',3.5],['G#3',4.5],['A#3',5.5],['C#4',7.5],['D#4',8.5],['F#4',10.5],['G#4',11.5],['A#4',12.5]];
-			  blackKeys.forEach(([note,pos])=>{
+			  GB_BLACK.forEach(function(b){
 			    const k=document.createElement('div');
-			    k.style.cssText=`position:absolute;left:${(pos+0.65)*kw}px;width:${kw*0.6}px;height:130px;background:linear-gradient(180deg,#1c1c1e 0%,#000 100%);border-radius:0 0 6px 6px;cursor:pointer;z-index:2;transition:background .08s;`;
-			    k.addEventListener('mousedown',()=>{gbPlayNote(GB_SHARP_FREQS[note],_gbMelodicVoice);k.style.background='linear-gradient(180deg,#3a3aff 0%,#0000aa 100%)';});
-			    k.addEventListener('mouseup',()=>k.style.background='linear-gradient(180deg,#1c1c1e 0%,#000 100%)');
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(GB_SHARP_FREQS[note],_gbMelodicVoice);},{passive:false});
+			    k.className='gb-key-b';
+			    k.style.cssText='left:'+((b[1]+0.68)*kw)+'px;width:'+(kw*0.58)+'px;top:0;height:60%;';
+			    k.dataset.f=b[0];
 			    area.appendChild(k);
 			  });
+			  // Toque + glissando: mantener pulsado y deslizar toca las teclas por las que pasas
+			  const down=function(k){ k.classList.add('dn'); _gbKeyPlay(+k.dataset.f); setTimeout(function(){k.classList.remove('dn');},150); };
+			  area.querySelectorAll('[data-f]').forEach(function(k){
+			    k.addEventListener('pointerdown',function(e){ e.preventDefault(); _gbGliss=true; try{k.releasePointerCapture(e.pointerId);}catch(err){} down(k); });
+			    k.addEventListener('pointerenter',function(){ if(_gbGliss) down(k); });
+			  });
+			  window.addEventListener('pointerup',function(){ _gbGliss=false; });
+			  window.addEventListener('pointercancel',function(){ _gbGliss=false; });
 			}
-			// ── Drums ──
+			// ===== Batería (pads oscuros estilo GarageBand) =====
 			const GB_DRUMS=[
-			  {name:'Kick',emoji:'🥁',freq:60,type:'kick',color:'#ff453a'},
-			  {name:'Snare',emoji:'💥',freq:200,type:'snare',color:'#ff9f0a'},
+			  {name:'Bombo',emoji:'🥁',freq:60,type:'kick',color:'#ff453a'},
+			  {name:'Caja',emoji:'🥁',freq:200,type:'snare',color:'#ff9f0a'},
 			  {name:'Hi-Hat',emoji:'🎩',freq:800,type:'hihat',color:'#ffd60a'},
-			  {name:'Open Hat',emoji:'🎶',freq:600,type:'openhat',color:'#ffd60a'},
+			  {name:'Hat abierto',emoji:'🎩',freq:600,type:'openhat',color:'#ffd60a'},
 			  {name:'Tom',emoji:'🪘',freq:150,type:'tom',color:'#30d158'},
-			  {name:'Crash',emoji:'✨',freq:900,type:'crash',color:'#0a84ff'},
-			  {name:'Clap',emoji:'👏',freq:300,type:'clap',color:'#bf5af2'},
-			  {name:'Conga',emoji:'🎵',freq:400,type:'conga',color:'#ff6b35'},
-			  {name:'Cowbell',emoji:'🔔',freq:700,type:'cowbell',color:'#5ac8f5'},
+			  {name:'Crash',emoji:'💥',freq:900,type:'crash',color:'#0a84ff'},
+			  {name:'Palmada',emoji:'👏',freq:300,type:'clap',color:'#bf5af2'},
+			  {name:'Conga',emoji:'🪘',freq:400,type:'conga',color:'#ff6b35'},
+			  {name:'Cencerro',emoji:'🔔',freq:700,type:'cowbell',color:'#5ac8f5'}
 			];
 			function gbBuildDrums(){
 			  const area=document.getElementById('gb-drums-area');
-			  area.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:600px;margin:0 auto;padding:20px;';
-			  GB_DRUMS.forEach(d=>{
+			  area.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:620px;margin:18px auto;padding:0 16px;';
+			  area.innerHTML='';
+			  GB_DRUMS.forEach(function(d){
 			    const pad=document.createElement('button');
-			    pad.style.cssText=`background:linear-gradient(135deg,${d.color}33,${d.color}11);border:1.5px solid ${d.color}66;border-radius:16px;color:#fff;padding:24px 12px;cursor:pointer;font-size:1.8rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .08s;`;
-			    pad.innerHTML=d.emoji+'<span style="font-size:11px;font-weight:700;opacity:.8;">'+d.name+'</span>';
-			    pad.addEventListener('mousedown',()=>{gbPlayDrum(d.type,d.freq);pad.style.background=`linear-gradient(135deg,${d.color}88,${d.color}44)`;});
-			    pad.addEventListener('mouseup',()=>{pad.style.background=`linear-gradient(135deg,${d.color}33,${d.color}11)`;});
-			    pad.addEventListener('touchstart',e=>{e.preventDefault();gbPlayDrum(d.type,d.freq);pad.style.background=`linear-gradient(135deg,${d.color}88,${d.color}44)`;},{passive:false});
-			    pad.addEventListener('touchend',()=>{pad.style.background=`linear-gradient(135deg,${d.color}33,${d.color}11)`;});
+			    pad.className='gb-pad';
+			    pad.innerHTML=d.emoji+'<span class="l"><span class="dot" style="background:'+d.color+';"></span>'+d.name+'</span>';
+			    const hit=function(e){ if(e) e.preventDefault(); gbPlayDrum(d.type,d.freq); pad.classList.add('dn'); setTimeout(function(){pad.classList.remove('dn');},110); };
+			    pad.addEventListener('pointerdown',hit);
 			    area.appendChild(pad);
 			  });
 			}
-			// ── Bass & Synth (similar to piano, different sound) ──
-			function gbBuildBass(){
-			  const area=document.getElementById('gb-bass-area');
-			  area.innerHTML='<div style="text-align:center;padding:40px 0;opacity:.5;font-size:13px;">Igual que Piano · tono de bajo</div>';
-			  const pianoEl=document.getElementById('gb-piano-area').cloneNode(true);
-			  pianoEl.querySelectorAll('[style]').forEach(k=>k.addEventListener('mousedown',()=>gbPlayNote(0,'bass')));
-			  area.appendChild(document.getElementById('gb-piano-area').cloneNode(true));
-			  // Simpler approach: reuse piano visuals, map to bass sound
-			  const area2=document.getElementById('gb-bass-area');
-			  area2.style.cssText='position:relative;height:200px;max-width:800px;margin:20px auto;';
-			  const ww=Math.min(800,window.innerWidth-40);
-			  const bassNotes=['E1','A1','D2','G2','B2','E2','A2','D3','G3','B3','E3','A3','D4','G4','B4'];
-			  const bassFreqs={E1:41.2,A1:55,D2:73.4,G2:98,B2:123.47,E2:82.4,A2:110,D3:146.83,G3:196,B3:246.94,E3:164.81,A3:220,D4:293.66,G4:392,B4:493.88};
-			  const kw=ww/bassNotes.length;
-			  bassNotes.forEach((note,i)=>{
-			    const k=document.createElement('div');
-			    k.style.cssText=`position:absolute;left:${i*kw}px;width:${kw-2}px;height:160px;background:linear-gradient(180deg,#2a1a0a 0%,#1a0a00 100%);border:1px solid #5a3a1a;border-radius:0 0 8px 8px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:8px;color:#ff9500;font-weight:700;`;
-			    k.textContent=note;
-			    k.addEventListener('mousedown',()=>gbPlayNote(bassFreqs[note]||100,'bass'));
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(bassFreqs[note]||100,'bass');},{passive:false});
-			    k.addEventListener('mousedown',()=>k.style.background='linear-gradient(180deg,#5a3a00 0%,#3a2000 100%)');
-			    k.addEventListener('mouseup',()=>k.style.background='linear-gradient(180deg,#2a1a0a 0%,#1a0a00 100%)');
-			    area2.appendChild(k);
-			  });
+			// ===== Instrumentos Smart: TIRAS DE ACORDES como en GarageBand de iPad =====
+			const GB_CHORDS=[
+			  {n:'Em', notes:[82.41,123.47,164.81,196,246.94,329.63]},
+			  {n:'Am', notes:[110,164.81,220,261.63,329.63,440]},
+			  {n:'Dm', notes:[146.83,220,293.66,349.23,440,587.33]},
+			  {n:'G',  notes:[98,123.47,146.83,196,246.94,392]},
+			  {n:'C',  notes:[130.81,164.81,196,261.63,329.63,523.25]},
+			  {n:'F',  notes:[87.31,130.81,174.61,220,261.63,349.23]},
+			  {n:'B♭', notes:[116.54,174.61,233.08,293.66,349.23,466.16]},
+			  {n:'B7', notes:[123.47,155.56,220,246.94,311.13,493.88]}
+			];
+			function gbStrum(ci,kind){
+			  const ch=GB_CHORDS[ci]; if(!ch) return;
+			  if(kind==='bass'){ gbPlayNote(ch.notes[0]/2,'bass'); setTimeout(function(){gbPlayNote(ch.notes[1]/2,'bass');},90); return; }
+			  if(kind==='strings'){ ch.notes.slice(1,5).forEach(function(f){ gbPlayNote(f,'strings'); }); return; }
+			  ch.notes.forEach(function(f,i){ setTimeout(function(){ gbPlayNote(f,'guitar'); }, i*36); });
 			}
+			function gbChordNote(ci,si,kind){
+			  const ch=GB_CHORDS[ci]; if(!ch) return;
+			  const voice=kind==='bass'?'bass':kind==='strings'?'strings':'guitar';
+			  const pool=kind==='bass'?[ch.notes[0]/2,ch.notes[1]/2,ch.notes[0],ch.notes[2]]:ch.notes.slice(1,5);
+			  gbPlayNote(pool[si]||pool[0],voice);
+			}
+			function gbBuildChords(kind){
+			  const area=document.getElementById('gb-chord-area');
+			  area.style.cssText='display:flex;flex:1;background:#0c0c0d;min-height:300px;';
+			  let s='';
+			  GB_CHORDS.forEach(function(ch,ci){
+			    s+='<div class="gb-strip">'
+			      +'<div class="gb-strip-h" onpointerdown="event.preventDefault();this.classList.add(\'dn\');gbStrum('+ci+',\''+kind+'\');" onpointerup="this.classList.remove(\'dn\')" onpointerleave="this.classList.remove(\'dn\')">'+ch.n+'</div>';
+			    for(let si=0;si<4;si++){
+			      s+='<div class="gb-seg" onpointerdown="event.preventDefault();this.classList.add(\'dn\');gbChordNote('+ci+','+si+',\''+kind+'\');setTimeout(function(el){el.classList.remove(\'dn\');},140,this)"></div>';
+			    }
+			    s+='</div>';
+			  });
+			  area.innerHTML=s;
+			}
+			// ===== Sintetizador =====
 			function gbBuildSynth(){
 			  const area=document.getElementById('gb-synth-area');
-			  area.style.cssText='display:flex;flex-direction:column;gap:16px;padding:20px;max-width:700px;margin:0 auto;';
-			  // Waveform selector
-			  area.innerHTML=`
-			    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-			      <button onclick="_gbSynthWave='sine'" style="background:#0a84ff22;border:1px solid #0a84ff;color:#0a84ff;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;">Sine</button>
-			      <button onclick="_gbSynthWave='square'" style="background:#ff9f0a22;border:1px solid #ff9f0a;color:#ff9f0a;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;">Square</button>
-			      <button onclick="_gbSynthWave='sawtooth'" style="background:#ff453a22;border:1px solid #ff453a;color:#ff453a;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;">Sawtooth</button>
-			      <button onclick="_gbSynthWave='triangle'" style="background:#30d15822;border:1px solid #30d158;color:#30d158;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;">Triangle</button>
-			    </div>
-			    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-			      <label style="font-size:11px;opacity:.6;">Sustain<br><input type="range" min="0.1" max="2" step="0.1" value="0.5" id="gb-sustain" style="width:120px;"></label>
-			      <label style="font-size:11px;opacity:.6;">Attack<br><input type="range" min="0.01" max="0.5" step="0.01" value="0.05" id="gb-attack" style="width:120px;"></label>
-			      <label style="font-size:11px;opacity:.6;">Release<br><input type="range" min="0.1" max="2" step="0.1" value="0.5" id="gb-release" style="width:120px;"></label>
-			    </div>
-			    <div id="gb-synth-keys" style="position:relative;height:160px;max-width:100%;overflow:hidden;"></div>
-			  `;
-			  // Synth keys
+			  area.style.cssText='display:flex;flex-direction:column;gap:16px;padding:20px;max-width:760px;margin:0 auto;';
+			  area.innerHTML=''
+			    +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+			    +  '<button class="gb-chip" onclick="_gbSynthWave=\'sine\'">Sine</button>'
+			    +  '<button class="gb-chip" onclick="_gbSynthWave=\'square\'">Square</button>'
+			    +  '<button class="gb-chip on" onclick="_gbSynthWave=\'sawtooth\'">Sawtooth</button>'
+			    +  '<button class="gb-chip" onclick="_gbSynthWave=\'triangle\'">Triangle</button>'
+			    +'</div>'
+			    +'<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;">'
+			    +  '<label style="font-size:11px;opacity:.6;">Sustain<br><input type="range" min="0.1" max="2" step="0.1" value="0.5" id="gb-sustain" style="width:120px;"></label>'
+			    +  '<label style="font-size:11px;opacity:.6;">Attack<br><input type="range" min="0.01" max="0.5" step="0.01" value="0.05" id="gb-attack" style="width:120px;"></label>'
+			    +  '<label style="font-size:11px;opacity:.6;">Release<br><input type="range" min="0.1" max="2" step="0.1" value="0.5" id="gb-release" style="width:120px;"></label>'
+			    +'</div>'
+			    +'<div id="gb-synth-keys" style="position:relative;height:170px;"></div>';
 			  const skArea=area.querySelector('#gb-synth-keys');
-			  const ww=Math.min(700,window.innerWidth-80);
+			  const ww=Math.min(760,window.innerWidth-70);
 			  const freqList=[130.81,146.83,164.81,174.61,196,220,246.94,261.63,293.66,329.63,349.23,392,440,493.88,523.25];
 			  const colors=['#ff453a','#ff6b35','#ff9f0a','#ffd60a','#30d158','#5ac8f5','#0a84ff','#bf5af2','#ff453a','#ff6b35','#ff9f0a','#ffd60a','#30d158','#5ac8f5','#0a84ff'];
 			  const kw=ww/freqList.length;
-			  freqList.forEach((freq,i)=>{
+			  freqList.forEach(function(freq,i){
 			    const k=document.createElement('div');
-			    k.style.cssText=`position:absolute;left:${i*kw}px;width:${kw-2}px;height:140px;background:linear-gradient(180deg,${colors[i]}44,${colors[i]}22);border:1px solid ${colors[i]}66;border-radius:8px;cursor:pointer;transition:all .08s;`;
-			    k.addEventListener('mousedown',()=>{gbPlayNote(freq,'synth');k.style.background=`${colors[i]}88`;});
-			    k.addEventListener('mouseup',()=>{k.style.background=`linear-gradient(180deg,${colors[i]}44,${colors[i]}22)`;});
-			    k.addEventListener('touchstart',e=>{e.preventDefault();gbPlayNote(freq,'synth');},{passive:false});
+			    k.style.cssText='position:absolute;left:'+(i*kw)+'px;width:'+(kw-2)+'px;height:150px;background:linear-gradient(180deg,'+colors[i]+'44,'+colors[i]+'22);border:1px solid '+colors[i]+'66;border-radius:8px;cursor:pointer;';
+			    k.addEventListener('pointerdown',function(e){ e.preventDefault(); gbPlayNote(freq,'synth'); k.style.background=colors[i]+'88'; setTimeout(function(){ k.style.background='linear-gradient(180deg,'+colors[i]+'44,'+colors[i]+'22)'; },130); });
 			    skArea.appendChild(k);
-			  });
-			}
-			let _gbSynthWave='sawtooth';
-			// Instrumentos melódicos que se tocan en el teclado del piano (mismo
-			// teclado, distinto timbre). Drums y bass tienen su propia área.
-			let _gbMelodicVoice='piano';
-			const GB_MELODIC=['piano','epiano','organ','guitar','strings','flute','brass','marimba','musicbox','bell','synth'];
-			function gbSelectInstrument(inst){
-			  _gbSelectedInstrument=inst;
-			  const isMelodic=GB_MELODIC.includes(inst);
-			  if(isMelodic) _gbMelodicVoice=inst;
-			  // Áreas: los melódicos comparten el teclado del piano; synth muestra su
-			  // fila de sliders; bass y drums tienen su propia área.
-			  const showPiano = isMelodic;
-			  document.getElementById('gb-piano-area').style.display = showPiano ? 'block' : 'none';
-			  document.getElementById('gb-synth-area').style.display = (inst==='synth') ? 'block' : 'none';
-			  document.getElementById('gb-drums-area').style.display = (inst==='drums') ? 'block' : 'none';
-			  document.getElementById('gb-bass-area').style.display = (inst==='bass') ? 'block' : 'none';
-			  document.querySelectorAll('.gb-inst-btn').forEach(b=>{
-			    b.style.background = (b.dataset.inst===inst) ? '#ff6600' : '#333';
 			  });
 			}
 			// Tabla de timbres: cada instrumento melódico se sintetiza con una o
@@ -15227,158 +15399,232 @@
 			function gbStop(){clearInterval(_gbLoop);document.getElementById('gb-status').textContent='⏹ Detenido';}
 			function gbClear(){_gbRecorded=[];document.getElementById('gb-status').textContent='Pista limpiada';}
 			// ===== Análisis GarageBand por sistema operativo de Apple =====
-			// iPadOS/iOS: instrumentos táctiles + LIVE LOOPS (cuadrícula de celdas en bucle).
-			// macOS: DAW multipista — vista de PISTAS con tomas, mute y mezcla en capas.
-			// (watchOS/tvOS no tienen GarageBand.) Esta app ofrece los tres modos.
-			function gbBuildExtraViews(modal){
-			  const header = modal.firstElementChild;
-			  const rightControls = header && header.lastElementChild;
-			  if(rightControls){
-			    const tabs = document.createElement('div');
-			    tabs.id = 'gb-views';
-			    tabs.style.cssText = 'display:flex;gap:4px;margin-right:6px;flex-shrink:0;';
-			    tabs.innerHTML = '<button class="gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" style="background:#ff6600;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🎹 Instrumentos</button>'
-			      + '<button class="gb-view-btn" data-v="loops" onclick="gbView(\'loops\')" style="background:#333;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🔁 Live Loops</button>'
-			      + '<button class="gb-view-btn" data-v="tracks" onclick="gbView(\'tracks\')" style="background:#333;border:none;color:#fff;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap;">🎚️ Pistas</button>';
-			    rightControls.insertBefore(tabs, rightControls.firstChild);
-			  }
-			  const instArea = modal.querySelector('#gb-instrument');
-			  const loops = document.createElement('div');
-			  loops.id = 'gb-loops';
-			  loops.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:none;';
-			  instArea.after(loops);
-			  const tracks = document.createElement('div');
-			  tracks.id = 'gb-tracks';
-			  tracks.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:none;';
-			  loops.after(tracks);
-			  gbBuildLiveLoops(loops);
-			  gbRenderTracks();
-			}
+			// iPadOS/iOS: explorador de sonidos + instrumentos táctiles Smart + LIVE LOOPS.
+			// macOS: DAW multipista — vista de PISTAS con regiones en línea de tiempo.
+			// (watchOS/tvOS no tienen GarageBand.) Esta app replica los tres.
 			function gbView(v){
-			  const map = { inst:'gb-instrument', loops:'gb-loops', tracks:'gb-tracks' };
-			  Object.keys(map).forEach(k=>{ const el = document.getElementById(map[k]); if(el) el.style.display = (k===v ? '' : 'none'); });
-			  document.querySelectorAll('.gb-view-btn').forEach(b=>{ b.style.background = (b.dataset.v===v ? '#ff6600' : '#333'); });
-			  if(v === 'tracks') gbRenderTracks();
+			  const map={browser:'gb-browser',inst:'gb-instrument',loops:'gb-loops',tracks:'gb-tracks'};
+			  Object.keys(map).forEach(function(k){
+			    const el=document.getElementById(map[k]); if(!el) return;
+			    el.style.display = (k===v ? (k==='browser'?'block':(k==='inst'?'flex':'block')) : 'none');
+			  });
+			  document.querySelectorAll('.gb-view-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
+			  if(v==='tracks') gbRenderTracks();
 			}
-			// --- LIVE LOOPS (estilo iPadOS): 4 filas x 4 variaciones, en bucle al BPM ---
-			const GB_LL_COLORS = ['#30d158','#0a84ff','#ffd60a','#ff375f'];
-			const GB_LL_ROWS = [
-			  { name:'🥁 Batería', inst:'drum', cells:[
+			// --- LCD de compás + tempo + metrónomo (la pantallita gris de GarageBand) ---
+			let _gbBeatStart=null,_gbMetroOn=false,_gbLastBeat=-1,_gbLCDTimer=null;
+			function gbTempo(d){
+			  _gbBpm=Math.max(60,Math.min(220,(parseInt(_gbBpm)||120)+d));
+			  const el=document.getElementById('gb-lcd-tempo'); if(el) el.textContent=_gbBpm;
+			}
+			function gbMetro(){
+			  _gbMetroOn=!_gbMetroOn;
+			  const b=document.getElementById('gb-metro-btn'); if(b) b.classList.toggle('on',_gbMetroOn);
+			}
+			function _gbTick(accent){
+			  if(!_gbAudioCtx) return;
+			  const now=_gbAudioCtx.currentTime;
+			  const o=_gbAudioCtx.createOscillator(), g=_gbAudioCtx.createGain();
+			  o.frequency.value=accent?1200:850; o.type='square';
+			  g.gain.setValueAtTime(.22,now); g.gain.exponentialRampToValueAtTime(.001,now+.05);
+			  o.connect(g); g.connect(_gbAudioCtx.destination); o.start(now); o.stop(now+.06);
+			}
+			function gbStartLCD(){
+			  if(_gbLCDTimer) return;
+			  _gbLCDTimer=setInterval(function(){
+			    const el=document.getElementById('gb-lcd-beat'); if(!el) return;
+			    const running=_gbBeatStart && (_gbRecording || _gbLLTimer);
+			    if(!running){ el.textContent='1.1'; _gbLastBeat=-1; return; }
+			    const beats=(Date.now()-_gbBeatStart)/60000*(parseInt(_gbBpm)||120);
+			    const bar=Math.floor(beats/4)+1, beat=Math.floor(beats%4)+1;
+			    el.textContent=bar+'.'+beat;
+			    const bi=Math.floor(beats);
+			    if(bi!==_gbLastBeat){ _gbLastBeat=bi; if(_gbMetroOn) _gbTick(beat===1); }
+			  },60);
+			}
+			// Al empezar/parar grabación arranca el contador del LCD
+			const _gbRecOrig=gbRecord;
+			gbRecord=function(){ _gbRecOrig(); _gbBeatStart=_gbRecording?Date.now():null; };
+			// --- LIVE LOOPS (estilo iPadOS): celdas de color por fila + columnas ---
+			const GB_LL_COLORS=['#30d158','#0a84ff','#ffd60a','#ff375f'];
+			const GB_LL_ICONS=['🥁','🎸','🎹','🎶'];
+			const GB_LL_ROWS=[
+			  { name:'Batería', inst:'drum', cells:[
 			    [[0,'kick'],[4,'kick'],[8,'kick'],[12,'kick']],
 			    [[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare']],
 			    [[0,'kick'],[2,'hihat'],[4,'snare'],[6,'hihat'],[8,'kick'],[10,'hihat'],[12,'snare'],[14,'hihat']],
 			    [[0,'kick'],[3,'kick'],[4,'snare'],[7,'hihat'],[8,'kick'],[11,'kick'],[12,'snare'],[14,'snare']] ] },
-			  { name:'🎸 Bajo', inst:'bass', cells:[
+			  { name:'Bajo', inst:'bass', cells:[
 			    [[0,110],[8,110]],
 			    [[0,110],[4,146.83],[8,164.81],[12,146.83]],
 			    [[0,110],[2,110],[4,130.81],[6,130.81],[8,98],[10,98],[12,123.47],[14,123.47]],
 			    [[0,110],[6,164.81],[8,146.83],[14,98]] ] },
-			  { name:'🎹 Acordes', inst:'epiano', cells:[
+			  { name:'Acordes', inst:'epiano', cells:[
 			    [[0,[220,277.18,329.63]]],
 			    [[0,[220,261.63,329.63]],[8,[196,246.94,293.66]]],
 			    [[0,[220,277.18,329.63]],[4,[246.94,311.13,369.99]],[8,[196,246.94,293.66]],[12,[220,277.18,329.63]]],
 			    [[0,[174.61,220,261.63]],[8,[164.81,207.65,246.94]]] ] },
-			  { name:'🎶 Melodía', inst:'synth', cells:[
+			  { name:'Melodía', inst:'synth', cells:[
 			    [[0,440],[4,523.25],[8,659.25],[12,523.25]],
 			    [[2,659.25],[6,587.33],[10,523.25],[14,493.88]],
 			    [[0,880],[2,659.25],[4,739.99],[6,659.25],[8,587.33],[10,523.25],[12,587.33],[14,659.25]],
 			    [[0,523.25],[8,698.46]] ] }
 			];
-			let _gbLLActive = {}, _gbLLTimer = null, _gbLLStep = 0;
+			let _gbLLActive={}, _gbLLTimer=null, _gbLLStep=0;
 			function gbBuildLiveLoops(container){
-			  let s = '<div style="font-size:11px;opacity:.55;margin-bottom:10px;">LIVE LOOPS (estilo iPad) — toca una celda para activarla en bucle. Una celda por fila; varias filas suenan juntas al BPM de arriba.</div>';
-			  s += '<div style="display:grid;grid-template-columns:110px repeat(4,1fr);gap:8px;max-width:760px;">';
-			  GB_LL_ROWS.forEach(function(row, r){
-			    s += '<div style="display:flex;align-items:center;font-size:12px;font-weight:700;opacity:.8;">' + row.name + '</div>';
-			    row.cells.forEach(function(_, c){
-			      s += '<button id="gb-ll-' + r + '-' + c + '" onclick="gbLLToggle(' + r + ',' + c + ')" style="height:56px;border:1.5px solid ' + GB_LL_COLORS[c] + '55;border-radius:12px;cursor:pointer;background:' + GB_LL_COLORS[c] + '22;color:' + GB_LL_COLORS[c] + ';font-size:18px;">▶</button>';
+			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">LIVE LOOPS (estilo iPad) — toca una celda para activarla en bucle, o dispara una COLUMNA entera con ▼. Varias filas suenan juntas al tempo del LCD.</div>';
+			  s+='<div style="display:grid;grid-template-columns:130px repeat(4,1fr);gap:8px;max-width:820px;">';
+			  s+='<div></div>';
+			  for(let c=0;c<4;c++) s+='<button onclick="gbLLColumn('+c+')" style="background:#2c2c2e;border:1px solid #48484a;border-radius:8px;color:#d8d8dc;padding:5px;cursor:pointer;font-size:11px;font-weight:700;">▼ Col '+(c+1)+'</button>';
+			  GB_LL_ROWS.forEach(function(row,r){
+			    s+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">'
+			      +'<span style="width:34px;height:34px;border-radius:9px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+GB_LL_ICONS[r]+'</span>'+row.name+'</div>';
+			    row.cells.forEach(function(_,c){
+			      s+='<button class="gb-ll-cell" id="gb-ll-'+r+'-'+c+'" onclick="gbLLToggle('+r+','+c+')" style="background:'+GB_LL_COLORS[r]+'26;color:'+GB_LL_COLORS[r]+';">▶</button>';
 			    });
 			  });
-			  s += '</div><div style="margin-top:12px;"><button onclick="gbLLStopAll()" style="background:#333;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">⏹ Parar todo</button></div>';
-			  container.innerHTML = s;
+			  s+='</div><div style="margin-top:14px;"><button class="gb-chip" onclick="gbLLStopAll()" style="padding:9px 16px;">⏹ Parar todo</button></div>';
+			  container.innerHTML=s;
 			}
 			function gbLLPaint(){
-			  GB_LL_ROWS.forEach(function(row, ri){ row.cells.forEach(function(_, ci){
-			    const b = document.getElementById('gb-ll-' + ri + '-' + ci);
+			  GB_LL_ROWS.forEach(function(row,ri){ row.cells.forEach(function(_,ci){
+			    const b=document.getElementById('gb-ll-'+ri+'-'+ci);
 			    if(!b) return;
-			    const on = !!_gbLLActive[ri + '-' + ci];
-			    b.style.background = on ? GB_LL_COLORS[ci] : GB_LL_COLORS[ci] + '22';
-			    b.style.color = on ? '#000' : GB_LL_COLORS[ci];
-			    b.textContent = on ? '◼' : '▶';
+			    const on=!!_gbLLActive[ri+'-'+ci];
+			    b.classList.toggle('on',on);
+			    b.style.background=on?GB_LL_COLORS[ri]:GB_LL_COLORS[ri]+'26';
+			    b.style.color=on?'#000':GB_LL_COLORS[ri];
+			    b.textContent=on?'◼':'▶';
 			  }); });
 			}
-			function gbLLToggle(r, c){
-			  const key = r + '-' + c;
+			function gbLLColumn(c){
+			  GB_LL_ROWS.forEach(function(row,r){
+			    Object.keys(_gbLLActive).forEach(function(k){ if(k.indexOf(r+'-')===0) delete _gbLLActive[k]; });
+			    _gbLLActive[r+'-'+c]=true;
+			  });
+			  gbLLPaint();
+			  if(!_gbLLTimer) _gbLLRun();
+			}
+			function gbLLToggle(r,c){
+			  const key=r+'-'+c;
 			  if(_gbLLActive[key]){ delete _gbLLActive[key]; }
 			  else{
-			    Object.keys(_gbLLActive).forEach(function(k){ if(k.indexOf(r + '-') === 0) delete _gbLLActive[k]; });
-			    _gbLLActive[key] = true;
+			    Object.keys(_gbLLActive).forEach(function(k){ if(k.indexOf(r+'-')===0) delete _gbLLActive[k]; });
+			    _gbLLActive[key]=true;
 			  }
 			  gbLLPaint();
-			  const any = Object.keys(_gbLLActive).length > 0;
-			  if(any && !_gbLLTimer){
-			    _gbLLStep = 0;
-			    const tick = function(){
-			      Object.keys(_gbLLActive).forEach(function(k){
-			        const parts = k.split('-');
-			        const row = GB_LL_ROWS[+parts[0]];
-			        const patt = row && row.cells[+parts[1]];
-			        if(!patt) return;
-			        patt.forEach(function(ev){
-			          if(ev[0] !== _gbLLStep) return;
-			          const val = ev[1];
-			          if(row.inst === 'drum') gbPlayDrum(val, 0);
-			          else if(Array.isArray(val)) val.forEach(function(f){ gbPlayNote(f, row.inst); });
-			          else gbPlayNote(val, row.inst);
-			        });
+			  const any=Object.keys(_gbLLActive).length>0;
+			  if(any && !_gbLLTimer) _gbLLRun();
+			  else if(!any && _gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer=null; _gbBeatStart=null; }
+			}
+			function _gbLLRun(){
+			  _gbLLStep=0; _gbBeatStart=Date.now();
+			  const tick=function(){
+			    Object.keys(_gbLLActive).forEach(function(k){
+			      const parts=k.split('-');
+			      const row=GB_LL_ROWS[+parts[0]];
+			      const patt=row && row.cells[+parts[1]];
+			      if(!patt) return;
+			      patt.forEach(function(ev){
+			        if(ev[0]!==_gbLLStep) return;
+			        const val=ev[1];
+			        if(row.inst==='drum') gbPlayDrum(val,0);
+			        else if(Array.isArray(val)) val.forEach(function(f){ gbPlayNote(f,row.inst); });
+			        else gbPlayNote(val,row.inst);
 			      });
-			      _gbLLStep = (_gbLLStep + 1) % 16;
-			      _gbLLTimer = setTimeout(tick, (60000 / (parseInt(_gbBpm) || 120)) / 4);
-			    };
-			    tick();
-			  } else if(!any && _gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer = null; }
+			    });
+			    _gbLLStep=(_gbLLStep+1)%16;
+			    _gbLLTimer=setTimeout(tick,(60000/(parseInt(_gbBpm)||120))/4);
+			  };
+			  tick();
 			}
 			function gbLLStopAll(){
-			  _gbLLActive = {};
-			  if(_gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer = null; }
+			  _gbLLActive={};
+			  if(_gbLLTimer){ clearTimeout(_gbLLTimer); _gbLLTimer=null; }
+			  _gbBeatStart=null;
 			  gbLLPaint();
 			}
-			// --- PISTAS (estilo macOS): tomas grabadas que se mezclan en capas ---
-			let _gbTakes = [];
+			// --- PISTAS (estilo macOS): regiones verdes en línea de tiempo + cabezal ---
+			let _gbTakes=[];
+			const GB_TRACK_ICONS={piano:'🎹',epiano:'🎹',organ:'🎹',guitar:'🎸',strings:'🎻',flute:'🪈',brass:'🎺',marimba:'🎵',musicbox:'🎶',bell:'🔔',synth:'🎛️',bass:'🎸',drums:'🥁'};
+			const GB_PX_PER_SEC=70;
 			function gbSaveTake(){
-			  const s = document.getElementById('gb-status');
-			  if(!_gbRecorded.length){ if(s) s.textContent = 'No hay nada grabado: ⏺ graba algo en Instrumentos primero.'; return; }
-			  const t0 = _gbRecorded[0].time;
-			  _gbTakes.push({ name: 'Toma ' + (_gbTakes.length + 1) + ' · ' + _gbSelectedInstrument, muted: false, events: _gbRecorded.map(function(e){ return Object.assign({}, e, { at: e.time - t0 }); }) });
+			  const s=document.getElementById('gb-status');
+			  if(!_gbRecorded.length){ if(s) s.textContent='No hay nada grabado: ⏺ graba algo con un instrumento primero.'; return; }
+			  const t0=_gbRecorded[0].time;
+			  _gbTakes.push({ name:_gbSelectedInstrument, muted:false, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
 			  gbRenderTracks();
-			  if(s) s.textContent = '💾 Toma guardada en Pistas (' + _gbTakes.length + ').';
+			  if(s) s.textContent='💾 Toma guardada en Pistas ('+_gbTakes.length+').';
 			}
-			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted = !_gbTakes[i].muted; gbRenderTracks(); } }
-			function gbDeleteTake(i){ _gbTakes.splice(i, 1); gbRenderTracks(); }
+			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted=!_gbTakes[i].muted; gbRenderTracks(); } }
+			function gbDeleteTake(i){ _gbTakes.splice(i,1); gbRenderTracks(); }
 			function gbPlayTake(i){
-			  const t = _gbTakes[i];
+			  const t=_gbTakes[i];
 			  if(!t) return;
 			  t.events.forEach(function(ev){
-			    setTimeout(function(){ ev.type === 'drum' ? gbPlayDrum(ev.drumType, ev.freq) : gbPlayNote(ev.freq, ev.type); }, ev.at);
+			    setTimeout(function(){ ev.type==='drum' ? gbPlayDrum(ev.drumType,ev.freq) : gbPlayNote(ev.freq,ev.type); }, ev.at);
 			  });
 			}
-			function gbPlayAllTakes(){ _gbTakes.forEach(function(t, i){ if(!t.muted) gbPlayTake(i); }); }
-			function gbRenderTracks(){
-			  const el = document.getElementById('gb-tracks');
-			  if(!el) return;
-			  let s = '<div style="font-size:11px;opacity:.55;margin-bottom:10px;">PISTAS (estilo Mac) — guarda tomas grabadas y mézclalas en capas. M silencia una pista.</div>';
-			  s += '<div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="gbSaveTake()" style="background:#ff6600;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">💾 Guardar toma actual</button><button onclick="gbPlayAllTakes()" style="background:#30d158;border:none;color:#fff;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">▶ Reproducir mezcla</button></div>';
-			  if(!_gbTakes.length){ s += '<div style="opacity:.4;font-size:12px;">Sin pistas todavía. Graba con ⏺ en Instrumentos y pulsa “Guardar toma actual”.</div>'; }
-			  _gbTakes.forEach(function(t, i){
-			    const dur = t.events.length ? Math.round(t.events[t.events.length - 1].at / 100) / 10 : 0;
-			    s += '<div style="display:flex;align-items:center;gap:10px;background:#242426;border-radius:10px;padding:10px 12px;margin-bottom:8px;">'
-			      + '<div style="flex:1;font-size:12px;font-weight:700;' + (t.muted ? 'opacity:.35;' : '') + '">' + t.name + ' <span style="opacity:.5;font-weight:400;">· ' + t.events.length + ' notas · ' + dur + 's</span></div>'
-			      + '<button onclick="gbPlayTake(' + i + ')" style="background:#30d158;border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">▶</button>'
-			      + '<button onclick="gbToggleMute(' + i + ')" style="background:' + (t.muted ? '#ff9f0a' : '#333') + ';border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:11px;font-weight:800;">M</button>'
-			      + '<button onclick="gbDeleteTake(' + i + ')" style="background:#333;border:none;color:#ff6961;width:28px;height:28px;border-radius:50%;cursor:pointer;">🗑</button>'
-			      + '</div>';
+			function gbPlayAllTakes(){
+			  let maxDur=0;
+			  _gbTakes.forEach(function(t,i){
+			    if(t.muted) return;
+			    gbPlayTake(i);
+			    const d=t.events.length?t.events[t.events.length-1].at:0;
+			    if(d>maxDur) maxDur=d;
 			  });
-			  el.innerHTML = s;
+			  // Cabezal rojo que recorre la línea de tiempo, como en el GarageBand de Mac
+			  const ph=document.getElementById('gb-playhead');
+			  if(ph && maxDur>200){
+			    ph.style.transition='none'; ph.style.left='150px'; ph.style.opacity='1';
+			    void ph.offsetWidth;
+			    ph.style.transition='left '+maxDur+'ms linear';
+			    ph.style.left=(150+(maxDur/1000)*GB_PX_PER_SEC)+'px';
+			    setTimeout(function(){ ph.style.opacity='0'; },maxDur+400);
+			  }
+			}
+			function gbRenderTracks(){
+			  const el=document.getElementById('gb-tracks');
+			  if(!el) return;
+			  let maxMs=4000;
+			  _gbTakes.forEach(function(t){ const d=t.events.length?t.events[t.events.length-1].at:0; if(d+800>maxMs) maxMs=d+800; });
+			  const laneW=Math.max(560,(maxMs/1000)*GB_PX_PER_SEC+40);
+			  const barMs=240000/(parseInt(_gbBpm)||120); // 4 tiempos por compás
+			  const barW=(barMs/1000)*GB_PX_PER_SEC;
+			  let ruler='<div style="position:relative;height:20px;margin-left:150px;width:'+laneW+'px;border-bottom:1px solid #333;">';
+			  for(let b=0;b*barW<laneW;b++) ruler+='<span style="position:absolute;left:'+(b*barW)+'px;font-size:9px;color:#8e8e93;border-left:1px solid #444;padding-left:3px;">'+(b+1)+'</span>';
+			  ruler+='</div>';
+			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla las reproduce todas en capas.</div>';
+			  s+='<div style="display:flex;gap:8px;margin-bottom:14px;">'
+			    +'<button class="gb-chip" onclick="gbSaveTake()" style="background:linear-gradient(180deg,#4a4a4c,#38383a);">＋ Guardar toma actual</button>'
+			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
+			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
+			    +'</div>';
+			  if(!_gbTakes.length){
+			    s+='<div style="opacity:.4;font-size:12px;padding:26px 4px;">Sin pistas todavía. Toca un instrumento con ⏺ activado y pulsa “＋ Guardar toma actual”.</div>';
+			    el.innerHTML=s; return;
+			  }
+			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(150+laneW)+'px;">'+ruler;
+			  _gbTakes.forEach(function(t,i){
+			    const durMs=t.events.length?Math.max(400,t.events[t.events.length-1].at):400;
+			    const w=Math.max(46,(durMs/1000)*GB_PX_PER_SEC);
+			    let bars='';
+			    for(let k=0;k<Math.min(24,t.events.length);k++) bars+='<span class="bar" style="height:'+(30+((k*37)%45))+'%;"></span>';
+			    s+='<div style="display:flex;height:52px;margin-top:6px;'+(t.muted?'opacity:.38;':'')+'">'
+			      +'<div class="gb-track-hdr">'
+			      +  '<span style="width:26px;height:26px;border-radius:7px;background:linear-gradient(180deg,#48484c,#333);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(GB_TRACK_ICONS[t.name]||'🎵')+'</span>'
+			      +  '<span style="flex:1;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+t.name+'</span>'
+			      +  '<button class="gb-ms'+(t.muted?' mOn':'')+'" onclick="gbToggleMute('+i+')" title="Silenciar">M</button>'
+			      +  '<button class="gb-ms" onclick="gbDeleteTake('+i+')" title="Borrar" style="color:#ff6961;">✕</button>'
+			      +'</div>'
+			      +'<div style="position:relative;width:'+laneW+'px;background:repeating-linear-gradient(90deg,#1c1c1e 0,#1c1c1e '+(barW-1)+'px,#2a2a2c '+(barW-1)+'px,#2a2a2c '+barW+'px);border-radius:0 8px 8px 0;cursor:pointer;" onclick="gbPlayTake('+i+')">'
+			      +  '<div class="gb-region" style="left:0;width:'+w+'px;">'+bars+'</div>'
+			      +'</div>'
+			      +'</div>';
+			  });
+			  s+='<div id="gb-playhead" style="position:absolute;top:20px;bottom:6px;left:150px;width:2px;background:#ff3b30;box-shadow:0 0 6px #ff3b30;opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;"></div>';
+			  s+='</div></div>';
+			  el.innerHTML=s;
 			}
 
 			/* ═══════════════════════════════════════════
