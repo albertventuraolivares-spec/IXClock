@@ -1878,7 +1878,7 @@
 							id="easy-mode-status"
 							style="font-size:10px;opacity:.6;margin-top:2px;"
 						>
-							Letras y botones más grandes
+							Reloj de orientación gigante · toca para activar
 						</div>
 					</div>
 					<div
@@ -12653,6 +12653,26 @@
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖐️ Conmutador de apps</div>
 			          Tocá la pantalla con 3 dedos a la vez (como en una tablet real) para ver las apps que abriste hace poco y saltar entre ellas rápido.
 			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">👴 Modo Fácil</div>
+			          El botón verde fijo <b>👴 MODO FÁCIL</b> (abajo a la derecha) abre un reloj de orientación gigante: hora, día, fecha, "ESTÁS EN CASA" y si es mañana/tarde/noche (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el interruptor <b>Modo Fácil</b> en configuración.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖼️ Fondos de pantalla</div>
+			          En Personalizar → Fondos. Los "En movimiento" son videos: cada tarjeta lleva una insignia con su resolución REAL medida (4K ✓ verde, o naranja si es menor). Con los chips <b>Todos / Solo 4K comprobados</b> eliges qué ver — nada se borra solo. La primera vez un fondo puede tardar en extraerse; después queda guardado y abre al instante. También puedes pegar un enlace de YouTube (se ve en su calidad máxima) o usar el Fondo Dinámico según la hora.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 GarageBand</div>
+			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado de piano (con octavas y glissando), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
+			          La app Traductor prueba 6 servicios en cadena y te dice cuál tradujo. Las <b>banderas</b> de Personalizar traducen toda la interfaz: verás el progreso (X/Y) y siempre termina en ✅ Listo — si un servicio falla, otro lo cubre.
+			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">📺 TV en vivo</div>
+			          En el panel de TV: elige país y "Ver canales", o usa <b>⚽ Deportes y Mundiales</b>, <b>⭐ Famosos</b> (Telemundo, FIFA+, ESPN, Univision y ~50 cadenas), <b>✨ Canales 4K/UHD</b> o "Ver todos" (~12.900 canales gratis de iptv-org). Escribe arriba para filtrar.
+			        </div>
 			        <div>
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💾 Tus datos</div>
 			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app.
@@ -13976,12 +13996,8 @@
 			  document.body.appendChild(fab);
 			}
 			function _easyOpenSettings(){
-			  // Configuración COMPLETA encima del modo fácil: se aparta la pantalla,
-			  // se abre el panel normal, y el botón verde fijo te devuelve al reloj.
-			  const scr = document.getElementById('easy-screen');
-			  if(scr) scr.style.display = 'none';
-			  const fab = document.getElementById('easy-fab');
-			  if(fab){ fab.textContent = '👴 VOLVER AL MODO FÁCIL'; }
+			  // Configuración COMPLETA por encima del reloj (el panel tiene mayor
+			  // z-index). Salir del modo fácil se hace AHÍ, con su interruptor.
 			  try{ toggleSidebar(); }catch(e){}
 			}
 			function setEasyMode(on){
@@ -13992,10 +14008,11 @@
 			  const scr = document.getElementById('easy-screen');
 			  const fab = document.getElementById('easy-fab');
 			  if(scr) scr.style.display = on ? 'flex' : 'none';
+			  // El botón fijo solo sirve para ENTRAR: dentro del modo se oculta y la
+			  // salida es desde configuración (⚙️ Ajustes → interruptor Modo Fácil).
 			  if(fab){
-			    fab.textContent = on ? '✕ SALIR DEL MODO FÁCIL' : '👴 MODO FÁCIL';
-			    fab.style.background = on ? '#3a3a3c' : '#30d158';
-			    fab.style.color = on ? '#fff' : '#003310';
+			    fab.textContent = '👴 MODO FÁCIL';
+			    fab.style.display = on ? 'none' : 'block';
 			  }
 			  if(on){ _easyTick(); if(!_easyTimer) _easyTimer = setInterval(_easyTick, 1000); }
 			  else if(_easyTimer){ clearInterval(_easyTimer); _easyTimer = null; }
