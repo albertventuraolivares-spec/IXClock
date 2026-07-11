@@ -1088,7 +1088,7 @@
 			class="dock-btn"
 			id="siri-dock-btn"
 			onclick="activateSiri()"
-			title="Siri"
+			title="IXA · Asistente de voz"
 			style="background:#000;border-radius:50%;box-shadow:0 3px 16px rgba(90,60,220,.55);padding:0;overflow:hidden;position:relative;"
 		>
 			<canvas id="siri-mini-canvas" width="96" height="96"></canvas>
@@ -1176,7 +1176,7 @@
 		<button
 			class="dock-btn dock-secondary"
 			onclick="openGarageBand()"
-			title="GarageBand"
+			title="IXBand"
 			style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);box-shadow:0 3px 14px rgba(0,0,0,.6);border:1px solid rgba(255,100,0,.3);"
 		>
 			<svg width="40" height="40" viewBox="0 0 40 40">
@@ -1760,7 +1760,7 @@
 					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
 					<div style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
-						🔮 Cómo habla Siri / el asistente
+						🔮 Cómo habla IXA / el asistente
 					</div>
 					<div style="display:flex;flex-wrap:wrap;gap:6px;" id="siri-dialect-btns"></div>
 					<div style="font-size:10px;opacity:.5;margin-top:8px;line-height:1.4;">
@@ -2365,9 +2365,18 @@
 							<div style="font-size:10px;opacity:.5;">¿Cuántas estrellas le pondrías?</div>
 							<div id="opinion-stars-input" style="font-size:24px;letter-spacing:4px;cursor:pointer;"></div>
 							<textarea id="opinion-textarea" rows="4" placeholder="Escribe aquí tu opinión..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2 text-xs outline-none resize-none"></textarea>
+							<div style="font-size:9px;opacity:.45;">Al guardar, tu opinión se PUBLICA y todos los visitantes de IXClock podrán verla.</div>
 							<div class="flex gap-2">
-								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar</button>
+								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar y publicar</button>
 								<button class="btn-option flex-1" onclick="opinionCancelEdit()">Cancelar</button>
+							</div>
+						</div>
+						<div id="opinion-publish-status" style="font-size:10px;margin-top:4px;"></div>
+						<!-- Muro público: lo que opina la gente, visible para todos -->
+						<div style="border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:8px;">
+							<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🌍 Opiniones de todos</div>
+							<div id="public-opinions" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+								<div style="font-size:10px;opacity:.4;">Cargando opiniones…</div>
 							</div>
 						</div>
 					</div>
@@ -2428,7 +2437,7 @@
 
 					<!-- Siri / Voz -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔮 Siri de Voz</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔮 IXA de Voz (asistente)</div>
 						<p class="text-xs opacity-70 leading-relaxed">Pulsa el icono del micrófono para activar el reconocimiento de voz (Web Speech API). Habla en español y el asistente responderá también en voz alta. Requiere Chrome o Safari con permiso de micrófono.</p>
 					</div>
 
@@ -2441,7 +2450,7 @@
 					<!-- Radio y Música -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎵 Radio &amp; Música</div>
-						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor iPod. También hay sonidos ambiente en el panel de clima.</p>
+						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor de música. También hay sonidos ambiente en el panel de clima.</p>
 					</div>
 
 					<!-- TV Mundial -->
@@ -2476,7 +2485,7 @@
 
 					<!-- GarageBand -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎹 GarageBand</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎹 IXBand</div>
 						<p class="text-xs opacity-70 leading-relaxed">Mini teclado virtual con Web Audio API. Elige instrumento (piano, sintetizador, guitarra…) y toca con el ratón o el teclado. Las notas se generan en tiempo real sin archivos de audio.</p>
 					</div>
 
@@ -2488,7 +2497,7 @@
 
 					<!-- iCloud / Backup -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">☁️ iCloud (Backup local)</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">☁️ Mi Nube · Respaldo local</div>
 						<p class="text-xs opacity-70 leading-relaxed">Guarda y restaura tu configuración (fondo, estilo de reloj, colores, notas, alarmas) en el almacenamiento local del navegador. No requiere cuenta ni conexión extra.</p>
 					</div>
 
@@ -2509,7 +2518,7 @@
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + I</kbd></span><span>Abrir IA</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + T</kbd></span><span>Abrir Traductor</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + M</kbd></span><span>Abrir Mapas</span></div>
-							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + S</kbd></span><span>Activar Siri</span></div>
+							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + S</kbd></span><span>Activar IXA (asistente)</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Space</kbd></span><span>Pausar/Reanudar música</span></div>
 						</div>
 					</div>
@@ -3032,7 +3041,7 @@
 				<input
 					id="ai-input"
 					class="flex-1 bg-black/40 border border-white/20 rounded-full py-2.5 px-4 text-xs placeholder-white/40 focus:outline-none focus:border-blue-400"
-					placeholder="Pregúntame algo… Siri te responderá en voz alta"
+					placeholder="Pregúntame algo… IXA te responderá en voz alta"
 					onkeydown="if(event.key==='Enter') sendAIMessage();"
 				/>
 				<button
@@ -5084,7 +5093,7 @@
 			  {id:'grad-dusk',name:'Crepúsculo',tags:'gradient dusk purple orange evening',type:'gradient',colors:['#2c3e50','#fd746c','#ff9068'],angle:135,dur:18},
 			  {id:'grad-jade',name:'Jade',tags:'gradient jade green calm',type:'gradient',colors:['#136a8a','#267871'],angle:135,dur:19},
 			  {id:'grad-cosmic',name:'Cósmico',tags:'gradient cosmic purple magenta space',type:'gradient',colors:['#41295a','#2f0743'],angle:135,dur:21},
-			  {id:'ios27',name:'iOS 27 Liquid',tags:'apple ios liquid glass fluid color',type:'gradient',colors:['#ff007f','#ff7e5f','#701a75','#3b82f6'],angle:270,dur:24},
+			  {id:'ios27',name:'IX 27 Liquid',tags:'ix liquid glass fluid color',type:'gradient',colors:['#ff007f','#ff7e5f','#701a75','#3b82f6'],angle:270,dur:24},
 			  {id:'aurora',name:'Aurora Boreal',tags:'apple ios nordic blue purple',type:'gradient',colors:['#0f172a','#1e1b4b','#4c1d95','#701a75','#991b1b'],angle:135,dur:16},
 			  {id:'samsung-ultra',name:'OneUI Galaxy',tags:'samsung galaxy space purple',type:'gradient',colors:['#090979','#8b5cf6','#00d4ff','#1e1b4b'],angle:270,dur:20},
 			  {id:'pixel-fluid',name:'Pixel Material',tags:'google pixel material abstract',type:'gradient',colors:['#fb923c','#fcd34d','#34d399','#38bdf8'],angle:270,dur:22},
@@ -12499,6 +12508,58 @@
 			  saveOpinionStorage();
 			  renderOpinion();
 			  opinionCancelEdit();
+			  opinionPublish(); // además de guardarse aquí, se publica para todos
+			}
+			/* ===== Opiniones PÚBLICAS: se guardan en el servidor (Netlify Blobs)
+			   para que cualquier visitante de IXClock las vea ===== */
+			const _OPINIONS_URL = '/.netlify/functions/opinions';
+			async function opinionPublish(){
+			  const st = document.getElementById('opinion-publish-status');
+			  if(!userOpinion || !userOpinion.trim()) return;
+			  if(location.protocol === 'file:'){ if(st){ st.textContent='(sin conexión: guardada solo en este aparato)'; st.style.color='#ff9f0a'; } return; }
+			  if(st){ st.textContent='🌍 Publicando…'; st.style.color=''; }
+			  try{
+			    const name = localStorage.getItem('uos_session') || 'Anónimo';
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const r = await fetch(_OPINIONS_URL, {
+			      method:'POST', headers:{'content-type':'application/json'},
+			      body: JSON.stringify({ name: name, stars: userRating || 5, text: userOpinion }),
+			      signal: ctrl.signal
+			    });
+			    clearTimeout(timer);
+			    if(!r.ok) throw new Error('HTTP ' + r.status);
+			    if(st){ st.textContent='🌍 Publicada — todos pueden verla ✓'; st.style.color='#30d158'; }
+			    loadPublicOpinions();
+			  }catch(e){
+			    if(st){ st.textContent='⚠️ No se pudo publicar (se guardó solo en este aparato). Reintenta al rato.'; st.style.color='#ff9f0a'; }
+			  }
+			}
+			async function loadPublicOpinions(){
+			  const box = document.getElementById('public-opinions');
+			  if(!box || location.protocol === 'file:') return;
+			  try{
+			    const ctrl = new AbortController();
+			    const timer = setTimeout(()=>ctrl.abort(), 10000);
+			    const r = await fetch(_OPINIONS_URL, { signal: ctrl.signal });
+			    clearTimeout(timer);
+			    if(!r.ok) throw new Error('HTTP ' + r.status);
+			    const list = await r.json();
+			    if(!Array.isArray(list) || !list.length){
+			      box.innerHTML = '<div style="font-size:10px;opacity:.4;">Aún no hay opiniones publicadas. ¡Sé el primero!</div>';
+			      return;
+			    }
+			    box.innerHTML = list.map(o=>{
+			      const stars = '⭐'.repeat(Math.max(1, Math.min(5, parseInt(o.stars)||5)));
+			      return '<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:7px 9px;">'
+			        + '<div style="font-size:10px;">' + stars + ' <b>' + escapeHtml(String(o.name||'Anónimo').slice(0,40)) + '</b>'
+			        + ' <span style="opacity:.4;">· ' + escapeHtml(String(o.date||'')) + '</span></div>'
+			        + '<div style="font-size:11px;opacity:.85;margin-top:2px;white-space:pre-wrap;">' + escapeHtml(String(o.text||'').slice(0,500)) + '</div>'
+			        + '</div>';
+			    }).join('');
+			  }catch(e){
+			    box.innerHTML = '<div style="font-size:10px;opacity:.4;">No se pudieron cargar las opiniones (revisa tu conexión).</div>';
+			  }
 			}
 			function opinionDelete(){
 			  userOpinion = '';
@@ -12743,14 +12804,14 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
-			          Ahí están Navegador, Juegos, GarageBand, Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
+			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ Siri</div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ IXA</div>
 			          Tocá el orbe para hablarle. Mantenelo presionado 4 segundos para que se abra directo la barra de búsqueda.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎵 Reproductor (iPod)</div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎵 Reproductor de música</div>
 			          Es una ventana flotante: se puede arrastrar tomándola desde arriba. El control de volumen está adentro.
 			        </div>
 			        <div style="margin-bottom:16px;">
@@ -12770,8 +12831,8 @@
 			          En Personalizar → <b>Relojes</b> hay dos barras: <b>Tamaño del reloj</b> (60%–220%) y <b>Altura de los números</b> — esta última estira los dígitos hacia arriba, como deja hacer iOS en la pantalla de bloqueo. Se guardan solos.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 GarageBand</div>
-			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado de piano (con octavas y glissando), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
+			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
@@ -12781,9 +12842,13 @@
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">📺 TV en vivo</div>
 			          En el panel de TV: elige país y "Ver canales", o usa <b>⚽ Deportes y Mundiales</b>, <b>⭐ Famosos</b> (Telemundo, FIFA+, ESPN, Univision y ~50 cadenas), <b>✨ Canales 4K/UHD</b> o "Ver todos" (~12.900 canales gratis de iptv-org). Escribe arriba para filtrar.
 			        </div>
+			        <div style="margin-bottom:16px;">
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💬 Mi Opinión (pública)</div>
+			          En Personalizar → Más está "Mi Opinión": pones estrellas y escribes lo que piensas, y al guardar <b>se publica para que todos los visitantes de IXClock la vean</b> en el muro "🌍 Opiniones de todos". Tu nombre de usuario acompaña la opinión.
+			        </div>
 			        <div>
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">💾 Tus datos</div>
-			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app.
+			          Todo lo que elijas (fondo, reloj, cuenta, pestañas del navegador) se guarda solo en este dispositivo — no se borra al cerrar y volver a abrir la app. La única excepción es tu opinión publicada, que sí es pública.
 			        </div>
 			      </div>
 			    </div>
@@ -12946,12 +13011,20 @@
 			    try{ return await fetch(url,Object.assign({},opts,{signal:ctrl.signal})); }
 			    finally{ clearTimeout(timer); }
 			  };
+			  // La MARCA no se traduce: antes de enviar, "IXClocK/IXClock" se cambia
+			  // por un marcador que los traductores dejan intacto, y al volver se
+			  // restaura con su escritura original exacta.
+			  const _brandMarks=[];
+			  // Cubre la marca y TODO lo que la acompaña: IXClocK, IXCLOCK+, y
+			  // direcciones completas como ixclockplus.netlify.app (palabra entera)
+			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*|\bixa\b/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
+			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
 			  const gone=async (s)=>{
 			    try{
-			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(s),{},6000);
+			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
 			      const d=await r.json();
-			      const t=(d?.[0]||[]).map(seg=>seg[0]).join('').trim();
+			      const t=unmask((d?.[0]||[]).map(seg=>seg[0]).join('').trim());
 			      return t||null;
 			    }catch(e){ return null; }
 			  };
@@ -12987,8 +13060,8 @@
 			          body:JSON.stringify({
 			            model:'openai-large',
 			            messages:[
-			              {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
-			              {role:'user',content:JSON.stringify(chunk)}
+			              {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Keep any ⟦N⟧ markers exactly as they are. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
+			              {role:'user',content:JSON.stringify(chunk.map(mask))}
 			            ]
 			          })
 			        },15000);
@@ -12999,7 +13072,7 @@
 			        const arr=JSON.parse(txt);
 			        if(Array.isArray(arr)&&arr.length===chunk.length){
 			          chunk.forEach((orig,idx)=>{
-			            const t=(arr[idx]||'').trim();
+			            const t=unmask((arr[idx]||'').trim());
 			            if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
 			            else results[orig]=orig;
 			          });
@@ -13022,41 +13095,36 @@
 			}
 
 			function _uiNodes(root){
-			  const SKIP=new Set(['SCRIPT','STYLE','INPUT','TEXTAREA','SELECT','OPTION']);
+			  // Recorre SOLO nodos de texto reales (antes también generaba objetos
+			  // falsos por cada palabra de cada elemento anidado: trabajo duplicado
+			  // a lo bestia). Salta código, campos de escritura y los relojes.
 			  const nodes=[];
-			  const w=document.createTreeWalker(root,NodeFilter.SHOW_ALL,{
+			  if(!root) return nodes;
+			  if(root.nodeType===3){
+			    const el=root.parentElement;
+			    if(el && el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return nodes;
+			    if(_uiOK(root.textContent.trim())) nodes.push(root);
+			    return nodes;
+			  }
+			  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
 			    acceptNode(n){
-			      if(SKIP.has(n.nodeName))return NodeFilter.FILTER_REJECT;
+			      const el=n.parentElement;
+			      if(!el) return NodeFilter.FILTER_REJECT;
+			      if(el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return NodeFilter.FILTER_REJECT;
 			      return NodeFilter.FILTER_ACCEPT;
 			    }
 			  });
 			  let n;
 			  while((n=w.nextNode())){
-			    if(n.nodeType===3){
-			      if(_uiOK(n.textContent.trim()))nodes.push(n);
-			    }else if(n.nodeType===1){
-			      const text=n.textContent;
-			      if(!text)continue;
-			      text.trim().split(/\s+/).forEach(word=>{
-			        if(_uiOK(word))nodes.push({textContent:word});
-			      });
-			    }
+			    if(_uiOK(n.textContent.trim())) nodes.push(n);
 			  }
 			  return nodes;
 			}
 
 			function _uiRoots(){
-			  return [
-			    document.getElementById('login-overlay'), // la bienvenida TAMBIÉN se traduce
-			    document.getElementById('left-sidebar'),
-			    document.getElementById('ai-chat-panel'),
-			    document.getElementById('translator-panel'),
-			    document.getElementById('alarm-panel'),
-			    document.getElementById('notes-panel'),
-			    document.getElementById('top-dock'),
-			    document.querySelector('main'),
-			    document.querySelector('aside'),
-			  ].filter(Boolean);
+			  // TODO el cuerpo: cualquier app, panel o modal — exista ya o se cree
+			  // después (el observador de mutaciones traduce lo nuevo al aparecer)
+			  return [document.body].filter(Boolean);
 			}
 
 			async function _uiApply(nodes,lang){
@@ -13107,28 +13175,31 @@
 			  }
 			  if(lang!=='es'){
 			    let _t=null;const pending=new Set();
+			    let _tMax=null;
+			    const _uiFlush=async()=>{
+			      clearTimeout(_t); _t=null;
+			      clearTimeout(_tMax); _tMax=null;
+			      const fresh=[...pending].filter(n=>!_uiOriginals.has(n)&&n.parentNode);
+			      pending.clear();
+			      if(fresh.length)await _uiApply(fresh,_uiLang);
+			    };
 			    _uiObserver=new MutationObserver(muts=>{
 			      muts.forEach(m=>{m.addedNodes.forEach(nd=>{
-			        if(nd.nodeType===3){if(_uiOK(nd.textContent.trim()))pending.add(nd);}
-			        else if(nd.nodeType===1){_uiNodes(nd).forEach(n=>pending.add(n));}
+			        // _uiNodes también filtra ancestros (reloj, [data-notrans], campos)
+			        _uiNodes(nd).forEach(n=>pending.add(n));
 			      });});
 			      if(!pending.size)return;
 			      clearTimeout(_t);
-			      _t=setTimeout(async()=>{
-			        const fresh=[...pending].filter(n=>!_uiOriginals.has(n)&&n.parentNode);
-			        pending.clear();
-			        if(fresh.length)await _uiApply(fresh,_uiLang);
-			      },350);
+			      _t=setTimeout(_uiFlush,350);
+			      // TOPE MÁXIMO: si algo muta sin parar (el LCD de GarageBand late cada
+			      // 60ms), el temporizador de 350ms se reiniciaba eternamente y la
+			      // traducción jamás se disparaba. Con este tope SIEMPRE sale a los 900ms.
+			      if(!_tMax) _tMax=setTimeout(_uiFlush,900);
 			    });
-			    // Only watch floating panels — NOT main or aside (those update every second = flicker)
-			    [
-			      document.getElementById('alarm-panel'),
-			      document.getElementById('ai-chat-panel'),
-			      document.getElementById('notes-panel'),
-			      document.getElementById('translator-panel'),
-			    ].filter(Boolean).forEach(el=>{
-			      _uiObserver.observe(el,{childList:true,subtree:true});
-			    });
+			    // Se observa TODO el body: los modales que se crean después (GarageBand,
+			    // TV, batería, Modo Fácil…) se traducen solos al aparecer. Los relojes
+			    // no parpadean: sus números los rechaza _uiOK y el caché evita la red.
+			    _uiObserver.observe(document.body,{childList:true,subtree:true});
 			  }
 			}
 
@@ -13886,7 +13957,7 @@
 			   saltar entre ellas sin tener que cerrar la actual y volver a buscarla. */
 			const APP_SWITCHER_REGISTRY = [
 			  {id:'browser', name:'Navegador', icon:'🌐', fn:'openBrowser'},
-			  {id:'garageband', name:'GarageBand', icon:'🎹', fn:'openGarageBand'},
+			  {id:'garageband', name:'IXBand', icon:'🎹', fn:'openGarageBand'},
 			  {id:'maps', name:'Mapas', icon:'🗺️', fn:'openAppleMaps'},
 			  {id:'games', name:'Juegos', icon:'🎮', fn:'toggleGamesPanel'},
 			  {id:'emulator', name:'Emulador', icon:'🕹️', fn:'openEmuMenu'},
@@ -13987,6 +14058,7 @@
 			loadAlarms();
 			loadNotes();
 			loadOpinion();
+			loadPublicOpinions();
 			setInterval(renderizarFeriados, 3600000);
 			setInterval(updateMoonPhase, 3600000);
 			document.getElementById('brightness-slider').oninput = e=>{
@@ -14241,7 +14313,7 @@
 			  scr.id = 'easy-screen';
 			  scr.style.cssText = 'position:fixed;inset:0;z-index:2500;background:#000;color:#bb2222;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;';
 			  scr.innerHTML = ''
-			    + '<div id="easy-hora" style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
+			    + '<div id="easy-hora" data-notrans style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
 			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
 			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
 			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
@@ -15413,7 +15485,7 @@
 			  modal.innerHTML=''
 			    +'<div id="gb-topbar">'
 			    +  '<button class="gb-tb-btn" onclick="gbView(\'songs\')" title="Mis canciones" style="font-size:17px;">⊞</button>'
-			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">GarageBand</span></div>'
+			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">IXBand</span></div>'
 			    +  '<div style="flex:1;"></div>'
 			    +  '<div style="display:flex;gap:6px;align-items:center;">'
 			    +    '<button class="gb-tb-btn" onclick="gbStop()" title="Ir al inicio">⏮</button>'
@@ -15470,7 +15542,7 @@
 			}
 			// ===== Explorador de sonidos (la pantalla de inicio del GarageBand de iPad) =====
 			const GB_BROWSER_CARDS=[
-			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'Piano, órgano, e-piano y 10 voces más'},
+			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'45 instrumentos del mundo por categorías'},
 			  {id:'drums',    icon:'🥁', n:'Batería',        d:'Pads de percusión para ritmos'},
 			  {id:'smartguitar',icon:'🎸', n:'Guitarra Smart', d:'Tiras de acordes: rasguea con un toque'},
 			  {id:'smartbass',  icon:'🎸', n:'Bajo Smart',     d:'Graves con acordes y notas sueltas'},
@@ -15482,7 +15554,7 @@
 			function gbBuildBrowser(){
 			  const el=document.getElementById('gb-browser');
 			  let s='<div style="font-size:19px;font-weight:800;margin-bottom:4px;">Explorador de sonidos</div>'
-			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Como en GarageBand: elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
+			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:900px;">';
 			  GB_BROWSER_CARDS.forEach(function(c){
 			    s+='<div class="gb-card" onclick="gbOpenInstrument(\''+c.id+'\')"><span class="i">'+c.icon+'</span><span class="n">'+c.n+'</span><span class="d">'+c.d+'</span></div>';
@@ -15520,7 +15592,18 @@
 			  }
 			}
 			// ===== Teclado (piano realista con octavas, voces y glissando) =====
-			const GB_KB_VOICES=[['piano','Piano'],['epiano','E-Piano'],['organ','Órgano'],['guitar','Guitarra'],['strings','Cuerdas'],['flute','Flauta'],['brass','Metales'],['marimba','Marimba'],['musicbox','Caja música'],['bell','Campanas']];
+			// TODOS los instrumentos del mundo, por categorías (como GarageBand):
+			// cada uno con su propia síntesis en GB_VOICES — no son solo botones.
+			const GB_INST_CATS=[
+			  {cat:'Teclados', icon:'🎹', items:[['piano','Piano'],['epiano','E-Piano'],['organ','Órgano'],['churchorgan','Órgano de iglesia'],['harpsichord','Clavecín'],['celesta','Celesta'],['clavinet','Clavinet'],['accordion','Acordeón']]},
+			  {cat:'Cuerdas', icon:'🎻', items:[['strings','Orquesta'],['violin','Violín'],['cello','Chelo'],['harp','Arpa'],['guitar','Guitarra'],['banjo','Banjo'],['ukulele','Ukelele'],['mandolin','Mandolina'],['bass','Bajo']]},
+			  {cat:'Viento', icon:'🪈', items:[['flute','Flauta'],['panflute','Flauta de pan'],['clarinet','Clarinete'],['oboe','Oboe'],['sax','Saxofón'],['harmonica','Armónica'],['whistle','Silbato'],['ocarina','Ocarina'],['bagpipe','Gaita']]},
+			  {cat:'Metales', icon:'🎺', items:[['brass','Trompeta'],['trombone','Trombón'],['tuba','Tuba'],['frenchhorn','Corno francés']]},
+			  {cat:'Percusión', icon:'🔔', items:[['marimba','Marimba'],['xylophone','Xilófono'],['vibraphone','Vibráfono'],['glockenspiel','Glockenspiel'],['steeldrum','Tambor metálico'],['timpani','Timbales'],['tubularbell','Campanas tubulares'],['musicbox','Caja de música'],['bell','Campanas']]},
+			  {cat:'Mundo', icon:'🌍', items:[['sitar','Sitar · India'],['koto','Koto · Japón'],['shamisen','Shamisen · Japón'],['erhu','Erhu · China'],['kalimba','Kalimba · África'],['didgeridoo','Didgeridoo · Australia'],['bagpipe','Gaita · Escocia'],['steeldrum','Steel drum · Caribe']]},
+			  {cat:'Electrónicos', icon:'🎛️', items:[['synth','Synth'],['synthlead','Lead'],['synthpad','Pad'],['chiptune','8-bit'],['theremin','Theremin']]}
+			];
+			let _gbKbCat=0;
 			let _gbMelodicVoice='piano';
 			let _gbOctave=0;
 			let _gbSynthWave='sawtooth';
@@ -15528,13 +15611,31 @@
 			const GB_BLACK=[[138.59,0.5],[155.56,1.5],[185,3.5],[207.65,4.5],[233.08,5.5],[277.18,7.5],[311.13,8.5],[369.99,10.5],[415.3,11.5],[466.16,12.5]];
 			let _gbGliss=false;
 			function gbBuildKeyboardBar(bar){
-			  let s='';
-			  GB_KB_VOICES.forEach(function(v){
-			    s+='<button class="gb-chip gb-voice-chip'+(v[0]===_gbMelodicVoice?' on':'')+'" data-v="'+v[0]+'" onclick="gbSelectInstrument(\''+v[0]+'\')">'+v[1]+'</button>';
+			  const cat=GB_INST_CATS[_gbKbCat]||GB_INST_CATS[0];
+			  let s='<div style="display:flex;flex-direction:column;gap:6px;width:100%;">';
+			  // Fila 1: categorías (como la biblioteca de sonidos de GarageBand)
+			  s+='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;">';
+			  GB_INST_CATS.forEach(function(c,i){
+			    s+='<button class="gb-chip'+(i===_gbKbCat?' on':'')+'" onclick="gbKbCat('+i+')">'+c.icon+' '+c.cat+'</button>';
 			  });
 			  s+='<div style="flex:1;"></div>';
-			  s+='<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="gb-chip" onclick="gbOctaveShift(-1)">Octava −</button><span id="gb-oct-lbl" style="font-size:11px;font-weight:800;opacity:.6;min-width:20px;text-align:center;">0</span><button class="gb-chip" onclick="gbOctaveShift(1)">Octava +</button></div>';
+			  s+='<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="gb-chip" onclick="gbOctaveShift(-1)">Octava −</button><span id="gb-oct-lbl" style="font-size:11px;font-weight:800;opacity:.6;min-width:20px;text-align:center;">'+(_gbOctave>0?'+':'')+_gbOctave+'</span><button class="gb-chip" onclick="gbOctaveShift(1)">Octava +</button></div>';
+			  s+='</div>';
+			  // Fila 2: instrumentos de la categoría elegida
+			  s+='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;">';
+			  cat.items.forEach(function(v){
+			    s+='<button class="gb-chip gb-voice-chip'+(v[0]===_gbMelodicVoice?' on':'')+'" data-v="'+v[0]+'" onclick="gbSelectInstrument(\''+v[0]+'\')">'+v[1]+'</button>';
+			  });
+			  s+='</div></div>';
 			  bar.innerHTML=s;
+			}
+			function gbKbCat(i){
+			  _gbKbCat=i;
+			  const bar=document.getElementById('gb-inst-bar');
+			  if(bar) gbBuildKeyboardBar(bar);
+			  const st=document.getElementById('gb-status');
+			  const c=GB_INST_CATS[i];
+			  if(st && c) st.textContent=c.icon+' '+c.cat+' — elige un instrumento y toca el teclado';
 			}
 			function gbOctaveShift(d){
 			  _gbOctave=Math.max(-2,Math.min(2,_gbOctave+d));
@@ -15547,8 +15648,8 @@
 			function _gbKeyPlay(freq){ gbPlayNote(freq*Math.pow(2,_gbOctave),_gbMelodicVoice); }
 			function gbBuildKeyboard(){
 			  const wrap=document.getElementById('gb-kb-wrap');
-			  wrap.innerHTML='<div style="flex:1;min-height:26px;background:linear-gradient(180deg,#2c2c2e,#1e1e20);border-bottom:2px solid #000;box-shadow:0 -4px 12px rgba(0,0,0,.4) inset;"></div>'
-			    +'<div id="gb-kb-keys" style="position:relative;height:min(240px,34vh);margin:0;background:#0c0c0d;"></div>';
+			  wrap.innerHTML='<div style="flex:1;min-height:14px;background:linear-gradient(180deg,#2c2c2e,#1e1e20);border-bottom:2px solid #000;box-shadow:0 -4px 12px rgba(0,0,0,.4) inset;"></div>'
+			    +'<div id="gb-kb-keys" style="position:relative;height:min(460px,56vh);margin:0;background:#0c0c0d;"></div>';
 			  const area=document.getElementById('gb-kb-keys');
 			  const ww=area.clientWidth||Math.min(1000,window.innerWidth);
 			  const kw=ww/GB_WHITE.length;
@@ -15683,7 +15784,53 @@
 			  musicbox:{parts:[{w:'sine',g:.4,mul:2},{w:'sine',g:.18,mul:5}],        filter:{t:'lowpass',f:6000}, env:{a:.002,s:.02,r:1.2}},
 			  bell:    {parts:[{w:'sine',g:.36,mul:1},{w:'sine',g:.24,mul:2.76},{w:'sine',g:.14,mul:5.4}], filter:{t:'lowpass',f:6000}, env:{a:.003,s:.05,r:1.4}},
 			  synth:   {parts:[{w:'sawtooth',g:.36,mul:1}],                          filter:{t:'bandpass',f:0}, env:{a:.02,s:.35,r:.4}, bandMul:2},
-			  bass:    {parts:[{w:'sawtooth',g:.5,mul:.5}],                          filter:{t:'lowpass',f:500}, env:{a:.01,s:.2,r:.4}}
+			  bass:    {parts:[{w:'sawtooth',g:.5,mul:.5}],                          filter:{t:'lowpass',f:500}, env:{a:.01,s:.2,r:.4}},
+			  // ===== Instrumentos del MUNDO (todos tocables en el teclado) =====
+			  // Teclados
+			  churchorgan:{parts:[{w:'sine',g:.26,mul:.5},{w:'sine',g:.24,mul:1},{w:'sine',g:.18,mul:2},{w:'sine',g:.12,mul:4},{w:'sine',g:.08,mul:8}], filter:{t:'lowpass',f:5200}, env:{a:.09,s:.7,r:.5}},
+			  harpsichord:{parts:[{w:'sawtooth',g:.3,mul:1},{w:'square',g:.12,mul:2}], filter:{t:'highpass',f:400}, env:{a:.002,s:.06,r:.5}},
+			  celesta: {parts:[{w:'sine',g:.4,mul:2},{w:'sine',g:.16,mul:6}],        filter:{t:'lowpass',f:7000}, env:{a:.002,s:.03,r:.9}},
+			  clavinet:{parts:[{w:'square',g:.26,mul:1},{w:'sawtooth',g:.14,mul:2}], filter:{t:'bandpass',f:0}, env:{a:.003,s:.08,r:.25}, bandMul:3},
+			  accordion:{parts:[{w:'square',g:.16,mul:1},{w:'sawtooth',g:.16,mul:1,det:9},{w:'square',g:.1,mul:2}], filter:{t:'lowpass',f:3400}, env:{a:.06,s:.55,r:.18}},
+			  // Cuerdas
+			  violin:  {parts:[{w:'sawtooth',g:.3,mul:1,det:5},{w:'sawtooth',g:.12,mul:2,det:-5}], filter:{t:'lowpass',f:3800}, env:{a:.09,s:.5,r:.3}},
+			  cello:   {parts:[{w:'sawtooth',g:.34,mul:.5,det:4},{w:'sawtooth',g:.14,mul:1,det:-4}], filter:{t:'lowpass',f:1800}, env:{a:.1,s:.5,r:.35}},
+			  harp:    {parts:[{w:'triangle',g:.42,mul:1},{w:'sine',g:.14,mul:3}],   filter:{t:'lowpass',f:4200}, env:{a:.004,s:.05,r:1.3}},
+			  banjo:   {parts:[{w:'sawtooth',g:.3,mul:1},{w:'square',g:.14,mul:3}],  filter:{t:'highpass',f:600}, env:{a:.002,s:.04,r:.3}},
+			  ukulele: {parts:[{w:'triangle',g:.36,mul:2},{w:'sine',g:.12,mul:4}],   filter:{t:'lowpass',f:3600}, env:{a:.003,s:.06,r:.4}},
+			  mandolin:{parts:[{w:'sawtooth',g:.26,mul:2,det:7},{w:'sawtooth',g:.2,mul:2,det:-7}], filter:{t:'lowpass',f:4200}, env:{a:.002,s:.05,r:.35}},
+			  // Viento
+			  panflute:{parts:[{w:'sine',g:.4,mul:1},{w:'triangle',g:.14,mul:1,det:12}], filter:{t:'lowpass',f:3200}, env:{a:.09,s:.32,r:.28}},
+			  clarinet:{parts:[{w:'square',g:.3,mul:1},{w:'square',g:.1,mul:3}],     filter:{t:'lowpass',f:2600}, env:{a:.06,s:.4,r:.2}},
+			  oboe:    {parts:[{w:'sawtooth',g:.22,mul:1},{w:'square',g:.2,mul:2}],  filter:{t:'bandpass',f:0}, env:{a:.05,s:.4,r:.2}, bandMul:3},
+			  sax:     {parts:[{w:'sawtooth',g:.32,mul:1},{w:'square',g:.1,mul:1,det:8}], filter:{t:'lowpass',f:2200}, env:{a:.04,s:.42,r:.25}},
+			  harmonica:{parts:[{w:'square',g:.2,mul:1},{w:'sawtooth',g:.16,mul:1,det:11},{w:'square',g:.08,mul:2}], filter:{t:'bandpass',f:0}, env:{a:.05,s:.5,r:.15}, bandMul:2},
+			  whistle: {parts:[{w:'sine',g:.44,mul:2}],                              filter:{t:'lowpass',f:8000}, env:{a:.03,s:.3,r:.12}},
+			  ocarina: {parts:[{w:'sine',g:.42,mul:1},{w:'sine',g:.1,mul:2}],        filter:{t:'lowpass',f:3000}, env:{a:.05,s:.35,r:.2}},
+			  bagpipe: {parts:[{w:'sawtooth',g:.2,mul:1},{w:'sawtooth',g:.14,mul:.5},{w:'square',g:.1,mul:1,det:14}], filter:{t:'lowpass',f:2800}, env:{a:.08,s:.65,r:.2}},
+			  // Metales
+			  trombone:{parts:[{w:'sawtooth',g:.32,mul:.5},{w:'square',g:.1,mul:1}], filter:{t:'lowpass',f:1900}, env:{a:.06,s:.4,r:.25}},
+			  tuba:    {parts:[{w:'sawtooth',g:.4,mul:.25},{w:'sine',g:.14,mul:.5}], filter:{t:'lowpass',f:900},  env:{a:.07,s:.4,r:.3}},
+			  frenchhorn:{parts:[{w:'sawtooth',g:.24,mul:1},{w:'sine',g:.2,mul:1}],  filter:{t:'lowpass',f:1600}, env:{a:.08,s:.45,r:.3}},
+			  // Percusión afinada
+			  xylophone:{parts:[{w:'sine',g:.4,mul:1},{w:'sine',g:.22,mul:5}],       filter:{t:'lowpass',f:7000}, env:{a:.002,s:.015,r:.35}},
+			  vibraphone:{parts:[{w:'sine',g:.4,mul:1},{w:'sine',g:.16,mul:4}],      filter:{t:'lowpass',f:5200}, env:{a:.004,s:.1,r:1.6}},
+			  glockenspiel:{parts:[{w:'sine',g:.36,mul:2},{w:'sine',g:.18,mul:8}],   filter:{t:'lowpass',f:9000}, env:{a:.002,s:.02,r:1.1}},
+			  steeldrum:{parts:[{w:'sine',g:.3,mul:1},{w:'sine',g:.2,mul:2.9},{w:'sine',g:.12,mul:4.2}], filter:{t:'lowpass',f:5000}, env:{a:.003,s:.05,r:.7}},
+			  timpani: {parts:[{w:'sine',g:.5,mul:.5},{w:'triangle',g:.2,mul:.75}],  filter:{t:'lowpass',f:700},  env:{a:.004,s:.08,r:.9}},
+			  tubularbell:{parts:[{w:'sine',g:.3,mul:1},{w:'sine',g:.22,mul:2.4},{w:'sine',g:.14,mul:4.5}], filter:{t:'lowpass',f:6000}, env:{a:.004,s:.1,r:2.2}},
+			  // Mundo
+			  sitar:   {parts:[{w:'sawtooth',g:.24,mul:1},{w:'square',g:.12,mul:2,det:9},{w:'sine',g:.1,mul:4}], filter:{t:'bandpass',f:0}, env:{a:.003,s:.15,r:1.1}, bandMul:2},
+			  koto:    {parts:[{w:'triangle',g:.36,mul:1},{w:'sawtooth',g:.1,mul:2}], filter:{t:'lowpass',f:3600}, env:{a:.003,s:.05,r:.8}},
+			  shamisen:{parts:[{w:'square',g:.24,mul:1},{w:'sawtooth',g:.14,mul:2}], filter:{t:'highpass',f:500}, env:{a:.002,s:.05,r:.45}},
+			  erhu:    {parts:[{w:'sawtooth',g:.26,mul:2,det:6},{w:'sine',g:.14,mul:2}], filter:{t:'lowpass',f:3200}, env:{a:.12,s:.5,r:.3}},
+			  kalimba: {parts:[{w:'sine',g:.44,mul:1},{w:'sine',g:.16,mul:5.4}],     filter:{t:'lowpass',f:4600}, env:{a:.002,s:.02,r:.6}},
+			  didgeridoo:{parts:[{w:'sawtooth',g:.4,mul:.25},{w:'square',g:.14,mul:.5,det:10}], filter:{t:'lowpass',f:600}, env:{a:.1,s:.7,r:.4}},
+			  // Electrónicos
+			  synthlead:{parts:[{w:'square',g:.3,mul:1},{w:'sawtooth',g:.14,mul:1,det:8}], filter:{t:'lowpass',f:3400}, env:{a:.01,s:.4,r:.2}},
+			  synthpad:{parts:[{w:'sawtooth',g:.2,mul:1,det:-9},{w:'sawtooth',g:.2,mul:1,det:9},{w:'triangle',g:.12,mul:2}], filter:{t:'lowpass',f:2200}, env:{a:.3,s:.6,r:.9}},
+			  chiptune:{parts:[{w:'square',g:.34,mul:1}],                            filter:{t:'lowpass',f:5000}, env:{a:.002,s:.1,r:.08}},
+			  theremin:{parts:[{w:'sine',g:.46,mul:1},{w:'sine',g:.08,mul:1,det:6}], filter:{t:'lowpass',f:4200}, env:{a:.14,s:.55,r:.4}}
 			};
 			function gbPlayNote(freq,type){
 			  if(!_gbAudioCtx)return;
