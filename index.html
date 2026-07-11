@@ -1088,7 +1088,7 @@
 			class="dock-btn"
 			id="siri-dock-btn"
 			onclick="activateSiri()"
-			title="Siri"
+			title="IXA · Asistente de voz"
 			style="background:#000;border-radius:50%;box-shadow:0 3px 16px rgba(90,60,220,.55);padding:0;overflow:hidden;position:relative;"
 		>
 			<canvas id="siri-mini-canvas" width="96" height="96"></canvas>
@@ -1760,7 +1760,7 @@
 					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
 					<div style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
-						🔮 Cómo habla Siri / el asistente
+						🔮 Cómo habla IXA / el asistente
 					</div>
 					<div style="display:flex;flex-wrap:wrap;gap:6px;" id="siri-dialect-btns"></div>
 					<div style="font-size:10px;opacity:.5;margin-top:8px;line-height:1.4;">
@@ -2437,7 +2437,7 @@
 
 					<!-- Siri / Voz -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔮 Siri de Voz</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔮 IXA de Voz (asistente)</div>
 						<p class="text-xs opacity-70 leading-relaxed">Pulsa el icono del micrófono para activar el reconocimiento de voz (Web Speech API). Habla en español y el asistente responderá también en voz alta. Requiere Chrome o Safari con permiso de micrófono.</p>
 					</div>
 
@@ -2450,7 +2450,7 @@
 					<!-- Radio y Música -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎵 Radio &amp; Música</div>
-						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor iPod. También hay sonidos ambiente en el panel de clima.</p>
+						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor de música. También hay sonidos ambiente en el panel de clima.</p>
 					</div>
 
 					<!-- TV Mundial -->
@@ -2497,7 +2497,7 @@
 
 					<!-- iCloud / Backup -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">☁️ iCloud (Backup local)</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">☁️ Mi Nube · Respaldo local</div>
 						<p class="text-xs opacity-70 leading-relaxed">Guarda y restaura tu configuración (fondo, estilo de reloj, colores, notas, alarmas) en el almacenamiento local del navegador. No requiere cuenta ni conexión extra.</p>
 					</div>
 
@@ -2518,7 +2518,7 @@
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + I</kbd></span><span>Abrir IA</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + T</kbd></span><span>Abrir Traductor</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + M</kbd></span><span>Abrir Mapas</span></div>
-							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + S</kbd></span><span>Activar Siri</span></div>
+							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + S</kbd></span><span>Activar IXA (asistente)</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Space</kbd></span><span>Pausar/Reanudar música</span></div>
 						</div>
 					</div>
@@ -3041,7 +3041,7 @@
 				<input
 					id="ai-input"
 					class="flex-1 bg-black/40 border border-white/20 rounded-full py-2.5 px-4 text-xs placeholder-white/40 focus:outline-none focus:border-blue-400"
-					placeholder="Pregúntame algo… Siri te responderá en voz alta"
+					placeholder="Pregúntame algo… IXA te responderá en voz alta"
 					onkeydown="if(event.key==='Enter') sendAIMessage();"
 				/>
 				<button
@@ -5093,7 +5093,7 @@
 			  {id:'grad-dusk',name:'Crepúsculo',tags:'gradient dusk purple orange evening',type:'gradient',colors:['#2c3e50','#fd746c','#ff9068'],angle:135,dur:18},
 			  {id:'grad-jade',name:'Jade',tags:'gradient jade green calm',type:'gradient',colors:['#136a8a','#267871'],angle:135,dur:19},
 			  {id:'grad-cosmic',name:'Cósmico',tags:'gradient cosmic purple magenta space',type:'gradient',colors:['#41295a','#2f0743'],angle:135,dur:21},
-			  {id:'ios27',name:'iOS 27 Liquid',tags:'apple ios liquid glass fluid color',type:'gradient',colors:['#ff007f','#ff7e5f','#701a75','#3b82f6'],angle:270,dur:24},
+			  {id:'ios27',name:'IX 27 Liquid',tags:'ix liquid glass fluid color',type:'gradient',colors:['#ff007f','#ff7e5f','#701a75','#3b82f6'],angle:270,dur:24},
 			  {id:'aurora',name:'Aurora Boreal',tags:'apple ios nordic blue purple',type:'gradient',colors:['#0f172a','#1e1b4b','#4c1d95','#701a75','#991b1b'],angle:135,dur:16},
 			  {id:'samsung-ultra',name:'OneUI Galaxy',tags:'samsung galaxy space purple',type:'gradient',colors:['#090979','#8b5cf6','#00d4ff','#1e1b4b'],angle:270,dur:20},
 			  {id:'pixel-fluid',name:'Pixel Material',tags:'google pixel material abstract',type:'gradient',colors:['#fb923c','#fcd34d','#34d399','#38bdf8'],angle:270,dur:22},
@@ -12807,11 +12807,11 @@
 			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ Siri</div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ IXA</div>
 			          Tocá el orbe para hablarle. Mantenelo presionado 4 segundos para que se abra directo la barra de búsqueda.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎵 Reproductor (iPod)</div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎵 Reproductor de música</div>
 			          Es una ventana flotante: se puede arrastrar tomándola desde arriba. El control de volumen está adentro.
 			        </div>
 			        <div style="margin-bottom:16px;">
@@ -13017,7 +13017,7 @@
 			  const _brandMarks=[];
 			  // Cubre la marca y TODO lo que la acompaña: IXClocK, IXCLOCK+, y
 			  // direcciones completas como ixclockplus.netlify.app (palabra entera)
-			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
+			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*|\bixa\b/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
 			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
 			  const gone=async (s)=>{
