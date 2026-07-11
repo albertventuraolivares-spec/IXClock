@@ -12771,7 +12771,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 GarageBand</div>
-			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado de piano (con octavas y glissando), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
+			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
@@ -12946,12 +12946,18 @@
 			    try{ return await fetch(url,Object.assign({},opts,{signal:ctrl.signal})); }
 			    finally{ clearTimeout(timer); }
 			  };
+			  // La MARCA no se traduce: antes de enviar, "IXClocK/IXClock" se cambia
+			  // por un marcador que los traductores dejan intacto, y al volver se
+			  // restaura con su escritura original exacta.
+			  const _brandMarks=[];
+			  const mask=(s)=>String(s).replace(/ixclock\+?/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
+			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
 			  const gone=async (s)=>{
 			    try{
-			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(s),{},6000);
+			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
 			      const d=await r.json();
-			      const t=(d?.[0]||[]).map(seg=>seg[0]).join('').trim();
+			      const t=unmask((d?.[0]||[]).map(seg=>seg[0]).join('').trim());
 			      return t||null;
 			    }catch(e){ return null; }
 			  };
@@ -12987,8 +12993,8 @@
 			          body:JSON.stringify({
 			            model:'openai-large',
 			            messages:[
-			              {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
-			              {role:'user',content:JSON.stringify(chunk)}
+			              {role:'system',content:`You are a UI string translator. Translate the JSON array from Spanish to ${targetName}. Keep any ⟦N⟧ markers exactly as they are. Return ONLY the JSON array with the same number of strings. No markdown, no code blocks, no explanation.`},
+			              {role:'user',content:JSON.stringify(chunk.map(mask))}
 			            ]
 			          })
 			        },15000);
@@ -12999,7 +13005,7 @@
 			        const arr=JSON.parse(txt);
 			        if(Array.isArray(arr)&&arr.length===chunk.length){
 			          chunk.forEach((orig,idx)=>{
-			            const t=(arr[idx]||'').trim();
+			            const t=unmask((arr[idx]||'').trim());
 			            if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
 			            else results[orig]=orig;
 			          });
@@ -15468,7 +15474,7 @@
 			}
 			// ===== Explorador de sonidos (la pantalla de inicio del GarageBand de iPad) =====
 			const GB_BROWSER_CARDS=[
-			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'Piano, órgano, e-piano y 10 voces más'},
+			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'45 instrumentos del mundo por categorías'},
 			  {id:'drums',    icon:'🥁', n:'Batería',        d:'Pads de percusión para ritmos'},
 			  {id:'smartguitar',icon:'🎸', n:'Guitarra Smart', d:'Tiras de acordes: rasguea con un toque'},
 			  {id:'smartbass',  icon:'🎸', n:'Bajo Smart',     d:'Graves con acordes y notas sueltas'},
@@ -15518,7 +15524,18 @@
 			  }
 			}
 			// ===== Teclado (piano realista con octavas, voces y glissando) =====
-			const GB_KB_VOICES=[['piano','Piano'],['epiano','E-Piano'],['organ','Órgano'],['guitar','Guitarra'],['strings','Cuerdas'],['flute','Flauta'],['brass','Metales'],['marimba','Marimba'],['musicbox','Caja música'],['bell','Campanas']];
+			// TODOS los instrumentos del mundo, por categorías (como GarageBand):
+			// cada uno con su propia síntesis en GB_VOICES — no son solo botones.
+			const GB_INST_CATS=[
+			  {cat:'Teclados', icon:'🎹', items:[['piano','Piano'],['epiano','E-Piano'],['organ','Órgano'],['churchorgan','Órgano de iglesia'],['harpsichord','Clavecín'],['celesta','Celesta'],['clavinet','Clavinet'],['accordion','Acordeón']]},
+			  {cat:'Cuerdas', icon:'🎻', items:[['strings','Orquesta'],['violin','Violín'],['cello','Chelo'],['harp','Arpa'],['guitar','Guitarra'],['banjo','Banjo'],['ukulele','Ukelele'],['mandolin','Mandolina'],['bass','Bajo']]},
+			  {cat:'Viento', icon:'🪈', items:[['flute','Flauta'],['panflute','Flauta de pan'],['clarinet','Clarinete'],['oboe','Oboe'],['sax','Saxofón'],['harmonica','Armónica'],['whistle','Silbato'],['ocarina','Ocarina'],['bagpipe','Gaita']]},
+			  {cat:'Metales', icon:'🎺', items:[['brass','Trompeta'],['trombone','Trombón'],['tuba','Tuba'],['frenchhorn','Corno francés']]},
+			  {cat:'Percusión', icon:'🔔', items:[['marimba','Marimba'],['xylophone','Xilófono'],['vibraphone','Vibráfono'],['glockenspiel','Glockenspiel'],['steeldrum','Tambor metálico'],['timpani','Timbales'],['tubularbell','Campanas tubulares'],['musicbox','Caja de música'],['bell','Campanas']]},
+			  {cat:'Mundo', icon:'🌍', items:[['sitar','Sitar · India'],['koto','Koto · Japón'],['shamisen','Shamisen · Japón'],['erhu','Erhu · China'],['kalimba','Kalimba · África'],['didgeridoo','Didgeridoo · Australia'],['bagpipe','Gaita · Escocia'],['steeldrum','Steel drum · Caribe']]},
+			  {cat:'Electrónicos', icon:'🎛️', items:[['synth','Synth'],['synthlead','Lead'],['synthpad','Pad'],['chiptune','8-bit'],['theremin','Theremin']]}
+			];
+			let _gbKbCat=0;
 			let _gbMelodicVoice='piano';
 			let _gbOctave=0;
 			let _gbSynthWave='sawtooth';
@@ -15526,13 +15543,31 @@
 			const GB_BLACK=[[138.59,0.5],[155.56,1.5],[185,3.5],[207.65,4.5],[233.08,5.5],[277.18,7.5],[311.13,8.5],[369.99,10.5],[415.3,11.5],[466.16,12.5]];
 			let _gbGliss=false;
 			function gbBuildKeyboardBar(bar){
-			  let s='';
-			  GB_KB_VOICES.forEach(function(v){
-			    s+='<button class="gb-chip gb-voice-chip'+(v[0]===_gbMelodicVoice?' on':'')+'" data-v="'+v[0]+'" onclick="gbSelectInstrument(\''+v[0]+'\')">'+v[1]+'</button>';
+			  const cat=GB_INST_CATS[_gbKbCat]||GB_INST_CATS[0];
+			  let s='<div style="display:flex;flex-direction:column;gap:6px;width:100%;">';
+			  // Fila 1: categorías (como la biblioteca de sonidos de GarageBand)
+			  s+='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;">';
+			  GB_INST_CATS.forEach(function(c,i){
+			    s+='<button class="gb-chip'+(i===_gbKbCat?' on':'')+'" onclick="gbKbCat('+i+')">'+c.icon+' '+c.cat+'</button>';
 			  });
 			  s+='<div style="flex:1;"></div>';
-			  s+='<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="gb-chip" onclick="gbOctaveShift(-1)">Octava −</button><span id="gb-oct-lbl" style="font-size:11px;font-weight:800;opacity:.6;min-width:20px;text-align:center;">0</span><button class="gb-chip" onclick="gbOctaveShift(1)">Octava +</button></div>';
+			  s+='<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;"><button class="gb-chip" onclick="gbOctaveShift(-1)">Octava −</button><span id="gb-oct-lbl" style="font-size:11px;font-weight:800;opacity:.6;min-width:20px;text-align:center;">'+(_gbOctave>0?'+':'')+_gbOctave+'</span><button class="gb-chip" onclick="gbOctaveShift(1)">Octava +</button></div>';
+			  s+='</div>';
+			  // Fila 2: instrumentos de la categoría elegida
+			  s+='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;">';
+			  cat.items.forEach(function(v){
+			    s+='<button class="gb-chip gb-voice-chip'+(v[0]===_gbMelodicVoice?' on':'')+'" data-v="'+v[0]+'" onclick="gbSelectInstrument(\''+v[0]+'\')">'+v[1]+'</button>';
+			  });
+			  s+='</div></div>';
 			  bar.innerHTML=s;
+			}
+			function gbKbCat(i){
+			  _gbKbCat=i;
+			  const bar=document.getElementById('gb-inst-bar');
+			  if(bar) gbBuildKeyboardBar(bar);
+			  const st=document.getElementById('gb-status');
+			  const c=GB_INST_CATS[i];
+			  if(st && c) st.textContent=c.icon+' '+c.cat+' — elige un instrumento y toca el teclado';
 			}
 			function gbOctaveShift(d){
 			  _gbOctave=Math.max(-2,Math.min(2,_gbOctave+d));
@@ -15545,8 +15580,8 @@
 			function _gbKeyPlay(freq){ gbPlayNote(freq*Math.pow(2,_gbOctave),_gbMelodicVoice); }
 			function gbBuildKeyboard(){
 			  const wrap=document.getElementById('gb-kb-wrap');
-			  wrap.innerHTML='<div style="flex:1;min-height:26px;background:linear-gradient(180deg,#2c2c2e,#1e1e20);border-bottom:2px solid #000;box-shadow:0 -4px 12px rgba(0,0,0,.4) inset;"></div>'
-			    +'<div id="gb-kb-keys" style="position:relative;height:min(240px,34vh);margin:0;background:#0c0c0d;"></div>';
+			  wrap.innerHTML='<div style="flex:1;min-height:14px;background:linear-gradient(180deg,#2c2c2e,#1e1e20);border-bottom:2px solid #000;box-shadow:0 -4px 12px rgba(0,0,0,.4) inset;"></div>'
+			    +'<div id="gb-kb-keys" style="position:relative;height:min(460px,56vh);margin:0;background:#0c0c0d;"></div>';
 			  const area=document.getElementById('gb-kb-keys');
 			  const ww=area.clientWidth||Math.min(1000,window.innerWidth);
 			  const kw=ww/GB_WHITE.length;
@@ -15681,7 +15716,53 @@
 			  musicbox:{parts:[{w:'sine',g:.4,mul:2},{w:'sine',g:.18,mul:5}],        filter:{t:'lowpass',f:6000}, env:{a:.002,s:.02,r:1.2}},
 			  bell:    {parts:[{w:'sine',g:.36,mul:1},{w:'sine',g:.24,mul:2.76},{w:'sine',g:.14,mul:5.4}], filter:{t:'lowpass',f:6000}, env:{a:.003,s:.05,r:1.4}},
 			  synth:   {parts:[{w:'sawtooth',g:.36,mul:1}],                          filter:{t:'bandpass',f:0}, env:{a:.02,s:.35,r:.4}, bandMul:2},
-			  bass:    {parts:[{w:'sawtooth',g:.5,mul:.5}],                          filter:{t:'lowpass',f:500}, env:{a:.01,s:.2,r:.4}}
+			  bass:    {parts:[{w:'sawtooth',g:.5,mul:.5}],                          filter:{t:'lowpass',f:500}, env:{a:.01,s:.2,r:.4}},
+			  // ===== Instrumentos del MUNDO (todos tocables en el teclado) =====
+			  // Teclados
+			  churchorgan:{parts:[{w:'sine',g:.26,mul:.5},{w:'sine',g:.24,mul:1},{w:'sine',g:.18,mul:2},{w:'sine',g:.12,mul:4},{w:'sine',g:.08,mul:8}], filter:{t:'lowpass',f:5200}, env:{a:.09,s:.7,r:.5}},
+			  harpsichord:{parts:[{w:'sawtooth',g:.3,mul:1},{w:'square',g:.12,mul:2}], filter:{t:'highpass',f:400}, env:{a:.002,s:.06,r:.5}},
+			  celesta: {parts:[{w:'sine',g:.4,mul:2},{w:'sine',g:.16,mul:6}],        filter:{t:'lowpass',f:7000}, env:{a:.002,s:.03,r:.9}},
+			  clavinet:{parts:[{w:'square',g:.26,mul:1},{w:'sawtooth',g:.14,mul:2}], filter:{t:'bandpass',f:0}, env:{a:.003,s:.08,r:.25}, bandMul:3},
+			  accordion:{parts:[{w:'square',g:.16,mul:1},{w:'sawtooth',g:.16,mul:1,det:9},{w:'square',g:.1,mul:2}], filter:{t:'lowpass',f:3400}, env:{a:.06,s:.55,r:.18}},
+			  // Cuerdas
+			  violin:  {parts:[{w:'sawtooth',g:.3,mul:1,det:5},{w:'sawtooth',g:.12,mul:2,det:-5}], filter:{t:'lowpass',f:3800}, env:{a:.09,s:.5,r:.3}},
+			  cello:   {parts:[{w:'sawtooth',g:.34,mul:.5,det:4},{w:'sawtooth',g:.14,mul:1,det:-4}], filter:{t:'lowpass',f:1800}, env:{a:.1,s:.5,r:.35}},
+			  harp:    {parts:[{w:'triangle',g:.42,mul:1},{w:'sine',g:.14,mul:3}],   filter:{t:'lowpass',f:4200}, env:{a:.004,s:.05,r:1.3}},
+			  banjo:   {parts:[{w:'sawtooth',g:.3,mul:1},{w:'square',g:.14,mul:3}],  filter:{t:'highpass',f:600}, env:{a:.002,s:.04,r:.3}},
+			  ukulele: {parts:[{w:'triangle',g:.36,mul:2},{w:'sine',g:.12,mul:4}],   filter:{t:'lowpass',f:3600}, env:{a:.003,s:.06,r:.4}},
+			  mandolin:{parts:[{w:'sawtooth',g:.26,mul:2,det:7},{w:'sawtooth',g:.2,mul:2,det:-7}], filter:{t:'lowpass',f:4200}, env:{a:.002,s:.05,r:.35}},
+			  // Viento
+			  panflute:{parts:[{w:'sine',g:.4,mul:1},{w:'triangle',g:.14,mul:1,det:12}], filter:{t:'lowpass',f:3200}, env:{a:.09,s:.32,r:.28}},
+			  clarinet:{parts:[{w:'square',g:.3,mul:1},{w:'square',g:.1,mul:3}],     filter:{t:'lowpass',f:2600}, env:{a:.06,s:.4,r:.2}},
+			  oboe:    {parts:[{w:'sawtooth',g:.22,mul:1},{w:'square',g:.2,mul:2}],  filter:{t:'bandpass',f:0}, env:{a:.05,s:.4,r:.2}, bandMul:3},
+			  sax:     {parts:[{w:'sawtooth',g:.32,mul:1},{w:'square',g:.1,mul:1,det:8}], filter:{t:'lowpass',f:2200}, env:{a:.04,s:.42,r:.25}},
+			  harmonica:{parts:[{w:'square',g:.2,mul:1},{w:'sawtooth',g:.16,mul:1,det:11},{w:'square',g:.08,mul:2}], filter:{t:'bandpass',f:0}, env:{a:.05,s:.5,r:.15}, bandMul:2},
+			  whistle: {parts:[{w:'sine',g:.44,mul:2}],                              filter:{t:'lowpass',f:8000}, env:{a:.03,s:.3,r:.12}},
+			  ocarina: {parts:[{w:'sine',g:.42,mul:1},{w:'sine',g:.1,mul:2}],        filter:{t:'lowpass',f:3000}, env:{a:.05,s:.35,r:.2}},
+			  bagpipe: {parts:[{w:'sawtooth',g:.2,mul:1},{w:'sawtooth',g:.14,mul:.5},{w:'square',g:.1,mul:1,det:14}], filter:{t:'lowpass',f:2800}, env:{a:.08,s:.65,r:.2}},
+			  // Metales
+			  trombone:{parts:[{w:'sawtooth',g:.32,mul:.5},{w:'square',g:.1,mul:1}], filter:{t:'lowpass',f:1900}, env:{a:.06,s:.4,r:.25}},
+			  tuba:    {parts:[{w:'sawtooth',g:.4,mul:.25},{w:'sine',g:.14,mul:.5}], filter:{t:'lowpass',f:900},  env:{a:.07,s:.4,r:.3}},
+			  frenchhorn:{parts:[{w:'sawtooth',g:.24,mul:1},{w:'sine',g:.2,mul:1}],  filter:{t:'lowpass',f:1600}, env:{a:.08,s:.45,r:.3}},
+			  // Percusión afinada
+			  xylophone:{parts:[{w:'sine',g:.4,mul:1},{w:'sine',g:.22,mul:5}],       filter:{t:'lowpass',f:7000}, env:{a:.002,s:.015,r:.35}},
+			  vibraphone:{parts:[{w:'sine',g:.4,mul:1},{w:'sine',g:.16,mul:4}],      filter:{t:'lowpass',f:5200}, env:{a:.004,s:.1,r:1.6}},
+			  glockenspiel:{parts:[{w:'sine',g:.36,mul:2},{w:'sine',g:.18,mul:8}],   filter:{t:'lowpass',f:9000}, env:{a:.002,s:.02,r:1.1}},
+			  steeldrum:{parts:[{w:'sine',g:.3,mul:1},{w:'sine',g:.2,mul:2.9},{w:'sine',g:.12,mul:4.2}], filter:{t:'lowpass',f:5000}, env:{a:.003,s:.05,r:.7}},
+			  timpani: {parts:[{w:'sine',g:.5,mul:.5},{w:'triangle',g:.2,mul:.75}],  filter:{t:'lowpass',f:700},  env:{a:.004,s:.08,r:.9}},
+			  tubularbell:{parts:[{w:'sine',g:.3,mul:1},{w:'sine',g:.22,mul:2.4},{w:'sine',g:.14,mul:4.5}], filter:{t:'lowpass',f:6000}, env:{a:.004,s:.1,r:2.2}},
+			  // Mundo
+			  sitar:   {parts:[{w:'sawtooth',g:.24,mul:1},{w:'square',g:.12,mul:2,det:9},{w:'sine',g:.1,mul:4}], filter:{t:'bandpass',f:0}, env:{a:.003,s:.15,r:1.1}, bandMul:2},
+			  koto:    {parts:[{w:'triangle',g:.36,mul:1},{w:'sawtooth',g:.1,mul:2}], filter:{t:'lowpass',f:3600}, env:{a:.003,s:.05,r:.8}},
+			  shamisen:{parts:[{w:'square',g:.24,mul:1},{w:'sawtooth',g:.14,mul:2}], filter:{t:'highpass',f:500}, env:{a:.002,s:.05,r:.45}},
+			  erhu:    {parts:[{w:'sawtooth',g:.26,mul:2,det:6},{w:'sine',g:.14,mul:2}], filter:{t:'lowpass',f:3200}, env:{a:.12,s:.5,r:.3}},
+			  kalimba: {parts:[{w:'sine',g:.44,mul:1},{w:'sine',g:.16,mul:5.4}],     filter:{t:'lowpass',f:4600}, env:{a:.002,s:.02,r:.6}},
+			  didgeridoo:{parts:[{w:'sawtooth',g:.4,mul:.25},{w:'square',g:.14,mul:.5,det:10}], filter:{t:'lowpass',f:600}, env:{a:.1,s:.7,r:.4}},
+			  // Electrónicos
+			  synthlead:{parts:[{w:'square',g:.3,mul:1},{w:'sawtooth',g:.14,mul:1,det:8}], filter:{t:'lowpass',f:3400}, env:{a:.01,s:.4,r:.2}},
+			  synthpad:{parts:[{w:'sawtooth',g:.2,mul:1,det:-9},{w:'sawtooth',g:.2,mul:1,det:9},{w:'triangle',g:.12,mul:2}], filter:{t:'lowpass',f:2200}, env:{a:.3,s:.6,r:.9}},
+			  chiptune:{parts:[{w:'square',g:.34,mul:1}],                            filter:{t:'lowpass',f:5000}, env:{a:.002,s:.1,r:.08}},
+			  theremin:{parts:[{w:'sine',g:.46,mul:1},{w:'sine',g:.08,mul:1,det:6}], filter:{t:'lowpass',f:4200}, env:{a:.14,s:.55,r:.4}}
 			};
 			function gbPlayNote(freq,type){
 			  if(!_gbAudioCtx)return;
