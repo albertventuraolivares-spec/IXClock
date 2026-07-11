@@ -12720,7 +12720,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">👴 Modo Fácil</div>
-			          El botón verde fijo <b>👴 MODO FÁCIL</b> (abajo a la derecha) abre un reloj de orientación gigante: hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el interruptor <b>Modo Fácil</b> en configuración. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b> (negro, degradado o tu fondo de pantalla) y el <b>tipo de números</b> (Digital, Clásico, Fino, Retro).
+			          Se activa en configuración con el interruptor <b>👴 Modo Fácil</b>: abre un reloj de orientación gigante — hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el mismo interruptor. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b> (negro, degradado o tu fondo de pantalla) y el <b>tipo de números</b> (Digital, Clásico, Fino, Retro).
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖼️ Fondos de pantalla</div>
@@ -14123,12 +14123,6 @@
 			    + '<div id="easy-siglo" style="font-family:Verdana,sans-serif;font-size:clamp(1rem,2.6vw,1.7rem);margin-top:10px;opacity:.7;"></div>'
 			    + '<button onclick="_easyOpenSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#c9c9ce;padding:12px 18px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:700;">⚙️ Ajustes</button>';
 			  document.body.appendChild(scr);
-			  // Botón FIJO que nunca desaparece (distinto al engranaje): entra y sale
-			  const fab = document.createElement('button');
-			  fab.id = 'easy-fab';
-			  fab.onclick = ()=>setEasyMode(!_easyModeOn);
-			  fab.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;border:none;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);background:#30d158;color:#003310;';
-			  document.body.appendChild(fab);
 			}
 			function _easyOpenSettings(){
 			  // Configuración COMPLETA por encima del reloj (el panel tiene mayor
@@ -14141,14 +14135,9 @@
 			  document.body.classList.toggle('easy-mode', on);
 			  _easyBuild();
 			  const scr = document.getElementById('easy-screen');
-			  const fab = document.getElementById('easy-fab');
 			  if(scr) scr.style.display = on ? 'flex' : 'none';
-			  // El botón fijo solo sirve para ENTRAR: dentro del modo se oculta y la
-			  // salida es desde configuración (⚙️ Ajustes → interruptor Modo Fácil).
-			  if(fab){
-			    fab.textContent = '👴 MODO FÁCIL';
-			    fab.style.display = on ? 'none' : 'block';
-			  }
+			  // Se entra y se sale SOLO desde configuración (interruptor Modo Fácil);
+			  // dentro del modo, ⚙️ Ajustes abre esa configuración encima.
 			  _easyApplyPrefs();
 			  if(on){ _easyTick(); if(!_easyTimer) _easyTimer = setInterval(_easyTick, 1000); }
 			  else if(_easyTimer){ clearInterval(_easyTimer); _easyTimer = null; }
