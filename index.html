@@ -5380,9 +5380,12 @@
 			// videos/fotogramas extraídos se perderían al recargar y las tarjetas
 			// tendrían que re-extraer todo desde cero (causa del "primer toque falla").
 			try{
-			  if(localStorage.getItem('wpCacheV') !== '5'){
+			  if(localStorage.getItem('wpCacheV') !== '6'){
+			    // v6: las cachés anteriores podían tener contenido de OTRO wallpaper
+			    // (videos "relacionados" o páginas equivocadas de un proxy). Se
+			    // vacían una vez; el extractor nuevo ya no deja entrar contenido ajeno.
 			    Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpm4_|wpf_|wpf4_|wp4k_|wpres_)/.test(k)) localStorage.removeItem(k); });
-			    localStorage.setItem('wpCacheV', '5');
+			    localStorage.setItem('wpCacheV', '6');
 			  }
 			}catch(e){}
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
@@ -5420,6 +5423,28 @@
 			    if(u.indexOf('http') !== 0){ try{ u = new URL(u, baseUrl).href; }catch(e){ return null; } }
 			    return u;
 			  };
+			  // ===== ANTIVENENO: el contenido debe ser DE ESTE wallpaper =====
+			  // Causa histórica de "el nombre no corresponde con la imagen": (1) un
+			  // proxy devuelve un listado/error en vez de la página pedida, o (2) la
+			  // página correcta incluye videos de wallpapers RELACIONADOS y el ranking
+			  // de calidad elegía uno ajeno. Solución: palabras del slug de la URL.
+			  let slugTokens = [];
+			  try{
+			    const slug = new URL(baseUrl).pathname.replace(/\/$/,'').split('/').pop()
+			      .replace(/-live-wallpaper$|-animated-wallpaper$/,'');
+			    slugTokens = slug.toLowerCase().split('-').filter(t => t.length >= 4 && !/^(live|wallpaper|animated|with|from|the|and)$/.test(t));
+			  }catch(e){}
+			  const _tok = (u)=>{
+			    if(!slugTokens.length) return true;
+			    try{ u = decodeURIComponent(String(u)).toLowerCase(); }catch(e){ u = String(u).toLowerCase(); }
+			    return slugTokens.some(t => u.indexOf(t) !== -1);
+			  };
+			  // Si el texto recibido NO menciona ninguna palabra del slug, el proxy
+			  // devolvió otra página (listado, portada, error): se descarta entera.
+			  if(slugTokens.length){
+			    const low = doc.toLowerCase();
+			    if(!slugTokens.some(t => low.indexOf(t) !== -1)) return null;
+			  }
 			  // Reúne TODOS los .mp4 de la página y elige el de mayor calidad (4K primero)
 			  const cand = [];
 			  (doc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(u=>cand.push(u));
@@ -5444,6 +5469,10 @@
 			    }catch(e){ return false; }
 			  });
 			  if(!pool.length) pool = fixedAll;
+			  // Los videos que llevan el nombre de ESTE wallpaper mandan: así un video
+			  // "relacionado" de otro wallpaper (aunque diga 4K) jamás gana.
+			  const own = pool.filter(_tok);
+			  if(own.length) pool = own;
 			  const qScore = u => /2160|4k|uhd/i.test(u) ? 3 : /1440|2k(?!\d)/i.test(u) ? 2 : /1080|fhd/i.test(u) ? 1 : 0;
 			  pool.sort((a,b)=>qScore(b)-qScore(a));
 			  const video = pool[0] || null;
@@ -5463,6 +5492,10 @@
 			      }catch(e){ return false; }
 			    });
 			    if(!ipool.length) ipool = imgs;
+			    // Igual que con los videos: primero las imágenes con el nombre de ESTE
+			    // wallpaper, para no agarrar la miniatura de un "relacionado"
+			    const iOwn = ipool.filter(_tok);
+			    if(iOwn.length) ipool = iOwn;
 			    const iq = u => /wp-content\/uploads|poster|thumb|preview|cover|\/media\//i.test(u) ? 1 : 0;
 			    ipool.sort((a,b)=>iq(b)-iq(a));
 			    thumb = ipool.find(u=>!/logo|icon|favicon|avatar|sprite|emoji/i.test(u)) || null;
