@@ -1176,7 +1176,7 @@
 		<button
 			class="dock-btn dock-secondary"
 			onclick="openGarageBand()"
-			title="GarageBand"
+			title="IXBand"
 			style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);box-shadow:0 3px 14px rgba(0,0,0,.6);border:1px solid rgba(255,100,0,.3);"
 		>
 			<svg width="40" height="40" viewBox="0 0 40 40">
@@ -2485,7 +2485,7 @@
 
 					<!-- GarageBand -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎹 GarageBand</div>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎹 IXBand</div>
 						<p class="text-xs opacity-70 leading-relaxed">Mini teclado virtual con Web Audio API. Elige instrumento (piano, sintetizador, guitarra…) y toca con el ratón o el teclado. Las notas se generan en tiempo real sin archivos de audio.</p>
 					</div>
 
@@ -12804,7 +12804,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
-			          Ahí están Navegador, Juegos, GarageBand, Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
+			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ Siri</div>
@@ -12831,7 +12831,7 @@
 			          En Personalizar → <b>Relojes</b> hay dos barras: <b>Tamaño del reloj</b> (60%–220%) y <b>Altura de los números</b> — esta última estira los dígitos hacia arriba, como deja hacer iOS en la pantalla de bloqueo. Se guardan solos.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 GarageBand</div>
+			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
 			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con tiras de acordes y sintetizador. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
@@ -13017,7 +13017,7 @@
 			  const _brandMarks=[];
 			  // Cubre la marca y TODO lo que la acompaña: IXClocK, IXCLOCK+, y
 			  // direcciones completas como ixclockplus.netlify.app (palabra entera)
-			  const mask=(s)=>String(s).replace(/ixclock[a-z0-9+]*(?:\.[a-z0-9-]+)*/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
+			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
 			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
 			  const gone=async (s)=>{
@@ -13957,7 +13957,7 @@
 			   saltar entre ellas sin tener que cerrar la actual y volver a buscarla. */
 			const APP_SWITCHER_REGISTRY = [
 			  {id:'browser', name:'Navegador', icon:'🌐', fn:'openBrowser'},
-			  {id:'garageband', name:'GarageBand', icon:'🎹', fn:'openGarageBand'},
+			  {id:'garageband', name:'IXBand', icon:'🎹', fn:'openGarageBand'},
 			  {id:'maps', name:'Mapas', icon:'🗺️', fn:'openAppleMaps'},
 			  {id:'games', name:'Juegos', icon:'🎮', fn:'toggleGamesPanel'},
 			  {id:'emulator', name:'Emulador', icon:'🕹️', fn:'openEmuMenu'},
@@ -15485,7 +15485,7 @@
 			  modal.innerHTML=''
 			    +'<div id="gb-topbar">'
 			    +  '<button class="gb-tb-btn" onclick="gbView(\'songs\')" title="Mis canciones" style="font-size:17px;">⊞</button>'
-			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">GarageBand</span></div>'
+			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">IXBand</span></div>'
 			    +  '<div style="flex:1;"></div>'
 			    +  '<div style="display:flex;gap:6px;align-items:center;">'
 			    +    '<button class="gb-tb-btn" onclick="gbStop()" title="Ir al inicio">⏮</button>'
@@ -15554,7 +15554,7 @@
 			function gbBuildBrowser(){
 			  const el=document.getElementById('gb-browser');
 			  let s='<div style="font-size:19px;font-weight:800;margin-bottom:4px;">Explorador de sonidos</div>'
-			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Como en GarageBand: elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
+			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:900px;">';
 			  GB_BROWSER_CARDS.forEach(function(c){
 			    s+='<div class="gb-card" onclick="gbOpenInstrument(\''+c.id+'\')"><span class="i">'+c.icon+'</span><span class="n">'+c.n+'</span><span class="d">'+c.d+'</span></div>';
