@@ -9543,6 +9543,12 @@
 			  if(!sel) return;
 			  sel.innerHTML = '<option value="">🌍 Elige un país…</option>' +
 			    list.map(c=>`<option value="${escapeHtml(c.code)}">${c.flag||'🌍'} ${escapeHtml(c.name)}</option>`).join('');
+			  // La región elegida al configurar la app (pantalla de Idioma y Región)
+			  // deja la TV ya apuntando a tu país
+			  try{
+			    const reg = localStorage.getItem('user_region');
+			    if(reg && !sel.value && [...sel.options].some(o=>o.value===reg)) sel.value = reg;
+			  }catch(e){}
 			}
 
 			async function searchTVChannels(){
@@ -12769,7 +12775,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
-			          La app Traductor prueba 6 servicios en cadena y te dice cuál tradujo. Las <b>banderas</b> de Personalizar traducen toda la interfaz: verás el progreso (X/Y) y siempre termina en ✅ Listo — si un servicio falla, otro lo cubre.
+			          La primera vez, ANTES de entrar, la app detecta tu idioma y región por la ubicación del aparato y te los pregunta para confirmar (la región deja la TV apuntando a tu país). La app Traductor prueba 6 servicios en cadena y te dice cuál tradujo. Las <b>banderas</b> de Personalizar traducen toda la interfaz cuando quieras cambiarla: verás el progreso (X/Y) y siempre termina en ✅ Listo — si un servicio falla, otro lo cubre.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">📺 TV en vivo</div>
@@ -12788,6 +12794,84 @@
 			  const modal=document.getElementById('login-help-modal');
 			  if(modal) modal.style.display='none';
 			}
+
+			/* ===== IDIOMA Y REGIÓN — primera pantalla, ANTES de iniciar sesión =====
+			   Como al configurar un iPad: la app detecta tu idioma y región por la
+			   ubicación del aparato (idioma del sistema + zona horaria, sin pedir
+			   permisos), los deja puestos, y AUN ASÍ te los pregunta para confirmar. */
+			const _LR_LANGS=[['es','🇪🇸','Español'],['en','🇺🇸','English'],['fr','🇫🇷','Français'],['pt','🇵🇹','Português'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano'],['zh','🇨🇳','中文'],['ja','🇯🇵','日本語'],['ko','🇰🇷','한국어'],['ar','🇸🇦','العربية'],['ru','🇷🇺','Русский'],['hi','🇮🇳','हिन्दी']];
+			const _LR_REGIONS=[['DO','🇩🇴','República Dominicana'],['MX','🇲🇽','México'],['CO','🇨🇴','Colombia'],['AR','🇦🇷','Argentina'],['ES','🇪🇸','España'],['US','🇺🇸','Estados Unidos'],['PE','🇵🇪','Perú'],['CL','🇨🇱','Chile'],['VE','🇻🇪','Venezuela'],['EC','🇪🇨','Ecuador'],['GT','🇬🇹','Guatemala'],['CU','🇨🇺','Cuba'],['BO','🇧🇴','Bolivia'],['HN','🇭🇳','Honduras'],['PY','🇵🇾','Paraguay'],['SV','🇸🇻','El Salvador'],['NI','🇳🇮','Nicaragua'],['CR','🇨🇷','Costa Rica'],['PA','🇵🇦','Panamá'],['UY','🇺🇾','Uruguay'],['PR','🇵🇷','Puerto Rico'],['BR','🇧🇷','Brasil'],['CA','🇨🇦','Canadá'],['GB','🇬🇧','Reino Unido'],['FR','🇫🇷','Francia'],['DE','🇩🇪','Alemania'],['IT','🇮🇹','Italia'],['PT','🇵🇹','Portugal'],['JP','🇯🇵','Japón'],['KR','🇰🇷','Corea del Sur'],['CN','🇨🇳','China'],['IN','🇮🇳','India'],['RU','🇷🇺','Rusia'],['SA','🇸🇦','Arabia Saudita'],['AU','🇦🇺','Australia'],['NL','🇳🇱','Países Bajos'],['PH','🇵🇭','Filipinas'],['MA','🇲🇦','Marruecos']];
+			const _LR_TZ={'Santo_Domingo':'DO','Mexico_City':'MX','Bogota':'CO','Buenos_Aires':'AR','Madrid':'ES','New_York':'US','Chicago':'US','Denver':'US','Los_Angeles':'US','Phoenix':'US','Lima':'PE','Santiago':'CL','Caracas':'VE','Guayaquil':'EC','Guatemala':'GT','Havana':'CU','La_Paz':'BO','Tegucigalpa':'HN','Asuncion':'PY','El_Salvador':'SV','Managua':'NI','Costa_Rica':'CR','Panama':'PA','Montevideo':'UY','Puerto_Rico':'PR','Sao_Paulo':'BR','Toronto':'CA','Vancouver':'CA','London':'GB','Paris':'FR','Berlin':'DE','Rome':'IT','Lisbon':'PT','Tokyo':'JP','Seoul':'KR','Shanghai':'CN','Kolkata':'IN','Moscow':'RU','Riyadh':'SA','Sydney':'AU','Amsterdam':'NL','Manila':'PH','Casablanca':'MA'};
+			function _lrDetect(){
+			  let lang='es', region='';
+			  try{
+			    const nl=navigator.language||'es';
+			    const l2=nl.slice(0,2).toLowerCase();
+			    if(_LR_LANGS.some(x=>x[0]===l2)) lang=l2;
+			    try{ region=(new Intl.Locale(nl).region||'').toUpperCase(); }catch(e){}
+			  }catch(e){}
+			  if(!region || !_LR_REGIONS.some(r=>r[0]===region)){
+			    try{
+			      const tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'').split('/').pop();
+			      if(_LR_TZ[tz]) region=_LR_TZ[tz];
+			    }catch(e){}
+			  }
+			  if(!_LR_REGIONS.some(r=>r[0]===region)) region='';
+			  return { lang, region };
+			}
+			let _lrPick=null;
+			function _lrRender(){
+			  const el=document.getElementById('langregion-overlay');
+			  if(!el||!_lrPick) return;
+			  const det=_lrPick;
+			  const langName=(_LR_LANGS.find(x=>x[0]===det.detLang)||[])[2]||det.detLang;
+			  const regName=(_LR_REGIONS.find(x=>x[0]===det.detRegion)||[])[2]||'';
+			  el.innerHTML='<div style="width:100%;max-width:420px;max-height:92vh;overflow-y:auto;padding:2rem 1.6rem;border-radius:2rem;background:rgba(30,30,40,.92);border:1px solid rgba(255,255,255,.18);box-shadow:0 32px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:14px;">'
+			    +'<div style="text-align:center;"><div style="font-size:2rem;">🌍</div>'
+			    +'<div style="font-size:1.25rem;font-weight:800;color:#fff;">Idioma y Región</div>'
+			    +'<div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:4px;line-height:1.5;">Detectado por tu ubicación: <b style="color:#0a84ff;">'+langName+(regName?' · '+regName:'')+'</b><br>Confírmalo o cámbialo — luego puedes cambiarlo en Personalizar.</div></div>'
+			    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
+			    +_LR_LANGS.map(x=>'<button onclick="_lrPick.lang=\''+x[0]+'\';_lrPaint()" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
+			    +'</div>'
+			    +'<div><div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:5px;font-weight:700;">REGIÓN</div>'
+			    +'<select id="lr-region" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:10px 12px;font-size:13px;">'
+			    +'<option value="">🌐 Otra / no decir</option>'
+			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+r[2]+'</option>').join('')
+			    +'</select></div>'
+			    +'<button onclick="_lrConfirm()" style="width:100%;padding:.9rem;border-radius:.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:800;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(10,132,255,.4);">Continuar</button>'
+			    +'</div>';
+			}
+			function _lrPaint(){
+			  document.querySelectorAll('[data-lr-lang]').forEach(b=>{
+			    const on=b.dataset.lrLang===_lrPick.lang;
+			    b.style.borderColor=on?'#0a84ff':'rgba(255,255,255,.14)';
+			    b.style.background=on?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)';
+			  });
+			}
+			function _lrConfirm(){
+			  const sel=document.getElementById('lr-region');
+			  const region=sel?sel.value:'';
+			  try{
+			    localStorage.setItem('lang_region_done','1');
+			    localStorage.setItem('user_region',region);
+			    localStorage.setItem('ui_lang',_lrPick.lang);
+			  }catch(e){}
+			  const el=document.getElementById('langregion-overlay');
+			  if(el) el.remove();
+			  if(_lrPick.lang!=='es'){
+			    try{ setUILang(_lrPick.lang, document.getElementById('ui-lang-'+_lrPick.lang)); }catch(e){}
+			  }
+			}
+			(function initLangRegion(){
+			  try{ if(localStorage.getItem('lang_region_done')==='1') return; }catch(e){}
+			  const det=_lrDetect();
+			  _lrPick={ lang:det.lang, region:det.region, detLang:det.lang, detRegion:det.region };
+			  const el=document.createElement('div');
+			  el.id='langregion-overlay';
+			  el.style.cssText='position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);padding:14px;';
+			  document.body.appendChild(el);
+			  _lrRender();
+			})();
 
 			/* ===== RADIO PANEL TOGGLE ===== */
 			let _radioPanelOpen = false;
