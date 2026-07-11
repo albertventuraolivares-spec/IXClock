@@ -12694,10 +12694,10 @@
 			})();
 
 			// ── Batch-translate an array of unique strings via Pollinations AI ──
-			async function _uiBatch(strings, lang){
+			async function _uiBatch(strings, lang, onProgress){
 			  if(!strings.length) return {};
 			  const results={};
-			  // Pull from cache
+			  // Primero la caché (traducciones ya hechas antes)
 			  const todo=strings.filter(s=>{
 			    const c=_uiTransCache[lang+'\x00'+s];
 			    if(c){results[s]=c;return false;}
@@ -12705,15 +12705,35 @@
 			  });
 			  if(!todo.length) return results;
 
+			  // fetch con LÍMITE DE TIEMPO: sin esto, si un servicio se colgaba la
+			  // interfaz se quedaba "Traduciendo…" para siempre (bug reportado).
+			  const fj=async (url,opts,ms)=>{
+			    const ctrl=new AbortController();
+			    const timer=setTimeout(()=>ctrl.abort(),ms||15000);
+			    try{ return await fetch(url,Object.assign({},opts,{signal:ctrl.signal})); }
+			    finally{ clearTimeout(timer); }
+			  };
+			  // Respaldo por cadena: Google gtx (rápido y fiable)
+			  const gone=async (s)=>{
+			    try{
+			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(s),{},6000);
+			      const d=await r.json();
+			      const t=(d?.[0]||[]).map(seg=>seg[0]).join('').trim();
+			      return t||null;
+			    }catch(e){ return null; }
+			  };
+
 			  const LANG_NAME={en:'English',fr:'French',pt:'Portuguese',de:'German',it:'Italian',
 			    zh:'Chinese (Simplified)',ja:'Japanese',ko:'Korean',ar:'Arabic',ru:'Russian',hi:'Hindi'};
 			  const targetName=LANG_NAME[lang]||lang;
 			  const SIZE=25;
+			  let doneCount=0;
 
 			  for(let i=0;i<todo.length;i+=SIZE){
 			    const chunk=todo.slice(i,i+SIZE);
+			    let chunkOk=false;
 			    try{
-			      const res=await fetch('https://api.pollinations.ai/v1/chat/completions',{
+			      const res=await fj('https://api.pollinations.ai/v1/chat/completions',{
 			        method:'POST',headers:{'Content-Type':'application/json'},
 			        body:JSON.stringify({
 			          model:'openai-large',
@@ -12722,11 +12742,11 @@
 			            {role:'user',content:JSON.stringify(chunk)}
 			          ]
 			        })
-			      });
+			      },15000);
 			      if(!res.ok) throw new Error('HTTP '+res.status);
 			      const data=await res.json();
 			      let txt=(data.choices?.[0]?.message?.content||'').trim();
-			      txt=txt.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+			      txt=txt.replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'').trim();
 			      const arr=JSON.parse(txt);
 			      if(Array.isArray(arr)&&arr.length===chunk.length){
 			        chunk.forEach((orig,idx)=>{
@@ -12734,8 +12754,20 @@
 			          if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
 			          else results[orig]=orig;
 			        });
+			        chunkOk=true;
 			      }
-			    }catch(e){chunk.forEach(s=>{results[s]=s;});}
+			    }catch(e){}
+			    if(!chunkOk){
+			      // Respaldo: Google traduce cada cadena del bloque en paralelo
+			      const ts=await Promise.all(chunk.map(gone));
+			      chunk.forEach((orig,idx)=>{
+			        const t=ts[idx];
+			        if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
+			        else results[orig]=orig;
+			      });
+			    }
+			    doneCount+=chunk.length;
+			    if(onProgress){ try{ onProgress(Math.min(doneCount,todo.length),todo.length); }catch(e){} }
 			  }
 			  return results;
 			}
@@ -12795,8 +12827,10 @@
 			    const orig=_uiOriginals.get(n)||n.textContent;
 			    if(_uiOK(orig.trim()))strSet.add(orig.trim());
 			  });
-			  console.log('Unique strings:', [...strSet]); // <-- DEBUG
-			  const map=await _uiBatch([...strSet],lang);
+			  const map=await _uiBatch([...strSet],lang,function(done,total){
+			    const st=document.getElementById('ui-lang-status');
+			    if(st && total>5) st.textContent='⏳ Traduciendo… '+done+'/'+total;
+			  });
 			  nodes.forEach(n=>{
 			    const raw=_uiOriginals.get(n)||n.textContent;
 			    const trimmed=raw.trim();
@@ -12820,10 +12854,13 @@
 			  if(st){st.textContent=lang==='es'?'':'⏳ Traduciendo…';st.style.color='#ff9500';}
 			  if(_uiObserver){_uiObserver.disconnect();_uiObserver=null;}
 			  const all=[];_uiRoots().forEach(r=>all.push(..._uiNodes(r)));
-			  await _uiApply(all,lang);
+			  let uiOk=true;
+			  try{ await _uiApply(all,lang); }
+			  catch(e){ uiOk=false; console.error('Traducción de interfaz falló:',e); }
 			  if(st){
-			    st.textContent=lang==='es'?'':'✅ Listo';st.style.color='#30d158';
-			    if(lang!=='es')setTimeout(()=>{if(st)st.textContent='';},2500);
+			    st.textContent=lang==='es'?'':(uiOk?'✅ Listo':'⚠️ Quedó a medias — toca la bandera otra vez');
+			    st.style.color=uiOk?'#30d158':'#ff9f0a';
+			    if(lang!=='es'&&uiOk)setTimeout(()=>{if(st)st.textContent='';},2500);
 			  }
 			  if(lang!=='es'){
 			    let _t=null;const pending=new Set();
@@ -15009,7 +15046,7 @@
 			  modal.id='garageband-modal';
 			  modal.innerHTML=''
 			    +'<div id="gb-topbar">'
-			    +  '<button class="gb-tb-btn" onclick="gbView(\'browser\')" title="Explorador de sonidos" style="font-size:17px;">⊞</button>'
+			    +  '<button class="gb-tb-btn" onclick="gbView(\'songs\')" title="Mis canciones" style="font-size:17px;">⊞</button>'
 			    +  '<div style="display:flex;align-items:center;gap:7px;margin-right:4px;"><span style="font-size:1.15rem;">🎸</span><span style="font-weight:800;font-size:13px;letter-spacing:.01em;">GarageBand</span></div>'
 			    +  '<div style="flex:1;"></div>'
 			    +  '<div style="display:flex;gap:6px;align-items:center;">'
@@ -15036,6 +15073,7 @@
 			    +  '</div>'
 			    +'</div>'
 			    +'<canvas id="gb-waveform" width="900" height="30" style="width:100%;height:30px;background:#0d0d0d;flex-shrink:0;border-bottom:1px solid #000;"></canvas>'
+			    +'<div id="gb-songs" style="flex:1;overflow-y:auto;padding:22px 28px;display:none;"></div>'
 			    +'<div id="gb-browser"></div>'
 			    +'<div id="gb-instrument" style="flex:1;overflow-y:auto;display:none;flex-direction:column;">'
 			    +  '<div id="gb-inst-bar" style="display:flex;gap:6px;align-items:center;padding:10px 14px;overflow-x:auto;flex-shrink:0;background:#1c1c1e;border-bottom:1px solid #000;"></div>'
@@ -15058,8 +15096,9 @@
 			  }
 			  if(_gbAudioCtx && _gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
 			  gbBuildBrowser();
+			  gbBuildSongs();
 			  gbBuildLiveLoops(document.getElementById('gb-loops'));
-			  gbView('browser');
+			  gbView('songs');
 			  gbDrawWaveform();
 			  gbStartLCD();
 			}
@@ -15403,13 +15442,105 @@
 			// macOS: DAW multipista — vista de PISTAS con regiones en línea de tiempo.
 			// (watchOS/tvOS no tienen GarageBand.) Esta app replica los tres.
 			function gbView(v){
-			  const map={browser:'gb-browser',inst:'gb-instrument',loops:'gb-loops',tracks:'gb-tracks'};
+			  const map={songs:'gb-songs',browser:'gb-browser',inst:'gb-instrument',loops:'gb-loops',tracks:'gb-tracks'};
 			  Object.keys(map).forEach(function(k){
 			    const el=document.getElementById(map[k]); if(!el) return;
-			    el.style.display = (k===v ? (k==='browser'?'block':(k==='inst'?'flex':'block')) : 'none');
+			    el.style.display = (k===v ? (k==='inst'?'flex':'block') : 'none');
 			  });
 			  document.querySelectorAll('.gb-view-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
 			  if(v==='tracks') gbRenderTracks();
+			}
+			// ===== "Mis canciones" — la pantalla de inicio del GarageBand real =====
+			// Conmutador LIVE LOOPS | PISTAS y cuadrícula de plantillas de género,
+			// como en la app de Apple. Cada género carga Live Loops con sus patrones.
+			function _gbP(steps,val){ return steps.map(function(s){ return [s,val]; }); }
+			const GB_GENRES=[
+			  {id:'edm', name:'EDM', icon:'🎛️', bpm:128, rows:[
+			    {name:'Batería',inst:'drum',cells:[_gbP([0,4,8,12],'kick'),_gbP([0,4,8,12],'kick').concat(_gbP([2,6,10,14],'hihat')),_gbP([0,4,8,12],'kick').concat(_gbP([2,6,10,14],'openhat'),_gbP([4,12],'clap')),_gbP([0,2,4,6,8,10,12,14],'kick')]},
+			    {name:'Bajo',inst:'bass',cells:[_gbP([0,8],110),_gbP([0,2,4,6,8,10,12,14],110),[[0,110],[2,110],[4,138.59],[6,138.59],[8,164.81],[10,164.81],[12,146.83],[14,146.83]],_gbP([0,4,8,12],55)]},
+			    {name:'Synth',inst:'synth',cells:[[[0,[220,277.18,329.63]]],[[0,[220,277.18,329.63]],[8,[196,246.94,293.66]]],[[0,[220,277.18,329.63]],[4,[220,277.18,329.63]],[8,[246.94,311.13,369.99]],[12,[196,246.94,293.66]]],[[2,[440,554.37]],[6,[440,554.37]],[10,[493.88,622.25]],[14,[392,493.88]]]]},
+			    {name:'Arpegio',inst:'bell',cells:[[[0,440],[4,554.37],[8,659.25],[12,554.37]],[[0,440],[2,554.37],[4,659.25],[6,880],[8,659.25],[10,554.37],[12,440],[14,554.37]],[[0,880],[4,659.25],[8,554.37],[12,440]],[[0,440],[8,880]]]}
+			  ]},
+			  {id:'hiphop', name:'Hip Hop', icon:'📻', bpm:90, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[4,'snare'],[7,'kick'],[8,'kick'],[12,'snare']],[[0,'kick'],[4,'snare'],[7,'kick'],[8,'kick'],[12,'snare'],[14,'snare']].concat(_gbP([2,6,10,14],'hihat')),_gbP([0,7,8],'kick').concat(_gbP([4,12],'snare'),_gbP([0,2,4,6,8,10,12,14],'hihat')),[[0,'kick'],[4,'snare'],[10,'kick'],[12,'snare'],[13,'snare'],[14,'snare']]]},
+			    {name:'Bajo',inst:'bass',cells:[[[0,82.41],[8,82.41]],[[0,82.41],[7,98],[8,82.41],[14,73.42]],[[0,82.41],[3,82.41],[7,98],[8,82.41],[11,110],[14,73.42]],[[0,55],[8,61.74]]]},
+			    {name:'E-Piano',inst:'epiano',cells:[[[0,[164.81,196,246.94]]],[[0,[164.81,196,246.94]],[8,[146.83,174.61,220]]],[[0,[164.81,196,246.94]],[6,[164.81,196,246.94]],[8,[146.83,174.61,220]],[14,[130.81,164.81,196]]],[[4,[196,246.94,293.66]],[12,[174.61,220,261.63]]]]},
+			    {name:'Melodía',inst:'flute',cells:[[[0,329.63],[6,392],[8,329.63]],[[2,493.88],[6,440],[10,392],[14,329.63]],[[0,659.25],[3,587.33],[7,493.88],[11,440]],[[8,392]]]}
+			  ]},
+			  {id:'dubstep', name:'Dubstep', icon:'☢️', bpm:140, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[8,'snare']],[[0,'kick'],[8,'snare']].concat(_gbP([2,6,10,14],'hihat')),[[0,'kick'],[6,'kick'],[8,'snare'],[13,'kick']].concat(_gbP([2,10,14],'openhat')),[[0,'kick'],[8,'snare'],[12,'snare'],[13,'snare'],[14,'snare'],[15,'snare']]]},
+			    {name:'Wobble',inst:'synth',cells:[_gbP([0,2,4,6,8,10,12,14],55),[[0,55],[3,55],[6,73.42],[8,55],[11,55],[14,82.41]],_gbP([0,1,2,3,8,9,10,11],61.74),[[0,55],[8,41.2]]]},
+			    {name:'Bajo',inst:'bass',cells:[[[0,55],[8,55]],[[0,55],[6,61.74],[8,55],[14,49]],[[0,55],[4,55],[8,61.74],[12,49]],[[0,27.5]]]},
+			    {name:'FX',inst:'bell',cells:[[[0,880]],[[4,1174.66],[12,987.77]],[[0,880],[6,1046.5],[10,1318.5]],[[8,659.25]]]}
+			  ]},
+			  {id:'rnb', name:'RnB', icon:'🎤', bpm:72, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[8,'snare']],[[0,'kick'],[8,'snare'],[10,'kick']].concat(_gbP([2,6,10,14],'hihat')),[[0,'kick'],[4,'kick'],[8,'snare'],[11,'kick'],[14,'snare']].concat(_gbP([0,2,4,6,8,10,12,14],'hihat')),[[0,'kick'],[8,'snare'],[14,'clap']]]},
+			    {name:'Bajo',inst:'bass',cells:[[[0,98],[8,110]],[[0,98],[6,98],[8,110],[14,123.47]],[[0,98],[3,110],[8,123.47],[11,110],[14,98]],[[0,49]]]},
+			    {name:'E-Piano',inst:'epiano',cells:[[[0,[196,246.94,293.66,349.23]]],[[0,[196,246.94,293.66,349.23]],[8,[174.61,220,261.63,329.63]]],[[0,[196,246.94,293.66]],[4,[220,261.63,329.63]],[8,[174.61,220,261.63]],[12,[196,246.94,293.66]]],[[8,[246.94,293.66,369.99]]]]},
+			    {name:'Melodía',inst:'musicbox',cells:[[[2,587.33],[10,523.25]],[[0,493.88],[4,587.33],[8,523.25],[12,440]],[[2,783.99],[5,698.46],[9,587.33],[13,523.25]],[[8,659.25]]]}
+			  ]},
+			  {id:'house', name:'House', icon:'🪩', bpm:124, rows:[
+			    {name:'Batería',inst:'drum',cells:[_gbP([0,4,8,12],'kick'),_gbP([0,4,8,12],'kick').concat(_gbP([2,6,10,14],'openhat')),_gbP([0,4,8,12],'kick').concat(_gbP([2,6,10,14],'openhat'),_gbP([4,12],'clap')),_gbP([0,4,8,12],'kick').concat(_gbP([1,3,5,7,9,11,13,15],'hihat'))]},
+			    {name:'Bajo',inst:'bass',cells:[_gbP([2,6,10,14],110),[[2,110],[6,110],[10,130.81],[14,98]],_gbP([0,2,4,6,8,10,12,14],110),[[2,55],[10,65.41]]]},
+			    {name:'Piano',inst:'piano',cells:[[[0,[261.63,329.63,392]]],[[2,[261.63,329.63,392]],[10,[293.66,349.23,440]]],[[0,[261.63,329.63,392]],[4,[261.63,329.63,392]],[8,[293.66,349.23,440]],[12,[246.94,293.66,392]]],[[6,[329.63,392,493.88]],[14,[261.63,329.63,392]]]]},
+			    {name:'Melodía',inst:'organ',cells:[[[0,523.25],[8,659.25]],[[0,523.25],[4,587.33],[8,659.25],[12,587.33]],[[2,783.99],[6,659.25],[10,587.33],[14,523.25]],[[0,392]]]}
+			  ]},
+			  {id:'chill', name:'Chill', icon:'🎧', bpm:80, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[8,'snare']],[[0,'kick'],[8,'snare']].concat(_gbP([4,12],'hihat')),[[0,'kick'],[7,'kick'],[8,'snare']].concat(_gbP([2,6,10,14],'hihat')),[[0,'kick']]]},
+			    {name:'Bajo',inst:'bass',cells:[[[0,87.31],[8,98]],[[0,87.31],[6,87.31],[8,98],[14,110]],[[0,87.31],[4,98],[8,110],[12,98]],[[0,43.65]]]},
+			    {name:'Cuerdas',inst:'strings',cells:[[[0,[174.61,220,261.63]]],[[0,[174.61,220,261.63]],[8,[196,246.94,293.66]]],[[0,[174.61,220,261.63]],[8,[146.83,174.61,220]]],[[0,[220,261.63,329.63]]]]},
+			    {name:'Caja música',inst:'musicbox',cells:[[[4,523.25],[12,587.33]],[[0,440],[6,523.25],[10,587.33]],[[2,659.25],[7,587.33],[11,523.25],[14,440]],[[8,349.23]]]}
+			  ]},
+			  {id:'rock', name:'Rock', icon:'🎸', bpm:120, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare']],[[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare']].concat(_gbP([0,2,4,6,8,10,12,14],'hihat')),[[0,'kick'],[2,'kick'],[4,'snare'],[8,'kick'],[10,'kick'],[12,'snare']].concat(_gbP([0,2,4,6,8,10,12,14],'hihat')),[[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare'],[14,'crash']]]},
+			    {name:'Guitarra',inst:'guitar',cells:[[[0,[82.41,123.47,164.81]]],[[0,[82.41,123.47,164.81]],[8,[98,146.83,196]]],[[0,[82.41,123.47,164.81]],[4,[82.41,123.47,164.81]],[8,[98,146.83,196]],[12,[110,164.81,220]]],_gbP([0,2,4,6,8,10,12,14],[82.41,123.47])]},
+			    {name:'Bajo',inst:'bass',cells:[_gbP([0,4,8,12],82.41),_gbP([0,2,4,6,8,10,12,14],82.41),[[0,82.41],[2,82.41],[4,82.41],[6,82.41],[8,98],[10,98],[12,110],[14,110]],[[0,41.2],[8,49]]]},
+			    {name:'Melodía',inst:'organ',cells:[[[0,329.63],[8,392]],[[0,329.63],[4,392],[8,440],[12,392]],[[2,493.88],[6,440],[10,392],[14,329.63]],[[0,246.94]]]}
+			  ]},
+			  {id:'electrofunk', name:'Electro Funk', icon:'🎺', bpm:108, rows:[
+			    {name:'Batería',inst:'drum',cells:[[[0,'kick'],[4,'clap'],[8,'kick'],[12,'clap']],[[0,'kick'],[4,'clap'],[7,'kick'],[10,'kick'],[12,'clap']].concat(_gbP([2,6,10,14],'hihat')),[[0,'kick'],[4,'clap'],[8,'kick'],[12,'clap']].concat(_gbP([1,3,5,7,9,11,13,15],'hihat'),_gbP([6,14],'cowbell')),[[0,'kick'],[12,'clap'],[14,'cowbell']]]},
+			    {name:'Bajo funk',inst:'bass',cells:[[[0,110],[3,110],[6,130.81],[10,110],[13,98]],[[0,110],[2,110],[3,130.81],[6,110],[8,110],[10,146.83],[13,130.81],[15,110]],_gbP([0,3,6,10,13],82.41),[[0,55],[10,65.41]]]},
+			    {name:'Synth',inst:'synth',cells:[[[2,[220,277.18]],[10,[246.94,311.13]]],[[2,[220,277.18]],[6,[220,277.18]],[10,[246.94,311.13]],[14,[196,246.94]]],[[0,[220,277.18,329.63]],[8,[196,246.94,293.66]]],[[6,[440,554.37]]]]},
+			    {name:'Metales',inst:'brass',cells:[[[0,329.63],[10,392]],[[0,329.63],[3,329.63],[10,392],[13,440]],[[2,523.25],[6,493.88],[10,440],[14,392]],[[8,261.63]]]}
+			  ]}
+			];
+			function gbBuildSongs(){
+			  const el=document.getElementById('gb-songs');
+			  let s='<div style="display:flex;align-items:center;margin-bottom:18px;">'
+			    +'<div style="color:#0a84ff;font-size:15px;font-weight:600;">‹ Mis canciones</div>'
+			    +'<div style="flex:1;display:flex;justify-content:center;margin-right:110px;">'
+			    +  '<div style="display:flex;background:#1c1c1e;border:1px solid #333;border-radius:9px;overflow:hidden;">'
+			    +    '<button id="gb-seg-ll" onclick="gbBuildSongs()" style="background:#48484c;border:none;color:#fff;padding:7px 22px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">LIVE LOOPS</button>'
+			    +    '<button onclick="gbView(\'tracks\')" style="background:transparent;border:none;color:#d8d8dc;padding:7px 22px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">PISTAS</button>'
+			    +  '</div>'
+			    +'</div></div>';
+			  s+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:30px 22px;max-width:980px;">';
+			  s+='<div onclick="gbOpenTemplate(\'new\')" style="cursor:pointer;text-align:center;">'
+			    +'<div style="width:104px;height:104px;margin:0 auto;border:3px dashed #8e8e93;border-radius:24px;"></div>'
+			    +'<div style="font-size:13px;color:#d8d8dc;margin-top:10px;">Nuevo</div></div>';
+			  s+='<div onclick="gbOpenTemplate(\'sounds\')" style="cursor:pointer;text-align:center;">'
+			    +'<div style="width:104px;height:104px;margin:0 auto;border-radius:24px;background:linear-gradient(135deg,#ff9a56,#ff5e7d 45%,#8fd3f4);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 6px 16px rgba(0,0,0,.4);">🎹</div>'
+			    +'<div style="font-size:13px;color:#d8d8dc;margin-top:10px;">Biblioteca de sonidos</div></div>';
+			  GB_GENRES.forEach(function(g){
+			    s+='<div onclick="gbLoadGenre(\''+g.id+'\')" style="cursor:pointer;text-align:center;">'
+			      +'<div style="width:104px;height:104px;margin:0 auto;border-radius:24px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:46px;box-shadow:0 6px 16px rgba(0,0,0,.4);filter:saturate(.55);">'+g.icon+'</div>'
+			      +'<div style="font-size:13px;color:#d8d8dc;margin-top:10px;">'+g.name+'</div></div>';
+			  });
+			  s+='</div>';
+			  el.innerHTML=s;
+			}
+			function gbOpenTemplate(t){ gbView('browser'); }
+			function gbLoadGenre(id){
+			  const g=GB_GENRES.find(function(x){ return x.id===id; });
+			  if(!g) return;
+			  gbLLStopAll();
+			  GB_LL_ROWS=g.rows;
+			  _gbBpm=g.bpm;
+			  const te=document.getElementById('gb-lcd-tempo'); if(te) te.textContent=g.bpm;
+			  gbBuildLiveLoops(document.getElementById('gb-loops'));
+			  gbView('loops');
+			  const st=document.getElementById('gb-status');
+			  if(st) st.textContent='🔁 '+g.name+' · '+g.bpm+' BPM — toca celdas o dispara una columna con ▼';
 			}
 			// --- LCD de compás + tempo + metrónomo (la pantallita gris de GarageBand) ---
 			let _gbBeatStart=null,_gbMetroOn=false,_gbLastBeat=-1,_gbLCDTimer=null;
@@ -15448,7 +15579,17 @@
 			// --- LIVE LOOPS (estilo iPadOS): celdas de color por fila + columnas ---
 			const GB_LL_COLORS=['#30d158','#0a84ff','#ffd60a','#ff375f'];
 			const GB_LL_ICONS=['🥁','🎸','🎹','🎶'];
-			const GB_LL_ROWS=[
+			function _gbLLIcon(row,r){
+			  if(row.inst==='drum') return '🥁';
+			  if(row.inst==='bass') return '🎸';
+			  if(row.inst==='guitar') return '🎸';
+			  if(row.inst==='brass') return '🎺';
+			  if(row.inst==='strings') return '🎻';
+			  if(row.inst==='synth') return '🎛️';
+			  if(row.inst==='epiano'||row.inst==='piano'||row.inst==='organ') return '🎹';
+			  return GB_LL_ICONS[r%4];
+			}
+			let GB_LL_ROWS=[
 			  { name:'Batería', inst:'drum', cells:[
 			    [[0,'kick'],[4,'kick'],[8,'kick'],[12,'kick']],
 			    [[0,'kick'],[4,'snare'],[8,'kick'],[12,'snare']],
@@ -15478,7 +15619,7 @@
 			  for(let c=0;c<4;c++) s+='<button onclick="gbLLColumn('+c+')" style="background:#2c2c2e;border:1px solid #48484a;border-radius:8px;color:#d8d8dc;padding:5px;cursor:pointer;font-size:11px;font-weight:700;">▼ Col '+(c+1)+'</button>';
 			  GB_LL_ROWS.forEach(function(row,r){
 			    s+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">'
-			      +'<span style="width:34px;height:34px;border-radius:9px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+GB_LL_ICONS[r]+'</span>'+row.name+'</div>';
+			      +'<span style="width:34px;height:34px;border-radius:9px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+_gbLLIcon(row,r)+'</span>'+row.name+'</div>';
 			    row.cells.forEach(function(_,c){
 			      s+='<button class="gb-ll-cell" id="gb-ll-'+r+'-'+c+'" onclick="gbLLToggle('+r+','+c+')" style="background:'+GB_LL_COLORS[r]+'26;color:'+GB_LL_COLORS[r]+';">▶</button>';
 			    });
