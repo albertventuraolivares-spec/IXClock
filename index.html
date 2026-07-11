@@ -2387,6 +2387,9 @@
 					class="custom-scrollbar pr-1 flex-col hidden space-y-3"
 				>
 
+					<!-- Novedades: qué se agregó/quitó/arregló y cuándo (se rellena por JS) -->
+					<div class="p-3.5 glass rounded-2xl" id="novedades-card" style="border:1px solid rgba(48,209,88,.3);"></div>
+
 					<!-- Intro -->
 					<div class="p-3.5 glass rounded-2xl">
 						<div class="text-[10px] font-bold opacity-50 tracking-widest mb-2">IXClocK -- Universal OS Dashboard</div>
@@ -12798,6 +12801,10 @@
 			        <button onclick="closeLoginHelp()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
 			      </div>
 			      <div style="overflow-y:auto;padding:16px 20px 20px;font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;">
+			        <div style="margin-bottom:16px;border:1px solid rgba(48,209,88,.3);border-radius:12px;padding:10px 12px;">
+			          <div style="font-weight:800;color:#30d158;margin-bottom:4px;">🆕 Novedades</div>
+			          Última actualización: <b style="color:#fff;">${typeof IX_CHANGELOG !== 'undefined' ? IX_CHANGELOG[0].fecha : ''}</b>. La lista completa de lo que se agregó, quitó o arregló está en <b>Personalizar → Manual</b>, arriba del todo.
+			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">⚙️ Botón de configuración</div>
 			          El círculo con el engranaje, arriba a la izquierda, abre <b>Personalizar</b>: fondos de pantalla, estilos de reloj, cuenta, e información de la app. Se ve desde cualquier app que tengas abierta, no hace falta cerrarla primero.
@@ -14059,6 +14066,44 @@
 			loadNotes();
 			loadOpinion();
 			loadPublicOpinions();
+			/* ===== NOVEDADES: registro de cambios visible para la gente =====
+			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
+			   se añade una entrada nueva ARRIBA con su fecha. */
+			const IX_CHANGELOG = [
+			  { fecha: '11 de julio de 2026', cambios: [
+			    '➕ Panel de Novedades (este mismo) en Ayuda',
+			    '➕ Opiniones públicas: el muro "🌍 Opiniones de todos" — lo que publicas lo ven todos los visitantes',
+			    '➕ 50 instrumentos del mundo en el teclado de IXBand, por categorías, con teclado gigante',
+			    '➕ Pantalla de Idioma y Región antes de entrar (detecta tu ubicación y te pregunta)',
+			    '➕ La traducción ahora cubre TODA la app, incluso apps que se abren después',
+			    '🔁 Renombres: GarageBand → IXBand, Siri → IXA, iPod → Reproductor de música, iCloud → Mi Nube (marcas propias)',
+			    '🛡️ Las marcas IXClock, IXBand, IXBench e IXA jamás se traducen',
+			    '🛠️ Arreglado el "Traduciendo…" infinito y la bienvenida sin traducir'
+			  ]},
+			  { fecha: '10-11 de julio de 2026', cambios: [
+			    '➕ IXBand estilo real: Mis canciones, plantillas de género (EDM, Hip Hop, Dubstep…), Live Loops, Pistas, LCD y metrónomo',
+			    '➕ Modo Fácil configurable: color, fondo y tipo de números desde configuración; estación del año y siglo',
+			    '➕ Fondo Dinámico ANIMADO según la hora y el clima real (lluvia, nieve, estrellas)',
+			    '➕ Tamaño y altura del reloj editables (Personalizar → Relojes)',
+			    '➕ Insignias de resolución real (4K ✓/1080p) y filtro Todos / Solo 4K en fondos',
+			    '➕ Botón ⭐ Famosos en TV (Telemundo, FIFA+, ESPN y ~50 cadenas)',
+			    '🛠️ Fondos: ya no "sale otro" al primer toque; nada se borra en silencio',
+			    '➖ Quitado el botón flotante del Modo Fácil (ahora todo desde configuración)'
+			  ]}
+			];
+			function renderNovedades(){
+			  const el = document.getElementById('novedades-card');
+			  if(!el || !IX_CHANGELOG.length) return;
+			  let s = '<div class="text-[10px] font-bold tracking-widest mb-1" style="color:#30d158;">🆕 NOVEDADES</div>'
+			    + '<div style="font-size:10px;opacity:.55;margin-bottom:8px;">Última actualización: <b>' + IX_CHANGELOG[0].fecha + '</b></div>';
+			  IX_CHANGELOG.forEach(function(e, i){
+			    if(i > 0) s += '<div style="font-size:10px;opacity:.5;font-weight:800;margin:10px 0 4px;">' + e.fecha + '</div>';
+			    s += '<ul style="font-size:11px;opacity:.8;line-height:1.7;padding-left:2px;list-style:none;">'
+			      + e.cambios.map(function(c){ return '<li>' + c + '</li>'; }).join('') + '</ul>';
+			  });
+			  el.innerHTML = s;
+			}
+			renderNovedades();
 			setInterval(renderizarFeriados, 3600000);
 			setInterval(updateMoonPhase, 3600000);
 			document.getElementById('brightness-slider').oninput = e=>{
