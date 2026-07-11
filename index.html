@@ -12950,7 +12950,9 @@
 			  // por un marcador que los traductores dejan intacto, y al volver se
 			  // restaura con su escritura original exacta.
 			  const _brandMarks=[];
-			  const mask=(s)=>String(s).replace(/ixclock\+?/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
+			  // Cubre la marca y TODO lo que la acompaña: IXClocK, IXCLOCK+, y
+			  // direcciones completas como ixclockplus.netlify.app (palabra entera)
+			  const mask=(s)=>String(s).replace(/ixclock[a-z0-9+]*(?:\.[a-z0-9-]+)*/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
 			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
 			  const gone=async (s)=>{
