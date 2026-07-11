@@ -5556,6 +5556,9 @@
 			    fillEl.style.backgroundImage = _poster + (wp.bg ? ', ' + wp.bg : '');
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
+			  } else if(wp.bg){
+			    // Sin póster todavía: al menos el gradiente del PROPIO fondo (nunca negro)
+			    fillEl.style.backgroundImage = wp.bg;
 			  }
 			  const vid = document.createElement('video');
 			  vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
@@ -6243,7 +6246,9 @@
 			    applyWallpaperToFill(nextFillEl, wp, ready);
 			    // Si ya hay una imagen de ESTE fondo (fotograma/portada), se cambia al
 			    // instante: se ve la foto correcta y el video aparece encima al cargar.
-			    if(_wpPosterFor(wp)) ready();
+			    // Al ARRANCAR la página también se cambia ya: no hay fondo anterior que
+			    // conservar, y esperar dejaba puesto "un fondo que no es" hasta 25s.
+			    if(window._wpRestoring || _wpPosterFor(wp)) ready();
 			    else setTimeout(ready, 25000); // red de seguridad
 			  } else {
 			    applyWallpaperToFill(nextFillEl, wp);
@@ -6514,11 +6519,29 @@
 			    h.style.cssText = 'grid-column:1/-1;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:10px 2px 2px;';
 			    grid.appendChild(h);
 			  };
+			  // Filtro elegido por el usuario: ver TODOS o solo los 4K comprobados.
+			  // Antes se ocultaban solos al usarlos ("busco otro y ese no está") — muy
+			  // confuso. Ahora nada desaparece en silencio: hay un botón de filtro.
+			  const _only4K = (()=>{ try{ return localStorage.getItem('wp_only4k') === '1'; }catch(e){ return false; } })();
+			  const _mkFilterChips = ()=>{
+			    const row = document.createElement('div');
+			    row.style.cssText = 'grid-column:1/-1;display:flex;gap:6px;padding:2px 2px 6px;';
+			    const mk = (label, on, only)=>{
+			      const bt = document.createElement('button');
+			      bt.textContent = label;
+			      bt.style.cssText = 'border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 12px;font-size:10px;font-weight:700;cursor:pointer;color:#fff;background:' + (on ? 'rgba(10,132,255,.45)' : 'rgba(255,255,255,.06)') + ';';
+			      bt.onclick = (e)=>{ e.stopPropagation(); try{ localStorage.setItem('wp_only4k', only ? '1' : '0'); }catch(err){} renderWallpaperGrid(); };
+			      return bt;
+			    };
+			    row.appendChild(mk('Todos', !_only4K, false));
+			    row.appendChild(mk('Solo 4K comprobados ✓', _only4K, true));
+			    grid.appendChild(row);
+			  };
 			  WALLPAPERS.forEach(wp=>{
 			    const isStill = wp.type === 'gradient' || wp.type === 'photo';
-			    // Fondos en movimiento ya comprobados como NO-4K: no se muestran
-			    if(!isStill){ try{ if(localStorage.getItem('wp4k_' + wp.id) === '0') return; }catch(e){} }
-			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento · 4K'); _motionHeaderDone = true; }
+			    // Con el filtro "Solo 4K" activo se ocultan los comprobados como no-4K
+			    if(!isStill && _only4K){ try{ if(localStorage.getItem('wp4k_' + wp.id) === '0') return; }catch(e){} }
+			    if(!isStill && !_motionHeaderDone){ _mkHeader('🎬 En movimiento · 4K'); _motionHeaderDone = true; _mkFilterChips(); }
 			    if(isStill && !_stillHeaderDone){ _mkHeader('🖼️ Quietos — fotos y degradados'); _stillHeaderDone = true; }
 			    const card = document.createElement('div');
 			    card.className = 'wallpaper-card';
@@ -6547,8 +6570,12 @@
 			        let frameCached = null, meta = null;
 			        try{ frameCached = localStorage.getItem('wpf4_' + wp.id); }catch(e){}
 			        try{ const c = localStorage.getItem('wpm4_' + wp.id); if(c) meta = JSON.parse(c); }catch(e){}
-			        // Resolución ya comprobada < 4K -> ni siquiera se crea la tarjeta
-			        if(meta && meta.res && meta.res < 3200){ try{ localStorage.setItem('wp4k_' + wp.id, '0'); }catch(e){} card.remove(); return; }
+			        // Resolución declarada < 4K: se marca; solo se oculta si el usuario
+			        // activó el filtro "Solo 4K" (nunca desaparece en silencio)
+			        if(meta && meta.res && meta.res < 3200){
+			          try{ localStorage.setItem('wp4k_' + wp.id, '0'); }catch(e){}
+			          if(_only4K){ card.remove(); return; }
+			        }
 			        // Insignia de resolución real (medida del video, o declarada por la página)
 			        (function(){
 			          let known = null;
@@ -13449,14 +13476,19 @@
 			// Restaurar fondo: primero un fondo personalizado (aleatorio/foto), luego
 			// uno por id; si no hay nada guardado, el default.
 			(function restoreWallpaper(){
+			  window._wpRestoring = true; // al arrancar, el cambio es inmediato (ver setWallpaper)
 			  try{
 			    if(localStorage.getItem('dynamic_bg_enabled')==='1'){ setDynamicBg(); return; }
 			    const custom=JSON.parse(localStorage.getItem('saved_wallpaper_custom')||'null');
 			    if(custom && custom.type){ _applyCustomWallpaper(custom); return; }
 			    const sw=localStorage.getItem('saved_wallpaper');
 			    if(sw && WALLPAPERS.find(w=>w.id===sw)){ setWallpaper(sw); return; }
-			  }catch(e){}
-			  setWallpaper('ios27');
+			    setWallpaper('ios27');
+			  }catch(e){
+			    try{ setWallpaper('ios27'); }catch(e2){}
+			  }finally{
+			    setTimeout(()=>{ window._wpRestoring = false; }, 500);
+			  }
 			})();
 			// Restaurar estilo de reloj guardado, si existe.
 			(function restoreClockStyle(){
@@ -13896,28 +13928,93 @@
 			  if(label)  label.textContent = saved + '%';
 			})();
 
-			/* ===== EASY MODE ===== */
+			/* ===== EASY MODE — Reloj de Orientación a pantalla completa =====
+			   Diseño del usuario (reloj_orientacion_v2.html): hora gigante roja
+			   Orbitron, día de la semana enorme, fecha, "ESTÁS EN CASA" y si es
+			   mañana/tarde/noche; de noche (22-6) los rojos se atenúan. Además:
+			   ⚙️ Ajustes abre la configuración normal ENCIMA, y hay un botón fijo
+			   que NUNCA desaparece para entrar/salir del modo. */
 			let _easyModeOn = localStorage.getItem('easy_mode') === 'on';
+			let _easyTimer = null;
+			const _EASY_DIAS = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
+			const _EASY_MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+			function _easyTick(){
+			  const scr = document.getElementById('easy-screen');
+			  if(!scr) return;
+			  const a = new Date();
+			  let h = a.getHours();
+			  const m = String(a.getMinutes()).padStart(2,'0');
+			  const ampm = h >= 12 ? 'PM' : 'AM';
+			  h = h % 12 || 12;
+			  document.getElementById('easy-hora').textContent = h + ':' + m + ' ' + ampm;
+			  document.getElementById('easy-dia').textContent = _EASY_DIAS[a.getDay()];
+			  document.getElementById('easy-fecha').textContent = a.getDate() + ' DE ' + _EASY_MESES[a.getMonth()] + ' DE ' + a.getFullYear();
+			  const h24 = a.getHours();
+			  document.getElementById('easy-momento').textContent =
+			    (h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE';
+			  scr.style.color = (h24>=22 || h24<6) ? '#771111' : '#bb2222';
+			}
+			function _easyBuild(){
+			  if(document.getElementById('easy-screen')) return;
+			  const scr = document.createElement('div');
+			  scr.id = 'easy-screen';
+			  scr.style.cssText = 'position:fixed;inset:0;z-index:2500;background:#000;color:#bb2222;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;';
+			  scr.innerHTML = ''
+			    + '<div id="easy-hora" style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
+			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
+			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
+			    + '<div style="width:55%;height:2px;background:#661111;margin:35px 0;"></div>'
+			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;">ESTÁS EN CASA</div>'
+			    + '<div id="easy-momento" style="font-family:Verdana,sans-serif;font-size:clamp(1.2rem,3.2vw,2.2rem);margin-top:12px;"></div>'
+			    + '<button onclick="_easyOpenSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#c9c9ce;padding:12px 18px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:700;">⚙️ Ajustes</button>';
+			  document.body.appendChild(scr);
+			  // Botón FIJO que nunca desaparece (distinto al engranaje): entra y sale
+			  const fab = document.createElement('button');
+			  fab.id = 'easy-fab';
+			  fab.onclick = ()=>setEasyMode(!_easyModeOn);
+			  fab.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;border:none;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);background:#30d158;color:#003310;';
+			  document.body.appendChild(fab);
+			}
+			function _easyOpenSettings(){
+			  // Configuración COMPLETA encima del modo fácil: se aparta la pantalla,
+			  // se abre el panel normal, y el botón verde fijo te devuelve al reloj.
+			  const scr = document.getElementById('easy-screen');
+			  if(scr) scr.style.display = 'none';
+			  const fab = document.getElementById('easy-fab');
+			  if(fab){ fab.textContent = '👴 VOLVER AL MODO FÁCIL'; }
+			  try{ toggleSidebar(); }catch(e){}
+			}
 			function setEasyMode(on){
 			  _easyModeOn = on;
 			  localStorage.setItem('easy_mode', on ? 'on' : 'off');
 			  document.body.classList.toggle('easy-mode', on);
-			  // Update toggle pill visual
+			  _easyBuild();
+			  const scr = document.getElementById('easy-screen');
+			  const fab = document.getElementById('easy-fab');
+			  if(scr) scr.style.display = on ? 'flex' : 'none';
+			  if(fab){
+			    fab.textContent = on ? '✕ SALIR DEL MODO FÁCIL' : '👴 MODO FÁCIL';
+			    fab.style.background = on ? '#3a3a3c' : '#30d158';
+			    fab.style.color = on ? '#fff' : '#003310';
+			  }
+			  if(on){ _easyTick(); if(!_easyTimer) _easyTimer = setInterval(_easyTick, 1000); }
+			  else if(_easyTimer){ clearInterval(_easyTimer); _easyTimer = null; }
+			  // Pill de configuración
 			  const pill  = document.getElementById('easy-mode-pill');
 			  const knob  = document.getElementById('easy-mode-knob');
 			  const status = document.getElementById('easy-mode-status');
 			  const banner = document.getElementById('easy-mode-banner');
 			  if(pill)  pill.style.background = on ? '#30d158' : '#3a3a3c';
 			  if(knob)  knob.style.transform  = on ? 'translateX(22px)' : 'translateX(0)';
-			  if(status) status.textContent   = on ? 'Modo Fácil activado ✅' : 'Letras y botones más grandes · toca para activar';
+			  if(status) status.textContent   = on ? 'Modo Fácil activado ✅' : 'Reloj de orientación gigante · toca para activar';
 			  if(banner) banner.style.background = on ? 'rgba(52,199,89,.22)' : 'rgba(52,199,89,.12)';
 			}
-			// Apply on load
-			if(_easyModeOn){
-			  document.body.classList.add('easy-mode');
-			  // Pill state will be set after DOM ready
-			  document.addEventListener('DOMContentLoaded', ()=>setEasyMode(true), {once:true});
-			}
+			// El botón fijo existe SIEMPRE (aunque el modo esté apagado) y el modo
+			// guardado se restaura al abrir.
+			document.addEventListener('DOMContentLoaded', ()=>{
+			  _easyBuild();
+			  setEasyMode(_easyModeOn);
+			}, {once:true});
 
 			/* ===== RESTORE TIME FORMAT BUTTON STATE ON LOAD ===== */
 			(function restoreTimeFormatBtns(){
