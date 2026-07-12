@@ -1749,7 +1749,7 @@
 						</button>
 					</div>
 					<div
-						id="ui-lang-status"
+						id="ui-lang-status" data-notrans
 						style="font-size:9px;margin-top:6px;text-align:center;min-height:12px;font-weight:700;"
 					></div>
 				</div>
@@ -2609,14 +2609,14 @@
 				></div>
 				<div
 					class="text-3xl font-extrabold mb-7 tracking-tight drop-shadow-lg"
-					id="date-display"
+					id="date-display" data-notrans
 				>
 					cargando fecha...
 				</div>
 				<div class="flex flex-wrap justify-center gap-3 mb-4">
 					<div
 						class="pill glass flex items-center gap-1.5"
-						id="pill-day"
+						id="pill-day" data-notrans
 					>
 						<span
 							class="material-symbols-outlined"
@@ -2626,7 +2626,7 @@
 					</div>
 					<div
 						class="pill glass flex items-center gap-1.5"
-						id="pill-date"
+						id="pill-date" data-notrans
 					>
 						<span
 							class="material-symbols-outlined"
@@ -2636,7 +2636,7 @@
 					</div>
 					<div
 						class="pill glass flex items-center gap-1.5"
-						id="pill-month"
+						id="pill-month" data-notrans
 					>
 						<span
 							class="material-symbols-outlined"
@@ -3372,7 +3372,7 @@
 					onkeydown="if(event.key==='Enter')tvSearchEnter()"
 					style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;"
 				/>
-				<select id="tv-country-select">
+				<select id="tv-country-select" data-notrans>
 					<option value="">🌍 Elige un país…</option>
 				</select>
 				<button
@@ -6383,7 +6383,7 @@
 			  const inp=document.getElementById('yt-wallpaper-url');
 			  const id=parseYoutubeId(inp && inp.value);
 			  if(!id){
-			    if(inp){ inp.style.borderColor='#ff453a'; inp.placeholder='Enlace no válido — copia el link del video'; setTimeout(()=>{ inp.style.borderColor=''; },1500); }
+			    if(inp){ inp.style.borderColor='#ff453a'; inp.placeholder=_uiT('Enlace no válido — copia el link del video'); setTimeout(()=>{ inp.style.borderColor=''; },1500); }
 			    return;
 			  }
 			  _applyCustomWallpaper({ id:'yt-'+id, name:'YouTube', tags:'video youtube movimiento', type:'youtube', videoId:id });
@@ -6553,6 +6553,7 @@
 			  if(!grid || document.getElementById('wp-selftest')) return;
 			  const el = document.createElement('div');
 			  el.id = 'wp-selftest';
+			  el.setAttribute('data-notrans','');
 			  el.style.cssText = 'grid-column:1/-1;font-size:11px;opacity:.5;padding:2px 2px 0;';
 			  el.textContent = 'Comprobando servicios de miniaturas…';
 			  grid.insertBefore(el, grid.firstChild);
@@ -6572,7 +6573,7 @@
 			  setInterval(()=>{
 			    let metas = 0, frames = 0;
 			    try{ metas = Object.keys(localStorage).filter(k=>k.indexOf('wpm4_')===0).length; frames = Object.keys(localStorage).filter(k=>k.indexOf('wpf4_')===0).length; }catch(e){}
-			    el.textContent = 'v2 · ' + (svc || 'comprobando…') + ' — videos: ' + metas + ' · dibujados: ' + _wpStats.frames + ' (+' + frames + ' guardados) · portadas: ' + _wpStats.portadas + ' · errores: ' + _wpStats.errores + ' · agotados: ' + _wpStats.timeouts + ' · cola: ' + _wpFrameQueue.length + ' · último: ' + _wpStats.ultimo;
+			    el.textContent = 'v2 · ' + (svc || _uiT('comprobando…')) + ' — ' + _uiT('videos') + ': ' + metas + ' · ' + _uiT('dibujados') + ': ' + _wpStats.frames + ' (+' + frames + ' ' + _uiT('guardados') + ') · ' + _uiT('portadas') + ': ' + _wpStats.portadas + ' · ' + _uiT('errores') + ': ' + _wpStats.errores + ' · ' + _uiT('agotados') + ': ' + _wpStats.timeouts + ' · ' + _uiT('cola') + ': ' + _wpFrameQueue.length + ' · ' + _uiT('último') + ': ' + _wpStats.ultimo;
 			  }, 2000);
 			}
 			// Cola perezosa de miniaturas reales (3 a la vez para no saturar el proxy)
@@ -7702,8 +7703,8 @@
 			  if(banner){
 			    if(todayHoliday){
 			      document.getElementById('holiday-banner-emoji').innerText = todayHoliday.emoji;
-			      document.getElementById('holiday-banner-name').innerText = todayHoliday.name;
-			      document.getElementById('holiday-banner-pais').innerText = todayHoliday.pais;
+			      document.getElementById('holiday-banner-name').innerText = _uiT(todayHoliday.name);
+			      document.getElementById('holiday-banner-pais').innerText = _uiT(todayHoliday.pais);
 			      banner.classList.remove('hidden');
 			      banner.classList.add('flex');
 			    } else {
@@ -7713,7 +7714,7 @@
 			  }
 
 			  feriados.forEach(f=>{
-			    const txtDias = f.diff===0 ? '¡Hoy! 🎉' : (f.diff===1 ? 'Mañana' : `${f.diff} días`);
+			    const txtDias = f.diff===0 ? _uiT('¡Hoy!')+' 🎉' : (f.diff===1 ? _uiT('Mañana') : `${f.diff} ${_uiT('días')}`);
 			    const colorDias = f.diff===0 ? '#ffd60a' : (f.diff<=7 ? '#ff9500' : 'rgba(255,255,255,0.45)');
 			    const div=document.createElement('div');
 			    div.className='flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/5 transition-colors';
@@ -7721,7 +7722,7 @@
 			      <div class="flex items-center gap-2 flex-1 min-w-0">
 			        <span style="font-size:1.25rem;flex-shrink:0;">${f.emoji}</span>
 			        <div class="min-w-0">
-			          <div style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</div>
+			          <div style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_uiT(f.name)}</div>
 			          <div style="font-size:9.5px;color:rgba(255,255,255,0.4);margin-top:1px;">${f.pais} · ${new Date().getFullYear() + (f.diff < 0 ? 1 : 0)}</div>
 			        </div>
 			      </div>
@@ -8296,7 +8297,7 @@
 			    }
 			    // Show error on button
 			    const b=document.getElementById('station-'+station.id);
-			    if(b){ b.style.opacity='.4'; b.title='⚠️ Stream no disponible'; }
+			    if(b){ b.style.opacity='.4'; b.title='⚠️ '+_uiT('Stream no disponible'); }
 			    isPlaying=false;
 			    const gp=document.getElementById('global-play');
 			    if(gp) gp.innerHTML='<span class="text-2xl">▶️</span>';
@@ -11617,7 +11618,7 @@
 			  else if(phase<20.30228){name='Gibosa Menguante';icon='brightness_3';}
 			  else if(phase<23.99361){name='Cuarto Menguante';icon='brightness_2';}
 			  else {name='Luna Menguante';icon='brightness_2';}
-			  document.getElementById('luna-nombre').innerText = name;
+			  document.getElementById('luna-nombre').innerText = _uiT(name);
 			  document.getElementById('moon-icon').innerText = icon;
 			}
 
@@ -12931,7 +12932,7 @@
 			    +_LR_LANGS.map(x=>'<button onclick="_lrPick.lang=\''+x[0]+'\';_lrPaint()" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
 			    +'</div>'
 			    +'<div><div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:5px;font-weight:700;">REGIÓN</div>'
-			    +'<select id="lr-region" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:10px 12px;font-size:13px;">'
+			    +'<select id="lr-region" data-notrans style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:10px 12px;font-size:13px;">'
 			    +'<option value="">🌐 Otra / no decir</option>'
 			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+r[2]+'</option>').join('')
 			    +'</select></div>'
@@ -13017,6 +13018,7 @@
 			try{ Object.values(_uiTransCache).forEach(v=>_uiOutSet.add(v)); }catch(e){}
 			let _uiObserver = null;
 			const _uiOriginals = new WeakMap(); // text node → original text
+			const _uiAttrOriginals = new WeakMap(); // elemento → {atributo: valor original}
 
 			// Restore active button on load
 			(function(){
@@ -13130,32 +13132,50 @@
 			  return true;
 			}
 
-			function _uiNodes(root){
-			  // Recorre SOLO nodos de texto reales (antes también generaba objetos
-			  // falsos por cada palabra de cada elemento anidado: trabajo duplicado
-			  // a lo bestia). Salta código, campos de escritura y los relojes.
+			const _UI_ATTRS=['placeholder','title','aria-label'];
+			function _uiNodes(root, incluirTraducidos){
+			  // Recorre nodos de texto REALES y también los atributos visibles
+			  // (placeholder/title/aria-label). Salta código, los relojes y
+			  // [data-notrans]. Los <option> SÍ se traducen (los selects enormes
+			  // llevan data-notrans). En modo revert (incluirTraducidos) también
+			  // recoge lo ya traducido para poder volver a español.
 			  const nodes=[];
 			  if(!root) return nodes;
+			  const okTxt=(t)=>_uiOK(t) && (incluirTraducidos || !_uiOutSet.has(t));
 			  if(root.nodeType===3){
 			    const el=root.parentElement;
-			    if(el && el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return nodes;
+			    if(el && el.closest('script,style,input,textarea,#clock-display,[data-notrans]')) return nodes;
 			    const rt=root.textContent.trim();
-			    if(_uiOK(rt) && !_uiOutSet.has(rt)) nodes.push(root);
+			    if(okTxt(rt)) nodes.push(root);
 			    return nodes;
 			  }
+			  if(root.nodeType!==1 && root.nodeType!==9) return nodes;
 			  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
 			    acceptNode(n){
 			      const el=n.parentElement;
 			      if(!el) return NodeFilter.FILTER_REJECT;
-			      if(el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return NodeFilter.FILTER_REJECT;
+			      if(el.closest('script,style,input,textarea,#clock-display,[data-notrans]')) return NodeFilter.FILTER_REJECT;
 			      return NodeFilter.FILTER_ACCEPT;
 			    }
 			  });
 			  let n;
 			  while((n=w.nextNode())){
 			    const t=n.textContent.trim();
-			    if(_uiOK(t) && !_uiOutSet.has(t)) nodes.push(n);
+			    if(okTxt(t)) nodes.push(n);
 			  }
+			  // Atributos visibles del propio root y de sus descendientes
+			  const addAttrs=(el)=>{
+			    if(!el.getAttribute || el.closest('script,style,#clock-display,[data-notrans]')) return;
+			    _UI_ATTRS.forEach(a=>{
+			      const v=el.getAttribute(a);
+			      if(!v) return;
+			      const t=v.trim();
+			      if(okTxt(t) || (incluirTraducidos && _uiAttrOriginals.has(el))) nodes.push({__attr:a, el:el});
+			    });
+			  };
+			  if(root.nodeType===1) addAttrs(root);
+			  const sel='[placeholder],[title],[aria-label]';
+			  (root.querySelectorAll ? root.querySelectorAll(sel) : []).forEach(addAttrs);
 			  return nodes;
 			}
 
@@ -13186,30 +13206,52 @@
 			  },250);
 			  return s;
 			}
+			// Cadenas que el DOM nunca ve hasta que se disparan (alerts, avisos):
+			// se pre-traducen al elegir idioma para que _uiT ya tenga caché.
+			const _UI_PRESEED=['Lugar no encontrado','Tu dispositivo no tiene sensor de orientación o ya está activo.','imagen(es) añadida(s)','¿Borrar TODOS los datos guardados?','Datos borrados','✅ Datos restaurados correctamente. Recargando…','❌ Error: archivo inválido','Enlace no válido — copia el link del video','Escuchando…','Stream no disponible','Batería y tiempo de carga','Nueva pestaña','¡Hoy!','Mañana','días','menos de 1','Luna Nueva','Luna Creciente','Cuarto Creciente','Gibosa Creciente','Luna Llena','Gibosa Menguante','Cuarto Menguante','Luna Menguante','ES DE MAÑANA','ES DE TARDE','ES DE NOCHE','Mando conectado','Sin mando','Listo','Traduciendo…','Quedó a medias — toca la bandera otra vez'];
 			async function _uiApply(nodes,lang){
+			  // Cada ítem es un nodo de texto o {__attr, el} (placeholder/title/aria)
+			  const getOrig=(n)=>{
+			    if(n.__attr){
+			      const m=_uiAttrOriginals.get(n.el)||{};
+			      return m[n.__attr]!==undefined ? m[n.__attr] : (n.el.getAttribute(n.__attr)||'');
+			    }
+			    return _uiOriginals.has(n)?_uiOriginals.get(n):n.textContent;
+			  };
 			  if(lang==='es'){
-			    nodes.forEach(n=>{if(_uiOriginals.has(n))n.textContent=_uiOriginals.get(n);});
+			    nodes.forEach(n=>{
+			      if(n.__attr){
+			        const m=_uiAttrOriginals.get(n.el);
+			        if(m && m[n.__attr]!==undefined) n.el.setAttribute(n.__attr, m[n.__attr]);
+			      } else if(_uiOriginals.has(n)) n.textContent=_uiOriginals.get(n);
+			    });
 			    return;
 			  }
-			  // Collect unique originals
 			  const strSet=new Set();
 			  nodes.forEach(n=>{
-			    const orig=_uiOriginals.get(n)||n.textContent;
-			    if(_uiOK(orig.trim()))strSet.add(orig.trim());
+			    const o=getOrig(n).trim();
+			    if(_uiOK(o)) strSet.add(o);
 			  });
 			  const map=await _uiBatch([...strSet],lang,function(done,total){
 			    const st=document.getElementById('ui-lang-status');
-			    if(st && total>5) st.textContent='⏳ Traduciendo… '+done+'/'+total;
+			    if(st && total>5) st.textContent='⏳ '+_uiT('Traduciendo…')+' '+done+'/'+total;
 			  });
 			  nodes.forEach(n=>{
-			    const raw=_uiOriginals.get(n)||n.textContent;
+			    const raw=getOrig(n);
 			    const trimmed=raw.trim();
 			    if(!_uiOK(trimmed))return;
-			    if(!_uiOriginals.has(n))_uiOriginals.set(n,raw);
 			    const t=map[trimmed];
-			    if(t&&t!==trimmed){
-			      const lead=raw.match(/^\s*/)[0],trail=raw.match(/\s*$/)[0];
-			      n.textContent=lead+t+trail;
+			    if(n.__attr){
+			      let m=_uiAttrOriginals.get(n.el);
+			      if(!m){ m={}; _uiAttrOriginals.set(n.el,m); }
+			      if(m[n.__attr]===undefined) m[n.__attr]=raw;
+			      if(t&&t!==trimmed) n.el.setAttribute(n.__attr, t);
+			    } else {
+			      if(!_uiOriginals.has(n))_uiOriginals.set(n,raw);
+			      if(t&&t!==trimmed){
+			        const lead=raw.match(/^\s*/)[0],trail=raw.match(/\s*$/)[0];
+			        n.textContent=lead+t+trail;
+			      }
 			    }
 			  });
 			  try{localStorage.setItem('ui_trans_cache',JSON.stringify(_uiTransCache));}catch(e){}
@@ -13221,14 +13263,15 @@
 			  document.querySelectorAll('.ui-lang-btn').forEach(b=>{b.style.background='rgba(255,255,255,.06)';b.style.borderColor='rgba(255,255,255,.15)';b.style.color='#fff';});
 			  if(btn){btn.style.background='rgba(10,132,255,.2)';btn.style.borderColor='rgba(10,132,255,.4)';btn.style.color='#0a84ff';}
 			  const st=document.getElementById('ui-lang-status');
-			  if(st){st.textContent=lang==='es'?'':'⏳ Traduciendo…';st.style.color='#ff9500';}
+			  if(st){st.textContent=lang==='es'?'':'⏳ '+_uiT('Traduciendo…');st.style.color='#ff9500';}
 			  if(_uiObserver){_uiObserver.disconnect();_uiObserver=null;}
-			  const all=[];_uiRoots().forEach(r=>all.push(..._uiNodes(r)));
+			  const all=[];_uiRoots().forEach(r=>all.push(..._uiNodes(r, lang==='es')));
 			  let uiOk=true;
+			  if(lang!=='es'){ try{ _uiBatch(_UI_PRESEED.slice(), lang); }catch(e){} } // calienta alerts/avisos
 			  try{ await _uiApply(all,lang); }
 			  catch(e){ uiOk=false; console.error('Traducción de interfaz falló:',e); }
 			  if(st){
-			    st.textContent=lang==='es'?'':(uiOk?'✅ Listo':'⚠️ Quedó a medias — toca la bandera otra vez');
+			    st.textContent=lang==='es'?'':(uiOk?'✅ '+_uiT('Listo'):'⚠️ '+_uiT('Quedó a medias — toca la bandera otra vez'));
 			    st.style.color=uiOk?'#30d158':'#ff9f0a';
 			    if(lang!=='es'&&uiOk)setTimeout(()=>{if(st)st.textContent='';},2500);
 			  }
@@ -13238,15 +13281,25 @@
 			    const _uiFlush=async()=>{
 			      clearTimeout(_t); _t=null;
 			      clearTimeout(_tMax); _tMax=null;
-			      const fresh=[...pending].filter(n=>!_uiOriginals.has(n)&&n.parentNode);
+			      const fresh=[...pending].filter(n=> n.__attr ? n.el.isConnected : (!_uiOriginals.has(n)&&n.parentNode));
 			      pending.clear();
 			      if(fresh.length)await _uiApply(fresh,_uiLang);
 			    };
 			    _uiObserver=new MutationObserver(muts=>{
-			      muts.forEach(m=>{m.addedNodes.forEach(nd=>{
-			        // _uiNodes también filtra ancestros (reloj, [data-notrans], campos)
-			        _uiNodes(nd).forEach(n=>pending.add(n));
-			      });});
+			      muts.forEach(m=>{
+			        if(m.type==='attributes' && m.target && m.target.getAttribute){
+			          const el=m.target;
+			          if(!el.closest('script,style,#clock-display,[data-notrans]')){
+			            const v=el.getAttribute(m.attributeName);
+			            if(v){ const t=v.trim(); if(_uiOK(t) && !_uiOutSet.has(t)) pending.add({__attr:m.attributeName, el:el}); }
+			          }
+			          return;
+			        }
+			        m.addedNodes.forEach(nd=>{
+			          // _uiNodes también filtra ancestros (reloj, [data-notrans], campos)
+			          _uiNodes(nd).forEach(n=>pending.add(n));
+			        });
+			      });
 			      if(!pending.size)return;
 			      clearTimeout(_t);
 			      _t=setTimeout(_uiFlush,350);
@@ -13258,7 +13311,7 @@
 			    // Se observa TODO el body: los modales que se crean después (GarageBand,
 			    // TV, batería, Modo Fácil…) se traducen solos al aparecer. Los relojes
 			    // no parpadean: sus números los rechaza _uiOK y el caché evita la red.
-			    _uiObserver.observe(document.body,{childList:true,subtree:true});
+			    _uiObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:_UI_ATTRS});
 			  }
 			}
 
@@ -13444,7 +13497,7 @@
 			  const bar=document.getElementById('siri-text-bar');
 			  if(bar){ bar.style.boxShadow='0 0 0 3px rgba(94,92,230,.8), 0 8px 32px rgba(0,0,0,.65)'; }
 			  const inp = document.getElementById('siri-text-input');
-			  if(inp){ inp.placeholder='Escuchando…'; inp.style.color='#fff'; }
+			  if(inp){ inp.placeholder=_uiT('Escuchando…'); inp.style.color='#fff'; }
 			  const rec=new SR();
 			  rec.lang='es-ES'; rec.interimResults=false;
 			  rec.onresult=function(e){
@@ -13986,7 +14039,7 @@
 			(function initBatteryWidget(){
 			  const pill=document.createElement('button');
 			  pill.id='battery-pill';
-			  pill.title='Batería y tiempo de carga';
+			  pill.title=_uiT('Batería y tiempo de carga');
 			  pill.style.cssText='position:fixed;top:1.35rem;right:72px;z-index:895;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;background:rgba(20,20,26,.55);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:#fff;font-size:12px;font-weight:800;cursor:pointer;';
 			  pill.innerHTML='🔋 <span id="battery-pill-pct">…</span>';
 			  pill.onclick=openBatteryPanel;
@@ -14123,6 +14176,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { fecha: '11 de julio de 2026', cambios: [
+			    '🛠️ Traducción TOTAL verificada pantalla por pantalla: también los textos de las cajas (placeholder), los globitos de los botones (title), las listas desplegables, los avisos emergentes y la fase lunar/festividades — y cero parpadeos (nada vuelve al español solo)',
 			    '➕ El botón ⚙️ de configuración ahora es FIJO (en Más puedes ponerlo a ocultarse solo)',
 			    '🛠️ Traducción: ya se traducen también los textos en vivo (estación, siglo, clima, "Actualizado")',
 			    '➕ Panel de Novedades (este mismo) en Ayuda',
@@ -14363,19 +14417,19 @@
 			  const ampm = h >= 12 ? 'PM' : 'AM';
 			  h = h % 12 || 12;
 			  document.getElementById('easy-hora').textContent = h + ':' + m + ' ' + ampm;
-			  document.getElementById('easy-dia').textContent = _EASY_DIAS[a.getDay()];
-			  document.getElementById('easy-fecha').textContent = a.getDate() + ' DE ' + _EASY_MESES[a.getMonth()] + ' DE ' + a.getFullYear();
+			  document.getElementById('easy-dia').textContent = _uiT(_EASY_DIAS[a.getDay()]);
+			  document.getElementById('easy-fecha').textContent = _uiT(a.getDate() + ' DE ' + _EASY_MESES[a.getMonth()] + ' DE ' + a.getFullYear());
 			  const h24 = a.getHours();
 			  document.getElementById('easy-momento').textContent =
-			    (h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE';
+			    _uiT((h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE');
 			  // Estación del año y siglo (como el panel principal, en texto plano)
 			  const mo = a.getMonth() + 1, yr = a.getFullYear();
 			  const estacion = (mo===12 || mo<=2) ? 'INVIERNO' : mo<=5 ? 'PRIMAVERA' : mo<=8 ? 'VERANO' : 'OTOÑO';
 			  const siglo = Math.floor((yr - 1) / 100) + 1;
 			  const est1 = document.getElementById('easy-estacion');
 			  const est2 = document.getElementById('easy-siglo');
-			  if(est1) est1.textContent = 'ESTAMOS EN ' + estacion + ' DE ' + yr;
-			  if(est2) est2.textContent = 'SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100) + ' DEL SIGLO ' + siglo;
+			  if(est1) est1.textContent = _uiT('ESTAMOS EN ' + estacion + ' DE ' + yr);
+			  if(est2) est2.textContent = _uiT('SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100) + ' DEL SIGLO ' + siglo);
 			  // De noche se atenúa (como el archivo original), respetando el color elegido
 			  scr.style.filter = (h24>=22 || h24<6) ? 'brightness(.55)' : '';
 			}
@@ -14484,7 +14538,7 @@
 			  if(!el) return;
 			  if(!window._weatherFetchedAt){ el.textContent='—'; return; }
 			  const mins=Math.floor((Date.now()-window._weatherFetchedAt)/60000);
-			  el.textContent = mins < 1 ? 'menos de 1' : mins;
+			  el.textContent = mins < 1 ? _uiT('menos de 1') : mins;
 			}
 			setInterval(updateLastUpdatedCounter, 15000);
 
@@ -14653,7 +14707,7 @@
 			  if(!q||!_aplMap)return;
 			  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'Accept-Language':'es'}})
 			    .then(r=>r.json()).then(d=>{
-			      if(!d.length){alert('Lugar no encontrado');return;}
+			      if(!d.length){alert(_uiT('Lugar no encontrado'));return;}
 			      const lat=parseFloat(d[0].lat),lon=parseFloat(d[0].lon);
 			      _aplMap.flyTo([lat,lon],14,{duration:1.5});
 			      if(_aplMarker)_aplMap.removeLayer(_aplMarker);
@@ -14906,7 +14960,7 @@
 			  });
 			  const addBtn=document.createElement('button');
 			  addBtn.textContent='+';
-			  addBtn.title='Nueva pestaña';
+			  addBtn.title=_uiT('Nueva pestaña');
 			  addBtn.style.cssText='background:rgba(255,255,255,.08);border:none;color:#fff;width:24px;height:24px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;';
 			  addBtn.addEventListener('click', ()=> browserNewTab());
 			  bar.appendChild(addBtn);
@@ -16424,7 +16478,7 @@
 			  if(DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
 			    DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startCompass();}).catch(console.error);
 			  }else{
-			    alert('Tu dispositivo no tiene sensor de orientación o ya está activo.');
+			    alert(_uiT('Tu dispositivo no tiene sensor de orientación o ya está activo.'));
 			  }
 			}
 			function drawCompass(heading){
@@ -16550,7 +16604,7 @@
 			        });
 			        cloudTab('gallery');
 			        renderWallpaperGrid();
-			        alert('✅ '+files.length+' imagen(es) añadida(s)');
+			        alert('✅ '+files.length+' '+_uiT('imagen(es) añadida(s)'));
 			      }
 			    };
 			    reader.readAsDataURL(file);
@@ -16570,7 +16624,7 @@
 			        ⬆️ Importar datos (JSON)
 			        <input type="file" accept=".json" onchange="importAllData(event)" style="display:none;">
 			      </label>
-			      <button onclick="if(confirm('¿Borrar TODOS los datos guardados?')){localStorage.clear();alert('Datos borrados');cloudTab('data');}" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">🗑️ Borrar todos los datos</button>
+			      <button onclick="if(confirm(_uiT('¿Borrar TODOS los datos guardados?'))){localStorage.clear();alert(_uiT('Datos borrados'));cloudTab('data');}" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">🗑️ Borrar todos los datos</button>
 			    </div>
 			  `;
 			}
@@ -16587,9 +16641,9 @@
 			    try{
 			      const data=JSON.parse(e.target.result);
 			      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k,v));
-			      alert('✅ Datos restaurados correctamente. Recargando…');
+			      alert(_uiT('✅ Datos restaurados correctamente. Recargando…'));
 			      setTimeout(()=>location.reload(),500);
-			    }catch(err){alert('❌ Error: archivo inválido');}
+			    }catch(err){alert(_uiT('❌ Error: archivo inválido'));}
 			  };
 			  reader.readAsText(file);
 			}
