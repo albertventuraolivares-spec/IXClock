@@ -2076,6 +2076,15 @@
 					id="tab-more"
 					class="custom-scrollbar pr-1 flex-col hidden space-y-3"
 				>
+					<!-- Botón de configuración: fijo u oculto -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">⚙️ Botón de configuración</div>
+						<div class="flex gap-2">
+							<button id="sbm-fijo" class="btn-option flex-1 active" onclick="setSettingsBtnMode('fijo')">📌 Fijo (siempre visible)</button>
+							<button id="sbm-auto" class="btn-option flex-1" onclick="setSettingsBtnMode('auto')">👻 Se oculta solo</button>
+						</div>
+						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
+					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
 							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2"
@@ -2386,6 +2395,9 @@
 					id="tab-manual"
 					class="custom-scrollbar pr-1 flex-col hidden space-y-3"
 				>
+
+					<!-- Novedades: qué se agregó/quitó/arregló y cuándo (se rellena por JS) -->
+					<div class="p-3.5 glass rounded-2xl" id="novedades-card" style="border:1px solid rgba(48,209,88,.3);"></div>
 
 					<!-- Intro -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -7126,18 +7138,32 @@
 			// Si se abre una app con el botón visible, ocúltalo al momento
 			setInterval(()=>{
 			  if(isSidebarVisible) return;
-			  if(!_isHomeScreen()){
-			    const btn = document.querySelector('.btn-settings');
-			    if(btn) btn.classList.remove('visible');
-			  }
+			  const btn = document.querySelector('.btn-settings');
+			  if(!btn) return;
+			  if(!_isHomeScreen()) btn.classList.remove('visible');
+			  else if(_settingsBtnMode === 'fijo') btn.classList.add('visible');
 			}, 700);
+			/* FIJO por defecto: mucha gente no entiende un botón que desaparece.
+			   En Personalizar → Más se puede volver al modo "se oculta solo". */
+			let _settingsBtnMode = localStorage.getItem('settings_btn_mode') || 'fijo';
+			function setSettingsBtnMode(m){
+			  _settingsBtnMode = m;
+			  try{ localStorage.setItem('settings_btn_mode', m); }catch(e){}
+			  const f=document.getElementById('sbm-fijo'), a=document.getElementById('sbm-auto');
+			  if(f) f.classList.toggle('active', m==='fijo');
+			  if(a) a.classList.toggle('active', m==='auto');
+			  const btn = document.querySelector('.btn-settings');
+			  if(m==='fijo'){ clearTimeout(_settingsHideTimer); if(btn && _isHomeScreen()) btn.classList.add('visible'); }
+			  else if(btn && !isSidebarVisible){ _settingsHideTimer = setTimeout(()=>{ if(!isSidebarVisible) btn.classList.remove('visible'); }, 3000); }
+			}
+			document.addEventListener('DOMContentLoaded', ()=>{ setSettingsBtnMode(_settingsBtnMode); }, {once:true});
 			function _showSettingsBtn(){
 			  if(!_isHomeScreen()) return;
 			  const btn = document.querySelector('.btn-settings');
 			  if(!btn) return;
 			  btn.classList.add('visible');
 			  clearTimeout(_settingsHideTimer);
-			  if(!isSidebarVisible){
+			  if(!isSidebarVisible && _settingsBtnMode !== 'fijo'){
 			    _settingsHideTimer = setTimeout(()=>{ if(!isSidebarVisible) btn.classList.remove('visible'); }, 3000);
 			  }
 			}
@@ -7151,7 +7177,9 @@
 			    clearTimeout(_settingsHideTimer);
 			  } else {
 			    clearTimeout(_settingsHideTimer);
-			    _settingsHideTimer = setTimeout(()=>{ if(btn) btn.classList.remove('visible'); }, 3000);
+			    if(_settingsBtnMode !== 'fijo'){
+			      _settingsHideTimer = setTimeout(()=>{ if(btn) btn.classList.remove('visible'); }, 3000);
+			    }
 			  }
 			}
 			// Detectar toque/ratón cerca de la esquina superior-izquierda para mostrar el botón
@@ -7373,15 +7401,15 @@
 			  setPillText('pill-month', MON.charAt(0).toUpperCase()+MON.slice(1));
 			  setPillText('pill-year', yearNum);
 			  const season = getSeason(now.getMonth());
-			  document.getElementById('pill-season').innerText = `${season.name} ${yearNum} ${season.icon}`;
+			  document.getElementById('pill-season').innerText = `${_uiT(season.name)} ${yearNum} ${season.icon}`;
 			  const centuryNum = Math.floor((now.getFullYear()-1)/100)+1;
 			  const yearOfCentury = now.getFullYear()%100===0 ? 100 : now.getFullYear()%100;
 			  const _sigloRomArr=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII'];
 			  const sigloDisp  = _romanMode ? (_sigloRomArr[centuryNum]||centuryNum) : centuryNum;
 			  const yCentDisp  = _romanMode ? toRoman(yearOfCentury) : yearOfCentury;
 			  const cbS=document.getElementById('cb-siglo'), cbA=document.getElementById('cb-ano');
-			  if(cbS) cbS.textContent=`Siglo ${sigloDisp}`;
-			  if(cbA) cbA.textContent=`Año ${yCentDisp} del Siglo ${sigloDisp}`;
+			  if(cbS) cbS.textContent=_uiT(`Siglo ${sigloDisp}`);
+			  if(cbA) cbA.textContent=_uiT(`Año ${yCentDisp} del Siglo ${sigloDisp}`);
 
 			  if(isDynamicBgEnabled && realNow.getMinutes()===0 && realNow.getSeconds()===0) applyDynamicBackground();
 			  if(realNow.getMinutes()===0 && realNow.getSeconds()===0) reproducirCampanada();
@@ -10747,7 +10775,7 @@
 			const _gpState = {};
 			function _updateGamepadStatus(connected){
 			  const el = document.getElementById('gamepad-status');
-			  if(el) el.textContent = connected ? '🎮 Mando conectado' : '🎮 Sin mando';
+			  if(el) el.textContent = '🎮 ' + _uiT(connected ? 'Mando conectado' : 'Sin mando');
 			}
 			function _pollGamepads(){
 			  // No malgastar CPU cuando la pestaña no está visible.
@@ -12798,9 +12826,13 @@
 			        <button onclick="closeLoginHelp()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
 			      </div>
 			      <div style="overflow-y:auto;padding:16px 20px 20px;font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;">
+			        <div style="margin-bottom:16px;border:1px solid rgba(48,209,88,.3);border-radius:12px;padding:10px 12px;">
+			          <div style="font-weight:800;color:#30d158;margin-bottom:4px;">🆕 Novedades</div>
+			          Última actualización: <b style="color:#fff;">${typeof IX_CHANGELOG !== 'undefined' ? IX_CHANGELOG[0].fecha : ''}</b>. La lista completa de lo que se agregó, quitó o arregló está en <b>Personalizar → Manual</b>, arriba del todo.
+			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">⚙️ Botón de configuración</div>
-			          El círculo con el engranaje, arriba a la izquierda, abre <b>Personalizar</b>: fondos de pantalla, estilos de reloj, cuenta, e información de la app. Se ve desde cualquier app que tengas abierta, no hace falta cerrarla primero.
+			          El círculo con el engranaje, arriba a la izquierda, está SIEMPRE visible y abre <b>Personalizar</b> (en Más puedes ponerlo a ocultarse solo): fondos de pantalla, estilos de reloj, cuenta, e información de la app. Se ve desde cualquier app que tengas abierta, no hace falta cerrarla primero.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
@@ -12979,6 +13011,10 @@
 			let _uiLang = localStorage.getItem('ui_lang') || 'es';
 			let _uiTransCache = {};
 			try { _uiTransCache = JSON.parse(localStorage.getItem('ui_trans_cache') || '{}'); } catch(e) {}
+			// Conjunto de RESULTADOS de traducción: un texto que ya ES una traducción
+			// no debe volver a traducirse (evitaba "EN|EN|..." en los textos en vivo)
+			const _uiOutSet = new Set();
+			try{ Object.values(_uiTransCache).forEach(v=>_uiOutSet.add(v)); }catch(e){}
 			let _uiObserver = null;
 			const _uiOriginals = new WeakMap(); // text node → original text
 
@@ -13046,7 +13082,7 @@
 			      if(ts.some(t=>t)){
 			        chunk.forEach((orig,idx)=>{
 			          const t=ts[idx];
-			          if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
+			          if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;_uiOutSet.add(t);}
 			          else results[orig]=orig;
 			        });
 			        chunkOk=true;
@@ -13073,7 +13109,7 @@
 			        if(Array.isArray(arr)&&arr.length===chunk.length){
 			          chunk.forEach((orig,idx)=>{
 			            const t=unmask((arr[idx]||'').trim());
-			            if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;}
+			            if(t&&t!==orig){results[orig]=t;_uiTransCache[lang+'\x00'+orig]=t;_uiOutSet.add(t);}
 			            else results[orig]=orig;
 			          });
 			          chunkOk=true;
@@ -13103,7 +13139,8 @@
 			  if(root.nodeType===3){
 			    const el=root.parentElement;
 			    if(el && el.closest('script,style,input,textarea,select,option,#clock-display,[data-notrans]')) return nodes;
-			    if(_uiOK(root.textContent.trim())) nodes.push(root);
+			    const rt=root.textContent.trim();
+			    if(_uiOK(rt) && !_uiOutSet.has(rt)) nodes.push(root);
 			    return nodes;
 			  }
 			  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
@@ -13116,7 +13153,8 @@
 			  });
 			  let n;
 			  while((n=w.nextNode())){
-			    if(_uiOK(n.textContent.trim())) nodes.push(n);
+			    const t=n.textContent.trim();
+			    if(_uiOK(t) && !_uiOutSet.has(t)) nodes.push(n);
 			  }
 			  return nodes;
 			}
@@ -13127,6 +13165,27 @@
 			  return [document.body].filter(Boolean);
 			}
 
+			/* Traducción SÍNCRONA para textos que la app reescribe en vivo (pastillas
+			   de estación/siglo cada segundo, clima al refrescar). Devuelve la
+			   traducción de la caché al momento; si no existe, la pide en segundo
+			   plano y la próxima escritura ya sale traducida. */
+			const _uiTQueue=new Set();
+			let _uiTTimer=null;
+			function _uiT(s){
+			  if(!s || typeof _uiLang==='undefined' || _uiLang==='es') return s;
+			  const c=_uiTransCache[_uiLang+'\x00'+s];
+			  if(c) return c;
+			  _uiTQueue.add(s);
+			  clearTimeout(_uiTTimer);
+			  _uiTTimer=setTimeout(async()=>{
+			    const arr=[..._uiTQueue]; _uiTQueue.clear();
+			    try{
+			      await _uiBatch(arr,_uiLang);
+			      try{ localStorage.setItem('ui_trans_cache',JSON.stringify(_uiTransCache)); }catch(e){}
+			    }catch(e){}
+			  },250);
+			  return s;
+			}
 			async function _uiApply(nodes,lang){
 			  if(lang==='es'){
 			    nodes.forEach(n=>{if(_uiOriginals.has(n))n.textContent=_uiOriginals.get(n);});
@@ -13665,21 +13724,21 @@
 			  const code=cur.weathercode;
 			  const iconEl=document.getElementById('curr-weather-icon');if(iconEl)iconEl.textContent=wEmoji[code]||'🌡️';
 			  const tempEl=document.getElementById('curr-temp');if(tempEl)tempEl.textContent=(_romanMode?toRoman(Math.round(cur.temperature_2m)):Math.round(cur.temperature_2m))+'°';
-			  const descEl=document.getElementById('curr-weather-desc');if(descEl)descEl.textContent=wDesc[code]||'Variable';
+			  const descEl=document.getElementById('curr-weather-desc');if(descEl)descEl.textContent=_uiT(wDesc[code]||'Variable');
 			  const feelsEl=document.getElementById('curr-feelslike');if(feelsEl)feelsEl.textContent=(_romanMode?toRoman(Math.round(cur.apparent_temperature??cur.temperature_2m)):Math.round(cur.apparent_temperature??cur.temperature_2m))+'°';
 			  const humEl=document.getElementById('curr-humidity');if(humEl)humEl.textContent=(_romanMode?toRoman(cur.relativehumidity_2m||0):(cur.relativehumidity_2m||'—'))+'%';
 			  const windEl=document.getElementById('curr-wind');if(windEl)windEl.textContent=(_romanMode?toRoman(Math.round(cur.windspeed_10m||0)):Math.round(cur.windspeed_10m||0))+'km/h';
 			  const rainPct=daily.precipitation_probability_max?.[0]||0;
 			  const rainEl=document.getElementById('rain-pct');if(rainEl)rainEl.textContent=(_romanMode?toRoman(rainPct):rainPct)+'%';
 			  const rainIcon=document.getElementById('rain-icon');if(rainIcon)rainIcon.textContent=rainPct>60?'🌧️':rainPct>30?'🌦️':'🌤️';
-			  const rainText=document.getElementById('rain-prob-text');if(rainText)rainText.textContent=rainPct>60?'Lluvia probable hoy':rainPct>30?'Posible lluvia':'Sin lluvia esperada';
+			  const rainText=document.getElementById('rain-prob-text');if(rainText)rainText.textContent=_uiT(rainPct>60?'Lluvia probable hoy':rainPct>30?'Posible lluvia':'Sin lluvia esperada');
 			  const tmax=Math.round(daily.temperature_2m_max?.[0]||0),tmin=Math.round(daily.temperature_2m_min?.[0]||0);
 			  const trEl=document.getElementById('temp-range-text');if(trEl)trEl.textContent='↑'+(_romanMode?toRoman(tmax):tmax)+'° ↓'+(_romanMode?toRoman(tmin):tmin)+'°';
 			  const hr=new Date().getHours();const uv=hourly.uv_index?.[hr]||0;
 			  const uvEl=document.getElementById('uv-index');if(uvEl)uvEl.textContent=_romanMode?toRoman(Math.round(uv)):Math.round(uv);
 			  if(daily.sunrise?.[0]){const raw=daily.sunrise[0].split('T')[1]?.slice(0,5)||'';const sr=document.getElementById('time-sunrise');if(sr){sr.dataset.raw=raw;sr.textContent=fmtTimeStr(raw);}}
 			  if(daily.sunset?.[0]){const raw=daily.sunset[0].split('T')[1]?.slice(0,5)||'';const ss=document.getElementById('time-sunset');if(ss){ss.dataset.raw=raw;ss.textContent=fmtTimeStr(raw);}}
-			  const updEl=document.getElementById('weather-updated');if(updEl)updEl.textContent='Actualizado '+new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+			  const updEl=document.getElementById('weather-updated');if(updEl)updEl.textContent=_uiT('Actualizado')+' '+new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
 			  // Hourly forecast
 			  const container=document.getElementById('hourly-container');if(!container)return;
 			  container.innerHTML='';
@@ -14059,6 +14118,46 @@
 			loadNotes();
 			loadOpinion();
 			loadPublicOpinions();
+			/* ===== NOVEDADES: registro de cambios visible para la gente =====
+			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
+			   se añade una entrada nueva ARRIBA con su fecha. */
+			const IX_CHANGELOG = [
+			  { fecha: '11 de julio de 2026', cambios: [
+			    '➕ El botón ⚙️ de configuración ahora es FIJO (en Más puedes ponerlo a ocultarse solo)',
+			    '🛠️ Traducción: ya se traducen también los textos en vivo (estación, siglo, clima, "Actualizado")',
+			    '➕ Panel de Novedades (este mismo) en Ayuda',
+			    '➕ Opiniones públicas: el muro "🌍 Opiniones de todos" — lo que publicas lo ven todos los visitantes',
+			    '➕ 50 instrumentos del mundo en el teclado de IXBand, por categorías, con teclado gigante',
+			    '➕ Pantalla de Idioma y Región antes de entrar (detecta tu ubicación y te pregunta)',
+			    '➕ La traducción ahora cubre TODA la app, incluso apps que se abren después',
+			    '🔁 Renombres: GarageBand → IXBand, Siri → IXA, iPod → Reproductor de música, iCloud → Mi Nube (marcas propias)',
+			    '🛡️ Las marcas IXClock, IXBand, IXBench e IXA jamás se traducen',
+			    '🛠️ Arreglado el "Traduciendo…" infinito y la bienvenida sin traducir'
+			  ]},
+			  { fecha: '10-11 de julio de 2026', cambios: [
+			    '➕ IXBand estilo real: Mis canciones, plantillas de género (EDM, Hip Hop, Dubstep…), Live Loops, Pistas, LCD y metrónomo',
+			    '➕ Modo Fácil configurable: color, fondo y tipo de números desde configuración; estación del año y siglo',
+			    '➕ Fondo Dinámico ANIMADO según la hora y el clima real (lluvia, nieve, estrellas)',
+			    '➕ Tamaño y altura del reloj editables (Personalizar → Relojes)',
+			    '➕ Insignias de resolución real (4K ✓/1080p) y filtro Todos / Solo 4K en fondos',
+			    '➕ Botón ⭐ Famosos en TV (Telemundo, FIFA+, ESPN y ~50 cadenas)',
+			    '🛠️ Fondos: ya no "sale otro" al primer toque; nada se borra en silencio',
+			    '➖ Quitado el botón flotante del Modo Fácil (ahora todo desde configuración)'
+			  ]}
+			];
+			function renderNovedades(){
+			  const el = document.getElementById('novedades-card');
+			  if(!el || !IX_CHANGELOG.length) return;
+			  let s = '<div class="text-[10px] font-bold tracking-widest mb-1" style="color:#30d158;">🆕 NOVEDADES</div>'
+			    + '<div style="font-size:10px;opacity:.55;margin-bottom:8px;">Última actualización: <b>' + IX_CHANGELOG[0].fecha + '</b></div>';
+			  IX_CHANGELOG.forEach(function(e, i){
+			    if(i > 0) s += '<div style="font-size:10px;opacity:.5;font-weight:800;margin:10px 0 4px;">' + e.fecha + '</div>';
+			    s += '<ul style="font-size:11px;opacity:.8;line-height:1.7;padding-left:2px;list-style:none;">'
+			      + e.cambios.map(function(c){ return '<li>' + c + '</li>'; }).join('') + '</ul>';
+			  });
+			  el.innerHTML = s;
+			}
+			renderNovedades();
 			setInterval(renderizarFeriados, 3600000);
 			setInterval(updateMoonPhase, 3600000);
 			document.getElementById('brightness-slider').oninput = e=>{
