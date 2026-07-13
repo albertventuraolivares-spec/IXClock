@@ -1648,105 +1648,10 @@
 						🌍 Idioma / Language / Langue
 					</div>
 					<div
-						style="display:flex;flex-wrap:wrap;gap:6px;"
-						id="ui-lang-btns"
+						style="display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow-y:auto;"
+						id="ui-lang-btns" data-notrans
 					>
-						<button
-							class="ui-lang-btn active"
-							id="ui-lang-es"
-							onclick="setUILang('es',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇪🇸 ES</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-en"
-							onclick="setUILang('en',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇺🇸 EN</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-fr"
-							onclick="setUILang('fr',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇫🇷 FR</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-pt"
-							onclick="setUILang('pt',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇧🇷 PT</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-de"
-							onclick="setUILang('de',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇩🇪 DE</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-it"
-							onclick="setUILang('it',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇮🇹 IT</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-zh"
-							onclick="setUILang('zh',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇨🇳 中</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ja"
-							onclick="setUILang('ja',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇯🇵 JP</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ar"
-							onclick="setUILang('ar',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇸🇦 AR</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ru"
-							onclick="setUILang('ru',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇷🇺 RU</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ko"
-							onclick="setUILang('ko',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇰🇷 KO</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-hi"
-							onclick="setUILang('hi',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇮🇳 HI</span>
-						</button>
+						<!-- Botones generados por JS desde UI_LANGS (todos los idiomas) -->
 					</div>
 					<div
 						id="ui-lang-status" data-notrans
@@ -13095,7 +13000,69 @@
 			   Como al configurar un iPad: la app detecta tu idioma y región por la
 			   ubicación del aparato (idioma del sistema + zona horaria, sin pedir
 			   permisos), los deja puestos, y AUN ASÍ te los pregunta para confirmar. */
-			const _LR_LANGS=[['es','🇪🇸','Español'],['en','🇺🇸','English'],['fr','🇫🇷','Français'],['pt','🇵🇹','Português'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano'],['zh','🇨🇳','中文'],['ja','🇯🇵','日本語'],['ko','🇰🇷','한국어'],['ar','🇸🇦','العربية'],['ru','🇷🇺','Русский'],['hi','🇮🇳','हिन्दी']];
+			// ===== TODOS LOS IDIOMAS DEL MUNDO (con bandera y nombre nativo) =====
+			// code = id único (botón/caché/localStorage). g = código real que se manda
+			// al traductor (Google/Lingva). Las variantes (inglés de UK/US/AU…) tienen
+			// code distinto pero comparten g, porque el traductor las traduce igual.
+			const UI_LANGS = [
+			  {code:'es',    flag:'🇪🇸', name:'Español',            g:'es'},
+			  {code:'es-MX', flag:'🇲🇽', name:'Español (México)',    g:'es'},
+			  {code:'es-AR', flag:'🇦🇷', name:'Español (Argentina)', g:'es'},
+			  {code:'en',    flag:'🇺🇸', name:'English (US)',        g:'en'},
+			  {code:'en-GB', flag:'🇬🇧', name:'English (UK)',        g:'en'},
+			  {code:'en-AU', flag:'🇦🇺', name:'English (Australia)', g:'en'},
+			  {code:'en-CA', flag:'🇨🇦', name:'English (Canada)',    g:'en'},
+			  {code:'en-IN', flag:'🇮🇳', name:'English (India)',     g:'en'},
+			  {code:'fr',    flag:'🇫🇷', name:'Français',            g:'fr'},
+			  {code:'fr-CA', flag:'🇨🇦', name:'Français (Canada)',   g:'fr'},
+			  {code:'pt',    flag:'🇧🇷', name:'Português (Brasil)',  g:'pt'},
+			  {code:'pt-PT', flag:'🇵🇹', name:'Português (Portugal)',g:'pt'},
+			  {code:'de',    flag:'🇩🇪', name:'Deutsch',             g:'de'},
+			  {code:'it',    flag:'🇮🇹', name:'Italiano',            g:'it'},
+			  {code:'nl',    flag:'🇳🇱', name:'Nederlands',          g:'nl'},
+			  {code:'ca',    flag:'🇦🇩', name:'Català',              g:'ca'},
+			  {code:'gl',    flag:'🇪🇸', name:'Galego',              g:'gl'},
+			  {code:'eu',    flag:'🇪🇸', name:'Euskara',             g:'eu'},
+			  {code:'pl',    flag:'🇵🇱', name:'Polski',              g:'pl'},
+			  {code:'ru',    flag:'🇷🇺', name:'Русский',             g:'ru'},
+			  {code:'uk',    flag:'🇺🇦', name:'Українська',          g:'uk'},
+			  {code:'cs',    flag:'🇨🇿', name:'Čeština',             g:'cs'},
+			  {code:'sk',    flag:'🇸🇰', name:'Slovenčina',          g:'sk'},
+			  {code:'ro',    flag:'🇷🇴', name:'Română',              g:'ro'},
+			  {code:'hu',    flag:'🇭🇺', name:'Magyar',              g:'hu'},
+			  {code:'el',    flag:'🇬🇷', name:'Ελληνικά',            g:'el'},
+			  {code:'bg',    flag:'🇧🇬', name:'Български',            g:'bg'},
+			  {code:'sr',    flag:'🇷🇸', name:'Српски',              g:'sr'},
+			  {code:'hr',    flag:'🇭🇷', name:'Hrvatski',            g:'hr'},
+			  {code:'sv',    flag:'🇸🇪', name:'Svenska',             g:'sv'},
+			  {code:'da',    flag:'🇩🇰', name:'Dansk',               g:'da'},
+			  {code:'no',    flag:'🇳🇴', name:'Norsk',               g:'no'},
+			  {code:'fi',    flag:'🇫🇮', name:'Suomi',               g:'fi'},
+			  {code:'tr',    flag:'🇹🇷', name:'Türkçe',              g:'tr'},
+			  {code:'ar',    flag:'🇸🇦', name:'العربية',             g:'ar'},
+			  {code:'he',    flag:'🇮🇱', name:'עברית',               g:'iw'},
+			  {code:'fa',    flag:'🇮🇷', name:'فارسی',               g:'fa'},
+			  {code:'ur',    flag:'🇵🇰', name:'اردو',                g:'ur'},
+			  {code:'hi',    flag:'🇮🇳', name:'हिन्दी',               g:'hi'},
+			  {code:'bn',    flag:'🇧🇩', name:'বাংলা',               g:'bn'},
+			  {code:'ta',    flag:'🇮🇳', name:'தமிழ்',               g:'ta'},
+			  {code:'te',    flag:'🇮🇳', name:'తెలుగు',              g:'te'},
+			  {code:'zh',    flag:'🇨🇳', name:'中文 (简体)',          g:'zh-CN'},
+			  {code:'zh-TW', flag:'🇹🇼', name:'中文 (繁體)',          g:'zh-TW'},
+			  {code:'ja',    flag:'🇯🇵', name:'日本語',               g:'ja'},
+			  {code:'ko',    flag:'🇰🇷', name:'한국어',               g:'ko'},
+			  {code:'vi',    flag:'🇻🇳', name:'Tiếng Việt',          g:'vi'},
+			  {code:'th',    flag:'🇹🇭', name:'ไทย',                 g:'th'},
+			  {code:'id',    flag:'🇮🇩', name:'Indonesia',           g:'id'},
+			  {code:'ms',    flag:'🇲🇾', name:'Melayu',              g:'ms'},
+			  {code:'fil',   flag:'🇵🇭', name:'Filipino',            g:'tl'},
+			  {code:'sw',    flag:'🇰🇪', name:'Kiswahili',           g:'sw'},
+			  {code:'af',    flag:'🇿🇦', name:'Afrikaans',           g:'af'}
+			];
+			const UILANG_G = {}; UI_LANGS.forEach(l=>{ UILANG_G[l.code]=l.g; });
+			// Código real para el traductor (variante -> base). 'es' es el idioma origen.
+			function _uiTC(code){ return UILANG_G[code] || (code||'es'); }
+			const _LR_LANGS=UI_LANGS.map(l=>[l.code,l.flag,l.name]);
 			const _LR_REGIONS=[['DO','🇩🇴','República Dominicana'],['MX','🇲🇽','México'],['CO','🇨🇴','Colombia'],['AR','🇦🇷','Argentina'],['ES','🇪🇸','España'],['US','🇺🇸','Estados Unidos'],['PE','🇵🇪','Perú'],['CL','🇨🇱','Chile'],['VE','🇻🇪','Venezuela'],['EC','🇪🇨','Ecuador'],['GT','🇬🇹','Guatemala'],['CU','🇨🇺','Cuba'],['BO','🇧🇴','Bolivia'],['HN','🇭🇳','Honduras'],['PY','🇵🇾','Paraguay'],['SV','🇸🇻','El Salvador'],['NI','🇳🇮','Nicaragua'],['CR','🇨🇷','Costa Rica'],['PA','🇵🇦','Panamá'],['UY','🇺🇾','Uruguay'],['PR','🇵🇷','Puerto Rico'],['BR','🇧🇷','Brasil'],['CA','🇨🇦','Canadá'],['GB','🇬🇧','Reino Unido'],['FR','🇫🇷','Francia'],['DE','🇩🇪','Alemania'],['IT','🇮🇹','Italia'],['PT','🇵🇹','Portugal'],['JP','🇯🇵','Japón'],['KR','🇰🇷','Corea del Sur'],['CN','🇨🇳','China'],['IN','🇮🇳','India'],['RU','🇷🇺','Rusia'],['SA','🇸🇦','Arabia Saudita'],['AU','🇦🇺','Australia'],['NL','🇳🇱','Países Bajos'],['PH','🇵🇭','Filipinas'],['MA','🇲🇦','Marruecos']];
 			const _LR_TZ={'Santo_Domingo':'DO','Mexico_City':'MX','Bogota':'CO','Buenos_Aires':'AR','Madrid':'ES','New_York':'US','Chicago':'US','Denver':'US','Los_Angeles':'US','Phoenix':'US','Lima':'PE','Santiago':'CL','Caracas':'VE','Guayaquil':'EC','Guatemala':'GT','Havana':'CU','La_Paz':'BO','Tegucigalpa':'HN','Asuncion':'PY','El_Salvador':'SV','Managua':'NI','Costa_Rica':'CR','Panama':'PA','Montevideo':'UY','Puerto_Rico':'PR','Sao_Paulo':'BR','Toronto':'CA','Vancouver':'CA','London':'GB','Paris':'FR','Berlin':'DE','Rome':'IT','Lisbon':'PT','Tokyo':'JP','Seoul':'KR','Shanghai':'CN','Kolkata':'IN','Moscow':'RU','Riyadh':'SA','Sydney':'AU','Amsterdam':'NL','Manila':'PH','Casablanca':'MA'};
 			// Nombres de país e idioma EN EL IDIOMA ELEGIDO usando la API nativa del
@@ -13290,18 +13257,24 @@
 			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*|\bixa\b/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
 			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
+			  // Código real que entiende el traductor (variante -> base: en-GB -> en)
+			  const gLang = (typeof _uiTC==='function') ? _uiTC(lang) : lang;
 			  const gone=async (s)=>{
 			    try{
-			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
+			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(gLang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
 			      const d=await r.json();
 			      const t=unmask((d?.[0]||[]).map(seg=>seg[0]).join('').trim());
 			      return t||null;
 			    }catch(e){ return null; }
 			  };
 
+			  // Nombre en inglés del idioma destino para el prompt de la IA (cualquier
+			  // idioma del mundo, vía la API del navegador; respaldo a un mapa corto)
 			  const LANG_NAME={en:'English',fr:'French',pt:'Portuguese',de:'German',it:'Italian',
-			    zh:'Chinese (Simplified)',ja:'Japanese',ko:'Korean',ar:'Arabic',ru:'Russian',hi:'Hindi'};
-			  const targetName=LANG_NAME[lang]||lang;
+			    'zh-CN':'Chinese (Simplified)','zh-TW':'Chinese (Traditional)',ja:'Japanese',ko:'Korean',ar:'Arabic',ru:'Russian',hi:'Hindi'};
+			  let targetName=LANG_NAME[gLang];
+			  if(!targetName){ try{ targetName=new Intl.DisplayNames(['en'],{type:'language'}).of(gLang); }catch(e){} }
+			  if(!targetName) targetName=gLang;
 			  const SIZE=25;
 			  let doneCount=0;
 
@@ -13489,13 +13462,27 @@
 			  try{localStorage.setItem('ui_trans_cache',JSON.stringify(_uiTransCache));}catch(e){}
 			}
 
+			// Genera los botones de TODOS los idiomas (bandera + nombre nativo) en el
+			// selector de la barra lateral. El activo queda resaltado.
+			function renderUILangButtons(){
+			  const box=document.getElementById('ui-lang-btns');
+			  if(!box) return;
+			  box.innerHTML = UI_LANGS.map(function(l){
+			    const on = l.code === _uiLang;
+			    return '<button class="ui-lang-btn'+(on?' active':'')+'" id="ui-lang-'+l.code+'" onclick="setUILang(\''+l.code+'\',this)" '
+			      + 'style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;'
+			      + (on ? 'background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;' : 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;')+'">'
+			      + l.flag+' '+l.name+'</button>';
+			  }).join('');
+			}
+			document.addEventListener('DOMContentLoaded', renderUILangButtons, {once:true});
 			async function setUILang(lang,btn){
 			  _uiLang=lang;
 			  localStorage.setItem('ui_lang',lang);
 			  // Los acentos del asistente (Dominicano, Mexicano…) son de países que
-			  // hablan español: solo se muestran cuando el idioma es español.
+			  // hablan español: solo se muestran cuando el idioma base es español.
 			  const _diaCard=document.getElementById('siri-dialect-card');
-			  if(_diaCard) _diaCard.style.display = (lang==='es') ? '' : 'none';
+			  if(_diaCard) _diaCard.style.display = (_uiTC(lang)==='es') ? '' : 'none';
 			  document.querySelectorAll('.ui-lang-btn').forEach(b=>{b.style.background='rgba(255,255,255,.06)';b.style.borderColor='rgba(255,255,255,.15)';b.style.color='#fff';});
 			  if(btn){btn.style.background='rgba(10,132,255,.2)';btn.style.borderColor='rgba(10,132,255,.4)';btn.style.color='#0a84ff';}
 			  const st=document.getElementById('ui-lang-status');
@@ -13551,7 +13538,7 @@
 			  }
 			}
 
-			if(_uiLang!=='es'){
+			if(_uiTC(_uiLang)!=='es'){
 			  // Oculta ya la tarjeta de acentos (español) para que no parpadee al cargar
 			  document.addEventListener('DOMContentLoaded', ()=>{ const c=document.getElementById('siri-dialect-card'); if(c) c.style.display='none'; }, {once:true});
 			  setTimeout(()=>setUILang(_uiLang,document.getElementById('ui-lang-'+_uiLang)),900);
@@ -14414,6 +14401,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { fecha: '13 de julio de 2026', cambios: [
+			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
 			    '🛠️ Idioma y Región: los nombres de país ahora salen en el idioma elegido (inglés → "United States", francés → "États-Unis"…), ya no mezclado con español',
 			    '🛠️ Los acentos del asistente (Dominicano, Mexicano…) solo se muestran en español, porque son de países hispanohablantes',
 			    '➕ Notas con DIBUJO estilo Apple Notes: bolígrafo, lápiz, marcador, resaltador y borrador, con paleta de colores. Compatible con lápices de iPad y stylus de Samsung/Android (usa la presión del lápiz)',
