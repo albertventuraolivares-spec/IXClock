@@ -1894,7 +1894,7 @@
 				</div>
 
 				<!-- Opciones del Modo Fácil: color, fondo y tipo de números -->
-				<div id="easy-config" class="shrink-0" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
+				<div id="easy-config" class="shrink-0" style="display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
 					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🎨 Color del Modo Fácil</div>
 					<div id="easy-colors" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
 						<button class="easy-color-sw" data-c="#bb2222" onclick="easySetColor('#bb2222')" style="width:34px;height:34px;border-radius:50%;background:#bb2222;border:3px solid #fff;cursor:pointer;"></button>
@@ -14757,6 +14757,10 @@
 			  _easyBuild();
 			  const scr = document.getElementById('easy-screen');
 			  if(scr) scr.style.display = on ? 'flex' : 'none';
+			  // Las opciones (color, fondo, números, qué mostrar…) solo tienen sentido
+			  // con el Modo Fácil encendido: se ocultan cuando está apagado.
+			  const cfg = document.getElementById('easy-config');
+			  if(cfg) cfg.style.display = on ? '' : 'none';
 			  // Se entra y se sale SOLO desde configuración (interruptor Modo Fácil);
 			  // dentro del modo, ⚙️ Ajustes abre esa configuración encima.
 			  _easyApplyPrefs();
