@@ -760,31 +760,6 @@
 		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
-		<!-- Mostrar todas / ocultar algunas apps (para dejar más espacio) -->
-		<button
-			class="dock-btn"
-			id="dock-expand-btn"
-			onclick="toggleDockSize()"
-			title="Mostrar todas / ocultar algunas apps"
-			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 12px rgba(0,0,0,.4);"
-		>
-			<svg id="dock-expand-icon" width="40" height="40" viewBox="0 0 40 40">
-				<rect width="40" height="40" rx="9" fill="url(#dockExpGrad)" />
-				<defs>
-					<linearGradient id="dockExpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-						<stop offset="0%" stop-color="#5e5ce6" />
-						<stop offset="100%" stop-color="#0a84ff" />
-					</linearGradient>
-				</defs>
-				<!-- Icono de "cuadrícula de apps" -->
-				<g fill="#fff">
-					<rect x="11" y="11" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="23.5" y="11" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="11" y="23.5" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="23.5" y="23.5" width="5.5" height="5.5" rx="1.4"/>
-				</g>
-			</svg>
-		</button>
 		<!-- Reloj -->
 		<button
 			class="dock-btn"
@@ -1502,43 +1477,6 @@
 				<circle cx="29" cy="18" r="1.2" fill="#30d158" />
 			</svg>
 		</button>
-		<!-- Pantalla completa -->
-		<button
-			class="dock-btn dock-secondary"
-			id="fullscreen-dock-btn"
-			onclick="toggleFullscreen()"
-			title="Pantalla completa"
-			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 14px rgba(94,92,230,.4);"
-		>
-			<svg width="40" height="40" viewBox="0 0 40 40">
-				<rect width="40" height="40" rx="9" fill="url(#fsGrad)" />
-				<defs>
-					<linearGradient
-						id="fsGrad"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-					>
-						<stop offset="0%" stop-color="#5e5ce6" />
-						<stop offset="100%" stop-color="#0a84ff" />
-					</linearGradient>
-				</defs>
-				<g
-					id="fullscreen-dock-icon"
-					fill="none"
-					stroke="#fff"
-					stroke-width="2.2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M13 9 H9 V13" />
-					<path d="M27 9 H31 V13" />
-					<path d="M13 31 H9 V27" />
-					<path d="M27 31 H31 V27" />
-				</g>
-			</svg>
-		</button>
 		<!-- Benchmark -->
 		<button
 			class="dock-btn dock-secondary"
@@ -2000,6 +1938,18 @@
 							<button id="sbm-auto" class="btn-option flex-1" onclick="setSettingsBtnMode('auto')">👻 Se oculta solo</button>
 						</div>
 						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
+					</div>
+					<!-- Pantalla y barra de apps (movido desde el dock) -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">🖥️ Pantalla y apps</div>
+						<button id="cfg-fullscreen-btn" class="btn-option w-full" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+						<p class="text-[10px] opacity-40 mt-2 mb-3 leading-relaxed">Ocupa toda la pantalla (sin barras del navegador). Toca otra vez para salir.</p>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">▦ Barra de apps</div>
+						<div class="flex gap-2">
+							<button id="dockmode-all" class="btn-option flex-1" onclick="setDockMode(false)">▦ Todas</button>
+							<button id="dockmode-compact" class="btn-option flex-1 active" onclick="setDockMode(true)">▪ Compacta</button>
+						</div>
+						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
 					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
@@ -10149,11 +10099,23 @@
 			/* ============ MOSTRAR TODAS / OCULTAR ALGUNAS APPS DEL DOCK ============ */
 			// compact = algunas apps ocultas (más espacio). Al pulsar se muestran
 			// todas; al pulsar de nuevo se vuelven a ocultar las secundarias.
+			function _syncDockModeBtns(compact){
+				const a = document.getElementById('dockmode-all');
+				const c = document.getElementById('dockmode-compact');
+				if(a) a.classList.toggle('active', !compact);
+				if(c) c.classList.toggle('active', compact);
+			}
+			function setDockMode(compact){
+				const dock = document.getElementById('top-dock');
+				if(!dock) return;
+				dock.classList.toggle('compact', compact);
+				try{ localStorage.setItem('dock_compact', compact ? '1' : '0'); }catch(e){}
+				_syncDockModeBtns(compact);
+			}
 			function toggleDockSize(){
 				const dock = document.getElementById('top-dock');
 				if(!dock) return;
-				const compact = dock.classList.toggle('compact');
-				try{ localStorage.setItem('dock_compact', compact ? '1' : '0'); }catch(e){}
+				setDockMode(!dock.classList.contains('compact'));
 			}
 			document.addEventListener('DOMContentLoaded', ()=>{
 				const dock = document.getElementById('top-dock');
@@ -10161,7 +10123,9 @@
 				let pref = null;
 				try{ pref = localStorage.getItem('dock_compact'); }catch(e){}
 				// Por defecto compacto (algunas apps ocultas) para que quepan mejor.
-				if(pref !== '0') dock.classList.add('compact');
+				const compact = pref !== '0';
+				dock.classList.toggle('compact', compact);
+				_syncDockModeBtns(compact);
 			});
 
 			/* ===================== PANTALLA COMPLETA ===================== */
@@ -10177,14 +10141,12 @@
 			  }
 			}
 			function updateFullscreenIcon(){
-			  const icon = document.getElementById('fullscreen-dock-icon');
-			  const btn = document.getElementById('fullscreen-dock-btn');
-			  if(!icon) return;
+			  const cfgBtn = document.getElementById('cfg-fullscreen-btn');
 			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
-			  if(btn) btn.title = isFull ? 'Salir de pantalla completa' : 'Pantalla completa';
-			  icon.innerHTML = isFull
-			    ? '<path d="M9 13 H13 V9" /><path d="M31 13 H27 V9" /><path d="M9 27 H13 V31" /><path d="M31 27 H27 V31" />'
-			    : '<path d="M13 9 H9 V13" /><path d="M27 9 H31 V13" /><path d="M13 31 H9 V27" /><path d="M27 31 H31 V27" />';
+			  if(cfgBtn){
+			    cfgBtn.classList.toggle('active', !!isFull);
+			    cfgBtn.textContent = isFull ? '\u26db Salir de pantalla completa' : '\u26db Pantalla completa';
+			  }
 			}
 			document.addEventListener('fullscreenchange', updateFullscreenIcon);
 			document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
@@ -12942,7 +12904,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
-			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
+			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador y Apps de Música. La <b>Pantalla completa</b> y el modo <b>Todas / Compacta</b> de la barra (que muestra u oculta los íconos secundarios si se ve muy larga) están en <b>Personalizar → Más → 🖥️ Pantalla y apps</b>.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ IXA</div>
@@ -14411,6 +14373,7 @@
 			    '🛠️ Modo Fácil: quitado "ESTAMOS" y el "Siglo 21" repetido; quitado el botón de Ajustes duplicado (se usa el engranaje de la esquina)',
 			    '➕ Compatibilidad total: funciona en pantallas mini, grandes y con notch/isla dinámica; los paneles se adaptan al tamaño',
 			    '🔁 Novedades rediseñado como un tablero de actualizaciones de juego: línea de tiempo con versión, fecha, título e insignias de color (NUEVO, MEJORA, CAMBIO…) para cada cambio',
+			    '🔁 Pantalla completa y Barra de apps (todas/compacta) movidas del dock a Configuración → Más, para dejar la barra de arriba más limpia',
 			  ]},
 			  { v:'1.5', fecha: '12 de julio de 2026', titulo:'Fondos y traducción a fondo', cambios: [
 			    '🛠️ Fondos en movimiento: arreglado a fondo el "me pone el que no es" — ahora se elige SIEMPRE el video principal del wallpaper (nunca uno de la sección de relacionados). Todos se re-extraen con el criterio corregido',
