@@ -13096,6 +13096,29 @@
 			const _LR_LANGS=[['es','🇪🇸','Español'],['en','🇺🇸','English'],['fr','🇫🇷','Français'],['pt','🇵🇹','Português'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano'],['zh','🇨🇳','中文'],['ja','🇯🇵','日本語'],['ko','🇰🇷','한국어'],['ar','🇸🇦','العربية'],['ru','🇷🇺','Русский'],['hi','🇮🇳','हिन्दी']];
 			const _LR_REGIONS=[['DO','🇩🇴','República Dominicana'],['MX','🇲🇽','México'],['CO','🇨🇴','Colombia'],['AR','🇦🇷','Argentina'],['ES','🇪🇸','España'],['US','🇺🇸','Estados Unidos'],['PE','🇵🇪','Perú'],['CL','🇨🇱','Chile'],['VE','🇻🇪','Venezuela'],['EC','🇪🇨','Ecuador'],['GT','🇬🇹','Guatemala'],['CU','🇨🇺','Cuba'],['BO','🇧🇴','Bolivia'],['HN','🇭🇳','Honduras'],['PY','🇵🇾','Paraguay'],['SV','🇸🇻','El Salvador'],['NI','🇳🇮','Nicaragua'],['CR','🇨🇷','Costa Rica'],['PA','🇵🇦','Panamá'],['UY','🇺🇾','Uruguay'],['PR','🇵🇷','Puerto Rico'],['BR','🇧🇷','Brasil'],['CA','🇨🇦','Canadá'],['GB','🇬🇧','Reino Unido'],['FR','🇫🇷','Francia'],['DE','🇩🇪','Alemania'],['IT','🇮🇹','Italia'],['PT','🇵🇹','Portugal'],['JP','🇯🇵','Japón'],['KR','🇰🇷','Corea del Sur'],['CN','🇨🇳','China'],['IN','🇮🇳','India'],['RU','🇷🇺','Rusia'],['SA','🇸🇦','Arabia Saudita'],['AU','🇦🇺','Australia'],['NL','🇳🇱','Países Bajos'],['PH','🇵🇭','Filipinas'],['MA','🇲🇦','Marruecos']];
 			const _LR_TZ={'Santo_Domingo':'DO','Mexico_City':'MX','Bogota':'CO','Buenos_Aires':'AR','Madrid':'ES','New_York':'US','Chicago':'US','Denver':'US','Los_Angeles':'US','Phoenix':'US','Lima':'PE','Santiago':'CL','Caracas':'VE','Guayaquil':'EC','Guatemala':'GT','Havana':'CU','La_Paz':'BO','Tegucigalpa':'HN','Asuncion':'PY','El_Salvador':'SV','Managua':'NI','Costa_Rica':'CR','Panama':'PA','Montevideo':'UY','Puerto_Rico':'PR','Sao_Paulo':'BR','Toronto':'CA','Vancouver':'CA','London':'GB','Paris':'FR','Berlin':'DE','Rome':'IT','Lisbon':'PT','Tokyo':'JP','Seoul':'KR','Shanghai':'CN','Kolkata':'IN','Moscow':'RU','Riyadh':'SA','Sydney':'AU','Amsterdam':'NL','Manila':'PH','Casablanca':'MA'};
+			// Nombres de país e idioma EN EL IDIOMA ELEGIDO usando la API nativa del
+			// navegador (Intl.DisplayNames). Así al elegir inglés se ve "United States"
+			// en vez de "Estados Unidos"; en francés "États-Unis"; etc. Si el navegador
+			// no lo soporta, cae a los nombres en español de las listas.
+			const _lrDNCache = {};
+			function _lrDN(lang, type){
+			  const key = lang + '|' + type;
+			  if(key in _lrDNCache) return _lrDNCache[key];
+			  let dn = null;
+			  try{ dn = new Intl.DisplayNames([lang], { type: type }); }catch(e){ dn = null; }
+			  return _lrDNCache[key] = dn;
+			}
+			function _lrRegionName(code, lang){
+			  if(!code) return '';
+			  const dn = _lrDN(lang || 'es', 'region');
+			  if(dn){ try{ const n = dn.of(code); if(n && n !== code) return n; }catch(e){} }
+			  return (_LR_REGIONS.find(r => r[0] === code) || [])[2] || code;
+			}
+			function _lrLangName(code, lang){
+			  const dn = _lrDN(lang || code, 'language');
+			  if(dn){ try{ const n = dn.of(code); if(n && n !== code) return n.charAt(0).toUpperCase() + n.slice(1); }catch(e){} }
+			  return (_LR_LANGS.find(l => l[0] === code) || [])[2] || code;
+			}
 			function _lrDetect(){
 			  let lang='es', region='';
 			  try{
@@ -13118,22 +13141,33 @@
 			  const el=document.getElementById('langregion-overlay');
 			  if(!el||!_lrPick) return;
 			  const det=_lrPick;
-			  const langName=(_LR_LANGS.find(x=>x[0]===det.detLang)||[])[2]||det.detLang;
-			  const regName=(_LR_REGIONS.find(x=>x[0]===det.detRegion)||[])[2]||'';
+			  // Nombres en el IDIOMA ELEGIDO (no en español fijo)
+			  const uiLang = det.lang || det.detLang || 'es';
+			  const langName=_lrLangName(det.detLang, uiLang);
+			  const regName=det.detRegion ? _lrRegionName(det.detRegion, uiLang) : '';
 			  el.innerHTML='<div style="width:100%;max-width:420px;max-height:92vh;overflow-y:auto;padding:2rem 1.6rem;border-radius:2rem;background:rgba(30,30,40,.92);border:1px solid rgba(255,255,255,.18);box-shadow:0 32px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:14px;">'
 			    +'<div style="text-align:center;"><div style="font-size:2rem;">🌍</div>'
 			    +'<div style="font-size:1.25rem;font-weight:800;color:#fff;">Idioma y Región</div>'
 			    +'<div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:4px;line-height:1.5;">Detectado por tu ubicación: <b style="color:#0a84ff;">'+langName+(regName?' · '+regName:'')+'</b><br>Confírmalo o cámbialo — luego puedes cambiarlo en Personalizar.</div></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
-			    +_LR_LANGS.map(x=>'<button onclick="_lrPick.lang=\''+x[0]+'\';_lrPaint()" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
+			    +_LR_LANGS.map(x=>'<button onclick="_lrPickLang(\''+x[0]+'\')" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
 			    +'</div>'
 			    +'<div><div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:5px;font-weight:700;">REGIÓN</div>'
 			    +'<select id="lr-region" data-notrans style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:10px 12px;font-size:13px;">'
 			    +'<option value="">🌐 Otra / no decir</option>'
-			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+r[2]+'</option>').join('')
+			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+_lrRegionName(r[0], uiLang)+'</option>').join('')
 			    +'</select></div>'
 			    +'<button onclick="_lrConfirm()" style="width:100%;padding:.9rem;border-radius:.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:800;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(10,132,255,.4);">Continuar</button>'
 			    +'</div>';
+			}
+			// Al tocar un idioma: recuerda la región elegida y re-renderiza TODO en ese
+			// idioma (los países pasan a "United States", "États-Unis", etc.)
+			function _lrPickLang(lang){
+			  if(!_lrPick) return;
+			  const sel = document.getElementById('lr-region');
+			  if(sel) _lrPick.region = sel.value;
+			  _lrPick.lang = lang;
+			  _lrRender();
 			}
 			function _lrPaint(){
 			  document.querySelectorAll('[data-lr-lang]').forEach(b=>{
@@ -14372,6 +14406,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { fecha: '13 de julio de 2026', cambios: [
+			    '🛠️ Idioma y Región: los nombres de país ahora salen en el idioma elegido (inglés → "United States", francés → "États-Unis"…), ya no mezclado con español',
 			    '➕ Notas con DIBUJO estilo Apple Notes: bolígrafo, lápiz, marcador, resaltador y borrador, con paleta de colores. Compatible con lápices de iPad y stylus de Samsung/Android (usa la presión del lápiz)',
 			    '➕ Modo Fácil editable: puedes ocultar mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa"',
 			    '🛠️ Modo Fácil: quitado "ESTAMOS" y el "Siglo 21" repetido; quitado el botón de Ajustes duplicado (se usa el engranaje de la esquina)',
