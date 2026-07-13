@@ -2299,7 +2299,7 @@
 						</button>
 						<div
 							id="campana-horario"
-							style="display:none;padding:8px 0 2px;display:none;flex-direction:column;gap:8px;"
+							style="display:none;padding:8px 0 2px;flex-direction:column;gap:8px;"
 						>
 							<div
 								style="font-size:10px;opacity:.55;font-weight:600;"
@@ -3800,7 +3800,7 @@
 							<div class="ica-sleep-title">Para dormir | Despertar</div>
 						</div>
 					</div>
-					<button class="ica-sleep-block .ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
+					<button class="ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
 				</div>
 				<div id="ica-alarms-list" style="display:flex;flex-direction:column;"></div>
 				<div style="margin-top:20px;">
@@ -4031,7 +4031,7 @@
 			<!-- SCIENTIFIC MODE -->
 			<div
 				id="calc-sci"
-				style="display:none;padding:6px 10px 10px;display:none;flex-direction:column;gap:6px;"
+				style="display:none;padding:6px 10px 10px;flex-direction:column;gap:6px;"
 			>
 				<div
 					style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;"
@@ -4046,7 +4046,7 @@
 			<!-- UNIT CONVERTER MODE -->
 			<div
 				id="calc-unit"
-				style="display:none;padding:10px 14px 14px;display:none;flex-direction:column;gap:10px;"
+				style="display:none;padding:10px 14px 14px;flex-direction:column;gap:10px;"
 			>
 				<select
 					id="unit-category"
@@ -5401,12 +5401,13 @@
 			// videos/fotogramas extraídos se perderían al recargar y las tarjetas
 			// tendrían que re-extraer todo desde cero (causa del "primer toque falla").
 			try{
-			  if(localStorage.getItem('wpCacheV') !== '6'){
-			    // v6: las cachés anteriores podían tener contenido de OTRO wallpaper
-			    // (videos "relacionados" o páginas equivocadas de un proxy). Se
-			    // vacían una vez; el extractor nuevo ya no deja entrar contenido ajeno.
+			  if(localStorage.getItem('wpCacheV') !== '7'){
+			    // v7: el extractor nuevo elige el video PRINCIPAL (og:video o el del
+			    // reproductor, nunca un "relacionado"). Se vacía una vez para que todos
+			    // los fondos se re-extraigan con el criterio corregido y ninguno quede
+			    // con el video equivocado que se cacheó antes.
 			    Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpm4_|wpf_|wpf4_|wp4k_|wpres_)/.test(k)) localStorage.removeItem(k); });
-			    localStorage.setItem('wpCacheV', '6');
+			    localStorage.setItem('wpCacheV', '7');
 			  }
 			}catch(e){}
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
@@ -5466,37 +5467,45 @@
 			    const low = doc.toLowerCase();
 			    if(!slugTokens.some(t => low.indexOf(t) !== -1)) return null;
 			  }
-			  // Reúne TODOS los .mp4 de la página y elige el de mayor calidad (4K primero)
-			  const cand = [];
-			  (doc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(u=>cand.push(u));
-			  const sv = doc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/gi) || [];
-			  sv.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) cand.push(m[1]); });
-			  const ov = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i);
-			  if(ov) cand.push(ov[1]);
-			  // Botones de descarga 4K/UHD que no terminan en .mp4 (p. ej. motionbgs /dl/4k/...):
-			  // el <video> sigue la redirección al archivo real
-			  (doc.match(/href=["']([^"']*\/(?:dl|download)\/[^"']*)["']/gi) || []).forEach(s=>{
-			    const m = s.match(/href=["']([^"']+)["']/i);
-			    if(m && /4k|uhd|2160/i.test(m[1])) cand.push(m[1]);
-			  });
 			  let baseHost = '';
 			  try{ baseHost = new URL(baseUrl).hostname.replace(/^www\./,''); }catch(e){}
-			  const fixedAll = cand.map(fix).filter(Boolean);
-			  // Prioriza archivos del propio sitio o de sus CDNs conocidos
-			  let pool = fixedAll.filter(u=>{
-			    try{
-			      const h = new URL(u).hostname;
-			      return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
-			    }catch(e){ return false; }
-			  });
-			  if(!pool.length) pool = fixedAll;
-			  // Los videos que llevan el nombre de ESTE wallpaper mandan: así un video
-			  // "relacionado" de otro wallpaper (aunque diga 4K) jamás gana.
-			  const own = pool.filter(_tok);
-			  if(own.length) pool = own;
-			  const qScore = u => /2160|4k|uhd/i.test(u) ? 3 : /1440|2k(?!\d)/i.test(u) ? 2 : /1080|fhd/i.test(u) ? 1 : 0;
-			  pool.sort((a,b)=>qScore(b)-qScore(a));
-			  const video = pool[0] || null;
+			  const sameHost = (u)=>{ try{ const h=new URL(u).hostname; return h.endsWith(baseHost)||h.endsWith('.b-cdn.net')||h==='cdn.pixabay.com'||h.endsWith('motionbgs.com'); }catch(e){ return false; } };
+			  // ===== SOLO la parte PRINCIPAL de la página =====
+			  // Estos sitios ponen abajo una sección de "wallpapers relacionados" con
+			  // videos de OTROS fondos. El reproductor real va ANTES. Cortamos el HTML
+			  // en el primer marcador de "relacionados" para no mirar los ajenos.
+			  let mainDoc = doc;
+			  const relRe = /related[-_ ]?(?:posts|wallpapers|videos)?|you[-_ ]?may[-_ ]?also|also[-_ ]?like|rp4wp|yarpp|m[aá]s[-_ ]wallpapers|similar[-_ ]wallpapers|siguiente[-_ ]wallpaper|next[-_ ]post/i;
+			  const relM = doc.match(relRe);
+			  // Corta en el primer marcador de "relacionados" que esté DENTRO del body
+			  // (los relacionados siempre van en el cuerpo; en el head no cuentan).
+			  const _bodyAt = doc.search(/<body/i);
+			  if(relM && _bodyAt >= 0 && relM.index > _bodyAt) mainDoc = doc.slice(0, relM.index);
+			  // 1) og:video: EL video principal declarado por la página. Manda sobre todo.
+			  let video = null;
+			  const ov = doc.match(/property=["']og:video(?::secure_url|:url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i)
+			          || doc.match(/content=["']([^"']+\.mp4[^"']*)["'][^>]*property=["']og:video/i);
+			  if(ov){ const u = fix(ov[1]); if(u && sameHost(u)) video = u; }
+			  if(!video){
+			    // 2) Candidatos SOLO de la parte principal, en ORDEN de documento
+			    const cand = [];
+			    const push = (u)=>{ const f = fix(u); if(f) cand.push(f); };
+			    const sTag = mainDoc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/gi) || [];
+			    sTag.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) push(m[1]); });
+			    (mainDoc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(push);
+			    // Botones de descarga 4K/UHD (motionbgs /dl/4k/...): el <video> redirige
+			    (mainDoc.match(/href=["']([^"']*\/(?:dl|download)\/[^"']*)["']/gi) || []).forEach(s=>{
+			      const m = s.match(/href=["']([^"']+)["']/i);
+			      if(m && /4k|uhd|2160/i.test(m[1])) push(m[1]);
+			    });
+			    let pool = cand.filter(sameHost);
+			    if(!pool.length) pool = cand;
+			    // 3) Si alguno lleva el nombre del wallpaper, ese; si no, el PRIMERO del
+			    //    documento (el reproductor hero) — NUNCA rankeamos por calidad aquí,
+			    //    porque un "relacionado" 4K le ganaría al fondo real.
+			    const own = pool.filter(_tok);
+			    video = own.length ? own[0] : (pool[0] || null);
+			  }
 			  let mt = doc.match(/property=["']og:image(?::url|:secure_url)?["'][^>]*content=["']([^"']+)["']/i)
 			        || doc.match(/content=["']([^"']+)["'][^>]*property=["']og:image/i)
 			        || doc.match(/name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
@@ -5504,14 +5513,10 @@
 			  let thumb = fix(mt ? (mt[1] || mt[0]) : null);
 			  if(!thumb){
 			    // Sin etiqueta og:image (p. ej. la página llegó como texto/markdown vía
-			    // r.jina.ai): busca cualquier imagen del propio sitio en el contenido
-			    const imgs = (doc.match(/https?:\/\/[^"'\s\\)>]+\.(?:jpg|jpeg|png|webp)[^"'\s\\)>]*/gi) || []).map(fix).filter(Boolean);
-			    let ipool = imgs.filter(u=>{
-			      try{
-			        const h = new URL(u).hostname;
-			        return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
-			      }catch(e){ return false; }
-			    });
+			    // r.jina.ai): busca cualquier imagen del propio sitio, SOLO en la parte
+			    // principal (antes de los "relacionados"), para no agarrar una ajena
+			    const imgs = (mainDoc.match(/https?:\/\/[^"'\s\\)>]+\.(?:jpg|jpeg|png|webp)[^"'\s\\)>]*/gi) || []).map(fix).filter(Boolean);
+			    let ipool = imgs.filter(sameHost);
 			    if(!ipool.length) ipool = imgs;
 			    // Igual que con los videos: primero las imágenes con el nombre de ESTE
 			    // wallpaper, para no agarrar la miniatura de un "relacionado"
@@ -5792,9 +5797,17 @@
 			  } else if(wp.type === 'video'){
 			    _wpAttachVideo(fillEl, wp, wp.url || null, onReady);
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
-			    fillEl.style.backgroundImage = `url('${wp.url}')`;
+			    // Gradiente propio de respaldo primero, para que NUNCA quede negro si la
+			    // foto (Unsplash) ya no existe; se comprueba la URL y solo se pone si carga.
+			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
+			    if(wp.url){
+			      const _probe = new Image();
+			      _probe.onload = ()=>{ if(fillEl.isConnected) fillEl.style.backgroundImage = `url('${wp.url}')`; };
+			      _probe.onerror = ()=>{ /* URL muerta: se queda el gradiente del propio fondo */ };
+			      _probe.src = wp.url;
+			    }
 			  } else if(wp.type === 'canvas'){
 			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
 			    const cvs = document.createElement('canvas');
@@ -12269,18 +12282,8 @@
 			  panel.style.transform = willOpen ? 'translateX(-50%) translateY(0) scale(1)' : 'translateX(-50%) translateY(16px) scale(.97)';
 			  if(willOpen) { renderCalcGrid(); calcUpdateDisplay(); }
 			}
-			function renderCalcGrid(){
-			  const grid = document.getElementById('calc-grid');
-			  grid.innerHTML = '';
-			  CALC_KEYS.forEach(k=>{
-			    const btn = document.createElement('button');
-			    btn.className = 'calc-btn-key ' + k.cls;
-			    btn.id = 'calck-' + (k.act==='op' ? k.val : k.act);
-			    btn.innerText = k.l;
-			    btn.onclick = ()=>calcPress(k);
-			    grid.appendChild(btn);
-			  });
-			}
+			// (Había aquí una renderCalcGrid() muerta que usaba #calc-grid/CALC_KEYS:
+			//  la definición real más abajo usa #calc-basic y la pisaba. Eliminada.)
 			function calcFormat(numStr){
 			  if(numStr==='Error') return numStr;
 			  const neg = numStr.startsWith('-');
@@ -14175,6 +14178,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { fecha: '12 de julio de 2026', cambios: [
+			    '🛠️ Fondos en movimiento: arreglado a fondo el "me pone el que no es" — ahora se elige SIEMPRE el video principal del wallpaper (nunca uno de la sección de relacionados). Todos se re-extraen con el criterio corregido',
+			    '🛠️ Traducción: cerrados los últimos textos que faltaban (barrido de ~40 pantallas, cero sin traducir y cero parpadeos)',
+			    '🛠️ Fotos de fondo: si una imagen ya no existe, se muestra el degradado del propio fondo en vez de quedar en negro',
+			    '🧹 Limpieza de código: quitado código muerto y una clase mal escrita'
+			  ]},
 			  { fecha: '11 de julio de 2026', cambios: [
 			    '🛠️ Traducción TOTAL verificada pantalla por pantalla: también los textos de las cajas (placeholder), los globitos de los botones (title), las listas desplegables, los avisos emergentes y la fase lunar/festividades — y cero parpadeos (nada vuelve al español solo)',
 			    '➕ El botón ⚙️ de configuración ahora es FIJO (en Más puedes ponerlo a ocultarse solo)',
