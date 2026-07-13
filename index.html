@@ -2,7 +2,7 @@
 <html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
 		<title>IXClocK -- Universal OS Dashboard</title>
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
@@ -718,6 +718,8 @@
 			.station-loading{opacity:.6;animation:stationPulse 1s ease-in-out infinite;}
 			.station-error{border-color:rgba(255,69,58,.6)!important;background:rgba(255,69,58,.08)!important;}
 			@keyframes stationPulse{0%,100%{opacity:.5;}50%{opacity:.9;}}
+			@keyframes novNuevo{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(48,209,88,.5);}50%{transform:scale(1.06);box-shadow:0 0 8px 1px rgba(48,209,88,.55);}}
+			.nov-nuevo{animation:novNuevo 1.6s ease-in-out infinite;}
 			input[type=range]{accent-color:var(--accent-color);}
 		</style>
 
@@ -758,31 +760,6 @@
 		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
-		<!-- Mostrar todas / ocultar algunas apps (para dejar más espacio) -->
-		<button
-			class="dock-btn"
-			id="dock-expand-btn"
-			onclick="toggleDockSize()"
-			title="Mostrar todas / ocultar algunas apps"
-			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 12px rgba(0,0,0,.4);"
-		>
-			<svg id="dock-expand-icon" width="40" height="40" viewBox="0 0 40 40">
-				<rect width="40" height="40" rx="9" fill="url(#dockExpGrad)" />
-				<defs>
-					<linearGradient id="dockExpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-						<stop offset="0%" stop-color="#5e5ce6" />
-						<stop offset="100%" stop-color="#0a84ff" />
-					</linearGradient>
-				</defs>
-				<!-- Icono de "cuadrícula de apps" -->
-				<g fill="#fff">
-					<rect x="11" y="11" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="23.5" y="11" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="11" y="23.5" width="5.5" height="5.5" rx="1.4"/>
-					<rect x="23.5" y="23.5" width="5.5" height="5.5" rx="1.4"/>
-				</g>
-			</svg>
-		</button>
 		<!-- Reloj -->
 		<button
 			class="dock-btn"
@@ -1500,43 +1477,6 @@
 				<circle cx="29" cy="18" r="1.2" fill="#30d158" />
 			</svg>
 		</button>
-		<!-- Pantalla completa -->
-		<button
-			class="dock-btn dock-secondary"
-			id="fullscreen-dock-btn"
-			onclick="toggleFullscreen()"
-			title="Pantalla completa"
-			style="background:linear-gradient(135deg,#5e5ce6,#0a84ff);box-shadow:0 3px 14px rgba(94,92,230,.4);"
-		>
-			<svg width="40" height="40" viewBox="0 0 40 40">
-				<rect width="40" height="40" rx="9" fill="url(#fsGrad)" />
-				<defs>
-					<linearGradient
-						id="fsGrad"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-					>
-						<stop offset="0%" stop-color="#5e5ce6" />
-						<stop offset="100%" stop-color="#0a84ff" />
-					</linearGradient>
-				</defs>
-				<g
-					id="fullscreen-dock-icon"
-					fill="none"
-					stroke="#fff"
-					stroke-width="2.2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M13 9 H9 V13" />
-					<path d="M27 9 H31 V13" />
-					<path d="M13 31 H9 V27" />
-					<path d="M27 31 H31 V27" />
-				</g>
-			</svg>
-		</button>
 		<!-- Benchmark -->
 		<button
 			class="dock-btn dock-secondary"
@@ -1648,105 +1588,10 @@
 						🌍 Idioma / Language / Langue
 					</div>
 					<div
-						style="display:flex;flex-wrap:wrap;gap:6px;"
-						id="ui-lang-btns"
+						style="display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow-y:auto;"
+						id="ui-lang-btns" data-notrans
 					>
-						<button
-							class="ui-lang-btn active"
-							id="ui-lang-es"
-							onclick="setUILang('es',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇪🇸 ES</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-en"
-							onclick="setUILang('en',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇺🇸 EN</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-fr"
-							onclick="setUILang('fr',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇫🇷 FR</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-pt"
-							onclick="setUILang('pt',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇧🇷 PT</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-de"
-							onclick="setUILang('de',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇩🇪 DE</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-it"
-							onclick="setUILang('it',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇮🇹 IT</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-zh"
-							onclick="setUILang('zh',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇨🇳 中</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ja"
-							onclick="setUILang('ja',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇯🇵 JP</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ar"
-							onclick="setUILang('ar',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇸🇦 AR</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ru"
-							onclick="setUILang('ru',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇷🇺 RU</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-ko"
-							onclick="setUILang('ko',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇰🇷 KO</span>
-						</button>
-						<button
-							class="ui-lang-btn"
-							id="ui-lang-hi"
-							onclick="setUILang('hi',this)"
-							style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:all .2s;"
-						>
-							<span class="ui-translate">🇮🇳 HI</span>
-						</button>
+						<!-- Botones generados por JS desde UI_LANGS (todos los idiomas) -->
 					</div>
 					<div
 						id="ui-lang-status" data-notrans
@@ -1754,8 +1599,10 @@
 					></div>
 				</div>
 
-				<!-- DIALECTO / VOZ DE SIRI -->
+				<!-- DIALECTO / VOZ DE SIRI (solo aplica en español: son acentos de
+				     países hispanohablantes; se oculta en otros idiomas) -->
 				<div
+					id="siri-dialect-card"
 					class="shrink-0"
 					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
@@ -1894,7 +1741,7 @@
 				</div>
 
 				<!-- Opciones del Modo Fácil: color, fondo y tipo de números -->
-				<div id="easy-config" class="shrink-0" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
+				<div id="easy-config" class="shrink-0" style="display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
 					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🎨 Color del Modo Fácil</div>
 					<div id="easy-colors" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
 						<button class="easy-color-sw" data-c="#bb2222" onclick="easySetColor('#bb2222')" style="width:34px;height:34px;border-radius:50%;background:#bb2222;border:3px solid #fff;cursor:pointer;"></button>
@@ -1917,6 +1764,13 @@
 						<button class="easy-font-btn btn-option" data-f="thin" onclick="easySetFont('thin')" style="font-size:10px;padding:6px 12px;">Fino</button>
 						<button class="easy-font-btn btn-option" data-f="retro" onclick="easySetFont('retro')" style="font-size:10px;padding:6px 12px;">Retro</button>
 					</div>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin:12px 0 6px;">✏️ Qué mostrar</div>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar mañana/tarde/noche</span><input type="checkbox" id="easy-show-momento" onchange="easySetToggle('easy_show_momento', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar AM / PM</span><input type="checkbox" id="easy-show-ampm" onchange="easySetToggle('easy_show_ampm', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar estación y siglo</span><input type="checkbox" id="easy-show-extra" onchange="easySetToggle('easy_show_extra', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin:10px 0 4px;">🏠 Texto de “en casa”</div>
+					<input type="text" id="easy-home-text" placeholder="ESTÁS EN CASA" oninput="easySetHomeText(this.value)" maxlength="40" style="width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#fff;padding:8px 10px;font-size:12px;" />
+					<div style="font-size:9px;opacity:.4;margin-top:4px;">Déjalo vacío para ocultar esa línea.</div>
 				</div>
 
 				<!-- AI Provider -->
@@ -2084,6 +1938,18 @@
 							<button id="sbm-auto" class="btn-option flex-1" onclick="setSettingsBtnMode('auto')">👻 Se oculta solo</button>
 						</div>
 						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
+					</div>
+					<!-- Pantalla y barra de apps (movido desde el dock) -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">🖥️ Pantalla y apps</div>
+						<button id="cfg-fullscreen-btn" class="btn-option w-full" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+						<p class="text-[10px] opacity-40 mt-2 mb-3 leading-relaxed">Ocupa toda la pantalla (sin barras del navegador). Toca otra vez para salir.</p>
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">▦ Barra de apps</div>
+						<div class="flex gap-2">
+							<button id="dockmode-all" class="btn-option flex-1" onclick="setDockMode(false)">▦ Todas</button>
+							<button id="dockmode-compact" class="btn-option flex-1 active" onclick="setDockMode(true)">▪ Compacta</button>
+						</div>
+						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
 					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
@@ -2299,7 +2165,7 @@
 						</button>
 						<div
 							id="campana-horario"
-							style="display:none;padding:8px 0 2px;display:none;flex-direction:column;gap:8px;"
+							style="display:none;padding:8px 0 2px;flex-direction:column;gap:8px;"
 						>
 							<div
 								style="font-size:10px;opacity:.55;font-weight:600;"
@@ -3800,7 +3666,7 @@
 							<div class="ica-sleep-title">Para dormir | Despertar</div>
 						</div>
 					</div>
-					<button class="ica-sleep-block .ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
+					<button class="ica-sleep-btn" style="background:none;border:none;color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;">CONFIGURAR</button>
 				</div>
 				<div id="ica-alarms-list" style="display:flex;flex-direction:column;"></div>
 				<div style="margin-top:20px;">
@@ -4031,7 +3897,7 @@
 			<!-- SCIENTIFIC MODE -->
 			<div
 				id="calc-sci"
-				style="display:none;padding:6px 10px 10px;display:none;flex-direction:column;gap:6px;"
+				style="display:none;padding:6px 10px 10px;flex-direction:column;gap:6px;"
 			>
 				<div
 					style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;"
@@ -4046,7 +3912,7 @@
 			<!-- UNIT CONVERTER MODE -->
 			<div
 				id="calc-unit"
-				style="display:none;padding:10px 14px 14px;display:none;flex-direction:column;gap:10px;"
+				style="display:none;padding:10px 14px 14px;flex-direction:column;gap:10px;"
 			>
 				<select
 					id="unit-category"
@@ -4601,11 +4467,12 @@
 				</div>
 			</div>
 			<div id="notes-edit-view" class="flex-1 hidden flex-col min-h-0">
-				<div
-					class="px-4 pt-1 pb-1 text-[11px] text-center opacity-40"
-					id="notes-edit-date"
-				>
-					Hoy
+				<div class="flex items-center justify-between px-3 pt-1 pb-1">
+					<span class="text-[11px] opacity-40" id="notes-edit-date">Hoy</span>
+					<div class="flex gap-1">
+						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
+						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:#fff;">🎨 Dibujar</button>
+					</div>
 				</div>
 				<textarea
 					id="notes-textarea"
@@ -4613,6 +4480,27 @@
 					placeholder="Nota"
 					oninput="notesAutoSave()"
 				></textarea>
+				<!-- Lienzo de dibujo estilo Apple Notes: lápiz, bolígrafo, marcador,
+				     resaltador, borrador + colores; compatible con lápices de iPad y
+				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
+				<div id="notes-draw-wrap" class="hidden flex-1 flex-col min-h-0">
+					<div id="notes-tools" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10">
+						<button class="notes-tool" data-tool="pen" onclick="notesTool('pen')" title="Bolígrafo" style="font-size:16px;padding:4px 7px;border-radius:9px;background:#0a84ff;border:none;cursor:pointer;">🖊️</button>
+						<button class="notes-tool" data-tool="pencil" onclick="notesTool('pencil')" title="Lápiz" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">✏️</button>
+						<button class="notes-tool" data-tool="marker" onclick="notesTool('marker')" title="Marcador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🖍️</button>
+						<button class="notes-tool" data-tool="highlighter" onclick="notesTool('highlighter')" title="Resaltador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🟡</button>
+						<button class="notes-tool" data-tool="eraser" onclick="notesTool('eraser')" title="Borrador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🧽</button>
+						<span style="width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 2px;"></span>
+						<input type="range" id="notes-size" min="1" max="40" value="4" oninput="notesSetSize(this.value)" title="Grosor" style="width:70px;">
+						<span style="flex:1;"></span>
+						<button onclick="notesUndo()" title="Deshacer" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">↩️</button>
+						<button onclick="notesClearDraw()" title="Borrar todo" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,69,58,.2);border:none;cursor:pointer;">🗑️</button>
+					</div>
+					<div id="notes-colors" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10"></div>
+					<div class="flex-1 min-h-0 relative" style="background:#fafafa;">
+						<canvas id="notes-canvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;"></canvas>
+					</div>
+				</div>
 				<div
 					class="flex items-center justify-between px-4 py-2.5 border-t border-white/10"
 				>
@@ -5386,6 +5274,43 @@
 			.wallpaper-card.wp-loading{outline:2px solid #0a84ff;animation:wpLoadingPulse 1s ease-in-out infinite;}
 			@keyframes wpLoadingPulse{50%{outline-color:rgba(10,132,255,.2);}}
 			.wp-res-badge{position:absolute;right:6px;top:6px;z-index:3;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.6);color:#30d158;letter-spacing:.04em;pointer-events:none;}
+			/* ===== COMPATIBILIDAD TOTAL — todos los tamaños de pantalla ===== */
+			/* Respeta las zonas seguras (notch, isla dinámica, barra inferior) */
+			#top-dock{padding-top:env(safe-area-inset-top,0);}
+			.btn-settings{top:max(22px,env(safe-area-inset-top,0));left:max(22px,env(safe-area-inset-left,0));}
+			/* Móviles: los paneles flotantes ocupan casi toda la pantalla en vez de
+			   un ancho fijo de 380px que se sale en pantallas pequeñas */
+			@media (max-width:640px){
+			  #translator-panel,#ai-chat-panel,#tv-panel,#games-panel,#alarm-panel,#notes-panel,#calc-panel{
+			    left:max(8px,env(safe-area-inset-left)) !important;
+			    right:max(8px,env(safe-area-inset-right)) !important;
+			    width:auto !important;max-width:none !important;
+			    bottom:max(84px,env(safe-area-inset-bottom)) !important;
+			    transform:none !important;
+			  }
+			  #calc-panel{left:8px !important;right:8px !important;}
+			  .btn-settings{width:42px;height:42px;}
+			}
+			/* Pantallas MUY pequeñas (relojes, cosas mini < 380px) */
+			@media (max-width:380px){
+			  :root{--clock-size:3.4rem;}
+			  #top-dock{gap:4px !important;overflow-x:auto;max-width:100vw;}
+			  #translator-panel,#ai-chat-panel,#tv-panel,#games-panel,#alarm-panel,#notes-panel,#calc-panel{
+			    top:6px !important;bottom:6px !important;max-height:none !important;
+			  }
+			}
+			/* Pantallas anchas / muy grandes: el contenido no se estira feo */
+			@media (min-width:1600px){
+			  #main-clock-wrap,main{max-width:1500px;margin-left:auto;margin-right:auto;}
+			}
+			/* Pantallas muy bajas (apaisado en móvil) */
+			@media (max-height:440px){
+			  :root{--clock-size:2.8rem;}
+			  #hourly-container-wrap,#luna-row{display:none;}
+			}
+			/* Táctil: nada de zoom accidental ni resaltado azul al tocar botones */
+			button,.dock-btn,.btn-option,.notes-tool,.notes-color{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+			img,canvas,video{max-width:100%;}
 			`;
 			document.head.appendChild(extraCSS);
 
@@ -5401,12 +5326,13 @@
 			// videos/fotogramas extraídos se perderían al recargar y las tarjetas
 			// tendrían que re-extraer todo desde cero (causa del "primer toque falla").
 			try{
-			  if(localStorage.getItem('wpCacheV') !== '6'){
-			    // v6: las cachés anteriores podían tener contenido de OTRO wallpaper
-			    // (videos "relacionados" o páginas equivocadas de un proxy). Se
-			    // vacían una vez; el extractor nuevo ya no deja entrar contenido ajeno.
+			  if(localStorage.getItem('wpCacheV') !== '7'){
+			    // v7: el extractor nuevo elige el video PRINCIPAL (og:video o el del
+			    // reproductor, nunca un "relacionado"). Se vacía una vez para que todos
+			    // los fondos se re-extraigan con el criterio corregido y ninguno quede
+			    // con el video equivocado que se cacheó antes.
 			    Object.keys(localStorage).forEach(k=>{ if(/^(wpv_|wpm_|wpm2_|wpm3_|wpm4_|wpf_|wpf4_|wp4k_|wpres_)/.test(k)) localStorage.removeItem(k); });
-			    localStorage.setItem('wpCacheV', '6');
+			    localStorage.setItem('wpCacheV', '7');
 			  }
 			}catch(e){}
 			// Una sola lectura de la página devuelve el video Y la miniatura reales
@@ -5466,37 +5392,45 @@
 			    const low = doc.toLowerCase();
 			    if(!slugTokens.some(t => low.indexOf(t) !== -1)) return null;
 			  }
-			  // Reúne TODOS los .mp4 de la página y elige el de mayor calidad (4K primero)
-			  const cand = [];
-			  (doc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(u=>cand.push(u));
-			  const sv = doc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/gi) || [];
-			  sv.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) cand.push(m[1]); });
-			  const ov = doc.match(/property=["']og:video(?::url|:secure_url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i);
-			  if(ov) cand.push(ov[1]);
-			  // Botones de descarga 4K/UHD que no terminan en .mp4 (p. ej. motionbgs /dl/4k/...):
-			  // el <video> sigue la redirección al archivo real
-			  (doc.match(/href=["']([^"']*\/(?:dl|download)\/[^"']*)["']/gi) || []).forEach(s=>{
-			    const m = s.match(/href=["']([^"']+)["']/i);
-			    if(m && /4k|uhd|2160/i.test(m[1])) cand.push(m[1]);
-			  });
 			  let baseHost = '';
 			  try{ baseHost = new URL(baseUrl).hostname.replace(/^www\./,''); }catch(e){}
-			  const fixedAll = cand.map(fix).filter(Boolean);
-			  // Prioriza archivos del propio sitio o de sus CDNs conocidos
-			  let pool = fixedAll.filter(u=>{
-			    try{
-			      const h = new URL(u).hostname;
-			      return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
-			    }catch(e){ return false; }
-			  });
-			  if(!pool.length) pool = fixedAll;
-			  // Los videos que llevan el nombre de ESTE wallpaper mandan: así un video
-			  // "relacionado" de otro wallpaper (aunque diga 4K) jamás gana.
-			  const own = pool.filter(_tok);
-			  if(own.length) pool = own;
-			  const qScore = u => /2160|4k|uhd/i.test(u) ? 3 : /1440|2k(?!\d)/i.test(u) ? 2 : /1080|fhd/i.test(u) ? 1 : 0;
-			  pool.sort((a,b)=>qScore(b)-qScore(a));
-			  const video = pool[0] || null;
+			  const sameHost = (u)=>{ try{ const h=new URL(u).hostname; return h.endsWith(baseHost)||h.endsWith('.b-cdn.net')||h==='cdn.pixabay.com'||h.endsWith('motionbgs.com'); }catch(e){ return false; } };
+			  // ===== SOLO la parte PRINCIPAL de la página =====
+			  // Estos sitios ponen abajo una sección de "wallpapers relacionados" con
+			  // videos de OTROS fondos. El reproductor real va ANTES. Cortamos el HTML
+			  // en el primer marcador de "relacionados" para no mirar los ajenos.
+			  let mainDoc = doc;
+			  const relRe = /related[-_ ]?(?:posts|wallpapers|videos)?|you[-_ ]?may[-_ ]?also|also[-_ ]?like|rp4wp|yarpp|m[aá]s[-_ ]wallpapers|similar[-_ ]wallpapers|siguiente[-_ ]wallpaper|next[-_ ]post/i;
+			  const relM = doc.match(relRe);
+			  // Corta en el primer marcador de "relacionados" que esté DENTRO del body
+			  // (los relacionados siempre van en el cuerpo; en el head no cuentan).
+			  const _bodyAt = doc.search(/<body/i);
+			  if(relM && _bodyAt >= 0 && relM.index > _bodyAt) mainDoc = doc.slice(0, relM.index);
+			  // 1) og:video: EL video principal declarado por la página. Manda sobre todo.
+			  let video = null;
+			  const ov = doc.match(/property=["']og:video(?::secure_url|:url)?["'][^>]*content=["']([^"']+\.mp4[^"']*)["']/i)
+			          || doc.match(/content=["']([^"']+\.mp4[^"']*)["'][^>]*property=["']og:video/i);
+			  if(ov){ const u = fix(ov[1]); if(u && sameHost(u)) video = u; }
+			  if(!video){
+			    // 2) Candidatos SOLO de la parte principal, en ORDEN de documento
+			    const cand = [];
+			    const push = (u)=>{ const f = fix(u); if(f) cand.push(f); };
+			    const sTag = mainDoc.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/gi) || [];
+			    sTag.forEach(s=>{ const m = s.match(/src=["']([^"']+)["']/i); if(m) push(m[1]); });
+			    (mainDoc.match(/https?:\/\/[^"'\s\\)>]+\.mp4[^"'\s\\)>]*/gi) || []).forEach(push);
+			    // Botones de descarga 4K/UHD (motionbgs /dl/4k/...): el <video> redirige
+			    (mainDoc.match(/href=["']([^"']*\/(?:dl|download)\/[^"']*)["']/gi) || []).forEach(s=>{
+			      const m = s.match(/href=["']([^"']+)["']/i);
+			      if(m && /4k|uhd|2160/i.test(m[1])) push(m[1]);
+			    });
+			    let pool = cand.filter(sameHost);
+			    if(!pool.length) pool = cand;
+			    // 3) Si alguno lleva el nombre del wallpaper, ese; si no, el PRIMERO del
+			    //    documento (el reproductor hero) — NUNCA rankeamos por calidad aquí,
+			    //    porque un "relacionado" 4K le ganaría al fondo real.
+			    const own = pool.filter(_tok);
+			    video = own.length ? own[0] : (pool[0] || null);
+			  }
 			  let mt = doc.match(/property=["']og:image(?::url|:secure_url)?["'][^>]*content=["']([^"']+)["']/i)
 			        || doc.match(/content=["']([^"']+)["'][^>]*property=["']og:image/i)
 			        || doc.match(/name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
@@ -5504,14 +5438,10 @@
 			  let thumb = fix(mt ? (mt[1] || mt[0]) : null);
 			  if(!thumb){
 			    // Sin etiqueta og:image (p. ej. la página llegó como texto/markdown vía
-			    // r.jina.ai): busca cualquier imagen del propio sitio en el contenido
-			    const imgs = (doc.match(/https?:\/\/[^"'\s\\)>]+\.(?:jpg|jpeg|png|webp)[^"'\s\\)>]*/gi) || []).map(fix).filter(Boolean);
-			    let ipool = imgs.filter(u=>{
-			      try{
-			        const h = new URL(u).hostname;
-			        return h.endsWith(baseHost) || h.endsWith('.b-cdn.net') || h === 'cdn.pixabay.com' || h.endsWith('motionbgs.com');
-			      }catch(e){ return false; }
-			    });
+			    // r.jina.ai): busca cualquier imagen del propio sitio, SOLO en la parte
+			    // principal (antes de los "relacionados"), para no agarrar una ajena
+			    const imgs = (mainDoc.match(/https?:\/\/[^"'\s\\)>]+\.(?:jpg|jpeg|png|webp)[^"'\s\\)>]*/gi) || []).map(fix).filter(Boolean);
+			    let ipool = imgs.filter(sameHost);
 			    if(!ipool.length) ipool = imgs;
 			    // Igual que con los videos: primero las imágenes con el nombre de ESTE
 			    // wallpaper, para no agarrar la miniatura de un "relacionado"
@@ -5792,9 +5722,17 @@
 			  } else if(wp.type === 'video'){
 			    _wpAttachVideo(fillEl, wp, wp.url || null, onReady);
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
-			    fillEl.style.backgroundImage = `url('${wp.url}')`;
+			    // Gradiente propio de respaldo primero, para que NUNCA quede negro si la
+			    // foto (Unsplash) ya no existe; se comprueba la URL y solo se pone si carga.
+			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
+			    if(wp.url){
+			      const _probe = new Image();
+			      _probe.onload = ()=>{ if(fillEl.isConnected) fillEl.style.backgroundImage = `url('${wp.url}')`; };
+			      _probe.onerror = ()=>{ /* URL muerta: se queda el gradiente del propio fondo */ };
+			      _probe.src = wp.url;
+			    }
 			  } else if(wp.type === 'canvas'){
 			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
 			    const cvs = document.createElement('canvas');
@@ -10161,11 +10099,23 @@
 			/* ============ MOSTRAR TODAS / OCULTAR ALGUNAS APPS DEL DOCK ============ */
 			// compact = algunas apps ocultas (más espacio). Al pulsar se muestran
 			// todas; al pulsar de nuevo se vuelven a ocultar las secundarias.
+			function _syncDockModeBtns(compact){
+				const a = document.getElementById('dockmode-all');
+				const c = document.getElementById('dockmode-compact');
+				if(a) a.classList.toggle('active', !compact);
+				if(c) c.classList.toggle('active', compact);
+			}
+			function setDockMode(compact){
+				const dock = document.getElementById('top-dock');
+				if(!dock) return;
+				dock.classList.toggle('compact', compact);
+				try{ localStorage.setItem('dock_compact', compact ? '1' : '0'); }catch(e){}
+				_syncDockModeBtns(compact);
+			}
 			function toggleDockSize(){
 				const dock = document.getElementById('top-dock');
 				if(!dock) return;
-				const compact = dock.classList.toggle('compact');
-				try{ localStorage.setItem('dock_compact', compact ? '1' : '0'); }catch(e){}
+				setDockMode(!dock.classList.contains('compact'));
 			}
 			document.addEventListener('DOMContentLoaded', ()=>{
 				const dock = document.getElementById('top-dock');
@@ -10173,7 +10123,9 @@
 				let pref = null;
 				try{ pref = localStorage.getItem('dock_compact'); }catch(e){}
 				// Por defecto compacto (algunas apps ocultas) para que quepan mejor.
-				if(pref !== '0') dock.classList.add('compact');
+				const compact = pref !== '0';
+				dock.classList.toggle('compact', compact);
+				_syncDockModeBtns(compact);
 			});
 
 			/* ===================== PANTALLA COMPLETA ===================== */
@@ -10189,14 +10141,12 @@
 			  }
 			}
 			function updateFullscreenIcon(){
-			  const icon = document.getElementById('fullscreen-dock-icon');
-			  const btn = document.getElementById('fullscreen-dock-btn');
-			  if(!icon) return;
+			  const cfgBtn = document.getElementById('cfg-fullscreen-btn');
 			  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
-			  if(btn) btn.title = isFull ? 'Salir de pantalla completa' : 'Pantalla completa';
-			  icon.innerHTML = isFull
-			    ? '<path d="M9 13 H13 V9" /><path d="M31 13 H27 V9" /><path d="M9 27 H13 V31" /><path d="M31 27 H27 V31" />'
-			    : '<path d="M13 9 H9 V13" /><path d="M27 9 H31 V13" /><path d="M13 31 H9 V27" /><path d="M27 31 H31 V27" />';
+			  if(cfgBtn){
+			    cfgBtn.classList.toggle('active', !!isFull);
+			    cfgBtn.textContent = isFull ? '\u26db Salir de pantalla completa' : '\u26db Pantalla completa';
+			  }
 			}
 			document.addEventListener('fullscreenchange', updateFullscreenIcon);
 			document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
@@ -12269,18 +12219,8 @@
 			  panel.style.transform = willOpen ? 'translateX(-50%) translateY(0) scale(1)' : 'translateX(-50%) translateY(16px) scale(.97)';
 			  if(willOpen) { renderCalcGrid(); calcUpdateDisplay(); }
 			}
-			function renderCalcGrid(){
-			  const grid = document.getElementById('calc-grid');
-			  grid.innerHTML = '';
-			  CALC_KEYS.forEach(k=>{
-			    const btn = document.createElement('button');
-			    btn.className = 'calc-btn-key ' + k.cls;
-			    btn.id = 'calck-' + (k.act==='op' ? k.val : k.act);
-			    btn.innerText = k.l;
-			    btn.onclick = ()=>calcPress(k);
-			    grid.appendChild(btn);
-			  });
-			}
+			// (Había aquí una renderCalcGrid() muerta que usaba #calc-grid/CALC_KEYS:
+			//  la definición real más abajo usa #calc-basic y la pisaba. Eliminada.)
 			function calcFormat(numStr){
 			  if(numStr==='Error') return numStr;
 			  const neg = numStr.startsWith('-');
@@ -12439,6 +12379,8 @@
 			  document.getElementById('notes-textarea').value = n ? n.content : '';
 			  document.getElementById('notes-edit-date').innerText = n ? notesFormatDate(n.updatedAt||Date.now()) : '';
 			  notesUpdateWordCount();
+			  notesSetMode('text');
+			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
 			}
 			function notesUpdateWordCount(){
@@ -12462,6 +12404,131 @@
 			  notes = notes.filter(x=>x.id!==currentNoteId);
 			  saveNotes();
 			  notesShowList();
+			}
+
+			/* ===================== NOTAS — DIBUJO estilo Apple Notes =====================
+			   Lápiz, bolígrafo, marcador, resaltador y borrador con paleta de colores.
+			   Compatible con lápices de iPad y stylus de Samsung/Android: usa Pointer
+			   Events y aprovecha la PRESIÓN (pointer.pressure) y la inclinación cuando
+			   el dispositivo las reporta, para trazos más gruesos/finos como en Apple. */
+			let _notesDrawing = null; // dataURL PNG de la nota actual
+			let _notesTool = 'pen', _notesColor = '#1c1c1e', _notesSize = 4;
+			let _nCtx = null, _nCanvas = null, _nDrawn = false, _nLast = null, _nUndoStack = [];
+			const NOTES_COLORS = ['#1c1c1e','#ffffff','#ff3b30','#ff9500','#ffcc00','#34c759','#0a84ff','#5856d6','#af52de','#ff2d55','#a2845e','#8e8e93'];
+			const NOTES_TOOLS = {
+			  pen:        { cap:'round', join:'round', alpha:1,   mul:1,   comp:'source-over' },
+			  pencil:     { cap:'round', join:'round', alpha:0.85,mul:0.7, comp:'source-over', grain:true },
+			  marker:     { cap:'square',join:'round', alpha:0.9, mul:2.4, comp:'source-over' },
+			  highlighter:{ cap:'round', join:'round', alpha:0.35,mul:3.5, comp:'multiply' },
+			  eraser:     { cap:'round', join:'round', alpha:1,   mul:2.2, comp:'destination-out' }
+			};
+			function notesSetMode(mode){
+			  const draw = document.getElementById('notes-draw-wrap');
+			  const ta = document.getElementById('notes-textarea');
+			  const bt = document.getElementById('notes-mode-text'), bd = document.getElementById('notes-mode-draw');
+			  if(mode === 'draw'){
+			    ta.classList.add('hidden');
+			    draw.classList.remove('hidden'); draw.classList.add('flex');
+			    if(bt){ bt.style.background='rgba(255,255,255,.1)'; bt.style.color='#fff'; }
+			    if(bd){ bd.style.background='#ffd60a'; bd.style.color='#1c1c1e'; }
+			    notesInitCanvas();
+			  } else {
+			    draw.classList.add('hidden'); draw.classList.remove('flex');
+			    ta.classList.remove('hidden');
+			    if(bd){ bd.style.background='rgba(255,255,255,.1)'; bd.style.color='#fff'; }
+			    if(bt){ bt.style.background='#ffd60a'; bt.style.color='#1c1c1e'; }
+			  }
+			}
+			function notesBuildColors(){
+			  const box = document.getElementById('notes-colors');
+			  if(!box || box.childElementCount) return;
+			  NOTES_COLORS.forEach(c=>{
+			    const b = document.createElement('button');
+			    b.className = 'notes-color';
+			    b.dataset.c = c;
+			    b.onclick = ()=>notesColor(c);
+			    b.style.cssText = 'width:24px;height:24px;border-radius:50%;background:'+c+';border:2px solid '+(c===_notesColor?'#0a84ff':'rgba(0,0,0,.15)')+';cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.2);';
+			    box.appendChild(b);
+			  });
+			}
+			function notesColor(c){ _notesColor = c; if(_notesTool==='eraser') notesTool('pen'); document.querySelectorAll('.notes-color').forEach(b=>b.style.borderColor = (b.dataset.c===c?'#0a84ff':'rgba(0,0,0,.15)')); }
+			function notesTool(t){ _notesTool = t; document.querySelectorAll('.notes-tool').forEach(b=>b.style.background = (b.dataset.tool===t?'#0a84ff':'rgba(255,255,255,.1)')); }
+			function notesSetSize(v){ _notesSize = parseInt(v)||4; }
+			function notesInitCanvas(){
+			  notesBuildColors();
+			  const cv = document.getElementById('notes-canvas');
+			  if(!cv) return;
+			  _nCanvas = cv;
+			  // Ajusta el lienzo a su tamaño real en pantalla (nítido en pantallas retina)
+			  const fit = ()=>{
+			    const r = cv.getBoundingClientRect();
+			    if(!r.width || !r.height) return;
+			    const dpr = Math.min(window.devicePixelRatio||1, 3);
+			    const prev = _nCtx ? cv.toDataURL() : (_notesDrawing || null);
+			    cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+			    _nCtx = cv.getContext('2d');
+			    _nCtx.scale(dpr,dpr);
+			    _nCtx.lineCap='round'; _nCtx.lineJoin='round';
+			    if(prev){ const img=new Image(); img.onload=()=>_nCtx.drawImage(img,0,0,r.width,r.height); img.src=prev; }
+			  };
+			  fit();
+			  if(!cv._wired){
+			    cv._wired = true;
+			    const pos = (e)=>{ const r=cv.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top, p: (e.pressure && e.pressure>0 && e.pressure!==0.5) ? e.pressure : 0.5 }; };
+			    const stroke = (a,b,pressure)=>{
+			      const T = NOTES_TOOLS[_notesTool] || NOTES_TOOLS.pen;
+			      _nCtx.globalCompositeOperation = T.comp;
+			      _nCtx.globalAlpha = T.alpha;
+			      _nCtx.strokeStyle = _notesTool==='eraser' ? 'rgba(0,0,0,1)' : _notesColor;
+			      _nCtx.lineCap = T.cap; _nCtx.lineJoin = T.join;
+			      // La presión del lápiz modula el grosor (como en Apple Notes)
+			      _nCtx.lineWidth = Math.max(0.5, _notesSize * T.mul * (0.4 + pressure*1.2));
+			      _nCtx.beginPath(); _nCtx.moveTo(a.x,a.y); _nCtx.lineTo(b.x,b.y); _nCtx.stroke();
+			    };
+			    cv.addEventListener('pointerdown', (e)=>{
+			      e.preventDefault();
+			      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+			      // guarda para deshacer (máx 12 pasos)
+			      try{ _nUndoStack.push(cv.toDataURL()); if(_nUndoStack.length>12) _nUndoStack.shift(); }catch(err){}
+			      _nLast = pos(e); _nDrawn = true;
+			      const dot = { x:_nLast.x+0.01, y:_nLast.y+0.01 };
+			      stroke(_nLast, dot, _nLast.p);
+			    });
+			    cv.addEventListener('pointermove', (e)=>{
+			      if(!_nLast) return;
+			      e.preventDefault();
+			      // coalesced events = trazo suave con lápiz rápido
+			      const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+			      evs.forEach(ev=>{ const p=pos(ev); stroke(_nLast,p,p.p); _nLast=p; });
+			    });
+			    const end = ()=>{ if(_nLast){ _nLast=null; notesSaveDrawing(); } };
+			    cv.addEventListener('pointerup', end);
+			    cv.addEventListener('pointercancel', end);
+			    cv.addEventListener('pointerleave', end);
+			    if(!window._notesResizeWired){ window._notesResizeWired=true; window.addEventListener('resize', ()=>{ if(_nCanvas && !document.getElementById('notes-draw-wrap').classList.contains('hidden')) fit(); }); }
+			  }
+			}
+			function notesSaveDrawing(){
+			  if(!currentNoteId || !_nCanvas) return;
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  if(!n) return;
+			  try{ n.drawing = _nCanvas.toDataURL('image/png'); _notesDrawing = n.drawing; n.updatedAt = Date.now(); saveNotes(); }catch(e){}
+			}
+			function notesUndo(){
+			  if(!_nUndoStack.length || !_nCtx || !_nCanvas) return;
+			  const url = _nUndoStack.pop();
+			  const r = _nCanvas.getBoundingClientRect();
+			  _nCtx.clearRect(0,0,r.width,r.height);
+			  const img = new Image();
+			  img.onload = ()=>{ _nCtx.drawImage(img,0,0,r.width,r.height); notesSaveDrawing(); };
+			  img.src = url;
+			}
+			function notesClearDraw(){
+			  if(!_nCtx || !_nCanvas) return;
+			  try{ _nUndoStack.push(_nCanvas.toDataURL()); }catch(e){}
+			  const r = _nCanvas.getBoundingClientRect();
+			  _nCtx.clearRect(0,0,r.width,r.height);
+			  notesSaveDrawing();
 			}
 
 			/* ===================== MI OPINIÓN ===================== */
@@ -12837,7 +12904,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🧭 Barra de apps (arriba a la derecha)</div>
-			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador, Apps de Música y Pantalla completa. El botón "🔲 Barra de apps" (dentro de Personalizar) muestra u oculta los íconos secundarios si la barra se ve muy larga.
+			          Ahí están Navegador, Juegos, IXBand (música), Mapas, VPN, IXBench (benchmark), Emulador y Apps de Música. La <b>Pantalla completa</b> y el modo <b>Todas / Compacta</b> de la barra (que muestra u oculta los íconos secundarios si se ve muy larga) están en <b>Personalizar → Más → 🖥️ Pantalla y apps</b>.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🗣️ IXA</div>
@@ -12853,7 +12920,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">👴 Modo Fácil</div>
-			          Se activa en configuración con el interruptor <b>👴 Modo Fácil</b>: abre un reloj de orientación gigante — hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el mismo interruptor. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b> (negro, degradado o tu fondo de pantalla) y el <b>tipo de números</b> (Digital, Clásico, Fino, Retro).
+			          Se activa en configuración con el interruptor <b>👴 Modo Fácil</b>: abre un reloj de orientación gigante — hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: usa el engranaje ⚙️ de la esquina y apaga el interruptor. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b>, el <b>tipo de números</b> (Digital, Clásico, Fino, Retro), y elegir <b>qué mostrar</b>: mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa".
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖼️ Fondos de pantalla</div>
@@ -12897,9 +12964,94 @@
 			   Como al configurar un iPad: la app detecta tu idioma y región por la
 			   ubicación del aparato (idioma del sistema + zona horaria, sin pedir
 			   permisos), los deja puestos, y AUN ASÍ te los pregunta para confirmar. */
-			const _LR_LANGS=[['es','🇪🇸','Español'],['en','🇺🇸','English'],['fr','🇫🇷','Français'],['pt','🇵🇹','Português'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano'],['zh','🇨🇳','中文'],['ja','🇯🇵','日本語'],['ko','🇰🇷','한국어'],['ar','🇸🇦','العربية'],['ru','🇷🇺','Русский'],['hi','🇮🇳','हिन्दी']];
+			// ===== TODOS LOS IDIOMAS DEL MUNDO (con bandera y nombre nativo) =====
+			// code = id único (botón/caché/localStorage). g = código real que se manda
+			// al traductor (Google/Lingva). Las variantes (inglés de UK/US/AU…) tienen
+			// code distinto pero comparten g, porque el traductor las traduce igual.
+			const UI_LANGS = [
+			  {code:'es',    flag:'🇪🇸', name:'Español',            g:'es'},
+			  {code:'es-MX', flag:'🇲🇽', name:'Español (México)',    g:'es'},
+			  {code:'es-AR', flag:'🇦🇷', name:'Español (Argentina)', g:'es'},
+			  {code:'en',    flag:'🇺🇸', name:'English (US)',        g:'en'},
+			  {code:'en-GB', flag:'🇬🇧', name:'English (UK)',        g:'en'},
+			  {code:'en-AU', flag:'🇦🇺', name:'English (Australia)', g:'en'},
+			  {code:'en-CA', flag:'🇨🇦', name:'English (Canada)',    g:'en'},
+			  {code:'en-IN', flag:'🇮🇳', name:'English (India)',     g:'en'},
+			  {code:'fr',    flag:'🇫🇷', name:'Français',            g:'fr'},
+			  {code:'fr-CA', flag:'🇨🇦', name:'Français (Canada)',   g:'fr'},
+			  {code:'pt',    flag:'🇧🇷', name:'Português (Brasil)',  g:'pt'},
+			  {code:'pt-PT', flag:'🇵🇹', name:'Português (Portugal)',g:'pt'},
+			  {code:'de',    flag:'🇩🇪', name:'Deutsch',             g:'de'},
+			  {code:'it',    flag:'🇮🇹', name:'Italiano',            g:'it'},
+			  {code:'nl',    flag:'🇳🇱', name:'Nederlands',          g:'nl'},
+			  {code:'ca',    flag:'🇦🇩', name:'Català',              g:'ca'},
+			  {code:'gl',    flag:'🇪🇸', name:'Galego',              g:'gl'},
+			  {code:'eu',    flag:'🇪🇸', name:'Euskara',             g:'eu'},
+			  {code:'pl',    flag:'🇵🇱', name:'Polski',              g:'pl'},
+			  {code:'ru',    flag:'🇷🇺', name:'Русский',             g:'ru'},
+			  {code:'uk',    flag:'🇺🇦', name:'Українська',          g:'uk'},
+			  {code:'cs',    flag:'🇨🇿', name:'Čeština',             g:'cs'},
+			  {code:'sk',    flag:'🇸🇰', name:'Slovenčina',          g:'sk'},
+			  {code:'ro',    flag:'🇷🇴', name:'Română',              g:'ro'},
+			  {code:'hu',    flag:'🇭🇺', name:'Magyar',              g:'hu'},
+			  {code:'el',    flag:'🇬🇷', name:'Ελληνικά',            g:'el'},
+			  {code:'bg',    flag:'🇧🇬', name:'Български',            g:'bg'},
+			  {code:'sr',    flag:'🇷🇸', name:'Српски',              g:'sr'},
+			  {code:'hr',    flag:'🇭🇷', name:'Hrvatski',            g:'hr'},
+			  {code:'sv',    flag:'🇸🇪', name:'Svenska',             g:'sv'},
+			  {code:'da',    flag:'🇩🇰', name:'Dansk',               g:'da'},
+			  {code:'no',    flag:'🇳🇴', name:'Norsk',               g:'no'},
+			  {code:'fi',    flag:'🇫🇮', name:'Suomi',               g:'fi'},
+			  {code:'tr',    flag:'🇹🇷', name:'Türkçe',              g:'tr'},
+			  {code:'ar',    flag:'🇸🇦', name:'العربية',             g:'ar'},
+			  {code:'he',    flag:'🇮🇱', name:'עברית',               g:'iw'},
+			  {code:'fa',    flag:'🇮🇷', name:'فارسی',               g:'fa'},
+			  {code:'ur',    flag:'🇵🇰', name:'اردو',                g:'ur'},
+			  {code:'hi',    flag:'🇮🇳', name:'हिन्दी',               g:'hi'},
+			  {code:'bn',    flag:'🇧🇩', name:'বাংলা',               g:'bn'},
+			  {code:'ta',    flag:'🇮🇳', name:'தமிழ்',               g:'ta'},
+			  {code:'te',    flag:'🇮🇳', name:'తెలుగు',              g:'te'},
+			  {code:'zh',    flag:'🇨🇳', name:'中文 (简体)',          g:'zh-CN'},
+			  {code:'zh-TW', flag:'🇹🇼', name:'中文 (繁體)',          g:'zh-TW'},
+			  {code:'ja',    flag:'🇯🇵', name:'日本語',               g:'ja'},
+			  {code:'ko',    flag:'🇰🇷', name:'한국어',               g:'ko'},
+			  {code:'vi',    flag:'🇻🇳', name:'Tiếng Việt',          g:'vi'},
+			  {code:'th',    flag:'🇹🇭', name:'ไทย',                 g:'th'},
+			  {code:'id',    flag:'🇮🇩', name:'Indonesia',           g:'id'},
+			  {code:'ms',    flag:'🇲🇾', name:'Melayu',              g:'ms'},
+			  {code:'fil',   flag:'🇵🇭', name:'Filipino',            g:'tl'},
+			  {code:'sw',    flag:'🇰🇪', name:'Kiswahili',           g:'sw'},
+			  {code:'af',    flag:'🇿🇦', name:'Afrikaans',           g:'af'}
+			];
+			const UILANG_G = {}; UI_LANGS.forEach(l=>{ UILANG_G[l.code]=l.g; });
+			// Código real para el traductor (variante -> base). 'es' es el idioma origen.
+			function _uiTC(code){ return UILANG_G[code] || (code||'es'); }
+			const _LR_LANGS=UI_LANGS.map(l=>[l.code,l.flag,l.name]);
 			const _LR_REGIONS=[['DO','🇩🇴','República Dominicana'],['MX','🇲🇽','México'],['CO','🇨🇴','Colombia'],['AR','🇦🇷','Argentina'],['ES','🇪🇸','España'],['US','🇺🇸','Estados Unidos'],['PE','🇵🇪','Perú'],['CL','🇨🇱','Chile'],['VE','🇻🇪','Venezuela'],['EC','🇪🇨','Ecuador'],['GT','🇬🇹','Guatemala'],['CU','🇨🇺','Cuba'],['BO','🇧🇴','Bolivia'],['HN','🇭🇳','Honduras'],['PY','🇵🇾','Paraguay'],['SV','🇸🇻','El Salvador'],['NI','🇳🇮','Nicaragua'],['CR','🇨🇷','Costa Rica'],['PA','🇵🇦','Panamá'],['UY','🇺🇾','Uruguay'],['PR','🇵🇷','Puerto Rico'],['BR','🇧🇷','Brasil'],['CA','🇨🇦','Canadá'],['GB','🇬🇧','Reino Unido'],['FR','🇫🇷','Francia'],['DE','🇩🇪','Alemania'],['IT','🇮🇹','Italia'],['PT','🇵🇹','Portugal'],['JP','🇯🇵','Japón'],['KR','🇰🇷','Corea del Sur'],['CN','🇨🇳','China'],['IN','🇮🇳','India'],['RU','🇷🇺','Rusia'],['SA','🇸🇦','Arabia Saudita'],['AU','🇦🇺','Australia'],['NL','🇳🇱','Países Bajos'],['PH','🇵🇭','Filipinas'],['MA','🇲🇦','Marruecos']];
 			const _LR_TZ={'Santo_Domingo':'DO','Mexico_City':'MX','Bogota':'CO','Buenos_Aires':'AR','Madrid':'ES','New_York':'US','Chicago':'US','Denver':'US','Los_Angeles':'US','Phoenix':'US','Lima':'PE','Santiago':'CL','Caracas':'VE','Guayaquil':'EC','Guatemala':'GT','Havana':'CU','La_Paz':'BO','Tegucigalpa':'HN','Asuncion':'PY','El_Salvador':'SV','Managua':'NI','Costa_Rica':'CR','Panama':'PA','Montevideo':'UY','Puerto_Rico':'PR','Sao_Paulo':'BR','Toronto':'CA','Vancouver':'CA','London':'GB','Paris':'FR','Berlin':'DE','Rome':'IT','Lisbon':'PT','Tokyo':'JP','Seoul':'KR','Shanghai':'CN','Kolkata':'IN','Moscow':'RU','Riyadh':'SA','Sydney':'AU','Amsterdam':'NL','Manila':'PH','Casablanca':'MA'};
+			// Nombres de país e idioma EN EL IDIOMA ELEGIDO usando la API nativa del
+			// navegador (Intl.DisplayNames). Así al elegir inglés se ve "United States"
+			// en vez de "Estados Unidos"; en francés "États-Unis"; etc. Si el navegador
+			// no lo soporta, cae a los nombres en español de las listas.
+			const _lrDNCache = {};
+			function _lrDN(lang, type){
+			  const key = lang + '|' + type;
+			  if(key in _lrDNCache) return _lrDNCache[key];
+			  let dn = null;
+			  try{ dn = new Intl.DisplayNames([lang], { type: type }); }catch(e){ dn = null; }
+			  return _lrDNCache[key] = dn;
+			}
+			function _lrRegionName(code, lang){
+			  if(!code) return '';
+			  const dn = _lrDN(lang || 'es', 'region');
+			  if(dn){ try{ const n = dn.of(code); if(n && n !== code) return n; }catch(e){} }
+			  return (_LR_REGIONS.find(r => r[0] === code) || [])[2] || code;
+			}
+			function _lrLangName(code, lang){
+			  const dn = _lrDN(lang || code, 'language');
+			  if(dn){ try{ const n = dn.of(code); if(n && n !== code) return n.charAt(0).toUpperCase() + n.slice(1); }catch(e){} }
+			  return (_LR_LANGS.find(l => l[0] === code) || [])[2] || code;
+			}
 			function _lrDetect(){
 			  let lang='es', region='';
 			  try{
@@ -12922,22 +13074,33 @@
 			  const el=document.getElementById('langregion-overlay');
 			  if(!el||!_lrPick) return;
 			  const det=_lrPick;
-			  const langName=(_LR_LANGS.find(x=>x[0]===det.detLang)||[])[2]||det.detLang;
-			  const regName=(_LR_REGIONS.find(x=>x[0]===det.detRegion)||[])[2]||'';
+			  // Nombres en el IDIOMA ELEGIDO (no en español fijo)
+			  const uiLang = det.lang || det.detLang || 'es';
+			  const langName=_lrLangName(det.detLang, uiLang);
+			  const regName=det.detRegion ? _lrRegionName(det.detRegion, uiLang) : '';
 			  el.innerHTML='<div style="width:100%;max-width:420px;max-height:92vh;overflow-y:auto;padding:2rem 1.6rem;border-radius:2rem;background:rgba(30,30,40,.92);border:1px solid rgba(255,255,255,.18);box-shadow:0 32px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:14px;">'
 			    +'<div style="text-align:center;"><div style="font-size:2rem;">🌍</div>'
 			    +'<div style="font-size:1.25rem;font-weight:800;color:#fff;">Idioma y Región</div>'
 			    +'<div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:4px;line-height:1.5;">Detectado por tu ubicación: <b style="color:#0a84ff;">'+langName+(regName?' · '+regName:'')+'</b><br>Confírmalo o cámbialo — luego puedes cambiarlo en Personalizar.</div></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
-			    +_LR_LANGS.map(x=>'<button onclick="_lrPick.lang=\''+x[0]+'\';_lrPaint()" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
+			    +_LR_LANGS.map(x=>'<button onclick="_lrPickLang(\''+x[0]+'\')" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'rgba(255,255,255,.14)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'rgba(255,255,255,.05)')+';color:#fff;font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
 			    +'</div>'
 			    +'<div><div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:5px;font-weight:700;">REGIÓN</div>'
 			    +'<select id="lr-region" data-notrans style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:10px 12px;font-size:13px;">'
 			    +'<option value="">🌐 Otra / no decir</option>'
-			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+r[2]+'</option>').join('')
+			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+_lrRegionName(r[0], uiLang)+'</option>').join('')
 			    +'</select></div>'
 			    +'<button onclick="_lrConfirm()" style="width:100%;padding:.9rem;border-radius:.9rem;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-weight:800;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(10,132,255,.4);">Continuar</button>'
 			    +'</div>';
+			}
+			// Al tocar un idioma: recuerda la región elegida y re-renderiza TODO en ese
+			// idioma (los países pasan a "United States", "États-Unis", etc.)
+			function _lrPickLang(lang){
+			  if(!_lrPick) return;
+			  const sel = document.getElementById('lr-region');
+			  if(sel) _lrPick.region = sel.value;
+			  _lrPick.lang = lang;
+			  _lrRender();
 			}
 			function _lrPaint(){
 			  document.querySelectorAll('[data-lr-lang]').forEach(b=>{
@@ -13058,18 +13221,24 @@
 			  const mask=(s)=>String(s).replace(/(?:ixclock|ixband|ixbench)[a-z0-9+]*(?:\.[a-z0-9-]+)*|\bixa\b/gi,(m)=>{ _brandMarks.push(m); return '⟦'+(_brandMarks.length-1)+'⟧'; });
 			  const unmask=(s)=>String(s).replace(/⟦\s*(\d+)\s*⟧/g,(_,i)=>_brandMarks[+i]!==undefined?_brandMarks[+i]:_);
 			  // Respaldo por cadena: Google gtx (rápido y fiable)
+			  // Código real que entiende el traductor (variante -> base: en-GB -> en)
+			  const gLang = (typeof _uiTC==='function') ? _uiTC(lang) : lang;
 			  const gone=async (s)=>{
 			    try{
-			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
+			      const r=await fj('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl='+encodeURIComponent(gLang)+'&dt=t&q='+encodeURIComponent(mask(s)),{},6000);
 			      const d=await r.json();
 			      const t=unmask((d?.[0]||[]).map(seg=>seg[0]).join('').trim());
 			      return t||null;
 			    }catch(e){ return null; }
 			  };
 
+			  // Nombre en inglés del idioma destino para el prompt de la IA (cualquier
+			  // idioma del mundo, vía la API del navegador; respaldo a un mapa corto)
 			  const LANG_NAME={en:'English',fr:'French',pt:'Portuguese',de:'German',it:'Italian',
-			    zh:'Chinese (Simplified)',ja:'Japanese',ko:'Korean',ar:'Arabic',ru:'Russian',hi:'Hindi'};
-			  const targetName=LANG_NAME[lang]||lang;
+			    'zh-CN':'Chinese (Simplified)','zh-TW':'Chinese (Traditional)',ja:'Japanese',ko:'Korean',ar:'Arabic',ru:'Russian',hi:'Hindi'};
+			  let targetName=LANG_NAME[gLang];
+			  if(!targetName){ try{ targetName=new Intl.DisplayNames(['en'],{type:'language'}).of(gLang); }catch(e){} }
+			  if(!targetName) targetName=gLang;
 			  const SIZE=25;
 			  let doneCount=0;
 
@@ -13257,9 +13426,27 @@
 			  try{localStorage.setItem('ui_trans_cache',JSON.stringify(_uiTransCache));}catch(e){}
 			}
 
+			// Genera los botones de TODOS los idiomas (bandera + nombre nativo) en el
+			// selector de la barra lateral. El activo queda resaltado.
+			function renderUILangButtons(){
+			  const box=document.getElementById('ui-lang-btns');
+			  if(!box) return;
+			  box.innerHTML = UI_LANGS.map(function(l){
+			    const on = l.code === _uiLang;
+			    return '<button class="ui-lang-btn'+(on?' active':'')+'" id="ui-lang-'+l.code+'" onclick="setUILang(\''+l.code+'\',this)" '
+			      + 'style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;'
+			      + (on ? 'background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;' : 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#fff;')+'">'
+			      + l.flag+' '+l.name+'</button>';
+			  }).join('');
+			}
+			document.addEventListener('DOMContentLoaded', renderUILangButtons, {once:true});
 			async function setUILang(lang,btn){
 			  _uiLang=lang;
 			  localStorage.setItem('ui_lang',lang);
+			  // Los acentos del asistente (Dominicano, Mexicano…) son de países que
+			  // hablan español: solo se muestran cuando el idioma base es español.
+			  const _diaCard=document.getElementById('siri-dialect-card');
+			  if(_diaCard) _diaCard.style.display = (_uiTC(lang)==='es') ? '' : 'none';
 			  document.querySelectorAll('.ui-lang-btn').forEach(b=>{b.style.background='rgba(255,255,255,.06)';b.style.borderColor='rgba(255,255,255,.15)';b.style.color='#fff';});
 			  if(btn){btn.style.background='rgba(10,132,255,.2)';btn.style.borderColor='rgba(10,132,255,.4)';btn.style.color='#0a84ff';}
 			  const st=document.getElementById('ui-lang-status');
@@ -13315,7 +13502,9 @@
 			  }
 			}
 
-			if(_uiLang!=='es'){
+			if(_uiTC(_uiLang)!=='es'){
+			  // Oculta ya la tarjeta de acentos (español) para que no parpadee al cargar
+			  document.addEventListener('DOMContentLoaded', ()=>{ const c=document.getElementById('siri-dialect-card'); if(c) c.style.display='none'; }, {once:true});
 			  setTimeout(()=>setUILang(_uiLang,document.getElementById('ui-lang-'+_uiLang)),900);
 			}
 
@@ -14175,7 +14364,24 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
-			  { fecha: '11 de julio de 2026', cambios: [
+			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
+			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
+			    '🛠️ Idioma y Región: los nombres de país ahora salen en el idioma elegido (inglés → "United States", francés → "États-Unis"…), ya no mezclado con español',
+			    '🛠️ Los acentos del asistente (Dominicano, Mexicano…) solo se muestran en español, porque son de países hispanohablantes',
+			    '➕ Notas con DIBUJO estilo Apple Notes: bolígrafo, lápiz, marcador, resaltador y borrador, con paleta de colores. Compatible con lápices de iPad y stylus de Samsung/Android (usa la presión del lápiz)',
+			    '➕ Modo Fácil editable: puedes ocultar mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa"',
+			    '🛠️ Modo Fácil: quitado "ESTAMOS" y el "Siglo 21" repetido; quitado el botón de Ajustes duplicado (se usa el engranaje de la esquina)',
+			    '➕ Compatibilidad total: funciona en pantallas mini, grandes y con notch/isla dinámica; los paneles se adaptan al tamaño',
+			    '🔁 Novedades rediseñado como un tablero de actualizaciones de juego: línea de tiempo con versión, fecha, título e insignias de color (NUEVO, MEJORA, CAMBIO…) para cada cambio',
+			    '🔁 Pantalla completa y Barra de apps (todas/compacta) movidas del dock a Configuración → Más, para dejar la barra de arriba más limpia',
+			  ]},
+			  { v:'1.5', fecha: '12 de julio de 2026', titulo:'Fondos y traducción a fondo', cambios: [
+			    '🛠️ Fondos en movimiento: arreglado a fondo el "me pone el que no es" — ahora se elige SIEMPRE el video principal del wallpaper (nunca uno de la sección de relacionados). Todos se re-extraen con el criterio corregido',
+			    '🛠️ Traducción: cerrados los últimos textos que faltaban (barrido de ~40 pantallas, cero sin traducir y cero parpadeos)',
+			    '🛠️ Fotos de fondo: si una imagen ya no existe, se muestra el degradado del propio fondo en vez de quedar en negro',
+			    '🧹 Limpieza de código: quitado código muerto y una clase mal escrita'
+			  ]},
+			  { v:'1.4', fecha: '11 de julio de 2026', titulo:'Traducción total y muro de opiniones', cambios: [
 			    '🛠️ Traducción TOTAL verificada pantalla por pantalla: también los textos de las cajas (placeholder), los globitos de los botones (title), las listas desplegables, los avisos emergentes y la fase lunar/festividades — y cero parpadeos (nada vuelve al español solo)',
 			    '➕ El botón ⚙️ de configuración ahora es FIJO (en Más puedes ponerlo a ocultarse solo)',
 			    '🛠️ Traducción: ya se traducen también los textos en vivo (estación, siglo, clima, "Actualizado")',
@@ -14188,7 +14394,7 @@
 			    '🛡️ Las marcas IXClock, IXBand, IXBench e IXA jamás se traducen',
 			    '🛠️ Arreglado el "Traduciendo…" infinito y la bienvenida sin traducir'
 			  ]},
-			  { fecha: '10-11 de julio de 2026', cambios: [
+			  { v:'1.3', fecha: '10-11 de julio de 2026', titulo:'IXBand real y fondos animados', cambios: [
 			    '➕ IXBand estilo real: Mis canciones, plantillas de género (EDM, Hip Hop, Dubstep…), Live Loops, Pistas, LCD y metrónomo',
 			    '➕ Modo Fácil configurable: color, fondo y tipo de números desde configuración; estación del año y siglo',
 			    '➕ Fondo Dinámico ANIMADO según la hora y el clima real (lluvia, nieve, estrellas)',
@@ -14199,16 +14405,53 @@
 			    '➖ Quitado el botón flotante del Modo Fácil (ahora todo desde configuración)'
 			  ]}
 			];
+			/* Categoría (etiqueta de color estilo tablero de updates) según el emoji inicial */
+			const IX_CAT = {
+			  '\u2795':      { t:'NUEVO',     c:'#30d158', b:'rgba(48,209,88,.16)' },
+			  '\ud83d\udee0': { t:'MEJORA',    c:'#0a84ff', b:'rgba(10,132,255,.16)' },
+			  '\u2796':      { t:'QUITADO',   c:'#ff453a', b:'rgba(255,69,58,.16)' },
+			  '\ud83d\udd01': { t:'CAMBIO',    c:'#ff9f0a', b:'rgba(255,159,10,.16)' },
+			  '\ud83e\uddf9': { t:'LIMPIEZA',  c:'#8e8e93', b:'rgba(142,142,147,.16)' },
+			  '\ud83d\udee1': { t:'SEGURIDAD', c:'#bf5af2', b:'rgba(191,90,242,.16)' }
+			};
+			function _novCat(txt){
+			  /* toma el primer emoji (uno o dos code units) y lo separa del texto */
+			  for(const k in IX_CAT){ if(txt.indexOf(k)===0) return { cat: IX_CAT[k], rest: txt.slice(k.length).trim() }; }
+			  return { cat: null, rest: txt.trim() };
+			}
 			function renderNovedades(){
 			  const el = document.getElementById('novedades-card');
 			  if(!el || !IX_CHANGELOG.length) return;
-			  let s = '<div class="text-[10px] font-bold tracking-widest mb-1" style="color:#30d158;">🆕 NOVEDADES</div>'
-			    + '<div style="font-size:10px;opacity:.55;margin-bottom:8px;">Última actualización: <b>' + IX_CHANGELOG[0].fecha + '</b></div>';
+			  let s = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'
+			    + '<div class="text-[11px] font-bold tracking-widest" style="color:#30d158;">\ud83c\udd95 NOVEDADES</div>'
+			    + '<div style="font-size:9px;opacity:.45;font-weight:700;">DIARIO DE ACTUALIZACIONES</div></div>';
+			  /* línea de tiempo vertical (estilo tablero de updates de un juego) */
+			  s += '<div style="position:relative;padding-left:20px;">'
+			    + '<div style="position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,rgba(48,209,88,.55),rgba(255,255,255,.08));border-radius:2px;"></div>';
 			  IX_CHANGELOG.forEach(function(e, i){
-			    if(i > 0) s += '<div style="font-size:10px;opacity:.5;font-weight:800;margin:10px 0 4px;">' + e.fecha + '</div>';
-			    s += '<ul style="font-size:11px;opacity:.8;line-height:1.7;padding-left:2px;list-style:none;">'
-			      + e.cambios.map(function(c){ return '<li>' + c + '</li>'; }).join('') + '</ul>';
+			    const nuevo = i === 0;
+			    const dot = nuevo ? '#30d158' : 'rgba(255,255,255,.35)';
+			    s += '<div style="position:relative;margin-bottom:16px;">';
+			    /* punto en la línea */
+			    s += '<div style="position:absolute;left:-18px;top:3px;width:12px;height:12px;border-radius:50%;background:' + dot + ';box-shadow:0 0 0 3px rgba(0,0,0,.35)' + (nuevo ? ',0 0 10px ' + dot : '') + ';"></div>';
+			    /* cabecera: versión + fecha + insignia NUEVO */
+			    s += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">';
+			    if(e.v) s += '<span style="font-size:9px;font-weight:800;letter-spacing:.5px;color:#30d158;background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.35);padding:1px 6px;border-radius:6px;">v' + e.v + '</span>';
+			    if(nuevo) s += '<span class="nov-nuevo" style="font-size:8px;font-weight:900;letter-spacing:.6px;color:#0b1f11;background:#30d158;padding:1px 6px;border-radius:6px;">NUEVO</span>';
+			    s += '<span style="font-size:9px;opacity:.5;font-weight:700;">' + e.fecha + '</span></div>';
+			    /* título de la versión */
+			    if(e.titulo) s += '<div style="font-size:12.5px;font-weight:800;margin-bottom:6px;opacity:.95;">' + e.titulo + '</div>';
+			    /* cambios con etiqueta de categoría a color */
+			    s += '<div style="display:flex;flex-direction:column;gap:5px;">';
+			    e.cambios.forEach(function(c){
+			      const pc = _novCat(c);
+			      let head = '';
+			      if(pc.cat) head = '<span style="flex:none;font-size:8px;font-weight:900;letter-spacing:.4px;color:' + pc.cat.c + ';background:' + pc.cat.b + ';padding:1px 5px;border-radius:5px;margin-top:1px;">' + pc.cat.t + '</span>';
+			      s += '<div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.5;opacity:.85;">' + head + '<span>' + pc.rest + '</span></div>';
+			    });
+			    s += '</div></div>';
 			  });
+			  s += '</div>';
 			  el.innerHTML = s;
 			}
 			renderNovedades();
@@ -14416,20 +14659,35 @@
 			  const m = String(a.getMinutes()).padStart(2,'0');
 			  const ampm = h >= 12 ? 'PM' : 'AM';
 			  h = h % 12 || 12;
-			  document.getElementById('easy-hora').textContent = h + ':' + m + ' ' + ampm;
+			  // AM/PM se puede quitar desde configuración
+			  const showAmpm = localStorage.getItem('easy_show_ampm') !== '0';
+			  document.getElementById('easy-hora').textContent = h + ':' + m + (showAmpm ? ' ' + ampm : '');
 			  document.getElementById('easy-dia').textContent = _uiT(_EASY_DIAS[a.getDay()]);
 			  document.getElementById('easy-fecha').textContent = _uiT(a.getDate() + ' DE ' + _EASY_MESES[a.getMonth()] + ' DE ' + a.getFullYear());
 			  const h24 = a.getHours();
-			  document.getElementById('easy-momento').textContent =
-			    _uiT((h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE');
-			  // Estación del año y siglo (como el panel principal, en texto plano)
+			  // "en casa" editable (o se oculta si está vacío)
+			  const homeEl = document.getElementById('easy-home');
+			  if(homeEl){
+			    const txt = localStorage.getItem('easy_home_text');
+			    const val = (txt === null) ? 'ESTÁS EN CASA' : txt;
+			    homeEl.textContent = val ? _uiT(val) : '';
+			    homeEl.style.display = val ? '' : 'none';
+			  }
+			  // mañana/tarde/noche se puede quitar
+			  const momEl = document.getElementById('easy-momento');
+			  if(momEl){
+			    if(localStorage.getItem('easy_show_momento') === '0'){ momEl.style.display = 'none'; }
+			    else { momEl.style.display = ''; momEl.textContent = _uiT((h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE'); }
+			  }
+			  // Estación y siglo (se pueden ocultar). "ESTAMOS" quitado; siglo sin repetir.
 			  const mo = a.getMonth() + 1, yr = a.getFullYear();
 			  const estacion = (mo===12 || mo<=2) ? 'INVIERNO' : mo<=5 ? 'PRIMAVERA' : mo<=8 ? 'VERANO' : 'OTOÑO';
 			  const siglo = Math.floor((yr - 1) / 100) + 1;
 			  const est1 = document.getElementById('easy-estacion');
 			  const est2 = document.getElementById('easy-siglo');
-			  if(est1) est1.textContent = _uiT('ESTAMOS EN ' + estacion + ' DE ' + yr);
-			  if(est2) est2.textContent = _uiT('SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100) + ' DEL SIGLO ' + siglo);
+			  const showExtra = localStorage.getItem('easy_show_extra') !== '0';
+			  if(est1){ est1.style.display = showExtra ? '' : 'none'; if(showExtra) est1.textContent = _uiT(estacion + ' DE ' + yr); }
+			  if(est2){ est2.style.display = showExtra ? '' : 'none'; if(showExtra) est2.textContent = _uiT('SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100)); }
 			  // De noche se atenúa (como el archivo original), respetando el color elegido
 			  scr.style.filter = (h24>=22 || h24<6) ? 'brightness(.55)' : '';
 			}
@@ -14469,17 +14727,28 @@
 			    + '<div id="easy-hora" data-notrans style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
 			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
 			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
-			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
+			    + '<div id="easy-home" style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
 			    + '<div id="easy-momento" style="font-family:Verdana,sans-serif;font-size:clamp(1.2rem,3.2vw,2.2rem);margin-top:12px;"></div>'
 			    + '<div id="easy-estacion" style="font-family:Verdana,sans-serif;font-size:clamp(1.1rem,3vw,2rem);margin-top:26px;opacity:.85;"></div>'
-			    + '<div id="easy-siglo" style="font-family:Verdana,sans-serif;font-size:clamp(1rem,2.6vw,1.7rem);margin-top:10px;opacity:.7;"></div>'
-			    + '<button onclick="_easyOpenSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#c9c9ce;padding:12px 18px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:700;">⚙️ Ajustes</button>';
+			    + '<div id="easy-siglo" style="font-family:Verdana,sans-serif;font-size:clamp(1rem,2.6vw,1.7rem);margin-top:10px;opacity:.7;"></div>';
+			  // Sin botón de Ajustes: el engranaje fijo de la esquina superior izquierda
+			  // (por encima de esta pantalla) abre la configuración — no se repite.
 			  document.body.appendChild(scr);
 			}
 			function _easyOpenSettings(){
 			  // Configuración COMPLETA por encima del reloj (el panel tiene mayor
 			  // z-index). Salir del modo fácil se hace AHÍ, con su interruptor.
 			  try{ toggleSidebar(); }catch(e){}
+			}
+			function easySetToggle(key, on){ try{ localStorage.setItem(key, on ? '1' : '0'); }catch(e){} if(typeof _easyTick==='function') _easyTick(); _easySyncControls(); }
+			function easySetHomeText(v){ try{ localStorage.setItem('easy_home_text', v); }catch(e){} if(typeof _easyTick==='function') _easyTick(); }
+			function _easySyncControls(){
+			  const set=(id,key,def)=>{ const el=document.getElementById(id); if(el) el.checked = (localStorage.getItem(key) ?? (def?'1':'0')) !== '0'; };
+			  set('easy-show-momento','easy_show_momento',true);
+			  set('easy-show-ampm','easy_show_ampm',true);
+			  set('easy-show-extra','easy_show_extra',true);
+			  const ht=document.getElementById('easy-home-text');
+			  if(ht){ const t=localStorage.getItem('easy_home_text'); ht.value = (t===null)?'ESTÁS EN CASA':t; }
 			}
 			function setEasyMode(on){
 			  _easyModeOn = on;
@@ -14488,6 +14757,10 @@
 			  _easyBuild();
 			  const scr = document.getElementById('easy-screen');
 			  if(scr) scr.style.display = on ? 'flex' : 'none';
+			  // Las opciones (color, fondo, números, qué mostrar…) solo tienen sentido
+			  // con el Modo Fácil encendido: se ocultan cuando está apagado.
+			  const cfg = document.getElementById('easy-config');
+			  if(cfg) cfg.style.display = on ? '' : 'none';
 			  // Se entra y se sale SOLO desde configuración (interruptor Modo Fácil);
 			  // dentro del modo, ⚙️ Ajustes abre esa configuración encima.
 			  _easyApplyPrefs();
@@ -14508,6 +14781,7 @@
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  _easyBuild();
 			  setEasyMode(_easyModeOn);
+			  _easySyncControls();
 			}, {once:true});
 
 			/* ===== RESTORE TIME FORMAT BUTTON STATE ON LOAD ===== */
