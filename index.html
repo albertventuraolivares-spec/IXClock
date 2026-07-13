@@ -1754,8 +1754,10 @@
 					></div>
 				</div>
 
-				<!-- DIALECTO / VOZ DE SIRI -->
+				<!-- DIALECTO / VOZ DE SIRI (solo aplica en español: son acentos de
+				     países hispanohablantes; se oculta en otros idiomas) -->
 				<div
+					id="siri-dialect-card"
 					class="shrink-0"
 					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
@@ -13490,6 +13492,10 @@
 			async function setUILang(lang,btn){
 			  _uiLang=lang;
 			  localStorage.setItem('ui_lang',lang);
+			  // Los acentos del asistente (Dominicano, Mexicano…) son de países que
+			  // hablan español: solo se muestran cuando el idioma es español.
+			  const _diaCard=document.getElementById('siri-dialect-card');
+			  if(_diaCard) _diaCard.style.display = (lang==='es') ? '' : 'none';
 			  document.querySelectorAll('.ui-lang-btn').forEach(b=>{b.style.background='rgba(255,255,255,.06)';b.style.borderColor='rgba(255,255,255,.15)';b.style.color='#fff';});
 			  if(btn){btn.style.background='rgba(10,132,255,.2)';btn.style.borderColor='rgba(10,132,255,.4)';btn.style.color='#0a84ff';}
 			  const st=document.getElementById('ui-lang-status');
@@ -13546,6 +13552,8 @@
 			}
 
 			if(_uiLang!=='es'){
+			  // Oculta ya la tarjeta de acentos (español) para que no parpadee al cargar
+			  document.addEventListener('DOMContentLoaded', ()=>{ const c=document.getElementById('siri-dialect-card'); if(c) c.style.display='none'; }, {once:true});
 			  setTimeout(()=>setUILang(_uiLang,document.getElementById('ui-lang-'+_uiLang)),900);
 			}
 
@@ -14407,6 +14415,7 @@
 			const IX_CHANGELOG = [
 			  { fecha: '13 de julio de 2026', cambios: [
 			    '🛠️ Idioma y Región: los nombres de país ahora salen en el idioma elegido (inglés → "United States", francés → "États-Unis"…), ya no mezclado con español',
+			    '🛠️ Los acentos del asistente (Dominicano, Mexicano…) solo se muestran en español, porque son de países hispanohablantes',
 			    '➕ Notas con DIBUJO estilo Apple Notes: bolígrafo, lápiz, marcador, resaltador y borrador, con paleta de colores. Compatible con lápices de iPad y stylus de Samsung/Android (usa la presión del lápiz)',
 			    '➕ Modo Fácil editable: puedes ocultar mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa"',
 			    '🛠️ Modo Fácil: quitado "ESTAMOS" y el "Siglo 21" repetido; quitado el botón de Ajustes duplicado (se usa el engranaje de la esquina)',
