@@ -2,7 +2,7 @@
 <html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
 		<title>IXClocK -- Universal OS Dashboard</title>
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
@@ -1917,6 +1917,13 @@
 						<button class="easy-font-btn btn-option" data-f="thin" onclick="easySetFont('thin')" style="font-size:10px;padding:6px 12px;">Fino</button>
 						<button class="easy-font-btn btn-option" data-f="retro" onclick="easySetFont('retro')" style="font-size:10px;padding:6px 12px;">Retro</button>
 					</div>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin:12px 0 6px;">✏️ Qué mostrar</div>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar mañana/tarde/noche</span><input type="checkbox" id="easy-show-momento" onchange="easySetToggle('easy_show_momento', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar AM / PM</span><input type="checkbox" id="easy-show-ampm" onchange="easySetToggle('easy_show_ampm', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar estación y siglo</span><input type="checkbox" id="easy-show-extra" onchange="easySetToggle('easy_show_extra', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
+					<div style="font-size:11px;font-weight:800;opacity:.75;margin:10px 0 4px;">🏠 Texto de “en casa”</div>
+					<input type="text" id="easy-home-text" placeholder="ESTÁS EN CASA" oninput="easySetHomeText(this.value)" maxlength="40" style="width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#fff;padding:8px 10px;font-size:12px;" />
+					<div style="font-size:9px;opacity:.4;margin-top:4px;">Déjalo vacío para ocultar esa línea.</div>
 				</div>
 
 				<!-- AI Provider -->
@@ -4601,11 +4608,12 @@
 				</div>
 			</div>
 			<div id="notes-edit-view" class="flex-1 hidden flex-col min-h-0">
-				<div
-					class="px-4 pt-1 pb-1 text-[11px] text-center opacity-40"
-					id="notes-edit-date"
-				>
-					Hoy
+				<div class="flex items-center justify-between px-3 pt-1 pb-1">
+					<span class="text-[11px] opacity-40" id="notes-edit-date">Hoy</span>
+					<div class="flex gap-1">
+						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
+						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:#fff;">🎨 Dibujar</button>
+					</div>
 				</div>
 				<textarea
 					id="notes-textarea"
@@ -4613,6 +4621,27 @@
 					placeholder="Nota"
 					oninput="notesAutoSave()"
 				></textarea>
+				<!-- Lienzo de dibujo estilo Apple Notes: lápiz, bolígrafo, marcador,
+				     resaltador, borrador + colores; compatible con lápices de iPad y
+				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
+				<div id="notes-draw-wrap" class="hidden flex-1 flex-col min-h-0">
+					<div id="notes-tools" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10">
+						<button class="notes-tool" data-tool="pen" onclick="notesTool('pen')" title="Bolígrafo" style="font-size:16px;padding:4px 7px;border-radius:9px;background:#0a84ff;border:none;cursor:pointer;">🖊️</button>
+						<button class="notes-tool" data-tool="pencil" onclick="notesTool('pencil')" title="Lápiz" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">✏️</button>
+						<button class="notes-tool" data-tool="marker" onclick="notesTool('marker')" title="Marcador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🖍️</button>
+						<button class="notes-tool" data-tool="highlighter" onclick="notesTool('highlighter')" title="Resaltador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🟡</button>
+						<button class="notes-tool" data-tool="eraser" onclick="notesTool('eraser')" title="Borrador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🧽</button>
+						<span style="width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 2px;"></span>
+						<input type="range" id="notes-size" min="1" max="40" value="4" oninput="notesSetSize(this.value)" title="Grosor" style="width:70px;">
+						<span style="flex:1;"></span>
+						<button onclick="notesUndo()" title="Deshacer" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">↩️</button>
+						<button onclick="notesClearDraw()" title="Borrar todo" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,69,58,.2);border:none;cursor:pointer;">🗑️</button>
+					</div>
+					<div id="notes-colors" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10"></div>
+					<div class="flex-1 min-h-0 relative" style="background:#fafafa;">
+						<canvas id="notes-canvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;"></canvas>
+					</div>
+				</div>
 				<div
 					class="flex items-center justify-between px-4 py-2.5 border-t border-white/10"
 				>
@@ -5386,6 +5415,43 @@
 			.wallpaper-card.wp-loading{outline:2px solid #0a84ff;animation:wpLoadingPulse 1s ease-in-out infinite;}
 			@keyframes wpLoadingPulse{50%{outline-color:rgba(10,132,255,.2);}}
 			.wp-res-badge{position:absolute;right:6px;top:6px;z-index:3;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.6);color:#30d158;letter-spacing:.04em;pointer-events:none;}
+			/* ===== COMPATIBILIDAD TOTAL — todos los tamaños de pantalla ===== */
+			/* Respeta las zonas seguras (notch, isla dinámica, barra inferior) */
+			#top-dock{padding-top:env(safe-area-inset-top,0);}
+			.btn-settings{top:max(22px,env(safe-area-inset-top,0));left:max(22px,env(safe-area-inset-left,0));}
+			/* Móviles: los paneles flotantes ocupan casi toda la pantalla en vez de
+			   un ancho fijo de 380px que se sale en pantallas pequeñas */
+			@media (max-width:640px){
+			  #translator-panel,#ai-chat-panel,#tv-panel,#games-panel,#alarm-panel,#notes-panel,#calc-panel{
+			    left:max(8px,env(safe-area-inset-left)) !important;
+			    right:max(8px,env(safe-area-inset-right)) !important;
+			    width:auto !important;max-width:none !important;
+			    bottom:max(84px,env(safe-area-inset-bottom)) !important;
+			    transform:none !important;
+			  }
+			  #calc-panel{left:8px !important;right:8px !important;}
+			  .btn-settings{width:42px;height:42px;}
+			}
+			/* Pantallas MUY pequeñas (relojes, cosas mini < 380px) */
+			@media (max-width:380px){
+			  :root{--clock-size:3.4rem;}
+			  #top-dock{gap:4px !important;overflow-x:auto;max-width:100vw;}
+			  #translator-panel,#ai-chat-panel,#tv-panel,#games-panel,#alarm-panel,#notes-panel,#calc-panel{
+			    top:6px !important;bottom:6px !important;max-height:none !important;
+			  }
+			}
+			/* Pantallas anchas / muy grandes: el contenido no se estira feo */
+			@media (min-width:1600px){
+			  #main-clock-wrap,main{max-width:1500px;margin-left:auto;margin-right:auto;}
+			}
+			/* Pantallas muy bajas (apaisado en móvil) */
+			@media (max-height:440px){
+			  :root{--clock-size:2.8rem;}
+			  #hourly-container-wrap,#luna-row{display:none;}
+			}
+			/* Táctil: nada de zoom accidental ni resaltado azul al tocar botones */
+			button,.dock-btn,.btn-option,.notes-tool,.notes-color{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+			img,canvas,video{max-width:100%;}
 			`;
 			document.head.appendChild(extraCSS);
 
@@ -12442,6 +12508,8 @@
 			  document.getElementById('notes-textarea').value = n ? n.content : '';
 			  document.getElementById('notes-edit-date').innerText = n ? notesFormatDate(n.updatedAt||Date.now()) : '';
 			  notesUpdateWordCount();
+			  notesSetMode('text');
+			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
 			}
 			function notesUpdateWordCount(){
@@ -12465,6 +12533,131 @@
 			  notes = notes.filter(x=>x.id!==currentNoteId);
 			  saveNotes();
 			  notesShowList();
+			}
+
+			/* ===================== NOTAS — DIBUJO estilo Apple Notes =====================
+			   Lápiz, bolígrafo, marcador, resaltador y borrador con paleta de colores.
+			   Compatible con lápices de iPad y stylus de Samsung/Android: usa Pointer
+			   Events y aprovecha la PRESIÓN (pointer.pressure) y la inclinación cuando
+			   el dispositivo las reporta, para trazos más gruesos/finos como en Apple. */
+			let _notesDrawing = null; // dataURL PNG de la nota actual
+			let _notesTool = 'pen', _notesColor = '#1c1c1e', _notesSize = 4;
+			let _nCtx = null, _nCanvas = null, _nDrawn = false, _nLast = null, _nUndoStack = [];
+			const NOTES_COLORS = ['#1c1c1e','#ffffff','#ff3b30','#ff9500','#ffcc00','#34c759','#0a84ff','#5856d6','#af52de','#ff2d55','#a2845e','#8e8e93'];
+			const NOTES_TOOLS = {
+			  pen:        { cap:'round', join:'round', alpha:1,   mul:1,   comp:'source-over' },
+			  pencil:     { cap:'round', join:'round', alpha:0.85,mul:0.7, comp:'source-over', grain:true },
+			  marker:     { cap:'square',join:'round', alpha:0.9, mul:2.4, comp:'source-over' },
+			  highlighter:{ cap:'round', join:'round', alpha:0.35,mul:3.5, comp:'multiply' },
+			  eraser:     { cap:'round', join:'round', alpha:1,   mul:2.2, comp:'destination-out' }
+			};
+			function notesSetMode(mode){
+			  const draw = document.getElementById('notes-draw-wrap');
+			  const ta = document.getElementById('notes-textarea');
+			  const bt = document.getElementById('notes-mode-text'), bd = document.getElementById('notes-mode-draw');
+			  if(mode === 'draw'){
+			    ta.classList.add('hidden');
+			    draw.classList.remove('hidden'); draw.classList.add('flex');
+			    if(bt){ bt.style.background='rgba(255,255,255,.1)'; bt.style.color='#fff'; }
+			    if(bd){ bd.style.background='#ffd60a'; bd.style.color='#1c1c1e'; }
+			    notesInitCanvas();
+			  } else {
+			    draw.classList.add('hidden'); draw.classList.remove('flex');
+			    ta.classList.remove('hidden');
+			    if(bd){ bd.style.background='rgba(255,255,255,.1)'; bd.style.color='#fff'; }
+			    if(bt){ bt.style.background='#ffd60a'; bt.style.color='#1c1c1e'; }
+			  }
+			}
+			function notesBuildColors(){
+			  const box = document.getElementById('notes-colors');
+			  if(!box || box.childElementCount) return;
+			  NOTES_COLORS.forEach(c=>{
+			    const b = document.createElement('button');
+			    b.className = 'notes-color';
+			    b.dataset.c = c;
+			    b.onclick = ()=>notesColor(c);
+			    b.style.cssText = 'width:24px;height:24px;border-radius:50%;background:'+c+';border:2px solid '+(c===_notesColor?'#0a84ff':'rgba(0,0,0,.15)')+';cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.2);';
+			    box.appendChild(b);
+			  });
+			}
+			function notesColor(c){ _notesColor = c; if(_notesTool==='eraser') notesTool('pen'); document.querySelectorAll('.notes-color').forEach(b=>b.style.borderColor = (b.dataset.c===c?'#0a84ff':'rgba(0,0,0,.15)')); }
+			function notesTool(t){ _notesTool = t; document.querySelectorAll('.notes-tool').forEach(b=>b.style.background = (b.dataset.tool===t?'#0a84ff':'rgba(255,255,255,.1)')); }
+			function notesSetSize(v){ _notesSize = parseInt(v)||4; }
+			function notesInitCanvas(){
+			  notesBuildColors();
+			  const cv = document.getElementById('notes-canvas');
+			  if(!cv) return;
+			  _nCanvas = cv;
+			  // Ajusta el lienzo a su tamaño real en pantalla (nítido en pantallas retina)
+			  const fit = ()=>{
+			    const r = cv.getBoundingClientRect();
+			    if(!r.width || !r.height) return;
+			    const dpr = Math.min(window.devicePixelRatio||1, 3);
+			    const prev = _nCtx ? cv.toDataURL() : (_notesDrawing || null);
+			    cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+			    _nCtx = cv.getContext('2d');
+			    _nCtx.scale(dpr,dpr);
+			    _nCtx.lineCap='round'; _nCtx.lineJoin='round';
+			    if(prev){ const img=new Image(); img.onload=()=>_nCtx.drawImage(img,0,0,r.width,r.height); img.src=prev; }
+			  };
+			  fit();
+			  if(!cv._wired){
+			    cv._wired = true;
+			    const pos = (e)=>{ const r=cv.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top, p: (e.pressure && e.pressure>0 && e.pressure!==0.5) ? e.pressure : 0.5 }; };
+			    const stroke = (a,b,pressure)=>{
+			      const T = NOTES_TOOLS[_notesTool] || NOTES_TOOLS.pen;
+			      _nCtx.globalCompositeOperation = T.comp;
+			      _nCtx.globalAlpha = T.alpha;
+			      _nCtx.strokeStyle = _notesTool==='eraser' ? 'rgba(0,0,0,1)' : _notesColor;
+			      _nCtx.lineCap = T.cap; _nCtx.lineJoin = T.join;
+			      // La presión del lápiz modula el grosor (como en Apple Notes)
+			      _nCtx.lineWidth = Math.max(0.5, _notesSize * T.mul * (0.4 + pressure*1.2));
+			      _nCtx.beginPath(); _nCtx.moveTo(a.x,a.y); _nCtx.lineTo(b.x,b.y); _nCtx.stroke();
+			    };
+			    cv.addEventListener('pointerdown', (e)=>{
+			      e.preventDefault();
+			      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+			      // guarda para deshacer (máx 12 pasos)
+			      try{ _nUndoStack.push(cv.toDataURL()); if(_nUndoStack.length>12) _nUndoStack.shift(); }catch(err){}
+			      _nLast = pos(e); _nDrawn = true;
+			      const dot = { x:_nLast.x+0.01, y:_nLast.y+0.01 };
+			      stroke(_nLast, dot, _nLast.p);
+			    });
+			    cv.addEventListener('pointermove', (e)=>{
+			      if(!_nLast) return;
+			      e.preventDefault();
+			      // coalesced events = trazo suave con lápiz rápido
+			      const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+			      evs.forEach(ev=>{ const p=pos(ev); stroke(_nLast,p,p.p); _nLast=p; });
+			    });
+			    const end = ()=>{ if(_nLast){ _nLast=null; notesSaveDrawing(); } };
+			    cv.addEventListener('pointerup', end);
+			    cv.addEventListener('pointercancel', end);
+			    cv.addEventListener('pointerleave', end);
+			    if(!window._notesResizeWired){ window._notesResizeWired=true; window.addEventListener('resize', ()=>{ if(_nCanvas && !document.getElementById('notes-draw-wrap').classList.contains('hidden')) fit(); }); }
+			  }
+			}
+			function notesSaveDrawing(){
+			  if(!currentNoteId || !_nCanvas) return;
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  if(!n) return;
+			  try{ n.drawing = _nCanvas.toDataURL('image/png'); _notesDrawing = n.drawing; n.updatedAt = Date.now(); saveNotes(); }catch(e){}
+			}
+			function notesUndo(){
+			  if(!_nUndoStack.length || !_nCtx || !_nCanvas) return;
+			  const url = _nUndoStack.pop();
+			  const r = _nCanvas.getBoundingClientRect();
+			  _nCtx.clearRect(0,0,r.width,r.height);
+			  const img = new Image();
+			  img.onload = ()=>{ _nCtx.drawImage(img,0,0,r.width,r.height); notesSaveDrawing(); };
+			  img.src = url;
+			}
+			function notesClearDraw(){
+			  if(!_nCtx || !_nCanvas) return;
+			  try{ _nUndoStack.push(_nCanvas.toDataURL()); }catch(e){}
+			  const r = _nCanvas.getBoundingClientRect();
+			  _nCtx.clearRect(0,0,r.width,r.height);
+			  notesSaveDrawing();
 			}
 
 			/* ===================== MI OPINIÓN ===================== */
@@ -12856,7 +13049,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">👴 Modo Fácil</div>
-			          Se activa en configuración con el interruptor <b>👴 Modo Fácil</b>: abre un reloj de orientación gigante — hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: toca <b>⚙️ Ajustes</b> dentro del modo y apaga el mismo interruptor. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b> (negro, degradado o tu fondo de pantalla) y el <b>tipo de números</b> (Digital, Clásico, Fino, Retro).
+			          Se activa en configuración con el interruptor <b>👴 Modo Fácil</b>: abre un reloj de orientación gigante — hora, día, fecha, "ESTÁS EN CASA", si es mañana/tarde/noche, la estación del año y el siglo (de noche se atenúa). Para <b>salir</b>: usa el engranaje ⚙️ de la esquina y apaga el interruptor. Debajo del interruptor puedes cambiar su <b>color</b>, su <b>fondo</b>, el <b>tipo de números</b> (Digital, Clásico, Fino, Retro), y elegir <b>qué mostrar</b>: mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa".
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🖼️ Fondos de pantalla</div>
@@ -14178,6 +14371,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { fecha: '13 de julio de 2026', cambios: [
+			    '➕ Notas con DIBUJO estilo Apple Notes: bolígrafo, lápiz, marcador, resaltador y borrador, con paleta de colores. Compatible con lápices de iPad y stylus de Samsung/Android (usa la presión del lápiz)',
+			    '➕ Modo Fácil editable: puedes ocultar mañana/tarde/noche, AM/PM, estación y siglo, y editar el texto de "en casa"',
+			    '🛠️ Modo Fácil: quitado "ESTAMOS" y el "Siglo 21" repetido; quitado el botón de Ajustes duplicado (se usa el engranaje de la esquina)',
+			    '➕ Compatibilidad total: funciona en pantallas mini, grandes y con notch/isla dinámica; los paneles se adaptan al tamaño',
+			  ]},
 			  { fecha: '12 de julio de 2026', cambios: [
 			    '🛠️ Fondos en movimiento: arreglado a fondo el "me pone el que no es" — ahora se elige SIEMPRE el video principal del wallpaper (nunca uno de la sección de relacionados). Todos se re-extraen con el criterio corregido',
 			    '🛠️ Traducción: cerrados los últimos textos que faltaban (barrido de ~40 pantallas, cero sin traducir y cero parpadeos)',
@@ -14425,20 +14624,35 @@
 			  const m = String(a.getMinutes()).padStart(2,'0');
 			  const ampm = h >= 12 ? 'PM' : 'AM';
 			  h = h % 12 || 12;
-			  document.getElementById('easy-hora').textContent = h + ':' + m + ' ' + ampm;
+			  // AM/PM se puede quitar desde configuración
+			  const showAmpm = localStorage.getItem('easy_show_ampm') !== '0';
+			  document.getElementById('easy-hora').textContent = h + ':' + m + (showAmpm ? ' ' + ampm : '');
 			  document.getElementById('easy-dia').textContent = _uiT(_EASY_DIAS[a.getDay()]);
 			  document.getElementById('easy-fecha').textContent = _uiT(a.getDate() + ' DE ' + _EASY_MESES[a.getMonth()] + ' DE ' + a.getFullYear());
 			  const h24 = a.getHours();
-			  document.getElementById('easy-momento').textContent =
-			    _uiT((h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE');
-			  // Estación del año y siglo (como el panel principal, en texto plano)
+			  // "en casa" editable (o se oculta si está vacío)
+			  const homeEl = document.getElementById('easy-home');
+			  if(homeEl){
+			    const txt = localStorage.getItem('easy_home_text');
+			    const val = (txt === null) ? 'ESTÁS EN CASA' : txt;
+			    homeEl.textContent = val ? _uiT(val) : '';
+			    homeEl.style.display = val ? '' : 'none';
+			  }
+			  // mañana/tarde/noche se puede quitar
+			  const momEl = document.getElementById('easy-momento');
+			  if(momEl){
+			    if(localStorage.getItem('easy_show_momento') === '0'){ momEl.style.display = 'none'; }
+			    else { momEl.style.display = ''; momEl.textContent = _uiT((h24>=6 && h24<12) ? 'ES DE MAÑANA' : (h24>=12 && h24<18) ? 'ES DE TARDE' : 'ES DE NOCHE'); }
+			  }
+			  // Estación y siglo (se pueden ocultar). "ESTAMOS" quitado; siglo sin repetir.
 			  const mo = a.getMonth() + 1, yr = a.getFullYear();
 			  const estacion = (mo===12 || mo<=2) ? 'INVIERNO' : mo<=5 ? 'PRIMAVERA' : mo<=8 ? 'VERANO' : 'OTOÑO';
 			  const siglo = Math.floor((yr - 1) / 100) + 1;
 			  const est1 = document.getElementById('easy-estacion');
 			  const est2 = document.getElementById('easy-siglo');
-			  if(est1) est1.textContent = _uiT('ESTAMOS EN ' + estacion + ' DE ' + yr);
-			  if(est2) est2.textContent = _uiT('SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100) + ' DEL SIGLO ' + siglo);
+			  const showExtra = localStorage.getItem('easy_show_extra') !== '0';
+			  if(est1){ est1.style.display = showExtra ? '' : 'none'; if(showExtra) est1.textContent = _uiT(estacion + ' DE ' + yr); }
+			  if(est2){ est2.style.display = showExtra ? '' : 'none'; if(showExtra) est2.textContent = _uiT('SIGLO ' + siglo + ' · AÑO ' + (yr - (siglo - 1) * 100)); }
 			  // De noche se atenúa (como el archivo original), respetando el color elegido
 			  scr.style.filter = (h24>=22 || h24<6) ? 'brightness(.55)' : '';
 			}
@@ -14478,17 +14692,28 @@
 			    + '<div id="easy-hora" data-notrans style="font-family:\'Orbitron\',monospace;font-weight:700;font-size:clamp(4rem,15vw,11rem);letter-spacing:.08em;text-shadow:0 0 8px rgba(255,0,0,.35);"></div>'
 			    + '<div id="easy-dia" style="font-family:\'Arial Black\',Arial,sans-serif;font-size:clamp(2.4rem,8vw,6rem);margin-top:20px;"></div>'
 			    + '<div id="easy-fecha" style="font-family:Arial,sans-serif;font-weight:bold;font-size:clamp(1.4rem,4vw,2.8rem);margin-top:10px;"></div>'
-			    + '<div style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
+			    + '<div id="easy-home" style="font-family:Verdana,sans-serif;font-size:clamp(1.4rem,4vw,2.8rem);font-weight:bold;margin-top:34px;">ESTÁS EN CASA</div>'
 			    + '<div id="easy-momento" style="font-family:Verdana,sans-serif;font-size:clamp(1.2rem,3.2vw,2.2rem);margin-top:12px;"></div>'
 			    + '<div id="easy-estacion" style="font-family:Verdana,sans-serif;font-size:clamp(1.1rem,3vw,2rem);margin-top:26px;opacity:.85;"></div>'
-			    + '<div id="easy-siglo" style="font-family:Verdana,sans-serif;font-size:clamp(1rem,2.6vw,1.7rem);margin-top:10px;opacity:.7;"></div>'
-			    + '<button onclick="_easyOpenSettings()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#c9c9ce;padding:12px 18px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:700;">⚙️ Ajustes</button>';
+			    + '<div id="easy-siglo" style="font-family:Verdana,sans-serif;font-size:clamp(1rem,2.6vw,1.7rem);margin-top:10px;opacity:.7;"></div>';
+			  // Sin botón de Ajustes: el engranaje fijo de la esquina superior izquierda
+			  // (por encima de esta pantalla) abre la configuración — no se repite.
 			  document.body.appendChild(scr);
 			}
 			function _easyOpenSettings(){
 			  // Configuración COMPLETA por encima del reloj (el panel tiene mayor
 			  // z-index). Salir del modo fácil se hace AHÍ, con su interruptor.
 			  try{ toggleSidebar(); }catch(e){}
+			}
+			function easySetToggle(key, on){ try{ localStorage.setItem(key, on ? '1' : '0'); }catch(e){} if(typeof _easyTick==='function') _easyTick(); _easySyncControls(); }
+			function easySetHomeText(v){ try{ localStorage.setItem('easy_home_text', v); }catch(e){} if(typeof _easyTick==='function') _easyTick(); }
+			function _easySyncControls(){
+			  const set=(id,key,def)=>{ const el=document.getElementById(id); if(el) el.checked = (localStorage.getItem(key) ?? (def?'1':'0')) !== '0'; };
+			  set('easy-show-momento','easy_show_momento',true);
+			  set('easy-show-ampm','easy_show_ampm',true);
+			  set('easy-show-extra','easy_show_extra',true);
+			  const ht=document.getElementById('easy-home-text');
+			  if(ht){ const t=localStorage.getItem('easy_home_text'); ht.value = (t===null)?'ESTÁS EN CASA':t; }
 			}
 			function setEasyMode(on){
 			  _easyModeOn = on;
@@ -14517,6 +14742,7 @@
 			document.addEventListener('DOMContentLoaded', ()=>{
 			  _easyBuild();
 			  setEasyMode(_easyModeOn);
+			  _easySyncControls();
 			}, {once:true});
 
 			/* ===== RESTORE TIME FORMAT BUTTON STATE ON LOAD ===== */
