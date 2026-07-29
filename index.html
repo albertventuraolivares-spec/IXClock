@@ -12932,7 +12932,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
-			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz) y sintetizador. Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
+			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, <b>Drummer</b> (un baterista que toca grooves solo por estilo), <b>Beat Sequencer</b> (caja de ritmos de pasos), Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz) y sintetizador. Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
@@ -14364,6 +14364,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'1.7', fecha: '29 de julio de 2026', titulo:'IXBand como GarageBand (parte 1)', cambios: [
+			    '➕ Drummer: un baterista que toca solo. Elige el estilo (Rock, Pop, Hip Hop, House, Trap, Funk, Latin, Reggaetón, Balada) y la intensidad, y sigue el tempo del LCD',
+			    '➕ Beat Sequencer: la caja de ritmos de pasos de GarageBand — 8 sonidos × 16 casillas que prendes/apagas, con Limpiar y Aleatorio',
+			    '🛠️ Analizadas las funciones reales de GarageBand para ir incorporándolas a IXBand por tandas (siguen: grabadora de voz con efectos, amplis/pedales, arpegiador, más plantillas y Remix FX)',
+			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
 			    '🛠️ Idioma y Región: los nombres de país ahora salen en el idioma elegido (inglés → "United States", francés → "États-Unis"…), ya no mezclado con español',
@@ -15954,6 +15959,8 @@
 			    +  '<div id="gb-drums-area" style="display:none;"></div>'
 			    +  '<div id="gb-chord-area" style="display:none;flex:1;"></div>'
 			    +  '<div id="gb-synth-area" style="display:none;"></div>'
+			    +  '<div id="gb-drummer-area" style="display:none;flex:1;"></div>'
+			    +  '<div id="gb-beatseq-area" style="display:none;flex:1;overflow:auto;"></div>'
 			    +'</div>'
 			    +'<div id="gb-loops" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
 			    +'<div id="gb-tracks" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
@@ -15979,6 +15986,8 @@
 			const GB_BROWSER_CARDS=[
 			  {id:'keyboard', icon:'🎹', n:'Teclado',        d:'45 instrumentos del mundo por categorías'},
 			  {id:'drums',    icon:'🥁', n:'Batería',        d:'Pads de percusión para ritmos'},
+			  {id:'drummer',  icon:'🥁', n:'Drummer',        d:'Un baterista que toca grooves solo por estilo'},
+			  {id:'beatseq',  icon:'🎚️', n:'Beat Sequencer', d:'Caja de ritmos de pasos, estilo drum machine'},
 			  {id:'smartguitar',icon:'🎸', n:'Guitarra Smart', d:'6 cuerdas de verdad: rasguea con el dedo o el lápiz'},
 			  {id:'smartbass',  icon:'🎸', n:'Bajo Smart',     d:'4 cuerdas graves: rasguea y pulsa notas'},
 			  {id:'smartstrings',icon:'🎻', n:'Cuerdas Smart',  d:'Orquesta de cuerdas para rasguear'},
@@ -16000,7 +16009,8 @@
 			  if(id==='loops'){ gbView('loops'); return; }
 			  if(id==='tracks'){ gbView('tracks'); return; }
 			  gbView('inst');
-			  ['gb-kb-wrap','gb-drums-area','gb-chord-area','gb-synth-area'].forEach(function(x){ document.getElementById(x).style.display='none'; });
+			  ['gb-kb-wrap','gb-drums-area','gb-chord-area','gb-synth-area','gb-drummer-area','gb-beatseq-area'].forEach(function(x){ const e=document.getElementById(x); if(e) e.style.display='none'; });
+			  gbDrummerStop(); gbSeqStop();
 			  const bar=document.getElementById('gb-inst-bar');
 			  if(id==='keyboard'){
 			    document.getElementById('gb-kb-wrap').style.display='flex';
@@ -16024,6 +16034,16 @@
 			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎛️ Sintetizador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Elige la onda y ajusta la envolvente</span>';
 			    gbBuildSynth(); _gbSelectedInstrument='synth';
 			    document.getElementById('gb-status').textContent='🎛️ Sintetizador listo';
+			  } else if(id==='drummer'){
+			    document.getElementById('gb-drummer-area').style.display='flex';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Drummer</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Un baterista que toca solo · elige el estilo y la intensidad</span>';
+			    gbBuildDrummer(); _gbSelectedInstrument='drums';
+			    document.getElementById('gb-status').textContent='🥁 Drummer · pulsa ▶ y elige el estilo';
+			  } else if(id==='beatseq'){
+			    document.getElementById('gb-beatseq-area').style.display='block';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎚️ Beat Sequencer</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Caja de ritmos: prende las casillas y pulsa ▶</span>';
+			    gbBuildBeatSeq(); _gbSelectedInstrument='drums';
+			    document.getElementById('gb-status').textContent='🎚️ Beat Sequencer · dibuja tu ritmo';
 			  }
 			}
 			// ===== Teclado (piano realista con octavas, voces y glissando) =====
@@ -16137,6 +16157,141 @@
 			    area.appendChild(pad);
 			  });
 			}
+			// ===== DRUMMER: un baterista que toca grooves solo (como GarageBand) =====
+			// Cada estilo trae varios patrones de 16 pasos por pieza; la intensidad
+			// elige un patrón más simple o más lleno y sube/baja el volumen.
+			const GB_DRUMMER_STYLES=[
+			  {id:'rock', name:'Rock', bpm:120, kick:[0,8,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14],extra:{crash:[0]}},
+			  {id:'pop', name:'Pop', bpm:110, kick:[0,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]},
+			  {id:'hiphop', name:'Hip Hop', bpm:90, kick:[0,7,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]},
+			  {id:'house', name:'House', bpm:124, kick:[0,4,8,12],snare:[],hat:[2,6,10,14],extra:{clap:[4,12],openhat:[2,6,10,14]}},
+			  {id:'trap', name:'Trap', bpm:140, kick:[0,6,10],snare:[8],hat:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]},
+			  {id:'funk', name:'Funk', bpm:104, kick:[0,3,6,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14],extra:{cowbell:[6,14]}},
+			  {id:'latin', name:'Latin', bpm:100, kick:[0,3,8,11],snare:[],hat:[0,2,4,6,8,10,12,14],extra:{conga:[2,6,10,14],clap:[4,12]}},
+			  {id:'reggaeton', name:'Reggaetón', bpm:96, kick:[0,8],snare:[3,6,11,14],hat:[0,2,4,6,8,10,12,14]},
+			  {id:'ballad', name:'Balada', bpm:72, kick:[0,8],snare:[4,12],hat:[0,4,8,12]}
+			];
+			let _gbDrummerStyle='rock', _gbDrummerInt=2, _gbDrummerTimer=null, _gbDrummerStep=0;
+			function gbBuildDrummer(){
+			  const area=document.getElementById('gb-drummer-area');
+			  area.style.cssText='display:flex;flex-direction:column;flex:1;gap:16px;padding:18px;max-width:900px;margin:0 auto;width:100%;';
+			  let s='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+			  GB_DRUMMER_STYLES.forEach(function(d){
+			    s+='<button class="gb-chip gb-drummer-chip'+(d.id===_gbDrummerStyle?' on':'')+'" data-d="'+d.id+'" onclick="gbDrummerPick(\''+d.id+'\')">'+d.name+'</button>';
+			  });
+			  s+='</div>';
+			  s+='<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;padding:22px;background:radial-gradient(120% 120% at 50% 0%,#2a2a2e,#151517);border-radius:18px;">'
+			    +'<button id="gb-drummer-play" onclick="gbDrummerToggle()" style="width:74px;height:74px;border-radius:50%;border:none;background:linear-gradient(180deg,#30d158,#20a848);color:#062;font-size:30px;font-weight:900;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);">▶</button>'
+			    +'<div style="display:flex;flex-direction:column;gap:6px;min-width:220px;">'
+			    +  '<div style="font-size:11px;opacity:.6;font-weight:700;">INTENSIDAD</div>'
+			    +  '<input type="range" min="1" max="3" step="1" value="'+_gbDrummerInt+'" oninput="_gbDrummerInt=+this.value;document.getElementById(\'gb-drummer-intlbl\').textContent=[\'\',\'Suave\',\'Normal\',\'Potente\'][this.value];" style="width:100%;">'
+			    +  '<div id="gb-drummer-intlbl" style="font-size:12px;font-weight:800;">'+['','Suave','Normal','Potente'][_gbDrummerInt]+'</div>'
+			    +'</div>'
+			    +'<div id="gb-drummer-viz" style="display:flex;gap:5px;align-items:flex-end;height:52px;"></div>'
+			    +'</div>';
+			  s+='<div style="font-size:11px;opacity:.45;text-align:center;">El baterista sigue el tempo del LCD de arriba. Sube la intensidad para un ritmo más lleno y fuerte.</div>';
+			  area.innerHTML=s;
+			  const viz=document.getElementById('gb-drummer-viz');
+			  if(viz){ for(let i=0;i<7;i++){ const b=document.createElement('div'); b.className='gb-viz-bar'; b.style.cssText='width:7px;height:12px;border-radius:3px;background:#30d158;opacity:.5;'; viz.appendChild(b); } }
+			}
+			function gbDrummerPick(id){
+			  _gbDrummerStyle=id;
+			  document.querySelectorAll('.gb-drummer-chip').forEach(function(b){ b.classList.toggle('on', b.dataset.d===id); });
+			  const d=GB_DRUMMER_STYLES.find(function(x){ return x.id===id; });
+			  if(d){ _gbBpm=d.bpm; const te=document.getElementById('gb-lcd-tempo'); if(te) te.textContent=d.bpm; }
+			}
+			function gbDrummerToggle(){ _gbDrummerTimer ? gbDrummerStop() : gbDrummerStart(); }
+			function gbDrummerStart(){
+			  if(_gbDrummerTimer) return;
+			  const btn=document.getElementById('gb-drummer-play'); if(btn){ btn.textContent='⏸'; btn.style.background='linear-gradient(180deg,#ff453a,#d0342b)'; btn.style.color='#fff'; }
+			  _gbDrummerStep=0; _gbBeatStart=Date.now();
+			  const d=GB_DRUMMER_STYLES.find(function(x){ return x.id===_gbDrummerStyle; })||GB_DRUMMER_STYLES[0];
+			  const tick=function(){
+			    const step=_gbDrummerStep, hit=function(arr,type,f,vel){ if(arr && arr.indexOf(step)>=0) gbPlayDrum(type,f,vel); };
+			    const iv=_gbDrummerInt; // 1..3
+			    hit(d.kick,'kick',60,0.7+iv*0.1);
+			    hit(d.snare,'snare',200,0.6+iv*0.12);
+			    // hats: en intensidad baja solo en pares; alta, todos
+			    if(d.hat && d.hat.indexOf(step)>=0 && (iv>=2 || step%4===0)) gbPlayDrum('hihat',800,0.35+iv*0.1);
+			    if(iv>=2 && d.extra) Object.keys(d.extra).forEach(function(t){ if(d.extra[t].indexOf(step)>=0) gbPlayDrum(t,t==='cowbell'?700:t==='conga'?400:300,0.5+iv*0.1); });
+			    // visualizador
+			    const bars=document.querySelectorAll('#gb-drummer-viz .gb-viz-bar');
+			    if(bars.length){ const b=bars[step%bars.length]; b.style.height=(14+Math.random()*34)+'px'; b.style.opacity='1'; setTimeout(function(){ b.style.opacity='.5'; b.style.height='12px'; },120); }
+			    _gbDrummerStep=(_gbDrummerStep+1)%16;
+			    _gbDrummerTimer=setTimeout(tick,(60000/(parseInt(_gbBpm)||120))/4);
+			  };
+			  tick();
+			}
+			function gbDrummerStop(){
+			  if(_gbDrummerTimer){ clearTimeout(_gbDrummerTimer); _gbDrummerTimer=null; }
+			  const btn=document.getElementById('gb-drummer-play'); if(btn){ btn.textContent='▶'; btn.style.background='linear-gradient(180deg,#30d158,#20a848)'; btn.style.color='#062'; }
+			}
+			// ===== BEAT SEQUENCER: caja de ritmos de pasos (como GarageBand) =====
+			const GB_SEQ_ROWS=[
+			  {name:'Bombo',type:'kick',freq:60,color:'#ff453a'},
+			  {name:'Caja',type:'snare',freq:200,color:'#ff9f0a'},
+			  {name:'Hi-Hat',type:'hihat',freq:800,color:'#ffd60a'},
+			  {name:'Hat abierto',type:'openhat',freq:600,color:'#30d158'},
+			  {name:'Palmada',type:'clap',freq:300,color:'#bf5af2'},
+			  {name:'Tom',type:'tom',freq:150,color:'#5ac8f5'},
+			  {name:'Crash',type:'crash',freq:900,color:'#0a84ff'},
+			  {name:'Cencerro',type:'cowbell',freq:700,color:'#ff6b35'}
+			];
+			let _gbSeq=null, _gbSeqTimer=null, _gbSeqStep=0;
+			function _gbSeqInit(){ if(_gbSeq) return; _gbSeq=GB_SEQ_ROWS.map(function(){ return new Array(16).fill(false); });
+			  // Un patrón inicial sencillo para que suene algo enseguida.
+			  [0,4,8,12].forEach(function(i){ _gbSeq[0][i]=true; }); [4,12].forEach(function(i){ _gbSeq[1][i]=true; }); [0,2,4,6,8,10,12,14].forEach(function(i){ _gbSeq[2][i]=true; });
+			}
+			function gbBuildBeatSeq(){
+			  _gbSeqInit();
+			  const area=document.getElementById('gb-beatseq-area');
+			  area.style.cssText='display:block;padding:16px;';
+			  let s='<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">'
+			    +'<button id="gb-seq-play" onclick="gbSeqToggle()" style="background:linear-gradient(180deg,#30d158,#20a848);border:none;color:#062;font-weight:900;padding:8px 18px;border-radius:10px;cursor:pointer;font-size:14px;">▶ Tocar</button>'
+			    +'<button class="gb-chip" onclick="gbSeqClear()">🧹 Limpiar</button>'
+			    +'<button class="gb-chip" onclick="gbSeqRandom()">🎲 Aleatorio</button>'
+			    +'<span style="font-size:11px;opacity:.45;">Prende casillas y pulsa Tocar. Sigue el tempo del LCD.</span></div>';
+			  s+='<div style="display:inline-block;min-width:100%;">';
+			  GB_SEQ_ROWS.forEach(function(row,r){
+			    s+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
+			      +'<div style="width:96px;flex-shrink:0;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:'+row.color+';"></span>'+row.name+'</div>'
+			      +'<div style="display:flex;gap:4px;">';
+			    for(let c=0;c<16;c++){
+			      s+='<button class="gb-seq-cell" id="gb-seq-'+r+'-'+c+'" data-r="'+r+'" data-c="'+c+'" onclick="gbSeqToggleCell('+r+','+c+')" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a3a3c;cursor:pointer;'+(c%4===0?'margin-left:5px;':'')+'background:'+(_gbSeq[r][c]?row.color:'#2a2a2c')+';"></button>';
+			    }
+			    s+='</div></div>';
+			  });
+			  s+='</div>';
+			  area.innerHTML=s;
+			}
+			function gbSeqToggleCell(r,c){
+			  _gbSeqInit(); _gbSeq[r][c]=!_gbSeq[r][c];
+			  const b=document.getElementById('gb-seq-'+r+'-'+c);
+			  if(b) b.style.background=_gbSeq[r][c]?GB_SEQ_ROWS[r].color:'#2a2a2c';
+			  if(_gbSeq[r][c]) gbPlayDrum(GB_SEQ_ROWS[r].type,GB_SEQ_ROWS[r].freq,0.9);
+			}
+			function gbSeqToggle(){ _gbSeqTimer ? gbSeqStop() : gbSeqStart(); }
+			function gbSeqStart(){
+			  if(_gbSeqTimer) return; _gbSeqInit();
+			  const btn=document.getElementById('gb-seq-play'); if(btn){ btn.textContent='⏸ Parar'; btn.style.background='linear-gradient(180deg,#ff453a,#d0342b)'; btn.style.color='#fff'; }
+			  _gbSeqStep=0; _gbBeatStart=Date.now();
+			  const tick=function(){
+			    const step=_gbSeqStep;
+			    GB_SEQ_ROWS.forEach(function(row,r){ if(_gbSeq[r][step]) gbPlayDrum(row.type,row.freq,0.9); });
+			    // resaltar la columna actual
+			    for(let r=0;r<GB_SEQ_ROWS.length;r++){ for(let c=0;c<16;c++){ const b=document.getElementById('gb-seq-'+r+'-'+c); if(!b) continue; const on=_gbSeq[r][c]; b.style.boxShadow=(c===step)?'0 0 0 2px #fff inset':'none'; b.style.background=on?GB_SEQ_ROWS[r].color:(c===step?'#3d3d40':'#2a2a2c'); } }
+			    _gbSeqStep=(_gbSeqStep+1)%16;
+			    _gbSeqTimer=setTimeout(tick,(60000/(parseInt(_gbBpm)||120))/4);
+			  };
+			  tick();
+			}
+			function gbSeqStop(){
+			  if(_gbSeqTimer){ clearTimeout(_gbSeqTimer); _gbSeqTimer=null; }
+			  const btn=document.getElementById('gb-seq-play'); if(btn){ btn.textContent='▶ Tocar'; btn.style.background='linear-gradient(180deg,#30d158,#20a848)'; btn.style.color='#062'; }
+			  for(let r=0;r<GB_SEQ_ROWS.length;r++){ for(let c=0;c<16;c++){ const b=document.getElementById('gb-seq-'+r+'-'+c); if(b){ b.style.boxShadow='none'; b.style.background=_gbSeq&&_gbSeq[r][c]?GB_SEQ_ROWS[r].color:'#2a2a2c'; } } }
+			}
+			function gbSeqClear(){ _gbSeqInit(); _gbSeq=GB_SEQ_ROWS.map(function(){ return new Array(16).fill(false); }); gbBuildBeatSeq(); }
+			function gbSeqRandom(){ _gbSeqInit(); _gbSeq=GB_SEQ_ROWS.map(function(row,r){ return new Array(16).fill(false).map(function(_,c){ return Math.random() < (r===2?0.5:r<2?0.3:0.12); }); }); gbBuildBeatSeq(); }
 			// ===== Instrumentos Smart: TIRAS DE ACORDES como en GarageBand de iPad =====
 			const GB_CHORDS=[
 			  {n:'Em', notes:[82.41,123.47,164.81,196,246.94,329.63]},
