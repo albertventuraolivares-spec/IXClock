@@ -1942,6 +1942,11 @@
 					id="tab-more"
 					class="custom-scrollbar pr-1 flex-col hidden space-y-3"
 				>
+					<!-- Apps: enlace propio, guardar sin internet e instalar -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">⬇️ Apps y descargas</div>
+						<div id="ix-downloads"></div>
+					</div>
 					<!-- Botón de configuración: fijo u oculto -->
 					<div class="p-3.5 glass rounded-2xl">
 						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">⚙️ Botón de configuración</div>
@@ -7150,6 +7155,7 @@
 			  if(e.clientX < 110 && e.clientY < 110) _showSettingsBtn();
 			},{passive:true});
 			function showTab(name){
+			  if(name==='more'){ try{ ixRenderDownloads(); }catch(e){} }
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
 			    document.getElementById('tab-'+t).classList.toggle('flex', t===name);
@@ -14422,6 +14428,9 @@
 			    '📲 IXClocK ya se puede INSTALAR como app (icono propio, pantalla completa sin barra del navegador) en iPad, iPhone, Android y ordenador',
 			    '🛠️ Ahora ABRE SIN INTERNET: el diseño se descuadraba por completo si fallaba la conexión, porque los estilos se bajaban de un CDN. Ya van dentro de la app y todo se ve bien aunque estés sin datos',
 			    '⚡ Carga bastante más rápida: los estilos pasaron de ~400 KB que se procesaban en tu dispositivo a 23 KB ya listos',
+			    '🔗 Cada app tiene AHORA SU PROPIO ENLACE: abres ixclockplus.netlify.app/?app=ixband y entras directo a IXBand, sin pasar por el panel. Igual con Mapas, Juegos, Emulador y las demás',
+			    '⬇️ Configuración → Más → «Apps y descargas»: guarda las apps en tu dispositivo para usarlas SIN INTERNET, todas de golpe o una por una, con barra de progreso, tamaño en MB y botón de borrar. Todo sin salir de la app',
+			    '📲 Botón «Instalar» en cada app para ponerle su icono propio en tu pantalla de inicio, con instrucciones según tu dispositivo',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18518,6 +18527,181 @@
 			}
 		</style>
 			<script>
+			// ===== REGISTRO DE APPS: enlace propio + descarga para usar sin internet =====
+			// Cada app tiene su enlace (?app=id). Si entras por ese enlace, la app se
+			// abre sola. Y cada una puede guardarse en el dispositivo para funcionar
+			// sin conexión (assets = lo que necesita bajarse de fuera).
+			const IX_APPS = [
+			  { id:'ixband',   n:'IXBand',        icon:'🎸', d:'Estudio de música con instrumentos del mundo', open:'openGarageBand',
+			    assets:[] },
+			  { id:'mapas',    n:'Mapas',         icon:'🗺️', d:'Mapas del mundo y lugares', open:'openAppleMaps',
+			    assets:['https://tile.openstreetmap.org/2/1/1.png','https://tile.openstreetmap.org/2/2/1.png','https://tile.openstreetmap.org/3/3/3.png','https://tile.openstreetmap.org/3/4/3.png'] },
+			  { id:'navegador',n:'Navegador',     icon:'🌐', d:'Navega por internet dentro de IXClocK', open:'openBrowser', assets:[] },
+			  { id:'juegos',   n:'Juegos',        icon:'🎮', d:'Juegos incluidos', open:'toggleGamesPanel', assets:[] },
+			  { id:'emulador', n:'Emulador',      icon:'🕹️', d:'Consolas clásicas (necesita el motor)', open:'openEmuMenu',
+			    assets:['https://cdn.emulatorjs.org/stable/data/loader.js','https://cdn.emulatorjs.org/stable/data/emulator.min.js','https://cdn.emulatorjs.org/stable/data/emulator.min.css'] },
+			  { id:'radio',    n:'Radio Mundial', icon:'📻', d:'Emisoras de todo el mundo', open:'openWorldRadioModal', assets:[] },
+			  { id:'musica',   n:'Apps de Música',icon:'🎧', d:'Spotify, Apple Music, YouTube Music…', open:'openMusicAppsModal', assets:[] },
+			  { id:'vpn',      n:'VPN',           icon:'🛡️', d:'Conexión protegida', open:'openVpnModal', assets:[] },
+			  { id:'bench',    n:'IXBench',       icon:'📊', d:'Mide la potencia de tu dispositivo', open:'openBenchmark', assets:[] },
+			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
+			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
+			  { id:'buscador', n:'Buscador',      icon:'🔎', d:'Busca en todo IXClocK', open:'openSmartFinderModal', assets:[] }
+			];
+			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
+			const IX_CORE_ASSETS = [
+			  'tailwind.css','index.html','manifest.webmanifest',
+			  'icon-192.png','icon-512.png','favicon.svg','apple-touch-icon.png'
+			];
+			const IX_DL_CACHE = 'ixclock-apps-v1';
+			function ixAppLink(id){ return location.origin + location.pathname + '?app=' + id; }
+			// --- Abrir la app que venga en el enlace ---
+			function ixOpenFromLink(){
+			  let id=null;
+			  try{ id=new URLSearchParams(location.search).get('app'); }catch(e){}
+			  if(!id) return;
+			  const app=IX_APPS.find(function(a){ return a.id===id; });
+			  if(!app) return;
+			  // Espera a que la interfaz esté lista antes de abrirla.
+			  setTimeout(function(){
+			    const fn=window[app.open];
+			    if(typeof fn==='function'){ try{ fn(); }catch(e){} }
+			  }, 1200);
+			}
+			// Al abrir una app, el enlace de la barra cambia para poder compartirlo.
+			function ixMarkOpen(id){
+			  try{ history.replaceState(null,'', id ? ('?app='+id) : location.pathname); }catch(e){}
+			}
+			// --- Guardar una app para usarla sin internet ---
+			function ixDlKey(id){ return 'ixdl_'+id; }
+			function ixIsDownloaded(id){ try{ return localStorage.getItem(ixDlKey(id))!==null; }catch(e){ return false; } }
+			function ixDlSize(id){ try{ return parseInt(localStorage.getItem(ixDlKey(id))||'0',10)||0; }catch(e){ return 0; } }
+			function ixFmtMB(b){ return b>=1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB'; }
+			async function ixDownloadApp(id, onProgress){
+			  const app = id==='__core__' ? {id:'__core__', assets:IX_CORE_ASSETS} : IX_APPS.find(function(a){ return a.id===id; });
+			  if(!app) return 0;
+			  // Siempre se guarda el armazón: es lo que hace que la app abra sin conexión.
+			  const list = (app.assets||[]).concat(app.id==='__core__'?[]:IX_CORE_ASSETS);
+			  let done=0, bytes=0;
+			  if(!('caches' in window)){ // navegador sin soporte: se marca igualmente para no bloquear
+			    try{ localStorage.setItem(ixDlKey(id),'0'); }catch(e){}
+			    return 0;
+			  }
+			  const c = await caches.open(IX_DL_CACHE);
+			  for(const u of list){
+			    try{
+			      const res = await fetch(u, {mode: u.startsWith('http')?'no-cors':'same-origin'});
+			      await c.put(u, res.clone());
+			      try{ const b = await res.clone().blob(); bytes += b.size; }catch(e){}
+			    }catch(e){ /* un recurso caído no debe tumbar la descarga entera */ }
+			    done++;
+			    if(onProgress) onProgress(Math.round(done/list.length*100));
+			  }
+			  try{ localStorage.setItem(ixDlKey(id), String(bytes)); }catch(e){}
+			  return bytes;
+			}
+			async function ixRemoveApp(id){
+			  const app=IX_APPS.find(function(a){ return a.id===id; });
+			  try{
+			    if('caches' in window && app){
+			      const c=await caches.open(IX_DL_CACHE);
+			      for(const u of (app.assets||[])) { try{ await c.delete(u); }catch(e){} }
+			    }
+			  }catch(e){}
+			  try{ localStorage.removeItem(ixDlKey(id)); }catch(e){}
+			  ixRenderDownloads();
+			}
+			// --- Panel de Descargas (Configuración) ---
+			function ixRenderDownloads(){
+			  const el=document.getElementById('ix-downloads'); if(!el) return;
+			  const totalDl=IX_APPS.filter(function(a){ return ixIsDownloaded(a.id); }).length;
+			  const totalBytes=IX_APPS.reduce(function(s,a){ return s+ixDlSize(a.id); },0);
+			  let s='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
+			    +'<button id="ix-dl-all" onclick="ixDownloadAll()" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:13px;">⬇️ Descargar todas</button>'
+			    +'<button onclick="ixRemoveAll()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e8e8ec;font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer;font-size:12px;">🗑️ Borrar todas</button>'
+			    +'<span style="font-size:11px;opacity:.55;">'+totalDl+' de '+IX_APPS.length+' guardadas · '+ixFmtMB(totalBytes)+'</span></div>'
+			    +'<div id="ix-dl-allbar" style="display:none;height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:14px;"><div id="ix-dl-allfill" style="height:100%;width:0%;background:linear-gradient(90deg,#0a84ff,#30d158);transition:width .2s;"></div></div>'
+			    +'<div style="font-size:11px;opacity:.5;margin-bottom:10px;line-height:1.5;">Cada app tiene su propio enlace: ábrelo y entras directo a esa app. «Guardar» la deja lista para usarla sin internet, y «Instalar» le pone su icono en tu pantalla de inicio.</div>'
+			    +'<div style="display:grid;gap:9px;">';
+			  IX_APPS.forEach(function(a){
+			    const dl=ixIsDownloaded(a.id), sz=ixDlSize(a.id);
+			    s+='<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);flex-wrap:wrap;">'
+			      +'<span style="font-size:22px;">'+a.icon+'</span>'
+			      +'<div style="flex:1;min-width:150px;">'
+			      +  '<div style="font-size:13px;font-weight:800;">'+a.n+(dl?' <span style="color:#30d158;font-size:10px;">✓ guardada'+(sz?' · '+ixFmtMB(sz):'')+'</span>':'')+'</div>'
+			      +  '<div style="font-size:10px;opacity:.5;">'+a.d+'</div>'
+			      +  '<div id="ix-dlbar-'+a.id+'" style="display:none;height:5px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px;"><div id="ix-dlfill-'+a.id+'" style="height:100%;width:0%;background:#30d158;transition:width .2s;"></div></div>'
+			      +'</div>'
+			      +'<button onclick="ixOpenApp(\''+a.id+'\')" title="Abrir" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">Abrir</button>'
+			      +'<button onclick="ixCopyLink(\''+a.id+'\')" title="Copiar enlace de esta app" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">🔗 Enlace</button>'
+			      +'<button onclick="ixInstallApp(\''+a.id+'\')" title="Poner su icono en la pantalla de inicio" style="background:rgba(94,92,230,.25);border:1px solid rgba(94,92,230,.5);color:#c7c6ff;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">📲 Instalar</button>'
+			      +(dl
+			        ? '<button onclick="ixRemoveApp(\''+a.id+'\')" style="background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.4);color:#ff8a80;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">Borrar</button>'
+			        : '<button id="ix-dlbtn-'+a.id+'" onclick="ixDownloadOne(\''+a.id+'\')" style="background:rgba(48,209,88,.2);border:1px solid rgba(48,209,88,.45);color:#8ef0ab;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">⬇️ Guardar</button>')
+			      +'</div>';
+			  });
+			  s+='</div>';
+			  el.innerHTML=s;
+			}
+			function ixOpenApp(id){
+			  const a=IX_APPS.find(function(x){ return x.id===id; }); if(!a) return;
+			  const fn=window[a.open];
+			  ixMarkOpen(id);
+			  if(typeof fn==='function'){ try{ fn(); }catch(e){} }
+			}
+			function ixCopyLink(id){
+			  const url=ixAppLink(id);
+			  const done=function(){ ixToast('🔗 Enlace copiado: '+url); };
+			  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(function(){ ixToast('Enlace: '+url); });
+			  else ixToast('Enlace: '+url);
+			}
+			function ixInstallApp(id){
+			  const a=IX_APPS.find(function(x){ return x.id===id; }); if(!a) return;
+			  const url=ixAppLink(id);
+			  const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+			  const msg = iOS
+			    ? 'Para poner '+a.n+' en tu pantalla de inicio:\n\n1) Se abrirá '+a.n+' en una pestaña.\n2) Toca Compartir (el cuadrito con la flecha).\n3) Toca «Añadir a pantalla de inicio».\n\nTe quedará con su propio icono y se abrirá directo en '+a.n+'.'
+			    : 'Para poner '+a.n+' en tu pantalla de inicio:\n\n1) Se abrirá '+a.n+' en una pestaña.\n2) Abre el menú del navegador (⋮).\n3) Elige «Instalar» o «Añadir a pantalla de inicio».';
+			  alert(msg);
+			  window.open(url,'_blank');
+			}
+			async function ixDownloadOne(id){
+			  const btn=document.getElementById('ix-dlbtn-'+id);
+			  const bar=document.getElementById('ix-dlbar-'+id), fill=document.getElementById('ix-dlfill-'+id);
+			  if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+			  if(bar) bar.style.display='block';
+			  await ixDownloadApp(id, function(pct){ if(fill) fill.style.width=pct+'%'; });
+			  ixRenderDownloads();
+			  ixToast('✅ Guardada para usar sin internet');
+			}
+			async function ixDownloadAll(){
+			  const btn=document.getElementById('ix-dl-all');
+			  const bar=document.getElementById('ix-dl-allbar'), fill=document.getElementById('ix-dl-allfill');
+			  if(btn){ btn.disabled=true; btn.textContent='Descargando…'; }
+			  if(bar) bar.style.display='block';
+			  for(let i=0;i<IX_APPS.length;i++){
+			    await ixDownloadApp(IX_APPS[i].id);
+			    if(fill) fill.style.width=Math.round((i+1)/IX_APPS.length*100)+'%';
+			  }
+			  ixRenderDownloads();
+			  ixToast('✅ Todas las apps guardadas para usar sin internet');
+			}
+			async function ixRemoveAll(){
+			  for(const a of IX_APPS){ await ixRemoveApp(a.id); }
+			  ixRenderDownloads();
+			  ixToast('Descargas borradas');
+			}
+			function ixToast(msg){
+			  let t=document.getElementById('ix-toast');
+			  if(!t){ t=document.createElement('div'); t.id='ix-toast';
+			    t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,20,24,.96);color:#fff;padding:12px 18px;border-radius:13px;font-size:12px;font-weight:700;z-index:2147483000;box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:88vw;text-align:center;border:1px solid rgba(255,255,255,.12);';
+			    document.body.appendChild(t); }
+			  t.textContent=msg; t.style.display='block';
+			  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },3200);
+			}
+			ixOpenFromLink();
+		</script>
+		<script>
 			// Service worker: permite instalar la app y que abra sin internet.
 			// Solo en http/https; en file:// el navegador no lo permite.
 			if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
