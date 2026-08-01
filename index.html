@@ -14431,6 +14431,8 @@
 			    '🔗 Cada app tiene AHORA SU PROPIO ENLACE: abres ixclockplus.netlify.app/?app=ixband y entras directo a IXBand, sin pasar por el panel. Igual con Mapas, Juegos, Emulador y las demás',
 			    '⬇️ Configuración → Más → «Apps y descargas»: guarda las apps en tu dispositivo para usarlas SIN INTERNET, todas de golpe o una por una, con barra de progreso, tamaño en MB y botón de borrar. Todo sin salir de la app',
 			    '📲 Botón «Instalar» en cada app para ponerle su icono propio en tu pantalla de inicio, con instrucciones según tu dispositivo',
+			    '🧭 MAPAS AHORA DICE PASO A PASO: la ruta trae las indicaciones giro a giro en español («gira a la derecha por Gran Vía», «en la rotonda toma la 2ª salida»), con su distancia cada una. Antes solo daba el total de km',
+			    '▶ Navegación en vivo: sigue tu posición en el mapa, va cambiando de indicación según avanzas y te la dice EN VOZ ALTA (se puede silenciar con 🔊)',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -15008,6 +15010,7 @@
 			        </div>
 			        <button onclick="amapRoute()" style="width:100%;background:#34c759;border:none;color:#fff;border-radius:10px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;">Trazar ruta</button>
 			        <div id="amap-route-info" style="font-size:12px;color:#fff;margin-top:8px;min-height:16px;"></div>
+			        <div id="amap-steps" style="display:none;"></div>
 			      </div>
 			    </div>
 			  `;
@@ -15111,7 +15114,7 @@
 			    if(!from){ if(info){info.textContent='⚠️ No se encontró el origen.';info.style.color='#ff6961';} return; }
 			    const to=await amapGeocode(toInp.value.trim());
 			    if(!to){ if(info){info.textContent='⚠️ No se encontró el destino.';info.style.color='#ff6961';} return; }
-			    const url=`https://router.project-osrm.org/route/v1/${mode}/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+			    const url=`https://router.project-osrm.org/route/v1/${mode}/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson&steps=true`;
 			    const res=await fetch(url); const data=await res.json();
 			    if(!data.routes||!data.routes.length){ if(info){info.textContent='⚠️ No se encontró ruta.';info.style.color='#ff6961';} return; }
 			    const route=data.routes[0];
@@ -15128,9 +15131,172 @@
 			    const tiempo = min>=60 ? Math.floor(min/60)+' h '+(min%60)+' min' : min+' min';
 			    const emoji = mode==='cycling'?'🚲':(mode==='foot'?'🚶':'🚗');
 			    if(info){ info.innerHTML=`${emoji} <b>${km} km</b> · ⏱️ ${tiempo}`; info.style.color='#34c759'; }
+			    // Indicaciones giro a giro
+			    amapStopNav();
+			    _amapSteps=(route.legs&&route.legs[0]&&route.legs[0].steps)?route.legs[0].steps:[];
+			    amapRenderSteps();
 			  }catch(e){
 			    if(info){ info.textContent='⚠️ Error al calcular la ruta. Intenta de nuevo.'; info.style.color='#ff6961'; }
+			    _amapSteps=[]; amapRenderSteps();
 			  }
+			}
+
+			/* ── Navegación PASO A PASO (indicaciones giro a giro, como Maps/Waze) ── */
+			let _amapSteps=[], _amapStepMarks=[], _amapNavOn=false, _amapWatchId=null,
+			    _amapNavIdx=0, _amapSpoken=-1, _amapYouMark=null, _amapVoiceOn=true;
+			// Traduce la maniobra que devuelve el motor de rutas a algo que se entienda.
+			function _amapManeuver(st){
+			  const m=st.maneuver||{}, t=m.type||'turn', mod=m.modifier||'', road=st.name||'';
+			  const via=road?(' por <b>'+road+'</b>'):'';
+			  const GIRO={
+			    'left':['↰','Gira a la izquierda'], 'right':['↱','Gira a la derecha'],
+			    'slight left':['↖','Ligeramente a la izquierda'], 'slight right':['↗','Ligeramente a la derecha'],
+			    'sharp left':['⬅','Giro cerrado a la izquierda'], 'sharp right':['➡','Giro cerrado a la derecha'],
+			    'straight':['↑','Sigue recto'], 'uturn':['↶','Da la vuelta']
+			  };
+			  const g=GIRO[mod]||['↑','Continúa'];
+			  switch(t){
+			    case 'depart':   return ['🚩','Empieza'+via];
+			    case 'arrive':   return ['🏁','Has llegado'+(road?(' a <b>'+road+'</b>'):' a tu destino')];
+			    case 'merge':    return ['⤵','Incorpórate'+via];
+			    case 'on ramp':  return ['↗','Toma la incorporación'+via];
+			    case 'off ramp': return ['↘','Toma la salida'+via];
+			    case 'fork':     return [g[0], (mod.indexOf('left')>=0?'En la bifurcación, mantente a la izquierda':mod.indexOf('right')>=0?'En la bifurcación, mantente a la derecha':'Sigue en la bifurcación')+via];
+			    case 'end of road': return [g[0], g[1]+' al final de la calle'+via];
+			    case 'continue': return [g[0], (mod==='uturn'?'Da la vuelta':'Continúa')+via];
+			    case 'roundabout':
+			    case 'rotary':   return ['🔄','En la rotonda, toma la <b>'+(m.exit||1)+'ª salida</b>'+via];
+			    case 'roundabout turn': return ['🔄','En la rotonda, '+g[1].toLowerCase()+via];
+			    case 'exit roundabout':
+			    case 'exit rotary': return ['🔄','Sal de la rotonda'+via];
+			    case 'new name': return ['↑','Continúa'+via];
+			    default:         return [g[0], g[1]+via];
+			  }
+			}
+			function _amapDist(m){ return m>=1000 ? (m/1000).toFixed(m>=10000?0:1)+' km' : Math.round(m)+' m'; }
+			// Distancia real entre dos puntos de la Tierra (para saber en qué paso vas).
+			function _amapMeters(a,b){
+			  const R=6371000, rad=Math.PI/180;
+			  const dLat=(b[0]-a[0])*rad, dLon=(b[1]-a[1])*rad;
+			  const s=Math.sin(dLat/2)**2 + Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLon/2)**2;
+			  return 2*R*Math.asin(Math.sqrt(s));
+			}
+			function _amapSay(txt){
+			  if(!_amapVoiceOn) return;
+			  try{
+			    if(!('speechSynthesis' in window)) return;
+			    const u=new SpeechSynthesisUtterance(String(txt).replace(/<[^>]+>/g,''));
+			    u.lang='es-ES'; u.rate=1;
+			    speechSynthesis.cancel(); speechSynthesis.speak(u);
+			  }catch(e){}
+			}
+			// Pinta la lista de indicaciones giro a giro.
+			function amapRenderSteps(){
+			  const box=document.getElementById('amap-steps'); if(!box) return;
+			  if(!_amapSteps.length){ box.innerHTML=''; box.style.display='none'; return; }
+			  box.style.display='block';
+			  let s='<div style="display:flex;gap:6px;margin:10px 0 8px;">'
+			    +'<button id="amap-nav-btn" onclick="amapToggleNav()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;border-radius:10px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;">▶ Iniciar navegación</button>'
+			    +'<button id="amap-voice-btn" onclick="amapToggleVoice()" title="Voz" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:10px;padding:9px 12px;font-size:12px;cursor:pointer;">🔊</button>'
+			    +'</div>'
+			    +'<div id="amap-nav-live" style="display:none;padding:12px;border-radius:12px;background:linear-gradient(135deg,#0a84ff,#0057b8);margin-bottom:8px;">'
+			    +  '<div id="amap-nav-icon" style="font-size:30px;line-height:1;">↑</div>'
+			    +  '<div id="amap-nav-text" style="font-size:14px;font-weight:800;margin-top:5px;line-height:1.35;">—</div>'
+			    +  '<div id="amap-nav-dist" style="font-size:11px;opacity:.85;margin-top:4px;">—</div>'
+			    +'</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">INDICACIONES ('+_amapSteps.length+')</div>'
+			    +'<div style="max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:5px;">';
+			  _amapSteps.forEach(function(st,i){
+			    const mv=_amapManeuver(st);
+			    s+='<div id="amap-step-'+i+'" onclick="amapGoStep('+i+')" style="display:flex;gap:9px;align-items:flex-start;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.06);cursor:pointer;border:1px solid transparent;">'
+			      +'<span style="font-size:17px;line-height:1.2;width:22px;text-align:center;flex-shrink:0;">'+mv[0]+'</span>'
+			      +'<div style="flex:1;min-width:0;"><div style="font-size:11.5px;line-height:1.4;">'+mv[1]+'</div>'
+			      +'<div style="font-size:10px;opacity:.5;margin-top:2px;">'+_amapDist(st.distance||0)+'</div></div></div>';
+			  });
+			  s+='</div>';
+			  box.innerHTML=s;
+			  const vb=document.getElementById('amap-voice-btn');
+			  if(vb) vb.style.opacity=_amapVoiceOn?'1':'.4';
+			}
+			function amapGoStep(i){
+			  const st=_amapSteps[i]; if(!st||!_aplMap) return;
+			  const loc=st.maneuver && st.maneuver.location;
+			  if(loc) _aplMap.setView([loc[1],loc[0]], 16, {animate:true});
+			  _amapHighlight(i);
+			  _amapSay(_amapManeuver(st)[1]);
+			}
+			function _amapHighlight(i){
+			  _amapSteps.forEach(function(_,j){
+			    const el=document.getElementById('amap-step-'+j); if(!el) return;
+			    const on=(j===i);
+			    el.style.background=on?'rgba(10,132,255,.28)':'rgba(255,255,255,.06)';
+			    el.style.borderColor=on?'rgba(10,132,255,.7)':'transparent';
+			    if(on && el.scrollIntoView) try{ el.scrollIntoView({block:'nearest'}); }catch(e){}
+			  });
+			}
+			function amapToggleVoice(){
+			  _amapVoiceOn=!_amapVoiceOn;
+			  const vb=document.getElementById('amap-voice-btn');
+			  if(vb){ vb.style.opacity=_amapVoiceOn?'1':'.4'; vb.textContent=_amapVoiceOn?'🔊':'🔇'; }
+			  if(!_amapVoiceOn && 'speechSynthesis' in window){ try{ speechSynthesis.cancel(); }catch(e){} }
+			}
+			function amapToggleNav(){ _amapNavOn ? amapStopNav() : amapStartNav(); }
+			function amapStartNav(){
+			  if(!_amapSteps.length) return;
+			  if(!navigator.geolocation){ const i=document.getElementById('amap-route-info'); if(i){i.textContent='⚠️ Este dispositivo no da tu ubicación.';i.style.color='#ff6961';} return; }
+			  _amapNavOn=true; _amapNavIdx=0; _amapSpoken=-1;
+			  const b=document.getElementById('amap-nav-btn');
+			  if(b){ b.textContent='⏹ Salir de la navegación'; b.style.background='linear-gradient(135deg,#ff453a,#d0342b)'; }
+			  const live=document.getElementById('amap-nav-live'); if(live) live.style.display='block';
+			  _amapUpdateNav(null);
+			  _amapWatchId=navigator.geolocation.watchPosition(function(p){
+			    _amapUpdateNav([p.coords.latitude,p.coords.longitude]);
+			  },function(){},{enableHighAccuracy:true,maximumAge:1000,timeout:12000});
+			}
+			function amapStopNav(){
+			  _amapNavOn=false;
+			  if(_amapWatchId!=null && navigator.geolocation){ try{ navigator.geolocation.clearWatch(_amapWatchId); }catch(e){} _amapWatchId=null; }
+			  const b=document.getElementById('amap-nav-btn');
+			  if(b){ b.textContent='▶ Iniciar navegación'; b.style.background='linear-gradient(135deg,#0a84ff,#5e5ce6)'; }
+			  const live=document.getElementById('amap-nav-live'); if(live) live.style.display='none';
+			  if(_amapYouMark && _aplMap){ try{ _aplMap.removeLayer(_amapYouMark); }catch(e){} _amapYouMark=null; }
+			  if('speechSynthesis' in window){ try{ speechSynthesis.cancel(); }catch(e){} }
+			}
+			// Con tu posición decide en qué paso vas, cuánto falta y cuándo avisarte.
+			function _amapUpdateNav(pos){
+			  if(!_amapNavOn) return;
+			  let idx=_amapNavIdx, dist=null;
+			  if(pos){
+			    // El paso actual es aquel cuya maniobra tienes más cerca por delante.
+			    let best=Infinity, bi=_amapNavIdx;
+			    for(let i=_amapNavIdx;i<_amapSteps.length;i++){
+			      const loc=_amapSteps[i].maneuver && _amapSteps[i].maneuver.location;
+			      if(!loc) continue;
+			      const d=_amapMeters(pos,[loc[1],loc[0]]);
+			      if(d<best){ best=d; bi=i; }
+			    }
+			    // Si ya pasaste la maniobra (menos de 25 m), salta a la siguiente.
+			    if(best<25 && bi<_amapSteps.length-1){ bi++; best=null; }
+			    idx=bi; _amapNavIdx=bi;
+			    const loc=_amapSteps[idx].maneuver && _amapSteps[idx].maneuver.location;
+			    dist = loc ? _amapMeters(pos,[loc[1],loc[0]]) : null;
+			    if(_aplMap){
+			      if(!_amapYouMark){
+			        _amapYouMark=L.circleMarker(pos,{radius:8,color:'#fff',weight:3,fillColor:'#0a84ff',fillOpacity:1}).addTo(_aplMap);
+			      } else _amapYouMark.setLatLng(pos);
+			      _aplMap.setView(pos, Math.max(_aplMap.getZoom(),16), {animate:true});
+			    }
+			  }
+			  const st=_amapSteps[idx]; if(!st) return;
+			  const mv=_amapManeuver(st);
+			  const ic=document.getElementById('amap-nav-icon'), tx=document.getElementById('amap-nav-text'), ds=document.getElementById('amap-nav-dist');
+			  if(ic) ic.textContent=mv[0];
+			  if(tx) tx.innerHTML=mv[1];
+			  if(ds) ds.textContent = dist!=null ? ('En '+_amapDist(dist)) : (_amapDist(st.distance||0)+' · esperando tu ubicación…');
+			  _amapHighlight(idx);
+			  // Avisa una vez por paso, al acercarte (o al empezar).
+			  const cerca = dist==null || dist<220;
+			  if(cerca && _amapSpoken!==idx){ _amapSpoken=idx; _amapSay(mv[1]); }
 			}
 
 			/* ═══════════════════════════════════════════
