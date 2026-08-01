@@ -11,7 +11,19 @@
 		<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 		<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 		<meta name="theme-color" content="#9333ea" />
-		<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+		<meta name="description" content="Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de música IXBand, todo en un mismo panel." />
+		<meta name="color-scheme" content="dark light" />
+		<link rel="manifest" href="manifest.webmanifest" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="IXClocK" />
+		<meta name="format-detection" content="telephone=no" />
+		<meta property="og:title" content="IXClocK -- Universal OS Dashboard" />
+		<meta property="og:description" content="Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de musica IXBand." />
+		<meta property="og:image" content="icon-512.png" />
+		<meta property="og:type" content="website" />
+		<link rel="stylesheet" href="tailwind.css" />
 		<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
 		<link
 			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -14407,6 +14419,9 @@
 			    '➕ BATERÍA FÍSICA: el kit acústico dibujado (bombo, caja, 3 toms, hi-hat, crash y ride) que se toca tocando cada tambor. El Hi-Hat suena abierto si le das por arriba y cerrado por abajo. Los pads siguen ahí con el botón ⬜ Pads',
 			    '🛠️ Emulador arreglado: cargaba el motor desde una dirección que ya no existe y siempre fallaba con "revisa tu conexión". Ahora usa el CDN oficial y prueba 3 espejos más si alguno se cae',
 			    '🛠️ Fondos de pantalla: 64 fondos de foto se quedaban en NEGRO cuando la imagen no cargaba (sin internet o enlace caído). Ahora todos tienen un degradado de respaldo y ninguno queda negro',
+			    '📲 IXClocK ya se puede INSTALAR como app (icono propio, pantalla completa sin barra del navegador) en iPad, iPhone, Android y ordenador',
+			    '🛠️ Ahora ABRE SIN INTERNET: el diseño se descuadraba por completo si fallaba la conexión, porque los estilos se bajaban de un CDN. Ya van dentro de la app y todo se ve bien aunque estés sin datos',
+			    '⚡ Carga bastante más rápida: los estilos pasaron de ~400 KB que se procesaban en tu dispositivo a 23 KB ya listos',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18502,5 +18517,14 @@
 			  line-height: 1.6 !important;
 			}
 		</style>
+			<script>
+			// Service worker: permite instalar la app y que abra sin internet.
+			// Solo en http/https; en file:// el navegador no lo permite.
+			if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+			  window.addEventListener("load", function () {
+			    navigator.serviceWorker.register("sw.js").catch(function () {});
+			  });
+			}
+		</script>
 	</body>
 </html>
