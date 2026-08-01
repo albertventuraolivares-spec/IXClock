@@ -5689,6 +5689,13 @@
 			    f.style.transform = 'translate(-50%,-50%) scale('+sc+')';
 			  });
 			}, {passive:true});
+			// Gradiente de respaldo estable para un fondo (mismo id -> mismos colores).
+			function _wpFallbackBg(wp){
+			  const key=String(wp&&(wp.id||wp.name)||'wp');
+			  let h=0; for(let i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; }
+			  const a=h%360, b=(a+38+(h>>9)%50)%360, c=(a+300)%360;
+			  return 'linear-gradient('+(120+(h>>3)%80)+'deg, hsl('+a+',62%,26%) 0%, hsl('+b+',58%,38%) 48%, hsl('+c+',55%,17%) 100%)';
+			}
 			function applyWallpaperToFill(fillEl, wp, onReady){
 			  // Stop any running canvas animation before reusing the fill element
 			  if(fillEl._canvasHandle){ try{fillEl._canvasHandle.stop();}catch(e){} fillEl._canvasHandle=null; }
@@ -5722,9 +5729,10 @@
 			  } else if(wp.type === 'video'){
 			    _wpAttachVideo(fillEl, wp, wp.url || null, onReady);
 			  } else if(wp.type === 'photo' || wp.type === 'custom'){
-			    // Gradiente propio de respaldo primero, para que NUNCA quede negro si la
-			    // foto (Unsplash) ya no existe; se comprueba la URL y solo se pone si carga.
-			    if(wp.bg) fillEl.style.backgroundImage = wp.bg;
+			    // Gradiente de respaldo PRIMERO, para que nunca quede negro si la foto no
+			    // carga (Unsplash caído, sin conexión o URL muerta). Si el fondo no trae
+			    // su propio gradiente se le genera uno a partir de su nombre.
+			    fillEl.style.backgroundImage = wp.bg || _wpFallbackBg(wp);
 			    fillEl.style.backgroundSize = 'cover';
 			    fillEl.style.backgroundPosition = 'center';
 			    if(wp.url){
@@ -10342,18 +10350,38 @@
 			  window.EJS_core = _emuCore;
 			  window.EJS_gameUrl = _emuRomUrl;
 			  window.EJS_gameName = file.name.replace(/\.[^.]+$/,'');
-			  window.EJS_pathtodata = 'https://cdn.jsdelivr.net/npm/emulatorjs@latest/data/';
 			  window.EJS_startOnLoaded = true;
 			  if(hint) hint.style.display = 'none';
-			  // Carga (una sola vez) el loader de EmulatorJS desde CDN.
-			  const s = document.createElement('script');
-			  s.src = 'https://cdn.jsdelivr.net/npm/emulatorjs@latest/data/loader.js';
-			  s.onerror = ()=>{
-			    if(hint){ hint.style.display='flex'; }
-			    if(hintText) hintText.textContent = '⚠️ No se pudo cargar el motor del emulador (revisa tu conexión). Intenta de nuevo.';
-			  };
-			  document.getElementById('emu-stage').appendChild(s);
+			  // Carga el motor de EmulatorJS. La dirección oficial es cdn.emulatorjs.org;
+			  // si esa falla se prueban espejos, porque un solo CDN caído dejaba el
+			  // emulador sin arrancar (era el fallo de 'revisa tu conexión').
+			  _emuLoadEngine(hint, hintText);
 			  _emuLoaded=true;
+			}
+			// Espejos del motor, en orden de preferencia.
+			const EMU_CDNS=[
+			  'https://cdn.emulatorjs.org/stable/data/',
+			  'https://cdn.emulatorjs.org/latest/data/',
+			  'https://cdn.jsdelivr.net/npm/@emulatorjs/emulatorjs@latest/data/',
+			  'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@main/data/'
+			];
+			function _emuLoadEngine(hint, hintText, i){
+			  i = i || 0;
+			  const stage = document.getElementById('emu-stage');
+			  if(!stage) return;
+			  if(i >= EMU_CDNS.length){
+			    if(hint) hint.style.display='flex';
+			    if(hintText) hintText.textContent = '⚠️ No se pudo cargar el motor del emulador (revisa tu conexión). Intenta de nuevo.';
+			    return;
+			  }
+			  const base = EMU_CDNS[i];
+			  // EJS_pathtodata debe apuntar al MISMO espejo que el loader: de ahí saca los núcleos.
+			  window.EJS_pathtodata = base;
+			  if(hintText) hintText.textContent = '⏳ Cargando el motor del emulador…';
+			  const sc = document.createElement('script');
+			  sc.src = base + 'loader.js';
+			  sc.onerror = ()=>{ sc.remove(); _emuLoadEngine(hint, hintText, i+1); };
+			  stage.appendChild(sc);
 			}
 			function closeEmulator(){
 			  emuTeardown();
@@ -12932,7 +12960,7 @@
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
-			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), batería de pads, <b>Drummer</b> (un baterista que toca grooves solo por estilo), <b>Beat Sequencer</b> (caja de ritmos de pasos), <b>Batería Smart</b> (arrastras los tambores: derecha = más complejo, arriba = más fuerte), Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz, con <b>Autoplay</b> para que se toquen solas), <b>Amplificador</b> con pedalera (distorsión, fuzz, wah, chorus, delay, reverb), <b>Grabadora</b> de voz con efectos (eco, robot, ardilla, monstruo…), <b>Sampler</b> (graba un sonido y tócalo afinado) y sintetizador. El teclado trae <b>arpegiador</b> y una categoría <b>Asia</b> (Guzheng, Pipa, Dizi, Gong, Shakuhachi, Taiko…). En Live Loops tienes <b>Remix FX</b> (filtro de DJ, repetidor y wobble). Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
+			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), <b>batería física</b> (el kit acústico que se toca tocando cada tambor) y de pads, <b>Drummer</b> (un baterista que toca grooves solo por estilo), <b>Beat Sequencer</b> (caja de ritmos de pasos), <b>Batería Smart</b> (arrastras los tambores: derecha = más complejo, arriba = más fuerte), Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz, con <b>Autoplay</b> para que se toquen solas), <b>Amplificador</b> con pedalera (distorsión, fuzz, wah, chorus, delay, reverb), <b>Grabadora</b> de voz con efectos (eco, robot, ardilla, monstruo…), <b>Sampler</b> (graba un sonido y tócalo afinado) y sintetizador. El teclado trae <b>arpegiador</b> y una categoría <b>Asia</b> (Guzheng, Pipa, Dizi, Gong, Shakuhachi, Taiko…). En Live Loops tienes <b>Remix FX</b> (filtro de DJ, repetidor y wobble). Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
 			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🌐 Traductor e idiomas</div>
@@ -14376,6 +14404,9 @@
 			    '➕ Remix FX en Live Loops: filtro de DJ, repetidor (stutter) y wobble',
 			    '➕ Plantillas nuevas: Beat Masher, Chinese Traditional y Chinese Modern',
 			    '➕ Categoría ASIA con instrumentos nuevos: Guzheng, Pipa, Dizi, Gong, Shakuhachi y Taiko (además de Koto, Shamisen y Erhu)',
+			    '➕ BATERÍA FÍSICA: el kit acústico dibujado (bombo, caja, 3 toms, hi-hat, crash y ride) que se toca tocando cada tambor. El Hi-Hat suena abierto si le das por arriba y cerrado por abajo. Los pads siguen ahí con el botón ⬜ Pads',
+			    '🛠️ Emulador arreglado: cargaba el motor desde una dirección que ya no existe y siempre fallaba con "revisa tu conexión". Ahora usa el CDN oficial y prueba 3 espejos más si alguno se cae',
+			    '🛠️ Fondos de pantalla: 64 fondos de foto se quedaban en NEGRO cuando la imagen no cargaba (sin internet o enlace caído). Ahora todos tienen un degradado de respaldo y ninguno queda negro',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -15928,6 +15959,9 @@
 			      +'.gb-smp-key{width:56px;height:96px;border-radius:0 0 8px 8px;border:1px solid #a9a9ad;border-top:none;background:linear-gradient(180deg,#fdfdfd,#e2e2e4);color:#8e8e93;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;}'
 			      +'.gb-smp-key:active{background:linear-gradient(180deg,#cfd6e6,#b9c2d8);}'
 			      +'.gb-seq-cell:active{transform:scale(.9);}'
+			      +'.gb-kit-piece{cursor:pointer;transform-box:fill-box;transform-origin:center;transition:transform .07s ease,filter .07s ease;}'
+			      +'.gb-kit-piece:hover{filter:brightness(1.12);}'
+			      +'.gb-kit-piece.hit{transform:scale(.95);filter:brightness(1.75) drop-shadow(0 0 10px rgba(255,214,10,.75));}'
 			      +'.gb-ll-cell{height:62px;border:none;border-radius:10px;cursor:pointer;font-size:19px;position:relative;transition:transform .08s;}'
 			      +'.gb-ll-cell.on{box-shadow:0 0 0 2px #fff,0 0 14px 2px rgba(255,255,255,.25);animation:gbCellPulse 1s ease-in-out infinite;}'
 			      +'@keyframes gbCellPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}'
@@ -16046,9 +16080,9 @@
 			    document.getElementById('gb-status').textContent='🎹 Teclado · toca y desliza (glissando) · ⏺ para grabar';
 			  } else if(id==='drums'){
 			    document.getElementById('gb-drums-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Batería</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca los pads · ⏺ para grabar el ritmo</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Batería</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca cada tambor y plato · el Hi-Hat abre si le das arriba · ⏺ para grabar</span>';
 			    gbBuildDrums(); _gbSelectedInstrument='drums';
-			    document.getElementById('gb-status').textContent='🥁 Batería · toca los pads';
+			    document.getElementById('gb-status').textContent='🥁 Batería física · toca los tambores y platos como en la de verdad';
 			  } else if(id==='smartguitar'||id==='smartbass'||id==='smartstrings'){
 			    document.getElementById('gb-chord-area').style.display='flex';
 			    const kind=id==='smartguitar'?'guitar':id==='smartbass'?'bass':'strings';
@@ -16203,17 +16237,106 @@
 			  {name:'Conga',emoji:'🪘',freq:400,type:'conga',color:'#ff6b35'},
 			  {name:'Cencerro',emoji:'🔔',freq:700,type:'cowbell',color:'#5ac8f5'}
 			];
+			// ===== BATERÍA FÍSICA: el kit acústico dibujado, como el de GarageBand =====
+			// Cada pieza está en su sitio real (bombo al centro, caja a la izquierda,
+			// toms arriba, platos a los lados) y se toca tocándola directamente.
+			const GB_KIT_PIECES=[
+			  {t:'crash', f:900, n:'Crash',    kind:'cym', cx:130, cy:100, rx:84, ry:24, tilt:-12, lp:'below'},
+			  {t:'hihat', f:800, n:'Hi-Hat',   kind:'cym', cx:258, cy:148, rx:64, ry:18, tilt:-7, alt:'openhat', lp:'below'},
+			  {t:'crash', f:1100,n:'Ride',     kind:'cym', cx:674, cy:112, rx:88, ry:25, tilt:9,  lp:'below'},
+			  {t:'tom',   f:220, n:'Tom 1',    kind:'drum',cx:372, cy:158, rx:58, ry:32, lp:'above'},
+			  {t:'tom',   f:180, n:'Tom 2',    kind:'drum',cx:498, cy:158, rx:60, ry:33, lp:'above'},
+			  {t:'snare', f:200, n:'Caja',     kind:'drum',cx:236, cy:292, rx:74, ry:40, lp:'below'},
+			  {t:'tom',   f:130, n:'Tom base', kind:'drum',cx:664, cy:288, rx:82, ry:44, lp:'below'},
+			  {t:'kick',  f:60,  n:'Bombo',    kind:'kick',cx:436, cy:330, rx:122, ry:88, lp:'inside'}
+			];
+			let _gbDrumView='kit';
+			function gbDrumView(v){ _gbDrumView=v; gbBuildDrums(); }
+			function _gbKitSVG(){
+			  let s='<svg id="gb-kit-svg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" style="width:100%;max-width:820px;display:block;margin:0 auto;touch-action:none;">'
+			    +'<defs>'
+			    +'<radialGradient id="gbCym" cx="50%" cy="40%"><stop offset="0%" stop-color="#ffe9a8"/><stop offset="55%" stop-color="#d4a63c"/><stop offset="100%" stop-color="#8a6414"/></radialGradient>'
+			    +'<radialGradient id="gbHead" cx="42%" cy="32%"><stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#e6e6ea"/><stop offset="100%" stop-color="#b6b6bd"/></radialGradient>'
+			    +'<radialGradient id="gbKick" cx="42%" cy="32%"><stop offset="0%" stop-color="#fdfdff"/><stop offset="55%" stop-color="#dededf"/><stop offset="100%" stop-color="#9c9ca4"/></radialGradient>'
+			    +'<linearGradient id="gbShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c9382e"/><stop offset="55%" stop-color="#8d1f18"/><stop offset="100%" stop-color="#5a110d"/></linearGradient>'
+			    +'<linearGradient id="gbRod" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9a9aa2"/><stop offset="100%" stop-color="#4a4a50"/></linearGradient>'
+			    +'</defs>';
+			  // Soportes (varillas) detrás de todo
+			  s+='<g stroke="url(#gbRod)" stroke-width="6" stroke-linecap="round" opacity=".85">'
+			    +'<line x1="130" y1="108" x2="152" y2="342"/><line x1="258" y1="156" x2="268" y2="330"/>'
+			    +'<line x1="674" y1="120" x2="652" y2="336"/></g>';
+			  GB_KIT_PIECES.forEach(function(p,i){
+			    const alt=p.alt?(' data-alt="'+p.alt+'"'):'';
+			    s+='<g class="gb-kit-piece" data-i="'+i+'" data-t="'+p.t+'" data-f="'+p.f+'"'+alt+'>';
+			    if(p.kind==='cym'){
+			      s+='<g transform="rotate('+p.tilt+' '+p.cx+' '+p.cy+')">'
+			        +'<ellipse cx="'+p.cx+'" cy="'+(p.cy+5)+'" rx="'+p.rx+'" ry="'+p.ry+'" fill="#000" opacity=".38"/>'
+			        +'<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+p.rx+'" ry="'+p.ry+'" fill="url(#gbCym)" stroke="#6d4f10" stroke-width="1.5"/>'
+			        +'<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+(p.rx*0.55)+'" ry="'+(p.ry*0.55)+'" fill="none" stroke="#a3781f" stroke-width="1" opacity=".7"/>'
+			        +'<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+(p.rx*0.16)+'" ry="'+(p.ry*0.3)+'" fill="#7a5a15"/></g>';
+			    } else {
+			      const grad=p.kind==='kick'?'url(#gbKick)':'url(#gbHead)';
+			      const depth=p.kind==='kick'?26:34;
+			      // Casco (lateral del tambor) + parche encima
+			      s+='<path d="M '+(p.cx-p.rx)+' '+p.cy+' L '+(p.cx-p.rx)+' '+(p.cy+depth)
+			        +' A '+p.rx+' '+p.ry+' 0 0 0 '+(p.cx+p.rx)+' '+(p.cy+depth)
+			        +' L '+(p.cx+p.rx)+' '+p.cy+' Z" fill="url(#gbShell)"/>'
+			        +'<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+p.rx+'" ry="'+p.ry+'" fill="'+grad+'" stroke="#3a3a3e" stroke-width="2.5"/>'
+			        +'<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+(p.rx*0.86)+'" ry="'+(p.ry*0.86)+'" fill="none" stroke="#c4c4ca" stroke-width="1" opacity=".8"/>';
+			      if(p.kind==='kick') s+='<ellipse cx="'+p.cx+'" cy="'+p.cy+'" rx="'+(p.rx*0.3)+'" ry="'+(p.ry*0.3)+'" fill="#1c1c1e" opacity=".55"/>';
+			    }
+			    // Etiqueta: encima de los toms, debajo del resto y DENTRO del parche del bombo
+			    const depth=(p.kind==='kick')?26:34;
+			    let ly, lc='#e8e8ec', lo='.62';
+			    if(p.lp==='above') ly=p.cy-p.ry-12;
+			    else if(p.lp==='inside'){ ly=p.cy+p.ry*0.56; lc='#4a4a52'; lo='.9'; }
+			    else ly=p.cy+(p.kind==='cym'?p.ry+16:depth+p.ry+16);
+			    s+='<text x="'+p.cx+'" y="'+ly+'" text-anchor="middle" font-size="12" font-weight="800" fill="'+lc+'" opacity="'+lo+'" style="pointer-events:none;">'+p.n+'</text>';
+			    s+='</g>';
+			  });
+			  s+='</svg>';
+			  return s;
+			}
+			function _gbBindKit(){
+			  const svg=document.getElementById('gb-kit-svg'); if(!svg) return;
+			  svg.querySelectorAll('.gb-kit-piece').forEach(function(g){
+			    const hit=function(e){
+			      if(e) e.preventDefault();
+			      const vel=(e&&e.pressure>0)?Math.max(.3,e.pressure):0.9;
+			      // El hi-hat abre si tocas su mitad de arriba (como el pedal de verdad)
+			      let type=g.dataset.t;
+			      const alt=g.dataset.alt;
+			      if(alt && e){
+			        const r=svg.getBoundingClientRect();
+			        const i=+g.dataset.i, p=GB_KIT_PIECES[i];
+			        const yLocal=(e.clientY-r.top)/r.height*450;
+			        if(yLocal < p.cy) type=alt;
+			      }
+			      gbPlayDrum(type, +g.dataset.f, vel);
+			      g.classList.add('hit');
+			      setTimeout(function(){ g.classList.remove('hit'); },110);
+			    };
+			    g.addEventListener('pointerdown',hit);
+			    g.addEventListener('pointerenter',function(e){ if(e.buttons) hit(e); });
+			  });
+			}
 			function gbBuildDrums(){
 			  const area=document.getElementById('gb-drums-area');
-			  area.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:620px;margin:18px auto;padding:0 16px;';
-			  area.innerHTML='';
+			  area.style.cssText='display:block;padding:8px 12px 14px;';
+			  let s='<div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">'
+			    +'<button class="gb-chip'+(_gbDrumView==='kit'?' on':'')+'" onclick="gbDrumView(&quot;kit&quot;)">🥁 Batería</button>'
+			    +'<button class="gb-chip'+(_gbDrumView==='pads'?' on':'')+'" onclick="gbDrumView(&quot;pads&quot;)">⬜ Pads</button></div>';
+			  if(_gbDrumView==='kit'){ s+=_gbKitSVG(); area.innerHTML=s; _gbBindKit(); return; }
+			  s+='<div id="gb-pads-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:620px;margin:10px auto;"></div>';
+			  area.innerHTML=s;
+			  const grid=document.getElementById('gb-pads-grid');
 			  GB_DRUMS.forEach(function(d){
 			    const pad=document.createElement('button');
 			    pad.className='gb-pad';
 			    pad.innerHTML=d.emoji+'<span class="l"><span class="dot" style="background:'+d.color+';"></span>'+d.name+'</span>';
 			    const hit=function(e){ if(e) e.preventDefault(); const vel=(e&&e.pressure>0)?Math.max(.3,e.pressure):0.9; gbPlayDrum(d.type,d.freq,vel); pad.classList.add('dn'); setTimeout(function(){pad.classList.remove('dn');},110); };
 			    pad.addEventListener('pointerdown',hit);
-			    area.appendChild(pad);
+			    grid.appendChild(pad);
 			  });
 			}
 			// ===== DRUMMER: un baterista que toca grooves solo (como GarageBand) =====
