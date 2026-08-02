@@ -13857,6 +13857,122 @@
 			    calcVal=String(Math.round(r*1e10)/1e10);calcExprStr='';calcJustResult=true;updCalc();
 			  }catch(e){calcVal='Error';updCalc();}
 			}
+			/* ── CONVERSOR DE DIVISAS ────────────────────────────────────────────
+			   El modo existía en pantalla pero no tenía nada de código detrás:
+			   initCurrencyCalc, convertCurrency y swapCurrency no existían, así que
+			   entrar al modo lanzaba un error y los desplegables salían vacíos.     */
+			const IX_CURRENCIES=[
+			  ['USD','Dólar estadounidense','🇺🇸'],['EUR','Euro','🇪🇺'],
+			  ['DOP','Peso dominicano','🇩🇴'],['MXN','Peso mexicano','🇲🇽'],
+			  ['COP','Peso colombiano','🇨🇴'],['ARS','Peso argentino','🇦🇷'],
+			  ['CLP','Peso chileno','🇨🇱'],['PEN','Sol peruano','🇵🇪'],
+			  ['UYU','Peso uruguayo','🇺🇾'],['BOB','Boliviano','🇧🇴'],
+			  ['PYG','Guaraní','🇵🇾'],['VES','Bolívar','🇻🇪'],
+			  ['BRL','Real brasileño','🇧🇷'],['GTQ','Quetzal','🇬🇹'],
+			  ['CRC','Colón costarricense','🇨🇷'],['HNL','Lempira','🇭🇳'],
+			  ['NIO','Córdoba','🇳🇮'],['PAB','Balboa','🇵🇦'],
+			  ['CUP','Peso cubano','🇨🇺'],['JMD','Dólar jamaicano','🇯🇲'],
+			  ['GBP','Libra esterlina','🇬🇧'],['CHF','Franco suizo','🇨🇭'],
+			  ['SEK','Corona sueca','🇸🇪'],['NOK','Corona noruega','🇳🇴'],
+			  ['DKK','Corona danesa','🇩🇰'],['PLN','Zloty','🇵🇱'],
+			  ['CZK','Corona checa','🇨🇿'],['RUB','Rublo','🇷🇺'],
+			  ['TRY','Lira turca','🇹🇷'],['CAD','Dólar canadiense','🇨🇦'],
+			  ['AUD','Dólar australiano','🇦🇺'],['NZD','Dólar neozelandés','🇳🇿'],
+			  ['JPY','Yen','🇯🇵'],['CNY','Yuan','🇨🇳'],
+			  ['KRW','Won','🇰🇷'],['INR','Rupia india','🇮🇳'],
+			  ['HKD','Dólar de Hong Kong','🇭🇰'],['SGD','Dólar de Singapur','🇸🇬'],
+			  ['THB','Baht','🇹🇭'],['PHP','Peso filipino','🇵🇭'],
+			  ['IDR','Rupia indonesia','🇮🇩'],['MYR','Ringgit','🇲🇾'],
+			  ['AED','Dírham','🇦🇪'],['SAR','Riyal saudí','🇸🇦'],
+			  ['ILS','Séquel','🇮🇱'],['EGP','Libra egipcia','🇪🇬'],
+			  ['ZAR','Rand','🇿🇦'],['NGN','Naira','🇳🇬'],
+			  ['MAD','Dírham marroquí','🇲🇦'],['BTC','Bitcoin','₿']
+			];
+			// Respaldo aproximado (por 1 USD) para cuando no hay conexión. No son
+			// tasas del día: sirven para que la calculadora siga dando una idea.
+			const IX_RATES_FALLBACK={USD:1,EUR:.92,DOP:60,MXN:17.1,COP:3950,ARS:980,CLP:930,PEN:3.75,
+			  UYU:39,BOB:6.9,PYG:7400,VES:36,BRL:5.4,GTQ:7.8,CRC:520,HNL:24.7,NIO:36.7,PAB:1,CUP:24,
+			  JMD:156,GBP:.79,CHF:.88,SEK:10.5,NOK:10.7,DKK:6.9,PLN:3.95,CZK:23,RUB:92,TRY:32,CAD:1.36,
+			  AUD:1.52,NZD:1.64,JPY:150,CNY:7.2,KRW:1330,INR:83,HKD:7.8,SGD:1.34,THB:35,PHP:56,
+			  IDR:15600,MYR:4.7,AED:3.67,SAR:3.75,ILS:3.7,EGP:48,ZAR:18.5,NGN:1500,MAD:10,BTC:.000016};
+			let _ixRates=null, _ixRatesBase='USD', _ixRatesWhen=null, _ixRatesLive=false;
+			function _ixCurName(c){ const f=IX_CURRENCIES.find(function(x){ return x[0]===c; }); return f?(f[2]+' '+f[0]+' · '+f[1]):c; }
+			// Se llama cada vez que se entra al modo: no debe duplicar opciones.
+			function initCurrencyCalc(){
+			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
+			  if(!from||!to) return;
+			  if(from.options.length===0 || to.options.length===0){
+			    const html=IX_CURRENCIES.map(function(c){ return '<option value="'+c[0]+'">'+c[2]+' '+c[0]+' · '+c[1]+'</option>'; }).join('');
+			    from.innerHTML=html; to.innerHTML=html;
+			    try{
+			      const g=JSON.parse(localStorage.getItem('ix_cur_pair')||'null');
+			      from.value=(g&&g[0])||'USD'; to.value=(g&&g[1])||'EUR';
+			    }catch(e){ from.value='USD'; to.value='EUR'; }
+			    if(!from.value) from.value='USD';
+			    if(!to.value) to.value='EUR';
+			  }
+			  _ixLoadRates().then(convertCurrency).catch(function(){ convertCurrency(); });
+			  convertCurrency();
+			}
+			// Tasas del día, guardadas 12 h. Si la red falla, se usan las de respaldo.
+			async function _ixLoadRates(){
+			  try{
+			    const c=JSON.parse(localStorage.getItem('ix_rates')||'null');
+			    if(c && c.when && (Date.now()-c.when)<43200000 && c.rates){
+			      _ixRates=c.rates; _ixRatesBase=c.base||'USD'; _ixRatesWhen=c.when; _ixRatesLive=true; return;
+			    }
+			  }catch(e){}
+			  try{
+			    const r=await fetch('https://open.er-api.com/v6/latest/USD');
+			    const d=await r.json();
+			    if(d && d.rates && d.rates.EUR){
+			      _ixRates=d.rates; _ixRatesBase='USD'; _ixRatesWhen=Date.now(); _ixRatesLive=true;
+			      try{ localStorage.setItem('ix_rates',JSON.stringify({rates:_ixRates,base:'USD',when:_ixRatesWhen})); }catch(e){}
+			      return;
+			    }
+			  }catch(e){}
+			  _ixRates=IX_RATES_FALLBACK; _ixRatesBase='USD'; _ixRatesWhen=null; _ixRatesLive=false;
+			}
+			function _ixFmt(n,cur){
+			  if(!isFinite(n)) return '—';
+			  const dec = (cur==='BTC') ? 8 : (Math.abs(n)>=1000 ? 2 : (Math.abs(n)>=1 ? 2 : 4));
+			  try{ return n.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:dec}); }
+			  catch(e){ return n.toFixed(dec); }
+			}
+			function convertCurrency(){
+			  const amtEl=document.getElementById('currency-amount');
+			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
+			  const out=document.getElementById('currency-result'), info=document.getElementById('currency-rate-info');
+			  if(!amtEl||!from||!to||!out) return;
+			  if(!_ixRates) _ixRates=IX_RATES_FALLBACK;
+			  const a=parseFloat(amtEl.value);
+			  const f=from.value||'USD', t=to.value||'EUR';
+			  try{ localStorage.setItem('ix_cur_pair',JSON.stringify([f,t])); }catch(e){}
+			  const rf=_ixRates[f], rt=_ixRates[t];
+			  if(!rf||!rt){
+			    out.textContent='—';
+			    if(info) info.textContent='No hay tasa para '+f+' o '+t+'.';
+			    return;
+			  }
+			  if(isNaN(a)){ out.textContent='—'; if(info) info.textContent=''; return; }
+			  const res=a*(rt/rf);                 // pasa por la base (USD) y sale al destino
+			  out.textContent=_ixFmt(res,t)+' '+t;
+			  if(info){
+			    const uno=_ixFmt(rt/rf,t);
+			    if(_ixRatesLive){
+			      const cuando=_ixRatesWhen?new Date(_ixRatesWhen).toLocaleDateString('es',{day:'2-digit',month:'short'}):'';
+			      info.textContent='1 '+f+' = '+uno+' '+t+(cuando?('  ·  tasas del '+cuando):'');
+			    }else{
+			      info.textContent='⚠️ sin conexión · tasas aproximadas  ·  1 '+f+' = '+uno+' '+t;
+			    }
+			  }
+			}
+			function swapCurrency(){
+			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
+			  if(!from||!to) return;
+			  const v=from.value; from.value=to.value; to.value=v;
+			  convertCurrency();
+			}
 			function switchCalcMode(mode){
 			  calcMode=mode;
 			  const modes=['basic','sci','unit','currency','math'];
@@ -14440,6 +14556,8 @@
 			    '🛠️ ALARMA FANTASMA ARREGLADA: venía una alarma de las 7:39 ENCENDIDA escrita en el código, que aparecía sola en cada dispositivo. Ya no viene ninguna, y ahora cada alarma tiene su botón de borrar',
 			    '🔍 Reloj mundial: ahora ESCRIBES la ciudad y aparece sola (Tokio, Madrid, Nueva York…), con su bandera y su hora. Antes había que escribir de memoria «America/New_York» en una ventanita. Funciona sin tildes y se pueden quitar ciudades',
 			    '🛠️ Cronómetro legible: el tiempo quedaba arriba con medio pantallazo vacío debajo, los botones perdidos abajo y las vueltas cortadas. Ahora va todo junto, con dígitos que no bailan y las vueltas con su sitio. Las vistas Digital/Analógico ya dicen cómo se llaman',
+			    '💱 CONVERSOR DE DIVISAS, que estaba muerto: se veía en la calculadora pero no tenía nada de código detrás y al abrirlo daba error con los desplegables vacíos. Ahora van 50 monedas (dólar, euro, peso dominicano, mexicano, colombiano… y hasta bitcoin) con las tasas del día, botón de intercambiar y memoria del par que usas',
+			    '📴 Las divisas también funcionan SIN INTERNET, con tasas aproximadas y avisándote de que lo son',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
