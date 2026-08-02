@@ -7385,6 +7385,7 @@
 			  updateAnalogHands(now);
 			  updateFlipClock(now);
 			  checkAlarms(realNow);
+			  checkIcaAlarms(realNow);
 			}
 
 			/* ===================== HOLIDAYS (algorithmic, RD + US) ===================== */
@@ -10387,22 +10388,44 @@
 			  'https://cdn.jsdelivr.net/npm/@emulatorjs/emulatorjs@latest/data/',
 			  'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@main/data/'
 			];
+			// Registro de lo que pasa con cada espejo, para poder diagnosticarlo desde
+			// el propio dispositivo (aquí no siempre se puede reproducir).
+			let _emuLog=[];
 			function _emuLoadEngine(hint, hintText, i){
 			  i = i || 0;
 			  const stage = document.getElementById('emu-stage');
 			  if(!stage) return;
+			  if(i===0) _emuLog=[];
 			  if(i >= EMU_CDNS.length){
 			    if(hint) hint.style.display='flex';
-			    if(hintText) hintText.textContent = '⚠️ No se pudo cargar el motor del emulador (revisa tu conexión). Intenta de nuevo.';
+			    if(hintText){
+			      hintText.innerHTML='⚠️ No se pudo cargar el motor del emulador.<br>'
+			        +'<span style="font-size:11px;opacity:.65;display:block;margin-top:8px;line-height:1.6;text-align:left;">'
+			        +'Se probaron '+EMU_CDNS.length+' servidores y fallaron todos:<br>'+_emuLog.join('<br>')
+			        +'<br><br>Suele ser porque tu red o tu VPN bloquea esos servidores. '
+			        +'Prueba con otra conexión (datos móviles en vez de wifi) o desactiva el bloqueador.</span>';
+			    }
 			    return;
 			  }
 			  const base = EMU_CDNS[i];
+			  const host = (function(){ try{ return new URL(base).host; }catch(e){ return base; } })();
 			  // EJS_pathtodata debe apuntar al MISMO espejo que el loader: de ahí saca los núcleos.
 			  window.EJS_pathtodata = base;
-			  if(hintText) hintText.textContent = '⏳ Cargando el motor del emulador…';
+			  if(hintText) hintText.textContent = '⏳ Cargando el motor… (servidor '+(i+1)+' de '+EMU_CDNS.length+': '+host+')';
 			  const sc = document.createElement('script');
+			  let hecho=false;
+			  const siguiente=function(motivo){
+			    if(hecho) return; hecho=true;
+			    clearTimeout(reloj);
+			    _emuLog.push('• '+host+' — '+motivo);
+			    try{ sc.remove(); }catch(e){}
+			    _emuLoadEngine(hint, hintText, i+1);
+			  };
+			  // Si un espejo se queda colgado sin dar error, se pasa al siguiente igualmente.
+			  const reloj=setTimeout(function(){ siguiente('tardó demasiado'); }, 15000);
+			  sc.onerror = function(){ siguiente('no responde o está bloqueado'); };
+			  sc.onload = function(){ if(hecho) return; hecho=true; clearTimeout(reloj); };
 			  sc.src = base + 'loader.js';
-			  sc.onerror = ()=>{ sc.remove(); _emuLoadEngine(hint, hintText, i+1); };
 			  stage.appendChild(sc);
 			}
 			function closeEmulator(){
@@ -12033,7 +12056,13 @@
 			async function saveAlarms(){
 			  try{ await window.storage.set('alarms', JSON.stringify(alarms), false); }catch(e){}
 			}
+			// Habia dos relojes distintos y el cronometro solo estaba en uno, asi que
+			// no habia forma de encontrarlo. Ahora ambos botones abren el completo.
 			function toggleAlarmPanel(){
+			  if(typeof toggleIOSClockApp==='function'){ toggleIOSClockApp(); return; }
+			  _toggleAlarmPanelViejo();
+			}
+			function _toggleAlarmPanelViejo(){
 			  const willOpen = !alarmPanelOpen;
 			  closeAllFloatingPanels();
 			  alarmPanelOpen = willOpen;
@@ -12182,6 +12211,24 @@
 			    return ALARM_TONES[n].id;
 			  }
 			  return null;
+			}
+			// Las alarmas creadas en la app de Reloj se guardaban pero NADIE las
+			// comprobaba, asi que nunca sonaban. Ahora usan el mismo timbre.
+			let _icaFired={};
+			function checkIcaAlarms(now){
+			  if(now.getSeconds()!==0) return;
+			  if(typeof _icaAlarms==='undefined' || !_icaAlarms.length) return;
+			  const key=now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
+			  _icaAlarms.forEach(function(a,i){
+			    if(!a || !a.on || !a.time) return;
+			    const p=String(a.time).split(':');
+			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
+			    if(isNaN(h)) return;
+			    if(h===now.getHours() && m===now.getMinutes() && _icaFired['a'+i]!==key){
+			      _icaFired['a'+i]=key;
+			      ringAlarm({id:'ica-'+i, hour:h, minute:m, label:a.label||'Alarma', tone:a.tone||'radial'});
+			    }
+			  });
 			}
 			function ringAlarm(alarm){
 			  ringingAlarmId = alarm.id;
@@ -14558,6 +14605,9 @@
 			    '🛠️ Cronómetro legible: el tiempo quedaba arriba con medio pantallazo vacío debajo, los botones perdidos abajo y las vueltas cortadas. Ahora va todo junto, con dígitos que no bailan y las vueltas con su sitio. Las vistas Digital/Analógico ya dicen cómo se llaman',
 			    '💱 CONVERSOR DE DIVISAS, que estaba muerto: se veía en la calculadora pero no tenía nada de código detrás y al abrirlo daba error con los desplegables vacíos. Ahora van 50 monedas (dólar, euro, peso dominicano, mexicano, colombiano… y hasta bitcoin) con las tasas del día, botón de intercambiar y memoria del par que usas',
 			    '📴 Las divisas también funcionan SIN INTERNET, con tasas aproximadas y avisándote de que lo son',
+			    '🛠️ LAS ALARMAS DEL RELOJ NO SONABAN: se guardaban pero nada las comprobaba, así que nunca avisaban. Ya suenan con su tono, sin repetirse y respetando el interruptor',
+			    '🕑 Un solo Reloj: había DOS apps de reloj distintas y el cronómetro solo estaba en una, por eso no aparecía. Ahora cualquiera de los dos botones abre la misma, con Reloj mundial, Alarmas, Cronómetro y Temporizador juntos',
+			    '🎮 Emulador: si no carga, ahora te dice QUÉ servidor falló de los 4 que prueba y qué hacer (cambiar de conexión o quitar el bloqueador), en vez del genérico «revisa tu conexión»',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
