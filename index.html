@@ -485,7 +485,7 @@
 			}
 			.ica-toggle.on::after{transform:translateX(20px);}
 			/* Stopwatch */
-			.ica-sw-display{font-size:4.5rem;font-weight:100;text-align:center;margin:40px 0 20px;font-variant-numeric:tabular-nums;}
+			.ica-sw-display{font-size:4.5rem;font-weight:200;text-align:center;margin:8px 0 4px;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;letter-spacing:-.02em;}
 			.ica-sw-analog{
 			  width:280px;height:280px;border-radius:50%;margin:20px auto;
 			  border:3px solid rgba(255,255,255,.15);position:relative;
@@ -513,12 +513,12 @@
 			  position:absolute;width:1.5px;height:28px;background:#ff9f0a;
 			  top:7px;left:50%;transform-origin:50% 28px;margin-left:-.75px;
 			}
-			.ica-sw-pager{display:flex;justify-content:center;gap:6px;margin:10px 0;}
+			.ica-sw-pager{display:flex;justify-content:center;gap:6px;margin:6px 0 2px;flex-shrink:0;}
 			.ica-sw-pager .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);}
 			.ica-sw-pager .dot.active{background:#fff;}
 			.ica-sw-btns{
-			  display:flex;justify-content:space-around;align-items:center;
-			  padding:20px 40px;margin-top:auto;
+			  display:flex;justify-content:center;align-items:center;gap:54px;
+			  padding:14px 40px 18px;flex-shrink:0;
 			}
 			.ica-sw-btn{
 			  width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
@@ -3665,6 +3665,10 @@
 					<h1>Reloj mundial</h1>
 					<button class="ica-header-btn" onclick="icaAddWorldClock()">+</button>
 				</div>
+				<div id="ica-city-search" style="display:none;padding:0 0 10px;">
+					<input id="ica-city-input" type="text" placeholder="Escribe una ciudad: Tokio, Madrid, Nueva York…" oninput="icaCitySearch(this.value)" autocomplete="off" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:#fff;font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;">
+					<div id="ica-city-results" style="display:none;margin-top:8px;background:rgba(28,28,30,.96);border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;max-height:320px;overflow-y:auto;"></div>
+				</div>
 				<div class="ica-empty" id="ica-world-empty">No hay ningún reloj mundial</div>
 				<div id="ica-world-list" style="display:flex;flex-direction:column;gap:0;"></div>
 			</div>
@@ -3693,8 +3697,8 @@
 			</div>
 			<!-- === VIEW: Cronómetro === -->
 			<div class="ica-view" id="ica-view-stopwatch">
-				<div style="flex:1;display:flex;flex-direction:column;padding-top:60px;">
-					<div id="ica-sw-pages" style="flex:1;position:relative;overflow:hidden;">
+				<div style="flex:1;display:flex;flex-direction:column;padding-top:22px;min-height:0;">
+					<div id="ica-sw-pages" style="flex-shrink:0;position:relative;overflow:hidden;">
 						<!-- Page 1: Digital -->
 						<div class="ica-sw-page active" id="ica-sw-digital">
 							<div class="ica-sw-display" id="ica-sw-time">00:00.00</div>
@@ -3705,14 +3709,14 @@
 						</div>
 					</div>
 					<div class="ica-sw-pager">
-						<div class="dot active" id="ica-sw-dot0" onclick="icaSwSetPage(0)" style="cursor:pointer;padding:4px;"></div>
-						<div class="dot" id="ica-sw-dot1" onclick="icaSwSetPage(1)" style="cursor:pointer;padding:4px;"></div>
+						<button id="ica-sw-dot0" onclick="icaSwSetPage(0)" style="background:rgba(255,255,255,.14);border:none;color:#fff;font-size:11px;font-weight:700;padding:5px 13px;border-radius:99px;cursor:pointer;">Digital</button>
+						<button id="ica-sw-dot1" onclick="icaSwSetPage(1)" style="background:transparent;border:none;color:rgba(255,255,255,.45);font-size:11px;font-weight:700;padding:5px 13px;border-radius:99px;cursor:pointer;">Analógico</button>
 					</div>
 					<div class="ica-sw-btns">
 						<button class="ica-sw-btn" id="ica-sw-lap" onclick="icaSwLap()">Vuelta</button>
 						<button class="ica-sw-btn green" id="ica-sw-start" onclick="icaSwToggle()">Iniciar</button>
 					</div>
-					<div id="ica-sw-laps" style="max-height:120px;overflow-y:auto;padding:0 20px;"></div>
+					<div id="ica-sw-laps" style="flex:1;min-height:0;overflow-y:auto;padding:0 20px 16px;"></div>
 				</div>
 			</div>
 			<!-- === VIEW: Timers === -->
@@ -14433,6 +14437,9 @@
 			    '📲 Botón «Instalar» en cada app para ponerle su icono propio en tu pantalla de inicio, con instrucciones según tu dispositivo',
 			    '🧭 MAPAS AHORA DICE PASO A PASO: la ruta trae las indicaciones giro a giro en español («gira a la derecha por Gran Vía», «en la rotonda toma la 2ª salida»), con su distancia cada una. Antes solo daba el total de km',
 			    '▶ Navegación en vivo: sigue tu posición en el mapa, va cambiando de indicación según avanzas y te la dice EN VOZ ALTA (se puede silenciar con 🔊)',
+			    '🛠️ ALARMA FANTASMA ARREGLADA: venía una alarma de las 7:39 ENCENDIDA escrita en el código, que aparecía sola en cada dispositivo. Ya no viene ninguna, y ahora cada alarma tiene su botón de borrar',
+			    '🔍 Reloj mundial: ahora ESCRIBES la ciudad y aparece sola (Tokio, Madrid, Nueva York…), con su bandera y su hora. Antes había que escribir de memoria «America/New_York» en una ventanita. Funciona sin tildes y se pueden quitar ciudades',
+			    '🛠️ Cronómetro legible: el tiempo quedaba arriba con medio pantallazo vacío debajo, los botones perdidos abajo y las vueltas cortadas. Ahora va todo junto, con dígitos que no bailan y las vueltas con su sitio. Las vistas Digital/Analógico ya dicen cómo se llaman',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18152,27 +18159,162 @@
 			    const city = tz.split('/').pop().replace(/_/g,' ');
 			    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08);">'
 			      +'<div><div style="font-size:13px;opacity:.5;">Hoy</div><div style="font-size:17px;font-weight:500;">'+city+'</div></div>'
-			      +'<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +'<div style="display:flex;align-items:center;gap:10px;">'
+			      +  '<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +  '<button onclick="icaRemoveWorldClock(&quot;'+tz+'&quot;)" title="Quitar" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;">✕</button>'
+			      +'</div>'
 			      +'</div>';
 			  }).join('');
 			}
-			function icaAddWorldClock(){
-			  const zones = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : ['America/New_York','Europe/London','Europe/Madrid','Asia/Tokyo','Australia/Sydney'];
-			  const tz = prompt('Zona horaria (ej: America/New_York, Europe/Madrid, Asia/Tokyo):');
-			  if(!tz) return;
-			  if(!_icaWorldClocks.includes(tz)){
+			// ── Buscador de ciudades del reloj mundial ──────────────────────────
+			// Antes había que escribir de memoria «America/New_York» en un prompt.
+			// Ahora se escribe «tokio», «nueva york», «madrid»… y aparece sola.
+			const ICA_CITIES=[
+			  ['Santo Domingo','America/Santo_Domingo','🇩🇴'],['Nueva York','America/New_York','🇺🇸'],
+			  ['Los Ángeles','America/Los_Angeles','🇺🇸'],['Chicago','America/Chicago','🇺🇸'],
+			  ['Miami','America/New_York','🇺🇸'],['Denver','America/Denver','🇺🇸'],
+			  ['Phoenix','America/Phoenix','🇺🇸'],['Anchorage','America/Anchorage','🇺🇸'],
+			  ['Honolulu','Pacific/Honolulu','🇺🇸'],['Toronto','America/Toronto','🇨🇦'],
+			  ['Vancouver','America/Vancouver','🇨🇦'],['Montreal','America/Toronto','🇨🇦'],
+			  ['Ciudad de México','America/Mexico_City','🇲🇽'],['Guadalajara','America/Mexico_City','🇲🇽'],
+			  ['Monterrey','America/Monterrey','🇲🇽'],['Tijuana','America/Tijuana','🇲🇽'],
+			  ['Cancún','America/Cancun','🇲🇽'],['Guatemala','America/Guatemala','🇬🇹'],
+			  ['San Salvador','America/El_Salvador','🇸🇻'],['Tegucigalpa','America/Tegucigalpa','🇭🇳'],
+			  ['Managua','America/Managua','🇳🇮'],['San José','America/Costa_Rica','🇨🇷'],
+			  ['Ciudad de Panamá','America/Panama','🇵🇦'],['La Habana','America/Havana','🇨🇺'],
+			  ['San Juan','America/Puerto_Rico','🇵🇷'],['Kingston','America/Jamaica','🇯🇲'],
+			  ['Puerto Príncipe','America/Port-au-Prince','🇭🇹'],['Bogotá','America/Bogota','🇨🇴'],
+			  ['Medellín','America/Bogota','🇨🇴'],['Caracas','America/Caracas','🇻🇪'],
+			  ['Quito','America/Guayaquil','🇪🇨'],['Guayaquil','America/Guayaquil','🇪🇨'],
+			  ['Lima','America/Lima','🇵🇪'],['La Paz','America/La_Paz','🇧🇴'],
+			  ['Santiago','America/Santiago','🇨🇱'],['Buenos Aires','America/Argentina/Buenos_Aires','🇦🇷'],
+			  ['Córdoba','America/Argentina/Cordoba','🇦🇷'],['Montevideo','America/Montevideo','🇺🇾'],
+			  ['Asunción','America/Asuncion','🇵🇾'],['São Paulo','America/Sao_Paulo','🇧🇷'],
+			  ['Río de Janeiro','America/Sao_Paulo','🇧🇷'],['Brasilia','America/Sao_Paulo','🇧🇷'],
+			  ['Manaos','America/Manaus','🇧🇷'],['Madrid','Europe/Madrid','🇪🇸'],
+			  ['Barcelona','Europe/Madrid','🇪🇸'],['Sevilla','Europe/Madrid','🇪🇸'],
+			  ['Valencia','Europe/Madrid','🇪🇸'],['Bilbao','Europe/Madrid','🇪🇸'],
+			  ['Canarias','Atlantic/Canary','🇪🇸'],['Lisboa','Europe/Lisbon','🇵🇹'],
+			  ['Oporto','Europe/Lisbon','🇵🇹'],['Londres','Europe/London','🇬🇧'],
+			  ['Mánchester','Europe/London','🇬🇧'],['Dublín','Europe/Dublin','🇮🇪'],
+			  ['París','Europe/Paris','🇫🇷'],['Marsella','Europe/Paris','🇫🇷'],
+			  ['Bruselas','Europe/Brussels','🇧🇪'],['Ámsterdam','Europe/Amsterdam','🇳🇱'],
+			  ['Berlín','Europe/Berlin','🇩🇪'],['Múnich','Europe/Berlin','🇩🇪'],
+			  ['Fráncfort','Europe/Berlin','🇩🇪'],['Zúrich','Europe/Zurich','🇨🇭'],
+			  ['Ginebra','Europe/Zurich','🇨🇭'],['Viena','Europe/Vienna','🇦🇹'],
+			  ['Roma','Europe/Rome','🇮🇹'],['Milán','Europe/Rome','🇮🇹'],
+			  ['Nápoles','Europe/Rome','🇮🇹'],['Atenas','Europe/Athens','🇬🇷'],
+			  ['Estocolmo','Europe/Stockholm','🇸🇪'],['Oslo','Europe/Oslo','🇳🇴'],
+			  ['Copenhague','Europe/Copenhagen','🇩🇰'],['Helsinki','Europe/Helsinki','🇫🇮'],
+			  ['Varsovia','Europe/Warsaw','🇵🇱'],['Praga','Europe/Prague','🇨🇿'],
+			  ['Budapest','Europe/Budapest','🇭🇺'],['Bucarest','Europe/Bucharest','🇷🇴'],
+			  ['Kiev','Europe/Kyiv','🇺🇦'],['Moscú','Europe/Moscow','🇷🇺'],
+			  ['Estambul','Europe/Istanbul','🇹🇷'],['Reikiavik','Atlantic/Reykjavik','🇮🇸'],
+			  ['El Cairo','Africa/Cairo','🇪🇬'],['Casablanca','Africa/Casablanca','🇲🇦'],
+			  ['Lagos','Africa/Lagos','🇳🇬'],['Nairobi','Africa/Nairobi','🇰🇪'],
+			  ['Johannesburgo','Africa/Johannesburg','🇿🇦'],['Ciudad del Cabo','Africa/Johannesburg','🇿🇦'],
+			  ['Argel','Africa/Algiers','🇩🇿'],['Túnez','Africa/Tunis','🇹🇳'],
+			  ['Adís Abeba','Africa/Addis_Ababa','🇪🇹'],['Acra','Africa/Accra','🇬🇭'],
+			  ['Dubái','Asia/Dubai','🇦🇪'],['Abu Dabi','Asia/Dubai','🇦🇪'],
+			  ['Doha','Asia/Qatar','🇶🇦'],['Riad','Asia/Riyadh','🇸🇦'],
+			  ['Jerusalén','Asia/Jerusalem','🇮🇱'],['Tel Aviv','Asia/Jerusalem','🇮🇱'],
+			  ['Teherán','Asia/Tehran','🇮🇷'],['Bagdad','Asia/Baghdad','🇮🇶'],
+			  ['Karachi','Asia/Karachi','🇵🇰'],['Nueva Delhi','Asia/Kolkata','🇮🇳'],
+			  ['Bombay','Asia/Kolkata','🇮🇳'],['Bangalore','Asia/Kolkata','🇮🇳'],
+			  ['Calcuta','Asia/Kolkata','🇮🇳'],['Katmandú','Asia/Kathmandu','🇳🇵'],
+			  ['Daca','Asia/Dhaka','🇧🇩'],['Bangkok','Asia/Bangkok','🇹🇭'],
+			  ['Hanói','Asia/Ho_Chi_Minh','🇻🇳'],['Ciudad Ho Chi Minh','Asia/Ho_Chi_Minh','🇻🇳'],
+			  ['Yakarta','Asia/Jakarta','🇮🇩'],['Bali','Asia/Makassar','🇮🇩'],
+			  ['Singapur','Asia/Singapore','🇸🇬'],['Kuala Lumpur','Asia/Kuala_Lumpur','🇲🇾'],
+			  ['Manila','Asia/Manila','🇵🇭'],['Hong Kong','Asia/Hong_Kong','🇭🇰'],
+			  ['Pekín','Asia/Shanghai','🇨🇳'],['Shanghái','Asia/Shanghai','🇨🇳'],
+			  ['Cantón','Asia/Shanghai','🇨🇳'],['Shenzhen','Asia/Shanghai','🇨🇳'],
+			  ['Taipéi','Asia/Taipei','🇹🇼'],['Seúl','Asia/Seoul','🇰🇷'],
+			  ['Tokio','Asia/Tokyo','🇯🇵'],['Osaka','Asia/Tokyo','🇯🇵'],
+			  ['Kioto','Asia/Tokyo','🇯🇵'],['Sídney','Australia/Sydney','🇦🇺'],
+			  ['Melbourne','Australia/Melbourne','🇦🇺'],['Brisbane','Australia/Brisbane','🇦🇺'],
+			  ['Perth','Australia/Perth','🇦🇺'],['Auckland','Pacific/Auckland','🇳🇿'],
+			  ['Fiyi','Pacific/Fiji','🇫🇯']
+			];
+			// Quita tildes para que «bogota» encuentre «Bogotá».
+			function _icaNorm(t){
+			  return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+			}
+			function icaCitySearch(q){
+			  const box=document.getElementById('ica-city-results'); if(!box) return;
+			  const n=_icaNorm(q);
+			  if(n.length<1){ box.innerHTML=''; box.style.display='none'; return; }
+			  let hits=ICA_CITIES.filter(function(c){ return _icaNorm(c[0]).indexOf(n)>=0; });
+			  // Respaldo: si no está en la lista, busca entre TODAS las zonas del sistema.
+			  if(!hits.length){
+			    let zones=[];
+			    try{ zones=Intl.supportedValuesOf?Intl.supportedValuesOf('timeZone'):[]; }catch(e){}
+			    hits=zones.filter(function(z){ return _icaNorm(z.split('/').pop().replace(/_/g,' ')).indexOf(n)>=0; })
+			              .slice(0,12).map(function(z){ return [z.split('/').pop().replace(/_/g,' '), z, '🌐']; });
+			  }
+			  hits=hits.slice(0,14);
+			  if(!hits.length){ box.style.display='block'; box.innerHTML='<div style="padding:12px;opacity:.45;font-size:12px;">No se encontró esa ciudad.</div>'; return; }
+			  box.style.display='block';
+			  box.innerHTML=hits.map(function(c){
+			    let hora='';
+			    try{ hora=new Date().toLocaleTimeString('es',{timeZone:c[1],hour:'2-digit',minute:'2-digit'}); }catch(e){}
+			    const ya=_icaWorldClocks.indexOf(c[1])>=0;
+			    return '<div onclick="icaPickCity(\''+c[1].replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07);">'
+			      +'<span style="font-size:18px;">'+c[2]+'</span>'
+			      +'<span style="flex:1;font-size:14px;">'+c[0]+'</span>'
+			      +'<span style="font-size:12px;opacity:.5;">'+hora+'</span>'
+			      +(ya?'<span style="font-size:11px;color:#30d158;">✓</span>':'<span style="font-size:16px;opacity:.5;">＋</span>')
+			      +'</div>';
+			  }).join('');
+			}
+			function icaPickCity(tz){
+			  if(_icaWorldClocks.indexOf(tz)<0){
 			    _icaWorldClocks.push(tz);
 			    localStorage.setItem('ica_world_clocks',JSON.stringify(_icaWorldClocks));
 			  }
+			  const inp=document.getElementById('ica-city-input'); if(inp) inp.value='';
+			  const box=document.getElementById('ica-city-results'); if(box){ box.innerHTML=''; box.style.display='none'; }
+			  const sb=document.getElementById('ica-city-search'); if(sb) sb.style.display='none';
 			  icaRenderWorldClocks();
+			}
+			function icaRemoveWorldClock(tz){
+			  _icaWorldClocks=_icaWorldClocks.filter(function(z){ return z!==tz; });
+			  localStorage.setItem('ica_world_clocks',JSON.stringify(_icaWorldClocks));
+			  icaRenderWorldClocks();
+			}
+			// El botón ＋ ahora abre el buscador en vez de un prompt.
+			function icaAddWorldClock(){
+			  const sb=document.getElementById('ica-city-search'); if(!sb) return;
+			  const abierto = sb.style.display!=='none';
+			  sb.style.display = abierto ? 'none' : 'block';
+			  if(!abierto){
+			    const inp=document.getElementById('ica-city-input');
+			    if(inp){ inp.value=''; inp.focus(); }
+			    icaCitySearch('');
+			  }
 			}
 			icaRenderWorldClocks();
 			setInterval(icaRenderWorldClocks, 30000);
 
 			// --- Alarms ---
-			let _icaAlarms = JSON.parse(localStorage.getItem('ica_alarms')||'[{"time":"7:39","label":"Alarma","on":true}]');
+			// Sin alarmas de fabrica: antes venia una puesta a las 7:39 y ENCENDIDA,
+			// escrita a mano en el codigo, que aparecia sola en cada dispositivo.
+			let _icaAlarms = (function(){
+			  try{ const v=JSON.parse(localStorage.getItem('ica_alarms')||'[]'); return Array.isArray(v)?v:[]; }
+			  catch(e){ return []; }
+			})();
+			function icaDeleteAlarm(i){
+			  _icaAlarms.splice(i,1);
+			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			  icaRenderAlarms();
+			}
 			function icaRenderAlarms(){
 			  const list = document.getElementById('ica-alarms-list');
+			  if(!list) return;
+			  if(!_icaAlarms.length){
+			    list.innerHTML='<div style="opacity:.45;font-size:13px;text-align:center;padding:26px 12px;line-height:1.6;">No tienes ninguna alarma.<br>Toca ＋ para crear una.</div>';
+			    return;
+			  }
 			  list.innerHTML = _icaAlarms.map((a,i)=>{
 			    const [h,m] = a.time.split(':');
 			    const h12 = ((+h % 12) || 12);
@@ -18180,7 +18322,10 @@
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
 			      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+a.label+' · '+icaToneName(a.tone)+' ›</div></div>'
-			      +'<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
+			      +'<div style="display:flex;align-items:center;gap:10px;">'
+			      +  '<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
+			      +  '<button onclick="icaDeleteAlarm('+i+')" title="Borrar alarma" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;">🗑</button>'
+			      +'</div>'
 			      +'</div>';
 			  }).join('');
 			}
@@ -18299,8 +18444,13 @@
 			  _icaSwPage = n;
 			  document.getElementById('ica-sw-digital').style.display = n===0?'block':'none';
 			  document.getElementById('ica-sw-analog').style.display = n===1?'block':'none';
-			  document.getElementById('ica-sw-dot0').classList.toggle('active',n===0);
-			  document.getElementById('ica-sw-dot1').classList.toggle('active',n===1);
+			  // Las pestañas Digital/Analógico se marcan con fondo, no con puntitos
+			  [0,1].forEach(function(k){
+			    const b=document.getElementById('ica-sw-dot'+k); if(!b) return;
+			    const on=(n===k);
+			    b.style.background = on ? 'rgba(255,255,255,.14)' : 'transparent';
+			    b.style.color = on ? '#fff' : 'rgba(255,255,255,.45)';
+			  });
 			}
 			(function(){
 			  const pages = document.getElementById('ica-sw-pages');
