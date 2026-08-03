@@ -14513,6 +14513,7 @@
 			        <div style="font-size:15px;font-weight:800;margin-bottom:4px;">Sin apps recientes</div>
 			        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px;">Todavía no abriste ninguna app en esta sesión.</div>
 			        <button onclick="closeAppSwitcher()" style="padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
+			        <div>${_ixBotonCerrarTodo()}</div>
 			      </div>`;
 			    modal.style.display='flex';
 			    return;
@@ -14520,7 +14521,10 @@
 			  modal.innerHTML=`
 			    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px;">Apps abiertas recientemente</div>
 			    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:640px;" id="app-switcher-grid"></div>
-			    <button onclick="closeAppSwitcher()" style="margin-top:24px;padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
+			    <div style="display:flex;flex-direction:column;align-items:center;">
+			      <button onclick="closeAppSwitcher()" style="margin-top:24px;padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
+			      ${_ixBotonCerrarTodo()}
+			    </div>
 			  `;
 			  const grid=modal.querySelector('#app-switcher-grid');
 			  _recentApps.forEach(a=>{
@@ -14533,6 +14537,30 @@
 			  });
 			  modal.style.display='flex';
 			}
+			// Cierra TODAS las ventanas abiertas y para lo que estuviera sonando o
+			// siguiendo tu posicion. No borra el historial de apps recientes.
+			function ixCerrarTodasLasVentanas(){
+			  let n=0;
+			  (_HOME_OPEN_PANELS||[]).forEach(function(id){
+			    const el=document.getElementById(id);
+			    if(el && el.classList.contains('open')){ el.classList.remove('open'); n++; }
+			  });
+			  (_HOME_DISPLAY_PANELS||[]).forEach(function(id){
+			    const el=document.getElementById(id);
+			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
+			  });
+			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop']
+			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
+			  closeAppSwitcher();
+			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
+			  try{ ixToast(n ? ('✕ '+n+' ventana'+(n===1?'':'s')+' cerrada'+(n===1?'':'s')) : 'No había ninguna ventana abierta'); }catch(e){}
+			  return n;
+			}
+			function _ixBotonCerrarTodo(){
+			  if(typeof _isHomeScreen==='function' && _isHomeScreen()) return '';
+			  return '<button onclick="ixCerrarTodasLasVentanas()" style="margin-top:14px;padding:11px 26px;border-radius:999px;background:rgba(255,69,58,.2);border:1px solid rgba(255,69,58,.45);color:#ff8a80;font-weight:800;font-size:13px;cursor:pointer;">✕ Cerrar todas las ventanas</button>';
+			}
 			function closeAppSwitcher(){
 			  const modal=document.getElementById('app-switcher-modal');
 			  if(modal) modal.style.display='none';
@@ -14540,8 +14568,37 @@
 			// Gesto: tocar con 3 dedos a la vez y soltar rápido (no arrastrar) = abrir
 			// el conmutador de apps, igual que el multitasking de un sistema real.
 			let _threeFingerTapStart=null;
+			// El gesto solo vale tocando EN SECO. Si alguno de los tres dedos cae sobre
+			// algo que hace cosas (un boton, los pads o las cuerdas de IXBand, el
+			// teclado, un juego...) no es un atajo: es que estas usando la app.
+			function _ixEsPulsable(el){
+			  const TAGS={BUTTON:1,A:1,INPUT:1,SELECT:1,TEXTAREA:1,LABEL:1,CANVAS:1,IFRAME:1,VIDEO:1,AUDIO:1,SUMMARY:1,OPTION:1};
+			  let n=el, saltos=0;
+			  while(n && n!==document.body && n.nodeType===1 && saltos++<12){
+			    if(TAGS[n.tagName] && !(n.tagName==='A' && !n.getAttribute('href'))) return true;
+			    if(n.hasAttribute('onclick')||n.hasAttribute('onpointerdown')||n.hasAttribute('ontouchstart')
+			       ||n.hasAttribute('onmousedown')||n.hasAttribute('contenteditable')||n.hasAttribute('tabindex')) return true;
+			    if(n.getAttribute('role')==='button') return true;
+			    // Red de seguridad: casi todo lo pulsable de la app lleva cursor:pointer,
+			    // asi cubrimos los elementos propios sin listarlos uno a uno.
+			    try{ if(getComputedStyle(n).cursor==='pointer') return true; }catch(err){}
+			    n=n.parentElement;
+			  }
+			  return false;
+			}
+			function _ixDedosEnSeco(touches){
+			  for(const t of touches){
+			    let el=null;
+			    try{ el=document.elementFromPoint(t.clientX,t.clientY); }catch(e){}
+			    if(el && _ixEsPulsable(el)) return false;
+			  }
+			  return true;
+			}
 			document.addEventListener('touchstart', (e)=>{
 			  if(e.touches.length===3){
+			    // Dentro de una app abierta, tres dedos son parte de lo que estas tocando.
+			    if(typeof _isHomeScreen==='function' && !_isHomeScreen()){ _threeFingerTapStart=null; return; }
+			    if(!_ixDedosEnSeco(e.touches)){ _threeFingerTapStart=null; return; }
 			    _threeFingerTapStart={ time:Date.now(), pts:[...e.touches].map(t=>({x:t.clientX,y:t.clientY})) };
 			  } else if(e.touches.length>3){
 			    _threeFingerTapStart=null; // más de 3 dedos: no es el gesto
@@ -14608,6 +14665,8 @@
 			    '🛠️ LAS ALARMAS DEL RELOJ NO SONABAN: se guardaban pero nada las comprobaba, así que nunca avisaban. Ya suenan con su tono, sin repetirse y respetando el interruptor',
 			    '🕑 Un solo Reloj: había DOS apps de reloj distintas y el cronómetro solo estaba en una, por eso no aparecía. Ahora cualquiera de los dos botones abre la misma, con Reloj mundial, Alarmas, Cronómetro y Temporizador juntos',
 			    '🎮 Emulador: si no carga, ahora te dice QUÉ servidor falló de los 4 que prueba y qué hacer (cambiar de conexión o quitar el bloqueador), en vez del genérico «revisa tu conexión»',
+			    '🖐️ El gesto de 3 dedos ya NO se dispara mientras tocas algo: solo abre el conmutador si los tres dedos caen en zona vacía y estás en la pantalla de inicio. Antes saltaba aunque estuvieras tocando los pads o las cuerdas de IXBand, o jugando',
+			    '✕ Botón «Cerrar todas las ventanas» en el conmutador de apps: cierra todo de golpe y para lo que estuviera sonando o siguiendo tu ubicación. Solo aparece si hay algo abierto',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
