@@ -14550,7 +14550,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
