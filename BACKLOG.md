@@ -24,23 +24,24 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-3. **Bienvenida de 3 pasos** la primera vez: qué es IXClocK, el gesto de 3
-   dedos y cómo instalarla. Guardar en `localStorage` para no repetirla.
-4. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
+3. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
    `_gbTakes` (ya existe `muted`, falta el resto).
-5. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-6. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-7. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+4. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
+5. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
+6. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-8. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-9. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+7. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+8. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-10. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+9. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Bienvenida de 3 pasos la primera vez (qué es, gesto de 3 dedos, instalar),
+  con `ix_onboarding_v1` en localStorage y botón para repetirla en la Ayuda.
 
 - Estados vacíos con gracia mediante `ixVacio(icono,titulo,texto)`, un
   componente reutilizable: Notas, Pistas de IXBand, buscador de canales y Mi

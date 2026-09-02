@@ -8691,6 +8691,64 @@
 			    +(accion?'<div style="margin-top:10px;">'+accion+'</div>':'')
 			    +'</div>';
 			}
+			// ── Bienvenida de 3 pasos (solo la primera vez) ──────────────────────
+			// Sin esto, alguien que entra por primera vez ve un panel lleno de cosas
+			// y no sabe que puede instalarla ni que hay un gesto de 3 dedos.
+			const IX_ONB_PASOS=[
+			  {icono:'🕐', titulo:'Esto es IXClocK',
+			   texto:'Tu panel con reloj mundial, clima, radio, mapas, juegos y hasta un estudio de música. Todo en la misma pantalla.',
+			   pista:'Los iconos de arriba abren cada app.'},
+			  {icono:'🖐️', titulo:'Toca con 3 dedos',
+			   texto:'Pon tres dedos en una zona vacía de la pantalla de inicio y se abre el cambiador de apps, con todo lo que tengas abierto.',
+			   pista:'Desde ahí puedes cerrarlo todo de golpe.'},
+			  {icono:'📲', titulo:'Instálala como app',
+			   texto:'Puede vivir en tu pantalla de inicio con su propio icono y abrirse sin la barra del navegador. Incluso funciona sin internet.',
+			   pista:'En Configuración → Más → «Apps y descargas».'}
+			];
+			let _ixOnbPaso=0;
+			function ixOnboardingVisto(){ try{ return localStorage.getItem('ix_onboarding_v1')==='1'; }catch(e){ return true; } }
+			function ixMostrarBienvenida(){
+			  if(document.getElementById('ix-onb')) return;
+			  _ixOnbPaso=0;
+			  const d=document.createElement('div');
+			  d.id='ix-onb';
+			  d.style.cssText='position:fixed;inset:0;z-index:10200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);padding:20px;';
+			  document.body.appendChild(d);
+			  ixPintarBienvenida();
+			}
+			function ixPintarBienvenida(){
+			  const d=document.getElementById('ix-onb'); if(!d) return;
+			  const p=IX_ONB_PASOS[_ixOnbPaso], ultimo=_ixOnbPaso===IX_ONB_PASOS.length-1;
+			  let puntos='';
+			  IX_ONB_PASOS.forEach(function(_,i){
+			    puntos+='<span style="width:7px;height:7px;border-radius:50%;background:'+(i===_ixOnbPaso?'#0a84ff':'rgba(255,255,255,.22)')+';"></span>';
+			  });
+			  d.innerHTML='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:26px;box-shadow:0 26px 70px rgba(0,0,0,.75);padding:28px 24px 22px;color:#fff;text-align:center;">'
+			    +'<div style="font-size:52px;line-height:1;margin-bottom:14px;">'+p.icono+'</div>'
+			    +'<div style="font-size:20px;font-weight:800;margin-bottom:9px;">'+escapeHtml(p.titulo)+'</div>'
+			    +'<div style="font-size:13.5px;opacity:.62;line-height:1.6;margin-bottom:12px;">'+escapeHtml(p.texto)+'</div>'
+			    +'<div style="font-size:11.5px;opacity:.42;margin-bottom:22px;">'+escapeHtml(p.pista)+'</div>'
+			    +'<div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;">'+puntos+'</div>'
+			    +'<div style="display:flex;gap:9px;">'
+			    +  '<button onclick="ixCerrarBienvenida()" style="flex:1;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;padding:13px;cursor:pointer;">'+(ultimo?'Cerrar':'Saltar')+'</button>'
+			    +  (ultimo
+			        ? '<button onclick="ixCerrarBienvenida()" style="flex:2;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:800;padding:13px;cursor:pointer;">¡Vamos!</button>'
+			        : '<button onclick="ixSiguienteBienvenida()" style="flex:2;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:800;padding:13px;cursor:pointer;">Siguiente</button>')
+			    +'</div></div>';
+			}
+			function ixSiguienteBienvenida(){
+			  if(_ixOnbPaso < IX_ONB_PASOS.length-1){ _ixOnbPaso++; ixPintarBienvenida(); }
+			  else ixCerrarBienvenida();
+			}
+			function ixCerrarBienvenida(){
+			  const d=document.getElementById('ix-onb'); if(d) d.remove();
+			  try{ localStorage.setItem('ix_onboarding_v1','1'); }catch(e){}
+			}
+			// Se puede volver a ver desde la Ayuda.
+			function ixRepetirBienvenida(){
+			  try{ localStorage.removeItem('ix_onboarding_v1'); }catch(e){}
+			  ixMostrarBienvenida();
+			}
 			function countryCodeToFlag(cc){
 			  if(!cc || cc.length!==2) return '🌍';
 			  try{
@@ -12822,6 +12880,10 @@
 			    if(overlay) overlay.style.display = 'none';
 			    if(typeof window.updateProfileBtn === 'function') window.updateProfileBtn();
 			    if(typeof window.showWelcomePill === 'function') window.showWelcomePill(username);
+			    // Bienvenida de 3 pasos, solo la primera vez en este dispositivo.
+			    if(typeof ixOnboardingVisto==='function' && !ixOnboardingVisto()){
+			      setTimeout(function(){ try{ ixMostrarBienvenida(); }catch(e){} }, 900);
+			    }
 			  }
 
 			  // --- invitado: entra al instante, sin formulario ---
@@ -12970,6 +13032,9 @@
 			  if(existing){
 			    document.getElementById('login-overlay').style.display='none';
 			    updateProfileBtn();
+			    if(typeof ixOnboardingVisto==='function' && !ixOnboardingVisto()){
+			      setTimeout(function(){ try{ ixMostrarBienvenida(); }catch(e){} }, 1200);
+			    }
 			  }
 			})();
 
@@ -13028,7 +13093,12 @@
 			          En Personalizar → <b>Relojes</b> hay dos barras: <b>Tamaño del reloj</b> (60%–220%) y <b>Altura de los números</b> — esta última estira los dígitos hacia arriba, como deja hacer iOS en la pantalla de bloqueo. Se guardan solos.
 			        </div>
 			        <div style="margin-bottom:16px;">
-			          <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
+			          <div style="margin-bottom:14px;padding:12px 14px;background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.3);border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+			          <span style="font-size:20px;">👋</span>
+			          <span style="flex:1;min-width:150px;font-size:12px;">¿Primera vez? Vuelve a ver la bienvenida con lo básico.</span>
+			          <button onclick="ixRepetirBienvenida()" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;cursor:pointer;">Ver bienvenida</button>
+			        </div>
+			        <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
 			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), <b>batería física</b> (el kit acústico que se toca tocando cada tambor) y de pads, <b>Drummer</b> (un baterista que toca grooves solo por estilo), <b>Beat Sequencer</b> (caja de ritmos de pasos), <b>Batería Smart</b> (arrastras los tambores: derecha = más complejo, arriba = más fuerte), Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz, con <b>Autoplay</b> para que se toquen solas), <b>Amplificador</b> con pedalera (distorsión, fuzz, wah, chorus, delay, reverb), <b>Grabadora</b> de voz con efectos (eco, robot, ardilla, monstruo…), <b>Sampler</b> (graba un sonido y tócalo afinado) y sintetizador. El teclado trae <b>arpegiador</b> y una categoría <b>Asia</b> (Guzheng, Pipa, Dizi, Gong, Shakuhachi, Taiko…). En Live Loops tienes <b>Remix FX</b> (filtro de DJ, repetidor y wobble). Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
 			        <div style="margin-bottom:16px;">
@@ -14673,6 +14743,7 @@
 			    '⏰ Crear una alarma ya no abre las ventanitas feas del navegador: tiene su propia pantalla con selector de hora y minutos, campo de etiqueta y los 8 tonos, que puedes OÍR tocándolos antes de elegir. Tocando una alarma la editas',
 			    '⏳ Lo mismo para el temporizador: etiqueta y tono con pantalla propia en vez de ventanitas',
 			    '🖼️ Pantallas vacías con gracia: Notas, Pistas de IXBand, el buscador de canales y Mi Nube ahora te dicen qué hacer cuando no hay nada, con su icono. La galería de Mi Nube antes no decía absolutamente nada',
+			    '👋 BIENVENIDA la primera vez: 3 pantallas cortas que explican qué es IXClocK, el gesto de 3 dedos y cómo instalarla como app. Solo sale una vez, y puedes volver a verla desde ❓ Ayuda',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
