@@ -14778,6 +14778,7 @@
 			    '⌨️ ATAJOS DE TECLADO para quien la use en ordenador o con teclado: Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración, Esc cierra la ventana de encima, Ctrl/⌘+⇧+X cierra todas y Ctrl/⌘+/ enseña la lista. La lista también está en ❓ Ayuda',
 			    '🎵 MIS CANCIONES ahora es de verdad tuya: guarda varias canciones («💾 Guardar en Mis canciones» desde Pistas), ábrelas, cámbiales el nombre, haz copias y bórralas. La que tienes abierta sale marcada en verde y todo lo que cambies se guarda en ella sola',
 			    '⬇️ EXPORTAR TU CANCIÓN a un archivo de audio: desde Pistas, «Exportar audio» graba la canción entera tal y como suena (con su reverb y su mezcla) y te la descarga con el nombre que le pusiste, lista para mandarla por WhatsApp o subirla donde quieras',
+			    '📤 Y un botón «Compartir» al lado, en móviles y tabletas: abre el menú del sistema para mandarla directamente por WhatsApp, correo o guardarla en Archivos, sin buscarla en la carpeta de descargas',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18501,7 +18502,7 @@
 			   sea lo mismo que oyes, con su reverb y su compresor. Va en tiempo
 			   real (una canción de 30 s tarda 30 s) porque los instrumentos se
 			   sintetizan sobre la marcha; no hay una mezcla ya hecha que copiar. */
-			let _gbExportando=false;
+			let _gbExportando=false, _gbUltimoExport=null;
 			function _gbFormatoAudio(){
 			  if(typeof MediaRecorder==='undefined') return null;
 			  const opciones=[['audio/webm;codecs=opus','webm'],['audio/webm','webm'],
@@ -18549,6 +18550,10 @@
 			    a.href=url; a.download=nombre+'.'+fmt[1];
 			    document.body.appendChild(a); a.click();
 			    setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} },4000);
+			    // Se guarda para poder compartirla: navigator.share exige que la
+			    // llamada salga de un toque del usuario, y la exportacion acaba
+			    // medio minuto despues del suyo, asi que hace falta otro boton.
+			    _gbUltimoExport={ blob:blob, nombre:a.download, tipo:fmt[0] };
 			    _gbEstado('✅ Exportada: '+a.download+' ('+Math.round(blob.size/1024)+' KB). Búscala en tus descargas.');
 			    gbRenderTracks();
 			  };
@@ -18569,6 +18574,27 @@
 			  })();
 			  setTimeout(function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} }, total);
 			  return true;
+			}
+			// Compartir por el menu del sistema (WhatsApp, correo, Archivos...).
+			function gbPuedeCompartir(){
+			  if(!_gbUltimoExport || !navigator.share || !navigator.canShare) return false;
+			  try{
+			    const f=new File([_gbUltimoExport.blob],_gbUltimoExport.nombre,{type:_gbUltimoExport.tipo});
+			    return navigator.canShare({files:[f]});
+			  }catch(e){ return false; }
+			}
+			function gbCompartirCancion(){
+			  if(!_gbUltimoExport){ _gbEstado('Exporta la canción primero.'); return; }
+			  let f;
+			  try{ f=new File([_gbUltimoExport.blob],_gbUltimoExport.nombre,{type:_gbUltimoExport.tipo}); }
+			  catch(e){ _gbEstado('⚠️ Este navegador no puede compartir archivos.'); return; }
+			  if(!navigator.share || !navigator.canShare || !navigator.canShare({files:[f]})){
+			    _gbEstado('Este dispositivo no comparte archivos: usa la que se descargó.');
+			    return;
+			  }
+			  navigator.share({ files:[f], title:_gbUltimoExport.nombre, text:'Hecha con IXBand' })
+			    .then(function(){ _gbEstado('📤 Compartida.'); })
+			    .catch(function(){ /* si la cancela, no hay nada que decir */ });
 			}
 			function _gbNombreCancion(){
 			  if(!_gbCancionActual) return null;
@@ -18845,6 +18871,7 @@
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
+			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
 			    +'</div>';

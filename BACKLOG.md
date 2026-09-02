@@ -23,8 +23,7 @@ empezar y se actualiza antes de subir.
 ### Funciones nuevas
 2. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
    pintadas en `#stations-container`. Valorar una fila «buscar en internet».
-3. **Compartir la canción** con `navigator.share`, ahora que el archivo existe.
-4. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
+3. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
 
 ---
 
@@ -40,7 +39,11 @@ empezar y se actualiza antes de subir.
     algo falla; si no, el maestro se queda mandando audio a un destino muerto.
   - El aviso de «ya se está grabando» va por toast, no por la línea de estado,
     porque ahí la cuenta atrás escribe cada medio segundo.
-  - Probado con `exportar_test.js`: 18/18, incluida una descarga real de 41 KB
+  - Botón «Compartir» al lado (`gbCompartirCancion`), solo si el dispositivo
+    puede compartir archivos. Es un botón aparte y no automático porque
+    `navigator.share` exige salir de un toque, y la exportación termina medio
+    minuto después del toque que la lanzó.
+  - Probado con `exportar_test.js`: 24/24, incluida una descarga real de 41 KB
     con el nombre de la canción.
 
 - «Mis canciones» pasa a ser una lista de verdad (`_gbCanciones`, clave
