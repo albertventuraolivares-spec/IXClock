@@ -8681,6 +8681,16 @@
 			function escapeHtml(str){
 			  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 			}
+			// Estado vacio con gracia: mismo aspecto en toda la app, en vez de que cada
+			// pantalla ponga su propio texto gris (o ninguno, como pasaba en Mi Nube).
+			function ixVacio(icono, titulo, texto, accion){
+			  return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:38px 22px;gap:7px;">'
+			    +'<div style="font-size:40px;line-height:1;opacity:.75;">'+icono+'</div>'
+			    +'<div style="font-size:14px;font-weight:800;color:#e8e8ec;">'+escapeHtml(titulo)+'</div>'
+			    +(texto?'<div style="font-size:12px;opacity:.45;max-width:280px;line-height:1.55;">'+escapeHtml(texto)+'</div>':'')
+			    +(accion?'<div style="margin-top:10px;">'+accion+'</div>':'')
+			    +'</div>';
+			}
 			function countryCodeToFlag(cc){
 			  if(!cc || cc.length!==2) return '🌍';
 			  try{
@@ -9433,7 +9443,7 @@
 			  const results = document.getElementById('world-radio-results');
 			  if(!results) return;
 			  if(!_lastWorldResults.length){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Sin resultados. Prueba otro término o país.</div>';
+			    results.innerHTML = ixVacio('📡','Sin resultados','Prueba con otro término o cambia el país.');
 			    return;
 			  }
 			  const countNote = `<div style="text-align:center;padding:2px 0 8px;opacity:.4;font-size:10px;">✅ ${_lastWorldResults.length} emisoras seguras (verificadas activas)</div>`;
@@ -12428,7 +12438,9 @@
 			  }
 			  if(countEl) countEl.innerText = notes.length===1 ? '1 nota' : notes.length+' notas';
 			  if(sorted.length===0){
-			    list.innerHTML = `<div class="text-xs opacity-40 text-center py-10">${notes.length===0 ? 'No tienes notas todavía' : 'Sin resultados'}</div>`;
+			    list.innerHTML = notes.length===0
+			      ? ixVacio('📝','No tienes notas todavía','Toca ＋ para escribir la primera.')
+			      : ixVacio('🔎','Sin resultados','No hay ninguna nota que coincida con lo que buscaste.');
 			    return;
 			  }
 			  sorted.forEach(n=>{
@@ -14660,6 +14672,7 @@
 			    '📡 La tarjeta «Buscador» decía que buscaba en todo IXClocK pero solo buscaba emisoras: ahora se llama «Buscador de canales» y dice lo que hace de verdad',
 			    '⏰ Crear una alarma ya no abre las ventanitas feas del navegador: tiene su propia pantalla con selector de hora y minutos, campo de etiqueta y los 8 tonos, que puedes OÍR tocándolos antes de elegir. Tocando una alarma la editas',
 			    '⏳ Lo mismo para el temporizador: etiqueta y tono con pantalla propia en vez de ventanitas',
+			    '🖼️ Pantallas vacías con gracia: Notas, Pistas de IXBand, el buscador de canales y Mi Nube ahora te dicen qué hacer cuando no hay nada, con su icono. La galería de Mi Nube antes no decía absolutamente nada',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18095,7 +18108,7 @@
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'</div>';
 			  if(!_gbTakes.length){
-			    s+='<div style="opacity:.4;font-size:12px;padding:26px 4px;">Sin pistas todavía. Toca un instrumento con ⏺ activado y pulsa “＋ Guardar toma actual”.</div>';
+			    s+=ixVacio('🎚️','Sin pistas todavía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo aquí.');
 			    el.innerHTML=s; return;
 			  }
 			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(150+laneW)+'px;">'+ruler;
@@ -18253,7 +18266,7 @@
 			    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;font-size:12px;"><div><div style="font-weight:700;color:#fff;margin-bottom:2px;">${k}</div><div style="opacity:.45;font-size:10px;font-family:monospace;">${display.slice(0,60)}</div></div><button onclick="if(confirm('Eliminar ${k}?'))localStorage.removeItem('${k}')" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff453a;padding:4px 8px;border-radius:8px;cursor:pointer;font-size:10px;white-space:nowrap;">Borrar</button></div>`;
 			  }).filter(Boolean).join('');
 			  const totalKB=(JSON.stringify(localStorage).length/1024).toFixed(1);
-			  cont.innerHTML=`<div style="font-size:11px;opacity:.4;margin-bottom:12px;">${totalKB} KB guardados · ${Object.keys(localStorage).length} elementos</div>${rows||'<div style="text-align:center;opacity:.4;padding:20px;">Sin datos guardados</div>'}`;
+			  cont.innerHTML=`<div style="font-size:11px;opacity:.4;margin-bottom:12px;">${totalKB} KB guardados · ${Object.keys(localStorage).length} elementos</div>${rows||ixVacio('☁️','Sin datos guardados','Cuando uses la app, aquí verás lo que se guarda en tu dispositivo.')}`;
 			}
 			function renderCloudGallery(cont){
 			  const custom=JSON.parse(localStorage.getItem('custom_wallpapers')||'[]');
@@ -18266,6 +18279,7 @@
 			    </div>
 			    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="custom-wp-grid">
 			  `;
+			  if(!custom.length) html+='</div>'+ixVacio('🖼️','Tu galería está vacía','Sube una foto tuya con el botón de arriba y podrás ponerla de fondo de pantalla.')+'<div style="display:none;">';
 			  custom.forEach((wp,i)=>{
 			    html+=`<div style="position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;cursor:pointer;" onclick="setWallpaper('custom_${i}')"><img src="${wp.url}" style="width:100%;height:100%;object-fit:cover;"><button onclick="event.stopPropagation();removeCustomWallpaper(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button></div>`;
 			  });

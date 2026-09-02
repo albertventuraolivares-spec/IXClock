@@ -16,34 +16,36 @@ empezar y se actualiza antes de subir.
 ## Pendiente
 
 ### Bugs y deuda
-1. **Estados vacíos sin gracia.** Varias apps no dicen nada cuando están vacías.
-   Referencia: el de alarmas («No tienes ninguna alarma. Toca ＋…»).
-   Revisar Notas, Mi Nube, Pistas de IXBand y el buscador de canales.
-2. **Estilos incoherentes.** Los paneles nuevos (descargas, ciudades, divisas) y
+1. **Estilos incoherentes.** Los paneles nuevos (descargas, ciudades, divisas) y
    los viejos usan radios, sombras y espaciados distintos. Unificar con
    variables CSS partiendo del `glass` que ya existe.
-3. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
+2. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
    espejos y avisa cuál falló, pero no se ha podido probar con red real. Si el
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-4. **Bienvenida de 3 pasos** la primera vez: qué es IXClocK, el gesto de 3
+3. **Bienvenida de 3 pasos** la primera vez: qué es IXClocK, el gesto de 3
    dedos y cómo instalarla. Guardar en `localStorage` para no repetirla.
-5. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
+4. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
    `_gbTakes` (ya existe `muted`, falta el resto).
-6. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-7. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-8. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+5. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
+6. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
+7. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-9. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-10. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+8. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+9. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-11. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+10. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Estados vacíos con gracia mediante `ixVacio(icono,titulo,texto)`, un
+  componente reutilizable: Notas, Pistas de IXBand, buscador de canales y Mi
+  Nube (su galería no decía nada). Definido junto a `escapeHtml` para que esté
+  disponible desde los bloques `<script>` que lo usan.
 
 - Crear/editar alarma y el tono del temporizador: pantalla propia con selector
   de hora, etiqueta y los 8 tonos audibles. Fuera los `prompt()` del navegador
