@@ -14769,6 +14769,7 @@
 			    '🛠️ Pistas: los números de compás de arriba estaban corridos y no coincidían con las regiones verdes desde que se añadió el mezclador. Ahora la regla y el cabezal rojo empiezan justo donde empieza la pista',
 			    '🔎 BUSCADOR DE VERDAD, el de la lupa del dock (o Ctrl+K): busca a la vez en apps, Configuración, notas, ciudades del reloj, alarmas, fondos, estilos de reloj y emisoras. Y al elegir hace la acción: abre la app, pone el fondo, añade la ciudad o te lleva al ajuste y te lo señala',
 			    '🔤 El buscador no distingue tildes: escribe «cancun» y encuentra «Cancún»',
+			    '💾 IXBand YA NO PIERDE TU CANCIÓN: las pistas, las secciones, el volumen, el paneo, el tempo y el compás se guardan solos en tu dispositivo y siguen ahí al volver a abrir. Antes, recargar la página lo borraba todo sin avisar. Hay un botón «Empezar de cero» para cuando quieras limpiar',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -16566,6 +16567,7 @@
 			    _gbAudioCtx = (typeof getAudioCtx==='function' ? getAudioCtx() : null) || new(window.AudioContext||window.webkitAudioContext)();
 			  }
 			  if(_gbAudioCtx && _gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
+			  gbCargarCancion();   // recupera lo grabado la ultima vez
 			  gbBuildBrowser();
 			  gbBuildSongs();
 			  gbBuildLiveLoops(document.getElementById('gb-loops'));
@@ -18010,6 +18012,7 @@
 			  _gbCompas=sig[0];
 			  const b=document.getElementById('gb-compas-btn'); if(b) b.textContent=sig[1];
 			  const st=document.getElementById('gb-status'); if(st) st.textContent='Compás '+sig[1]+' · '+sig[0]+' tiempos por compás';
+			  _gbGuardarPronto();
 			}
 			function gbToggleCuentaAtras(){
 			  _gbCuentaAtras=!_gbCuentaAtras;
@@ -18190,6 +18193,7 @@
 			function gbTempo(d){
 			  _gbBpm=Math.max(60,Math.min(220,(parseInt(_gbBpm)||120)+d));
 			  const el=document.getElementById('gb-lcd-tempo'); if(el) el.textContent=_gbBpm;
+			  _gbGuardarPronto();
 			}
 			function gbMetro(){
 			  _gbMetroOn=!_gbMetroOn;
@@ -18381,12 +18385,12 @@
 			  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 			  return L[n%26] + (n>=26 ? String(Math.floor(n/26)+1) : '');
 			}
-			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ _gbSecActiva=id; gbRenderTracks(); } }
+			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto(); } }
 			function gbSecNueva(){
 			  _gbSecSeq++;
 			  const id='s'+_gbSecSeq;
 			  _gbSecciones.push({id:id, nombre:_gbNombreSec(_gbSecciones.length)});
-			  _gbSecActiva=id; gbRenderTracks();
+			  _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto();
 			  _gbEstado('➕ Sección nueva. Graba algo y guárdalo aquí.');
 			}
 			function gbSecDuplicar(){
@@ -18399,14 +18403,14 @@
 			    return Object.assign({},x.t,{ sec:nueva.id, events:x.t.events.map(function(e){ return Object.assign({},e); }) });
 			  });
 			  _gbTakes=_gbTakes.concat(copias);
-			  _gbSecActiva=nueva.id; gbRenderTracks();
+			  _gbSecActiva=nueva.id; gbRenderTracks(); _gbGuardarPronto();
 			  _gbEstado('⧉ Sección duplicada con sus '+copias.length+' pista(s).');
 			}
 			function gbSecMover(dir){
 			  const i=_gbSecIdx(_gbSecActiva), j=i+dir;
 			  if(i<0 || j<0 || j>=_gbSecciones.length) return;
 			  const tmp=_gbSecciones[i]; _gbSecciones[i]=_gbSecciones[j]; _gbSecciones[j]=tmp;
-			  gbRenderTracks();
+			  gbRenderTracks(); _gbGuardarPronto();
 			}
 			function gbSecBorrar(){
 			  if(_gbSecciones.length<=1){ _gbEstado('La canción necesita al menos una sección.'); return; }
@@ -18415,7 +18419,7 @@
 			  _gbTakes=_gbTakes.filter(function(t){ return _gbSecDe(t)!==id; });
 			  _gbSecciones.splice(i,1);
 			  _gbSecActiva=_gbSecciones[Math.min(i,_gbSecciones.length-1)].id;
-			  gbRenderTracks();
+			  gbRenderTracks(); _gbGuardarPronto();
 			}
 			// Renombrar sin ventanitas del navegador: el chip se vuelve un campo.
 			function gbSecRenombrar(){
@@ -18426,7 +18430,7 @@
 			  const inp=document.getElementById('gb-sec-inp'); if(!inp) return;
 			  inp.focus(); inp.select();
 			  let hecho=false;
-			  const guardar=function(){ if(hecho) return; hecho=true; const v=inp.value.trim(); if(v) sec.nombre=v; gbRenderTracks(); };
+			  const guardar=function(){ if(hecho) return; hecho=true; const v=inp.value.trim(); if(v) sec.nombre=v; gbRenderTracks(); _gbGuardarPronto(); };
 			  inp.onblur=guardar;
 			  inp.onkeydown=function(e){
 			    if(e.key==='Enter'){ e.preventDefault(); guardar(); }
@@ -18467,20 +18471,77 @@
 			  ph.style.left=(GB_LANE_X+(ms/1000)*GB_PX_PER_SEC)+'px';
 			  setTimeout(function(){ ph.style.opacity='0'; },ms+400);
 			}
+			/* ── GUARDAR LA CANCIÓN entre sesiones ────────────────────────────
+			   Antes, recargar la página borraba todo lo grabado sin avisar. Ahora
+			   las pistas, las secciones, el tempo y el compás se guardan solos en
+			   este dispositivo, y al volver a abrir IXBand siguen donde estaban.
+			   No sale de aquí: es localStorage, no se sube a ningún sitio.       */
+			const GB_CLAVE_CANCION='ixband_cancion_v1';
+			const GB_MAX_CANCION=2000000;   // ~2 MB: deja sitio de sobra al resto de la app
+			let _gbGuardarTimer=null, _gbAvisoLleno=false;
+			function _gbGuardarPronto(){
+			  // Espera un poco: mover un mando de volumen dispara muchos cambios
+			  // seguidos y no hace falta escribir en el disco en cada píxel.
+			  clearTimeout(_gbGuardarTimer);
+			  _gbGuardarTimer=setTimeout(gbGuardarCancion,600);
+			}
+			function gbGuardarCancion(){
+			  try{
+			    const datos=JSON.stringify({
+			      v:1, bpm:_gbBpm, compas:_gbCompas,
+			      secciones:_gbSecciones, secActiva:_gbSecActiva, secSeq:_gbSecSeq,
+			      takes:_gbTakes
+			    });
+			    if(datos.length>GB_MAX_CANCION){
+			      if(!_gbAvisoLleno){
+			        _gbAvisoLleno=true;
+			        _gbEstado('⚠️ La canción es demasiado larga para guardarse sola. Borra alguna pista.');
+			      }
+			      return false;
+			    }
+			    localStorage.setItem(GB_CLAVE_CANCION,datos);
+			    _gbAvisoLleno=false;
+			    return true;
+			  }catch(e){
+			    // Sin sitio o en modo privado: se sigue tocando, solo no se guarda.
+			    if(!_gbAvisoLleno){ _gbAvisoLleno=true; _gbEstado('⚠️ No se pudo guardar la canción en este dispositivo.'); }
+			    return false;
+			  }
+			}
+			function gbCargarCancion(){
+			  let d=null;
+			  try{ d=JSON.parse(localStorage.getItem(GB_CLAVE_CANCION)||'null'); }catch(e){ d=null; }
+			  if(!d || !Array.isArray(d.takes)) return false;
+			  _gbTakes=d.takes;
+			  if(Array.isArray(d.secciones) && d.secciones.length) _gbSecciones=d.secciones;
+			  // Si la sección guardada ya no existe, se cae a la primera en vez de
+			  // dejar la vista en blanco sin explicación.
+			  _gbSecActiva=(d.secActiva && _gbSecIdx(d.secActiva)>=0) ? d.secActiva : _gbSecciones[0].id;
+			  _gbSecSeq=d.secSeq||_gbSecciones.length;
+			  if(d.bpm) _gbBpm=d.bpm;
+			  if(d.compas) _gbCompas=d.compas;
+			  return true;
+			}
+			function gbBorrarCancionGuardada(){
+			  try{ localStorage.removeItem(GB_CLAVE_CANCION); }catch(e){}
+			  _gbTakes=[]; _gbSecciones=[{id:'s1',nombre:'A'}]; _gbSecActiva='s1'; _gbSecSeq=1;
+			  gbRenderTracks();
+			  _gbEstado('🗑️ Canción borrada. Empiezas de cero.');
+			}
 			function gbSaveTake(){
 			  const s=document.getElementById('gb-status');
 			  if(!_gbRecorded.length){ if(s) s.textContent='No hay nada grabado: ⏺ graba algo con un instrumento primero.'; return; }
 			  const t0=_gbRecorded[0].time;
 			  _gbTakes.push({ name:_gbSelectedInstrument, sec:_gbSecActiva, muted:false, solo:false, vol:1, pan:0, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
-			  gbRenderTracks();
+			  gbRenderTracks(); _gbGuardarPronto();
 			  if(s) s.textContent='💾 Toma guardada en Pistas ('+_gbTakes.length+').';
 			}
-			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted=!_gbTakes[i].muted; gbRenderTracks(); } }
-			function gbToggleSolo(i){ if(_gbTakes[i]){ _gbTakes[i].solo=!_gbTakes[i].solo; gbRenderTracks(); } }
-			function gbSetVol(i,v){ if(_gbTakes[i]){ _gbTakes[i].vol=Math.max(0,Math.min(1.5,parseFloat(v)||0)); const e=document.getElementById('gb-vol-'+i); if(e) e.textContent=Math.round(_gbTakes[i].vol*100)+'%'; } }
-			function gbSetPan(i,v){ if(_gbTakes[i]){ _gbTakes[i].pan=Math.max(-1,Math.min(1,parseFloat(v)||0)); const e=document.getElementById('gb-pan-'+i); if(e) e.textContent=_gbTextoPan(_gbTakes[i].pan); } }
+			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted=!_gbTakes[i].muted; gbRenderTracks(); _gbGuardarPronto(); } }
+			function gbToggleSolo(i){ if(_gbTakes[i]){ _gbTakes[i].solo=!_gbTakes[i].solo; gbRenderTracks(); _gbGuardarPronto(); } }
+			function gbSetVol(i,v){ if(_gbTakes[i]){ _gbTakes[i].vol=Math.max(0,Math.min(1.5,parseFloat(v)||0)); const e=document.getElementById('gb-vol-'+i); if(e) e.textContent=Math.round(_gbTakes[i].vol*100)+'%'; _gbGuardarPronto(); } }
+			function gbSetPan(i,v){ if(_gbTakes[i]){ _gbTakes[i].pan=Math.max(-1,Math.min(1,parseFloat(v)||0)); const e=document.getElementById('gb-pan-'+i); if(e) e.textContent=_gbTextoPan(_gbTakes[i].pan); _gbGuardarPronto(); } }
 			function _gbTextoPan(p){ if(Math.abs(p)<.06) return 'Centro'; return (p<0?'Izq ':'Der ')+Math.round(Math.abs(p)*100)+'%'; }
-			function gbDeleteTake(i){ _gbTakes.splice(i,1); gbRenderTracks(); }
+			function gbDeleteTake(i){ _gbTakes.splice(i,1); gbRenderTracks(); _gbGuardarPronto(); }
 			// Cada pista suena por su propio canal: volumen y paneo. Se enchufa al bus
 			// maestro, asi conserva la reverb y el limitador de toda la app.
 			function _gbCanalPista(t){
@@ -18565,6 +18626,8 @@
 			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
 			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
+			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Borra TODAS las pistas y secciones guardadas en este dispositivo" style="color:#ff6961;">🗑️ Empezar de cero</button>'
+			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
 			    +'</div>';
 			  if(!tomas.length){
 			    s+=ixVacio('🎚️','Sección vacía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo a esta sección.');

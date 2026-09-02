@@ -23,14 +23,28 @@ empezar y se actualiza antes de subir.
 ### Funciones nuevas
 2. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor. (Ctrl+K ya existe, del buscador.)
-3. **Guardar la canción de IXBand** entre sesiones: hoy `_gbTakes` y
-   `_gbSecciones` viven solo en memoria y se pierden al recargar.
+3. **Varias canciones guardadas** en IXBand, no solo la última: «Mis canciones»
+   (`gbBuildSongs`) hoy es un selector de plantillas, no una lista de lo tuyo.
 4. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
    pintadas en `#stations-container`. Valorar una fila «buscar en internet».
 
 ---
 
 ## Hecho
+
+- La canción de IXBand ya no se pierde al recargar. `gbGuardarCancion()` /
+  `gbCargarCancion()` guardan pistas, secciones, tempo y compás en
+  `localStorage` bajo `ixband_cancion_v1`; `gbInit()` la recupera al abrir.
+  - Guardado con retardo de 600 ms (`_gbGuardarPronto`): arrastrar un mando de
+    volumen dispara muchísimos cambios y no hay que escribir en cada píxel.
+  - Tope de 2 MB: por encima avisa en vez de reventar el `localStorage` del
+    resto de la app. Un guardado corrupto o sin tomas se ignora sin romper.
+  - Si la sección activa guardada ya no existe, cae en la primera en vez de
+    dejar Pistas en blanco.
+  - Botón «Empezar de cero» y un aviso de que se guarda solo en el dispositivo.
+  - Probado con `guardado_test.js`: 28/28, con dos sesiones en el **mismo
+    contexto** del navegador (`browser.newPage()` crea uno nuevo cada vez y
+    vacía el `localStorage`, que era justo lo que había que probar).
 
 - Buscador global (`ixBuscarTodo`), con la lupa del dock, `?app=buscar` y
   Ctrl+K / ⌘K. Busca a la vez en apps, Configuración, notas, ciudades, alarmas,
