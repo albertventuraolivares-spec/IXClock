@@ -781,6 +781,13 @@
 		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
+		<!-- Buscar en toda la app (sin .dock-secondary: no se oculta en modo compacto) -->
+		<button
+			class="dock-btn"
+			onclick="ixAbrirBusqueda()"
+			title="Buscar en todo IXClocK (Ctrl+K)"
+			style="background:linear-gradient(135deg,#3a3a3c,#1c1c1e);box-shadow:0 3px 12px rgba(0,0,0,.4);color:#fff;font-size:19px;"
+		>🔎</button>
 		<!-- Reloj -->
 		<button
 			class="dock-btn"
@@ -14760,6 +14767,8 @@
 			    '🎯 AFINADOR con micrófono en IXBand: toca una cuerda y te dice la nota (La4, Mi2…), los Hz exactos y si vas alto o bajo. La aguja se pone verde cuando está afinada. Sirve para guitarra, bajo, violín, voz o cualquier instrumento',
 			    '🅰️ SECCIONES DE CANCIÓN en Pistas: monta el arreglo por bloques (Intro, Estrofa, Estribillo…). Puedes crear, renombrar, reordenar con ‹ › y DUPLICAR una sección entera con sus pistas, y con ▶▶ Toda la canción suenan todas seguidas en orden',
 			    '🛠️ Pistas: los números de compás de arriba estaban corridos y no coincidían con las regiones verdes desde que se añadió el mezclador. Ahora la regla y el cabezal rojo empiezan justo donde empieza la pista',
+			    '🔎 BUSCADOR DE VERDAD, el de la lupa del dock (o Ctrl+K): busca a la vez en apps, Configuración, notas, ciudades del reloj, alarmas, fondos, estilos de reloj y emisoras. Y al elegir hace la acción: abre la app, pone el fondo, añade la ciudad o te lleva al ajuste y te lo señala',
+			    '🔤 El buscador no distingue tildes: escribe «cancun» y encuentra «Cancún»',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -19657,7 +19666,8 @@
 			  { id:'bench',    n:'IXBench',       icon:'📊', d:'Mide la potencia de tu dispositivo', open:'openBenchmark', assets:[] },
 			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
-			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] }
+			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] },
+			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] }
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [
@@ -19810,6 +19820,234 @@
 			  t.textContent=msg; t.style.display='block';
 			  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },3200);
 			}
+			/* ═══════════════════════════════════════════
+			   BUSCADOR GLOBAL — busca en TODA la app
+			   ═══════════════════════════════════════════
+			   Hasta ahora cada cosa se buscaba en su sitio: los fondos en Fondos,
+			   las emisoras en Radio, las notas en Notas. Esto busca en todo a la
+			   vez y, al elegir un resultado, hace lo que harías tú a mano: abre la
+			   app, marca el fondo, añade la ciudad o te lleva al ajuste.
+
+			   Los fondos, relojes y emisoras no se copian a una lista aparte: se
+			   leen del propio HTML que ya los pinta, así nunca se quedan viejos. */
+			let _ixBusqRes=[], _ixBusqSel=0, _ixBusqAbierto=false;
+
+			function _ixAbrirReloj(vista){
+			  const app=document.getElementById('ios-clock-app');
+			  if(app && !app.classList.contains('open')) app.classList.add('open');
+			  try{ icaSwitchTab(vista); }catch(e){}
+			}
+			// Índice de Configuración: cada tarjeta del panel lateral, con el texto
+			// que se ve dentro. Se lee del DOM para que los ajustes nuevos entren
+			// solos, sin tener que apuntarlos aquí.
+			function _ixIndiceAjustes(){
+			  const pestanas={wallpapers:'Fondos',clocks:'Relojes',more:'Más',manual:'Manual'};
+			  const out=[];
+			  Object.keys(pestanas).forEach(function(t){
+			    const cont=document.getElementById('tab-'+t);
+			    if(!cont) return;
+			    Array.prototype.forEach.call(cont.children, function(card,k){
+			      const h=card.querySelector('.uppercase');
+			      const titulo=h?(h.textContent||'').trim():'';
+			      if(!titulo) return;
+			      if(!card.id) card.id='ix-ajuste-'+t+'-'+k;
+			      const partes=[titulo];
+			      Array.prototype.forEach.call(card.querySelectorAll('button,label,p,h3'), function(e){
+			        const tx=(e.textContent||'').trim();
+			        if(tx && tx.length<120) partes.push(tx);
+			      });
+			      out.push({tab:t, tabN:pestanas[t], id:card.id, titulo:titulo, texto:partes.join(' ')});
+			    });
+			  });
+			  return out;
+			}
+			function ixIrAjuste(tab,id){
+			  try{ if(!isSidebarVisible) toggleSidebar(); }catch(e){}
+			  try{ showTab(tab); }catch(e){}
+			  setTimeout(function(){
+			    const el=document.getElementById(id);
+			    if(!el) return;
+			    el.scrollIntoView({behavior:'smooth',block:'center'});
+			    // Un destello para que se vea cuál es, sin dejar nada pegado.
+			    const antes=el.style.boxShadow;
+			    el.style.transition='box-shadow .3s';
+			    el.style.boxShadow='0 0 0 2px #0a84ff, 0 0 22px rgba(10,132,255,.55)';
+			    setTimeout(function(){ el.style.boxShadow=antes||''; },1800);
+			  },260);
+			}
+			// Une los trozos del DOM que ya existen (fondos, relojes, emisoras).
+			// selTit apunta al trozo que lleva el NOMBRE dentro de cada tarjeta; sin
+			// él se pegarían la vista previa y el nombre («12:34Candy Pop»).
+			function _ixDeDom(sel, grupo, icono, sub, selTit){
+			  const r=[];
+			  document.querySelectorAll(sel).forEach(function(el){
+			    const et=selTit?el.querySelector(selTit):null;
+			    const titulo=((et?et.textContent:el.textContent)||'').trim().replace(/\s+/g,' ').slice(0,60);
+			    const tags=(el.getAttribute('data-tags')||el.getAttribute('data-title')||'');
+			    if(!titulo && !tags) return;
+			    r.push({ grupo:grupo, icono:icono, titulo:titulo||tags.slice(0,40), sub:sub,
+			                  texto:titulo+' '+tags, ir:function(){ el.click(); } });
+			  });
+			  return r;
+			}
+			// Sin tildes y en minúsculas: quien escribe «cancun» quiere «Cancún», y
+			// en un móvil poner la tilde cuesta más que escribir la palabra.
+			function _ixNorm(t){
+			  t=(t||'').toLowerCase();
+			  try{ return t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(e){ return t; }
+			}
+			function ixBuscarTodo(q){
+			  q=_ixNorm((q||'').trim());
+			  if(q.length<1) return [];
+			  const todo=[];
+			  // 1. Apps
+			  IX_APPS.forEach(function(a){
+			    todo.push({ grupo:'Apps', icono:a.icon, titulo:a.n, sub:a.d, texto:a.n+' '+a.d,
+			      ir:function(){ const f=window[a.open]; if(typeof f==='function') try{ f(); }catch(e){} } });
+			  });
+			  // 2. Configuración
+			  _ixIndiceAjustes().forEach(function(x){
+			    todo.push({ grupo:'Configuración', icono:'⚙️', titulo:x.titulo, sub:'Configuración › '+x.tabN,
+			      texto:x.texto, ir:function(){ ixIrAjuste(x.tab,x.id); } });
+			  });
+			  // 3. Notas
+			  try{
+			    (notes||[]).forEach(function(n){
+			      const t1=((n.content||'').split('\n')[0]||'').trim().slice(0,60)||'Nota nueva';
+			      todo.push({ grupo:'Notas', icono:'📝', titulo:t1, sub:'Nota', texto:n.content||'',
+			        ir:function(){ try{ if(!notesPanelOpen) toggleNotesPanel(); notesOpen(n.id); }catch(e){} } });
+			    });
+			  }catch(e){}
+			  // 4. Ciudades del reloj mundial
+			  try{
+			    ICA_CITIES.forEach(function(c){
+			      todo.push({ grupo:'Reloj mundial', icono:c[2]||'🌍', titulo:c[0], sub:'Añadir al reloj mundial',
+			        texto:c[0]+' '+c[1], ir:function(){ _ixAbrirReloj('world'); try{ icaPickCity(c[1]); }catch(e){} } });
+			    });
+			  }catch(e){}
+			  // 5. Alarmas
+			  try{
+			    (_icaAlarms||[]).forEach(function(a){
+			      todo.push({ grupo:'Alarmas', icono:'⏰', titulo:(a.label||'Alarma')+' · '+a.time,
+			        sub:'Alarma', texto:(a.label||'')+' '+a.time,
+			        ir:function(){ _ixAbrirReloj('alarms'); } });
+			    });
+			  }catch(e){}
+			  // 6-8. Lo que ya está pintado en pantalla
+			  try{
+			    todo.push.apply(todo,_ixDeDom('.wallpaper-card','Fondos','🖼️','Poner este fondo','.wp-label'));
+			    todo.push.apply(todo,_ixDeDom('.clock-style-btn','Relojes','🕰️','Poner este reloj','div:last-child'));
+			    todo.push.apply(todo,_ixDeDom('#stations-container button[data-title]','Emisoras','📻','Poner esta emisora','div[style*="font-weight:700"]'));
+			  }catch(e){}
+
+			  // Ordenar: primero lo que empieza igual, luego lo que lo contiene.
+			  const res=[];
+			  todo.forEach(function(x){
+			    const t=_ixNorm(x.titulo), c=_ixNorm(x.texto);
+			    let p=-1;
+			    if(t.indexOf(q)===0) p=0;
+			    else if(t.indexOf(q)>=0) p=1;
+			    else if(c.indexOf(q)>=0) p=2;
+			    if(p>=0){ x.p=p; res.push(x); }
+			  });
+			  res.sort(function(a,b){ return a.p-b.p || a.titulo.length-b.titulo.length; });
+			  // Como mucho 6 por grupo, para que la lista se lea de un vistazo, y todo
+			  // lo de un grupo junto: si no, el mismo título («FONDOS») salía dos
+			  // veces porque el orden lo mandaba la puntuación, no el grupo.
+			  const cuenta={}, cajas={}, orden=[];
+			  res.forEach(function(x){
+			    cuenta[x.grupo]=(cuenta[x.grupo]||0)+1;
+			    if(cuenta[x.grupo]>6) return;
+			    if(!cajas[x.grupo]){ cajas[x.grupo]=[]; orden.push(x.grupo); }
+			    cajas[x.grupo].push(x);
+			  });
+			  let out=[];
+			  orden.forEach(function(g){ out=out.concat(cajas[g]); });
+			  return out.slice(0,40);
+			}
+			function ixAbrirBusqueda(){
+			  let ov=document.getElementById('ix-busqueda');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-busqueda';
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482000;display:flex;align-items:flex-start;justify-content:center;padding:9vh 16px 16px;background:rgba(0,0,0,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);';
+			    ov.onclick=function(e){ if(e.target===ov) ixCerrarBusqueda(); };
+			    ov.innerHTML=
+			       '<div style="width:min(620px,96vw);max-height:78vh;display:flex;flex-direction:column;background:rgba(28,28,30,.97);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-lg,16px);box-shadow:var(--sh-3,0 24px 60px rgba(0,0,0,.7));overflow:hidden;">'
+			      +  '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);">'
+			      +    '<span style="font-size:17px;opacity:.6;">🔎</span>'
+			      +    '<input id="ix-busq-inp" placeholder="Buscar en todo IXClocK: apps, ajustes, notas, ciudades, fondos…" autocomplete="off" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;">'
+			      +    '<button onclick="ixCerrarBusqueda()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:13px;flex-shrink:0;">✕</button>'
+			      +  '</div>'
+			      +  '<div id="ix-busq-res" style="flex:1;overflow-y:auto;padding:8px;"></div>'
+			      +  '<div style="padding:8px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;opacity:.4;">↑ ↓ para moverte · Enter para abrir · Esc para salir</div>'
+			      +'</div>';
+			    document.body.appendChild(ov);
+			    const inp=ov.querySelector('#ix-busq-inp');
+			    inp.addEventListener('input',function(){ _ixBusqSel=0; ixPintarBusqueda(this.value); });
+			    inp.addEventListener('keydown',ixBusquedaTeclas);
+			  }
+			  ov.style.display='flex'; _ixBusqAbierto=true;
+			  const inp=document.getElementById('ix-busq-inp');
+			  inp.value=''; inp.focus();
+			  ixPintarBusqueda('');
+			}
+			function ixCerrarBusqueda(){
+			  const ov=document.getElementById('ix-busqueda');
+			  if(ov) ov.style.display='none';
+			  _ixBusqAbierto=false; _ixBusqRes=[];
+			}
+			function ixPintarBusqueda(q){
+			  const caja=document.getElementById('ix-busq-res');
+			  if(!caja) return;
+			  _ixBusqRes=ixBuscarTodo(q);
+			  if(!(q||'').trim()){
+			    caja.innerHTML='<div style="padding:26px 16px;text-align:center;font-size:12px;opacity:.45;line-height:1.7;">Escribe para buscar en toda la app.<br>Apps, ajustes, notas, ciudades del reloj, alarmas, fondos, relojes y emisoras.</div>';
+			    return;
+			  }
+			  if(!_ixBusqRes.length){
+			    caja.innerHTML=ixVacio('🔎','Sin resultados','No hay nada en IXClocK que coincida con «'+escapeHtml(q)+'».');
+			    return;
+			  }
+			  let html='', grupo='';
+			  _ixBusqRes.forEach(function(x,i){
+			    if(x.grupo!==grupo){
+			      grupo=x.grupo;
+			      html+='<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.4;padding:10px 10px 5px;">'+escapeHtml(grupo)+'</div>';
+			    }
+			    html+='<div class="ix-busq-fila" data-i="'+i+'" onclick="ixBusquedaIr('+i+')" style="display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm,10px);cursor:pointer;'+(i===_ixBusqSel?'background:rgba(10,132,255,.28);':'')+'">'
+			      +'<span style="font-size:17px;width:24px;text-align:center;flex-shrink:0;">'+escapeHtml(x.icono||'•')+'</span>'
+			      +'<span style="flex:1;min-width:0;">'
+			      +  '<span style="display:block;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(x.titulo||'')+'</span>'
+			      +  '<span style="display:block;font-size:10px;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(x.sub||'')+'</span>'
+			      +'</span></div>';
+			  });
+			  caja.innerHTML=html;
+			}
+			function ixBusquedaTeclas(e){
+			  if(e.key==='Escape'){ e.preventDefault(); ixCerrarBusqueda(); return; }
+			  if(!_ixBusqRes.length) return;
+			  if(e.key==='ArrowDown'){ e.preventDefault(); _ixBusqSel=(_ixBusqSel+1)%_ixBusqRes.length; }
+			  else if(e.key==='ArrowUp'){ e.preventDefault(); _ixBusqSel=(_ixBusqSel-1+_ixBusqRes.length)%_ixBusqRes.length; }
+			  else if(e.key==='Enter'){ e.preventDefault(); ixBusquedaIr(_ixBusqSel); return; }
+			  else return;
+			  ixPintarBusqueda(document.getElementById('ix-busq-inp').value);
+			  const f=document.querySelector('.ix-busq-fila[data-i="'+_ixBusqSel+'"]');
+			  if(f) f.scrollIntoView({block:'nearest'});
+			}
+			function ixBusquedaIr(i){
+			  const x=_ixBusqRes[i];
+			  if(!x) return;
+			  ixCerrarBusqueda();
+			  setTimeout(function(){ try{ x.ir(); }catch(e){} },60);
+			}
+			// Atajo del ordenador: Ctrl+K o ⌘K abre el buscador desde donde estés.
+			document.addEventListener('keydown',function(e){
+			  if((e.ctrlKey||e.metaKey) && (e.key==='k'||e.key==='K')){
+			    e.preventDefault();
+			    _ixBusqAbierto ? ixCerrarBusqueda() : ixAbrirBusqueda();
+			  }
+			});
 			ixOpenFromLink();
 		</script>
 		<script>

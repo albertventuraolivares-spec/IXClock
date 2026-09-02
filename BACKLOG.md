@@ -21,16 +21,30 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
-    y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-3. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
-    apps, control del reproductor.
-4. **Guardar la canción de IXBand** entre sesiones: hoy `_gbTakes` y
+2. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+    apps, control del reproductor. (Ctrl+K ya existe, del buscador.)
+3. **Guardar la canción de IXBand** entre sesiones: hoy `_gbTakes` y
    `_gbSecciones` viven solo en memoria y se pierden al recargar.
+4. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
+   pintadas en `#stations-container`. Valorar una fila «buscar en internet».
 
 ---
 
 ## Hecho
+
+- Buscador global (`ixBuscarTodo`), con la lupa del dock, `?app=buscar` y
+  Ctrl+K / ⌘K. Busca a la vez en apps, Configuración, notas, ciudades, alarmas,
+  fondos, estilos de reloj y emisoras, y al elegir **ejecuta la acción**.
+  - Fondos, relojes y emisoras se leen del DOM que ya los pinta
+    (`_ixDeDom`), no de una copia: así no se quedan viejos nunca.
+  - Configuración se indexa recorriendo las tarjetas del panel lateral
+    (`_ixIndiceAjustes`), así los ajustes futuros entran solos. Al elegir uno
+    abre el panel, cambia de pestaña y lo señala con un destello.
+  - Sin tildes (`_ixNorm`): «cancun» encuentra «Cancún».
+  - Máximo 6 por grupo y los de un grupo siempre juntos: si no, la misma
+    cabecera salía dos veces porque mandaba la puntuación y no el grupo.
+  - Navegación con flechas y Enter; el texto de las notas va escapado.
+  - Probado con `buscador_test.js`: 34/34.
 
 - Secciones de canción en Pistas (`_gbSecciones`, `_gbSecActiva`). Cada toma
   lleva `sec`; la vista filtra por la sección activa pero sigue pasando el
