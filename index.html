@@ -14776,6 +14776,7 @@
 			    '🔤 El buscador no distingue tildes: escribe «cancun» y encuentra «Cancún»',
 			    '💾 IXBand YA NO PIERDE TU CANCIÓN: las pistas, las secciones, el volumen, el paneo, el tempo y el compás se guardan solos en tu dispositivo y siguen ahí al volver a abrir. Antes, recargar la página lo borraba todo sin avisar. Hay un botón «Empezar de cero» para cuando quieras limpiar',
 			    '⌨️ ATAJOS DE TECLADO para quien la use en ordenador o con teclado: Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración, Esc cierra la ventana de encima, Ctrl/⌘+⇧+X cierra todas y Ctrl/⌘+/ enseña la lista. La lista también está en ❓ Ayuda',
+			    '🎵 MIS CANCIONES ahora es de verdad tuya: guarda varias canciones («💾 Guardar en Mis canciones» desde Pistas), ábrelas, cámbiales el nombre, haz copias y bórralas. La que tienes abierta sale marcada en verde y todo lo que cambies se guarda en ella sola',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18165,6 +18166,29 @@
 			    +    '<button onclick="gbView(\'tracks\')" style="background:transparent;border:none;color:#d8d8dc;padding:7px 22px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">PISTAS</button>'
 			    +  '</div>'
 			    +'</div></div>';
+			  // Tus canciones guardadas, antes que las plantillas: lo tuyo primero.
+			  gbCargarLista();
+			  if(_gbCanciones.length){
+			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.45;margin-bottom:12px;">TUS CANCIONES</div>';
+			    s+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:22px 18px;max-width:980px;margin-bottom:34px;">';
+			    _gbCanciones.forEach(function(c){
+			      const d=c.datos||{}, nt=(d.takes||[]).length, ns=(d.secciones||[]).length;
+			      const abierta=c.id===_gbCancionActual;
+			      s+='<div style="text-align:center;">'
+			        +'<div onclick="gbAbrirCancion(\''+c.id+'\')" title="Abrir" style="cursor:pointer;width:104px;height:104px;margin:0 auto;border-radius:24px;background:linear-gradient(135deg,#0a84ff,#5e5ce6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 6px 16px rgba(0,0,0,.4);'+(abierta?'outline:3px solid #30d158;outline-offset:3px;':'')+'">'
+			        +  '<span style="font-size:34px;">🎵</span>'
+			        +  '<span style="font-size:9px;opacity:.85;">'+nt+' pista'+(nt===1?'':'s')+' · '+ns+' sec.</span>'
+			        +'</div>'
+			        +'<div id="gb-cancion-n-'+c.id+'" style="font-size:13px;color:#d8d8dc;margin-top:9px;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(c.nombre)+'</div>'
+			        +'<div style="display:flex;gap:5px;justify-content:center;margin-top:5px;">'
+			        +  '<button onclick="gbRenombrarCancion(\''+c.id+'\')" title="Cambiar el nombre" style="background:rgba(255,255,255,.1);border:none;color:#d8d8dc;border-radius:6px;font-size:11px;padding:3px 7px;cursor:pointer;">✎</button>'
+			        +  '<button onclick="gbDuplicarCancion(\''+c.id+'\')" title="Hacer una copia" style="background:rgba(255,255,255,.1);border:none;color:#d8d8dc;border-radius:6px;font-size:11px;padding:3px 7px;cursor:pointer;">⧉</button>'
+			        +  '<button onclick="gbBorrarCancion(\''+c.id+'\')" title="Borrar esta canción" style="background:rgba(255,255,255,.1);border:none;color:#ff6961;border-radius:6px;font-size:11px;padding:3px 7px;cursor:pointer;">✕</button>'
+			        +'</div></div>';
+			    });
+			    s+='</div>';
+			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.45;margin-bottom:12px;">EMPEZAR UNA NUEVA</div>';
+			  }
 			  s+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:30px 22px;max-width:980px;">';
 			  s+='<div onclick="gbOpenTemplate(\'new\')" style="cursor:pointer;text-align:center;">'
 			    +'<div style="width:104px;height:104px;margin:0 auto;border:3px dashed #8e8e93;border-radius:24px;"></div>'
@@ -18489,7 +18513,7 @@
 			  // Espera un poco: mover un mando de volumen dispara muchos cambios
 			  // seguidos y no hace falta escribir en el disco en cada píxel.
 			  clearTimeout(_gbGuardarTimer);
-			  _gbGuardarTimer=setTimeout(gbGuardarCancion,600);
+			  _gbGuardarTimer=setTimeout(function(){ gbGuardarCancion(); _gbSincronizarCancion(); },600);
 			}
 			function gbGuardarCancion(){
 			  try{
@@ -18531,8 +18555,112 @@
 			function gbBorrarCancionGuardada(){
 			  try{ localStorage.removeItem(GB_CLAVE_CANCION); }catch(e){}
 			  _gbTakes=[]; _gbSecciones=[{id:'s1',nombre:'A'}]; _gbSecActiva='s1'; _gbSecSeq=1;
+			  _gbCancionActual=null;   // se sale de la cancion abierta, no se vacia la guardada
 			  gbRenderTracks();
-			  _gbEstado('🗑️ Canción borrada. Empiezas de cero.');
+			  _gbEstado('🗑️ Empiezas de cero. Lo que hubiera en Mis canciones sigue ahí.');
+			}
+			/* ── MIS CANCIONES: varias guardadas, no solo la última ───────────
+			   El guardado automático protege lo que estás tocando ahora. Esto es
+			   lo otro: poder tener varias canciones a la vez, abrirlas, copiarlas
+			   y borrarlas, que es para lo que sirve «Mis canciones». Mientras una
+			   está abierta, cada cambio se escribe también en ella, como un
+			   documento de verdad.                                              */
+			const GB_CLAVE_LISTA='ixband_canciones_v1';
+			const GB_MAX_LISTA=3500000;   // ~3,5 MB entre todas
+			let _gbCanciones=[], _gbCancionActual=null;
+			function gbCargarLista(){
+			  try{
+			    const d=JSON.parse(localStorage.getItem(GB_CLAVE_LISTA)||'null');
+			    _gbCanciones=Array.isArray(d)?d:[];
+			  }catch(e){ _gbCanciones=[]; }
+			  return _gbCanciones;
+			}
+			function gbGuardarLista(){
+			  try{
+			    const txt=JSON.stringify(_gbCanciones);
+			    if(txt.length>GB_MAX_LISTA){ _gbEstado('⚠️ No cabe otra canción. Borra alguna de Mis canciones.'); return false; }
+			    localStorage.setItem(GB_CLAVE_LISTA,txt);
+			    return true;
+			  }catch(e){ _gbEstado('⚠️ No se pudo guardar en este dispositivo.'); return false; }
+			}
+			function _gbEstadoActual(){
+			  return { bpm:_gbBpm, compas:_gbCompas, secciones:_gbSecciones,
+			           secActiva:_gbSecActiva, secSeq:_gbSecSeq, takes:_gbTakes };
+			}
+			// Copia profunda por JSON: si se guardara la referencia, seguir tocando
+			// cambiaria tambien la cancion ya guardada.
+			function _gbClonar(x){ return JSON.parse(JSON.stringify(x)); }
+			function gbGuardarComo(){
+			  if(!_gbTakes.length){ _gbEstado('No hay nada que guardar: graba y guarda alguna toma primero.'); return; }
+			  gbCargarLista();
+			  const c={ id:'c'+Date.now(), nombre:'Canción '+(_gbCanciones.length+1),
+			            fecha:Date.now(), datos:_gbClonar(_gbEstadoActual()) };
+			  _gbCanciones.unshift(c);
+			  if(!gbGuardarLista()){ _gbCanciones.shift(); return; }
+			  _gbCancionActual=c.id;
+			  gbBuildSongs();
+			  _gbEstado('💾 Guardada como «'+c.nombre+'». Está en Mis canciones.');
+			}
+			function gbAbrirCancion(id){
+			  gbCargarLista();
+			  const c=_gbCanciones.find(function(x){ return x.id===id; });
+			  if(!c || !c.datos) return;
+			  const d=_gbClonar(c.datos);
+			  _gbTakes=Array.isArray(d.takes)?d.takes:[];
+			  _gbSecciones=(Array.isArray(d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1',nombre:'A'}];
+			  _gbSecActiva=(d.secActiva && _gbSecIdx(d.secActiva)>=0)?d.secActiva:_gbSecciones[0].id;
+			  _gbSecSeq=d.secSeq||_gbSecciones.length;
+			  if(d.bpm) _gbBpm=d.bpm;
+			  if(d.compas) _gbCompas=d.compas;
+			  const te=document.getElementById('gb-lcd-tempo'); if(te) te.textContent=_gbBpm;
+			  _gbCancionActual=id;
+			  gbGuardarCancion();
+			  gbRenderTracks(); gbView('tracks');
+			  _gbEstado('🎵 «'+c.nombre+'» abierta.');
+			}
+			function gbDuplicarCancion(id){
+			  gbCargarLista();
+			  const i=_gbCanciones.findIndex(function(x){ return x.id===id; });
+			  if(i<0) return;
+			  const copia=_gbClonar(_gbCanciones[i]);
+			  copia.id='c'+Date.now(); copia.nombre=_gbCanciones[i].nombre+' (copia)'; copia.fecha=Date.now();
+			  _gbCanciones.splice(i+1,0,copia);
+			  if(!gbGuardarLista()){ _gbCanciones.splice(i+1,1); return; }
+			  gbBuildSongs();
+			}
+			function gbBorrarCancion(id){
+			  gbCargarLista();
+			  _gbCanciones=_gbCanciones.filter(function(x){ return x.id!==id; });
+			  gbGuardarLista();
+			  if(_gbCancionActual===id) _gbCancionActual=null;   // deja de escribir en algo que ya no existe
+			  gbBuildSongs();
+			}
+			// Renombrar sin ventanitas, igual que las secciones.
+			function gbRenombrarCancion(id){
+			  const c=_gbCanciones.find(function(x){ return x.id===id; });
+			  const el=document.getElementById('gb-cancion-n-'+id);
+			  if(!c || !el) return;
+			  el.innerHTML='<input id="gb-cancion-inp" value="'+escapeHtml(c.nombre)+'" maxlength="40" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font:inherit;text-align:center;outline:none;">';
+			  const inp=document.getElementById('gb-cancion-inp'); if(!inp) return;
+			  inp.focus(); inp.select();
+			  let hecho=false;
+			  const guardar=function(){ if(hecho) return; hecho=true;
+			    const v=inp.value.trim(); if(v) c.nombre=v;
+			    gbGuardarLista(); gbBuildSongs(); };
+			  inp.onblur=guardar;
+			  inp.onkeydown=function(e){
+			    if(e.key==='Enter'){ e.preventDefault(); guardar(); }
+			    else if(e.key==='Escape'){ hecho=true; gbBuildSongs(); }
+			  };
+			}
+			// Mientras una canción está abierta, sus cambios se guardan en ella.
+			function _gbSincronizarCancion(){
+			  if(!_gbCancionActual) return;
+			  gbCargarLista();
+			  const c=_gbCanciones.find(function(x){ return x.id===_gbCancionActual; });
+			  if(!c){ _gbCancionActual=null; return; }
+			  c.datos=_gbClonar(_gbEstadoActual()); c.fecha=Date.now();
+			  gbGuardarLista();
 			}
 			function gbSaveTake(){
 			  const s=document.getElementById('gb-status');
@@ -18632,7 +18760,8 @@
 			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
 			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
-			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Borra TODAS las pistas y secciones guardadas en este dispositivo" style="color:#ff6961;">🗑️ Empezar de cero</button>'
+			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
+			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
 			    +'</div>';
 			  if(!tomas.length){

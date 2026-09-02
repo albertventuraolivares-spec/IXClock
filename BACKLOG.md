@@ -21,16 +21,26 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Varias canciones guardadas** en IXBand, no solo la última: «Mis canciones»
-   (`gbBuildSongs`) hoy es un selector de plantillas, no una lista de lo tuyo.
-3. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
+2. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
    pintadas en `#stations-container`. Valorar una fila «buscar en internet».
-4. **Exportar la canción de IXBand** a un archivo de audio, para poder
+3. **Exportar la canción de IXBand** a un archivo de audio, para poder
    compartirla fuera de la app.
+4. **Compartir un enlace** de una canción, si cabe en la URL.
 
 ---
 
 ## Hecho
+
+- «Mis canciones» pasa a ser una lista de verdad (`_gbCanciones`, clave
+  `ixband_canciones_v1`), encima de las plantillas de género que ya estaban.
+  Guardar como, abrir, renombrar en línea, duplicar y borrar.
+  - `_gbCancionActual` marca la canción abierta: mientras lo esté, cada cambio
+    se escribe también en ella (`_gbSincronizarCancion`), como un documento.
+  - Todo se clona con `_gbClonar` al guardar, abrir y duplicar. Sin eso, seguir
+    tocando modificaría la canción ya guardada, porque sería la misma lista.
+  - «Empezar de cero» vacía lo que tienes ahora y **no** toca la lista.
+  - Tope conjunto de 3,5 MB con aviso; lista corrupta se ignora.
+  - Probado con `canciones_test.js`: 33/33.
 
 - Atajos de teclado (`IX_ATAJOS`): Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración,
   Esc cerrar la de encima, Ctrl/⌘+⇧+X cerrar todas, Ctrl/⌘+/ ver la lista.
