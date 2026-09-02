@@ -39,3 +39,20 @@ node pruebas/auditoria.js
 > los de la pantalla de inicio y Configuración. Los de dentro de IXBand quedan
 > fuera a propósito: es un estudio con la pantalla muy apretada y allí el
 > mínimo de 40 px sacaría los controles fuera de la pantalla.
+
+## `offline.js`
+Comprueba que la promesa de «funciona sin internet» es cierta. Abre la app una
+vez con red para que se instale el service worker, **apaga el servidor** y
+vuelve a abrirla. Con el servidor apagado no hay forma de que llegue nada de
+fuera: si la página se pinta, sale del almacén del navegador.
+
+```
+node pruebas/offline.js
+```
+
+Última pasada: **12/12**. Sin red abren el armazón, los estilos, el código,
+IXBand entero y el buscador.
+
+> Se apaga el servidor en vez de contar peticiones: el service worker refresca
+> en segundo plano lo que ya tiene guardado, y ese conteo daba falsos avisos.
+

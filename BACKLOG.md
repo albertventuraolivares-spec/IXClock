@@ -42,6 +42,12 @@ empezar y se actualiza antes de subir.
   - `pruebas/syncheck.js` también se guardó en el repo. Nada de esa carpeta lo
     carga `index.html`.
 
+- **Comprobado que funciona sin internet de verdad** (`pruebas/offline.js`,
+  12/12): se instala el service worker, se **apaga el servidor** y la app
+  vuelve a abrir con sus estilos, su código, IXBand entero y el buscador.
+  Guarda 13 archivos del armazón. Es la prueba de la promesa de «guardar para
+  usar sin internet» que se le enseña al usuario en Configuración.
+
 - Exportar la canción a un archivo de audio (`gbExportarCancion`). Se graba la
   salida del maestro (`_gbBusOut`, la salida del compresor) con `MediaRecorder`
   mientras suena `gbPlayCancion()`, así el archivo lleva la reverb y la mezcla.
