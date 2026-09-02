@@ -12141,7 +12141,7 @@
 			    row.innerHTML = `
 			      <div>
 			        <div class="alarm-time">${fmtAMPM(a.hour,a.minute)}</div>
-			        <div class="alarm-label">${a.label}</div>
+			        <div class="alarm-label">${escapeHtml(a.label)}</div>
 			      </div>
 			      <div class="flex items-center gap-2">
 			        <div class="toggle-switch ${a.enabled?'on':''}" onclick="toggleAlarmEnabled('${a.id}')"><div class="knob-sw"></div></div>
@@ -12450,7 +12450,7 @@
 			    const row = document.createElement('div');
 			    row.className = 'note-row';
 			    row.onclick = ()=>notesOpen(n.id);
-			    row.innerHTML = `<div class="note-title">${title}</div><div class="note-meta"><span>${notesFormatDate(n.updatedAt||Date.now())}</span>${rest ? '<span class="note-snippet">'+rest+'</span>' : ''}</div>`;
+			    row.innerHTML = `<div class="note-title">${escapeHtml(title)}</div><div class="note-meta"><span>${notesFormatDate(n.updatedAt||Date.now())}</span>${rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : ''}</div>`;
 			    list.appendChild(row);
 			  });
 			}
@@ -14667,6 +14667,9 @@
 			    '🎮 Emulador: si no carga, ahora te dice QUÉ servidor falló de los 4 que prueba y qué hacer (cambiar de conexión o quitar el bloqueador), en vez del genérico «revisa tu conexión»',
 			    '🖐️ El gesto de 3 dedos ya NO se dispara mientras tocas algo: solo abre el conmutador si los tres dedos caen en zona vacía y estás en la pantalla de inicio. Antes saltaba aunque estuvieras tocando los pads o las cuerdas de IXBand, o jugando',
 			    '✕ Botón «Cerrar todas las ventanas» en el conmutador de apps: cierra todo de golpe y para lo que estuviera sonando o siguiendo tu ubicación. Solo aparece si hay algo abierto',
+			    '🔐 Seguridad: una nota o una alarma con código dentro (por ejemplo <img onerror=...>) llegaba a EJECUTARSE al mostrarse. Ahora tu texto se muestra tal cual, como texto, sin ejecutar nada',
+			    '🛠️ El atajo «Navegador» del icono instalado no abría nada (apuntaba a un nombre que no existía). Ya funciona',
+			    '📡 La tarjeta «Buscador» decía que buscaba en todo IXClocK pero solo buscaba emisoras: ahora se llama «Buscador de canales» y dice lo que hace de verdad',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -19089,7 +19092,7 @@
 			  { id:'bench',    n:'IXBench',       icon:'📊', d:'Mide la potencia de tu dispositivo', open:'openBenchmark', assets:[] },
 			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
-			  { id:'buscador', n:'Buscador',      icon:'🔎', d:'Busca en todo IXClocK', open:'openSmartFinderModal', assets:[] }
+			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] }
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [

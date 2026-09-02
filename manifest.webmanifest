@@ -26,6 +26,6 @@
   ],
   "shortcuts": [
     { "name": "IXBand", "short_name": "IXBand", "url": "/?app=ixband", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Navegador", "short_name": "Navegador", "url": "/?app=browser", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    { "name": "Navegador", "short_name": "Navegador", "url": "/?app=navegador", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }
