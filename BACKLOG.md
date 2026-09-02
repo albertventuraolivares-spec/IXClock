@@ -21,17 +21,27 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
-   piden Grabadora y Sampler.
-3. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-4. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+2. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+3. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-5. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+4. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Afinador con micrófono en IXBand (`gbBuildAfinador`). Detecta el tono por
+  autocorrelación (`_gbFrecuenciaDe`) con recorte de silencios e interpolación
+  parabólica del pico, para no confundir la fundamental con un armónico, y lo
+  pasa a nota con `_gbNotaDe` (MIDI 69 = La4 = 440 Hz). Nota grande, Hz, y aguja
+  que se pone verde dentro de ±5 centésimas.
+  - El bucle se limita a 20 lecturas/segundo: la autocorrelación es O(n²) sobre
+    2048 muestras y a 60 fps calentaba el móvil sin ganar precisión.
+  - Suelta el micrófono al parar, al cambiar de instrumento **y si el montaje
+    del audio falla a medias** (ese último caso dejaba el micrófono abierto).
+  - Probado con `afinador_test.js`: 29/29, incluyendo leer un MediaStream real
+    de 440 Hz generado por la tarjeta de sonido.
 
 - Cuenta atrás antes de grabar (un compás de claqueta con el número en pantalla,
   reutilizando `_gbTick`) y compás configurable 4/4, 3/4, 6/8, 2/4 en `_gbCompas`,

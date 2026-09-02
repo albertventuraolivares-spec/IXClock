@@ -14757,6 +14757,7 @@
 			    '🎛️ MEZCLADOR en Pistas de IXBand: cada pista tiene su volumen y su paneo (izquierda/derecha), además de silenciar. Y botón SOLO para oír una sola pista y callar las demás',
 			    '1️⃣ CUENTA ATRÁS antes de grabar: pulsas ⏺ y suena un compás de claqueta con el número en grande, para saber dónde entrar. Se activa con el botón 1·2·3 y se cancela pulsando ⏺ otra vez',
 			    '🎼 COMPÁS configurable: 4/4, 3/4, 6/8 y 2/4. Cambia lo que cuenta el reloj de arriba y los golpes de la claqueta',
+			    '🎯 AFINADOR con micrófono en IXBand: toca una cuerda y te dice la nota (La4, Mi2…), los Hz exactos y si vas alto o bajo. La aguja se pone verde cuando está afinada. Sirve para guitarra, bajo, violín, voz o cualquier instrumento',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -16539,6 +16540,7 @@
 			    +  '<div id="gb-amp-area" style="display:none;flex:1;flex-direction:column;"></div>'
 			    +  '<div id="gb-smartdrums-area" style="display:none;flex:1;overflow:auto;"></div>'
 			    +  '<div id="gb-sampler-area" style="display:none;flex:1;overflow:auto;"></div>'
+			    +  '<div id="gb-tuner-area" style="display:none;flex:1;"></div>'
 			    +'</div>'
 			    +'<div id="gb-loops" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
 			    +'<div id="gb-tracks" style="flex:1;overflow-y:auto;padding:18px;display:none;"></div>'
@@ -16570,6 +16572,7 @@
 			  {id:'audiorec', icon:'🎤', n:'Grabadora',      d:'Graba tu voz con efectos: eco, robot, ardilla…'},
 			  {id:'amp',      icon:'🔊', n:'Amplificador',   d:'Amplis y pedales de guitarra: distorsión, wah, delay'},
 			  {id:'sampler',  icon:'🎵', n:'Sampler',        d:'Graba un sonido y tócalo en el teclado'},
+			  {id:'tuner',    icon:'🎯', n:'Afinador',       d:'Afina tu guitarra o cualquier instrumento'},
 			  {id:'smartguitar',icon:'🎸', n:'Guitarra Smart', d:'6 cuerdas de verdad: rasguea con el dedo o el lápiz'},
 			  {id:'smartbass',  icon:'🎸', n:'Bajo Smart',     d:'4 cuerdas graves: rasguea y pulsa notas'},
 			  {id:'smartstrings',icon:'🎻', n:'Cuerdas Smart',  d:'Orquesta de cuerdas para rasguear'},
@@ -16591,8 +16594,9 @@
 			  if(id==='loops'){ gbView('loops'); return; }
 			  if(id==='tracks'){ gbView('tracks'); return; }
 			  gbView('inst');
-			  ['gb-kb-wrap','gb-drums-area','gb-chord-area','gb-synth-area','gb-drummer-area','gb-beatseq-area','gb-audiorec-area','gb-amp-area','gb-smartdrums-area','gb-sampler-area'].forEach(function(x){ const e=document.getElementById(x); if(e) e.style.display='none'; });
+			  ['gb-kb-wrap','gb-drums-area','gb-chord-area','gb-synth-area','gb-drummer-area','gb-beatseq-area','gb-audiorec-area','gb-amp-area','gb-smartdrums-area','gb-sampler-area','gb-tuner-area'].forEach(function(x){ const e=document.getElementById(x); if(e) e.style.display='none'; });
 			  gbDrummerStop(); gbSeqStop(); gbSmartDrumsStop(); _gbAmpOn=false;
+			  try{ gbAfinadorParar(); }catch(e){}   // suelta el micrófono al cambiar de instrumento
 			  const bar=document.getElementById('gb-inst-bar');
 			  if(id==='keyboard'){
 			    document.getElementById('gb-kb-wrap').style.display='flex';
@@ -16646,6 +16650,11 @@
 			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎵 Sampler</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Graba un sonido corto y tócalo como instrumento</span>';
 			    gbBuildSampler(); _gbSelectedInstrument='sample';
 			    document.getElementById('gb-status').textContent='🎵 Sampler · graba un sonido y toca el teclado';
+			  } else if(id==='tuner'){
+			    document.getElementById('gb-tuner-area').style.display='flex';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎯 Afinador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca una nota cerca del micrófono</span>';
+			    gbBuildAfinador(); _gbSelectedInstrument='tuner';
+			    document.getElementById('gb-status').textContent='🎯 Afinador · pulsa Escuchar';
 			  }
 			}
 			// ===== Teclado (piano realista con octavas, voces y glissando) =====
@@ -17292,6 +17301,130 @@
 			  src.start(); _gbVoiceSrc=src;
 			  const f=GB_VOICE_FX.find(function(x){ return x.id===fx; });
 			  _gbMicStatus('▶ Sonando con efecto: '+(f?f.n:fx));
+			}
+			// ── AFINADOR con micrófono ───────────────────────────────────────────
+			// Detecta el tono por autocorrelación: busca cada cuánto se repite la
+			// onda. Es lo que mejor funciona con instrumentos reales, porque no se
+			// deja engañar por los armónicos como sí pasa mirando solo el espectro.
+			const GB_NOTAS=['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+			let _gbAfStream=null,_gbAfAnalyser=null,_gbAfRAF=null,_gbAfBuf=null,_gbAfOn=false,_gbAfUltima=0;
+			function _gbFrecuenciaDe(buf, sr){
+			  // Si apenas hay señal, no intentamos adivinar nada.
+			  let energia=0;
+			  for(let i=0;i<buf.length;i++) energia+=buf[i]*buf[i];
+			  if(Math.sqrt(energia/buf.length) < 0.012) return -1;
+			  // Recorta los extremos silenciosos para que la repetición se vea limpia.
+			  let ini=0, fin=buf.length-1, umbral=0.2;
+			  while(ini<buf.length/2 && Math.abs(buf[ini])<umbral) ini++;
+			  while(fin>buf.length/2 && Math.abs(buf[fin])<umbral) fin--;
+			  const b=buf.slice(ini,fin), n=b.length;
+			  if(n<256) return -1;
+			  const c=new Float32Array(n).fill(0);
+			  for(let d=0;d<n;d++) for(let i=0;i<n-d;i++) c[d]+=b[i]*b[i+d];
+			  // Salta el pico de d=0 y busca el siguiente máximo: ese es el periodo.
+			  let d=0; while(d<n-1 && c[d]>c[d+1]) d++;
+			  let max=-1, pos=-1;
+			  for(let i=d;i<n;i++) if(c[i]>max){ max=c[i]; pos=i; }
+			  if(pos<=0) return -1;
+			  // Ajuste fino con una parábola entre los tres puntos del pico.
+			  const y1=c[pos-1]||0, y2=c[pos], y3=c[pos+1]||0;
+			  const a=(y1+y3-2*y2)/2, b2=(y3-y1)/2;
+			  const periodo = a ? pos - b2/(2*a) : pos;
+			  const f = sr/periodo;
+			  return (f>55 && f<1800) ? f : -1;
+			}
+			function _gbNotaDe(freq){
+			  // 69 = La4 = 440 Hz en la numeración MIDI.
+			  const midi = 69 + 12*Math.log2(freq/440);
+			  const redondeada = Math.round(midi);
+			  const cents = Math.round((midi-redondeada)*100);   // desviación en centésimas
+			  return { nombre: GB_NOTAS[((redondeada%12)+12)%12],
+			           octava: Math.floor(redondeada/12)-1,
+			           cents: cents };
+			}
+			function gbBuildAfinador(){
+			  const area=document.getElementById('gb-tuner-area');
+			  area.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:24px;';
+			  area.innerHTML=
+			     '<div id="gb-af-nota" style="font-size:88px;font-weight:200;line-height:1;font-variant-numeric:tabular-nums;">—</div>'
+			    +'<div id="gb-af-hz" style="font-size:13px;opacity:.5;">Pulsa Escuchar y toca una nota</div>'
+			    +'<div style="position:relative;width:min(420px,88vw);height:14px;background:rgba(255,255,255,.08);border-radius:var(--r-full,999px);overflow:hidden;">'
+			    +  '<div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.45);"></div>'
+			    +  '<div id="gb-af-aguja" style="position:absolute;left:50%;top:0;bottom:0;width:6px;border-radius:3px;background:#8e8e93;transform:translateX(-50%);transition:left .08s linear,background .15s;"></div>'
+			    +'</div>'
+			    +'<div style="display:flex;justify-content:space-between;width:min(420px,88vw);font-size:10px;opacity:.4;"><span>♭ bajo</span><span>afinado</span><span>alto ♯</span></div>'
+			    +'<button id="gb-af-btn" onclick="gbAfinadorToggle()" style="margin-top:8px;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;font-size:14px;padding:13px 30px;border-radius:var(--r-md,12px);cursor:pointer;">🎤 Escuchar</button>'
+			    +'<div style="font-size:11px;opacity:.4;text-align:center;max-width:300px;line-height:1.5;">Toca una cuerda o una nota cerca del micrófono. La aguja al centro y en verde significa que está afinada.</div>';
+			}
+			function gbAfinadorToggle(){ _gbAfOn ? gbAfinadorParar() : gbAfinadorEmpezar(); }
+			function gbAfinadorEmpezar(){
+			  const hz=document.getElementById('gb-af-hz');
+			  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ if(hz) hz.textContent='Este navegador no deja usar el micrófono.'; return; }
+			  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(stream){
+			    // Se guarda el micrófono ANTES de montar nada más: si el montaje
+			    // falla a medias, gbAfinadorParar() sabe qué tiene que soltar y el
+			    // móvil no se queda con la luz del micrófono encendida.
+			    _gbAfStream=stream;
+			    // Reusa el contexto de audio de la app (en iOS un segundo contexto se silencia).
+			    if(!_gbAudioCtx){
+			      _gbAudioCtx = (typeof getAudioCtx==='function' ? getAudioCtx() : null) || new(window.AudioContext||window.webkitAudioContext)();
+			    }
+			    if(_gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
+			    const src=_gbAudioCtx.createMediaStreamSource(stream);
+			    _gbAfAnalyser=_gbAudioCtx.createAnalyser();
+			    _gbAfAnalyser.fftSize=2048;
+			    _gbAfBuf=new Float32Array(_gbAfAnalyser.fftSize);
+			    src.connect(_gbAfAnalyser);   // no se conecta a la salida: evita acople
+			    _gbAfOn=true;
+			    const b=document.getElementById('gb-af-btn');
+			    if(b){ b.textContent='⏹ Parar'; b.style.background='linear-gradient(135deg,#ff453a,#d0342b)'; }
+			    _gbAfinadorBucle();
+			  }).catch(function(err){
+			    gbAfinadorParar();   // deja todo cerrado, incluido el micrófono
+			    if(hz) hz.textContent = (err && err.name==='NotAllowedError')
+			      ? 'No diste permiso para el micrófono.'
+			      : 'No se pudo abrir el micrófono en este dispositivo.';
+			  });
+			}
+			function _gbAfinadorBucle(){
+			  if(!_gbAfOn || !_gbAfAnalyser) return;
+			  // La autocorrelacion es cara (compara la onda consigo misma miles de
+			  // veces). A 60 veces por segundo calentaria el movil sin ganar nada:
+			  // el oido no nota mas de ~20 lecturas por segundo en un afinador.
+			  const ahora=(performance&&performance.now)?performance.now():Date.now();
+			  if(ahora-_gbAfUltima >= 50){
+			    _gbAfUltima=ahora;
+			    _gbAfAnalyser.getFloatTimeDomainData(_gbAfBuf);
+			    const f=_gbFrecuenciaDe(_gbAfBuf,_gbAudioCtx.sampleRate);
+			    gbAfinadorPintar(f);
+			  }
+			  _gbAfRAF=requestAnimationFrame(_gbAfinadorBucle);
+			}
+			function gbAfinadorPintar(f){
+			  const n=document.getElementById('gb-af-nota'), hz=document.getElementById('gb-af-hz'), ag=document.getElementById('gb-af-aguja');
+			  if(!n) return;
+			  if(f<=0){ n.textContent='—'; if(hz) hz.textContent='Escuchando…'; if(ag){ ag.style.left='50%'; ag.style.background='#8e8e93'; } return; }
+			  const d=_gbNotaDe(f);
+			  n.textContent=d.nombre+d.octava;
+			  const afinada=Math.abs(d.cents)<=5;
+			  if(hz) hz.textContent=f.toFixed(1)+' Hz · '+(afinada?'afinada':(d.cents<0?d.cents+' bajo':'+'+d.cents+' alto'));
+			  if(ag){
+			    const pct=50+Math.max(-50,Math.min(50,d.cents))*0.9;   // ±50 centésimas de margen
+			    ag.style.left=pct+'%';
+			    ag.style.background=afinada?'#30d158':(Math.abs(d.cents)<=15?'#ffd60a':'#ff453a');
+			  }
+			  n.style.color=afinada?'#30d158':'#fff';
+			}
+			function gbAfinadorParar(){
+			  _gbAfOn=false;
+			  if(_gbAfRAF){ cancelAnimationFrame(_gbAfRAF); _gbAfRAF=null; }
+			  if(_gbAfStream){ _gbAfStream.getTracks().forEach(function(t){ t.stop(); }); _gbAfStream=null; }
+			  _gbAfAnalyser=null;
+			  const b=document.getElementById('gb-af-btn');
+			  if(b){ b.textContent='🎤 Escuchar'; b.style.background='linear-gradient(135deg,#0a84ff,#5e5ce6)'; }
+			  const n=document.getElementById('gb-af-nota'); if(n){ n.textContent='—'; n.style.color='#fff'; }
+			  const hz=document.getElementById('gb-af-hz'); if(hz) hz.textContent='Pulsa Escuchar y toca una nota';
+			  const ag=document.getElementById('gb-af-aguja'); if(ag){ ag.style.left='50%'; ag.style.background='#8e8e93'; }
 			}
 			// ===== SAMPLER: graba un sonido y tócalo afinado en el teclado =====
 			let _gbSampleBuf=null, _gbSampleRec=null, _gbSampleChunks=[], _gbSampleStream=null;
