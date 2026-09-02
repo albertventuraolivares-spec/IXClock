@@ -14758,6 +14758,8 @@
 			    '1️⃣ CUENTA ATRÁS antes de grabar: pulsas ⏺ y suena un compás de claqueta con el número en grande, para saber dónde entrar. Se activa con el botón 1·2·3 y se cancela pulsando ⏺ otra vez',
 			    '🎼 COMPÁS configurable: 4/4, 3/4, 6/8 y 2/4. Cambia lo que cuenta el reloj de arriba y los golpes de la claqueta',
 			    '🎯 AFINADOR con micrófono en IXBand: toca una cuerda y te dice la nota (La4, Mi2…), los Hz exactos y si vas alto o bajo. La aguja se pone verde cuando está afinada. Sirve para guitarra, bajo, violín, voz o cualquier instrumento',
+			    '🅰️ SECCIONES DE CANCIÓN en Pistas: monta el arreglo por bloques (Intro, Estrofa, Estribillo…). Puedes crear, renombrar, reordenar con ‹ › y DUPLICAR una sección entera con sus pistas, y con ▶▶ Toda la canción suenan todas seguidas en orden',
+			    '🛠️ Pistas: los números de compás de arriba estaban corridos y no coincidían con las regiones verdes desde que se añadió el mezclador. Ahora la regla y el cabezal rojo empiezan justo donde empieza la pista',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18344,11 +18346,123 @@
 			let _gbTakes=[];
 			const GB_TRACK_ICONS={piano:'🎹',epiano:'🎹',organ:'🎹',guitar:'🎸',strings:'🎻',flute:'🪈',brass:'🎺',marimba:'🎵',musicbox:'🎶',bell:'🔔',synth:'🎛️',bass:'🎸',drums:'🥁'};
 			const GB_PX_PER_SEC=70;
+			// Dónde empieza el carril de regiones: cabecera de pista + mezclador.
+			// Tienen que coincidir con .gb-track-hdr (192px) y .gb-mix (132px) del
+			// CSS de más arriba; si cambian allí, cambian aquí, o la regla de
+			// compases deja de cuadrar con las regiones.
+			const GB_HDR_W=192, GB_MIX_W=132, GB_LANE_X=GB_HDR_W+GB_MIX_W;
+			// --- SECCIONES DE CANCIÓN (intro, estrofa, estribillo…) ------------
+			// Una canción no es una sola tirada: es un arreglo de bloques que se
+			// repiten. Cada toma pertenece a una sección; las secciones se ordenan
+			// y con «Toda la canción» suenan una detrás de otra, como el arreglo
+			// de GarageBand. Duplicar una sección copia sus tomas de verdad, así
+			// que retocar el estribillo repetido no toca el primero.
+			const GB_SEC_COLORES=['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff375f','#5ac8fa','#ffd60a'];
+			let _gbSecciones=[{id:'s1',nombre:'A'}], _gbSecActiva='s1', _gbSecSeq=1;
+			function _gbSecIdx(id){ for(let i=0;i<_gbSecciones.length;i++) if(_gbSecciones[i].id===id) return i; return -1; }
+			function _gbSecColor(id){ const i=_gbSecIdx(id); return GB_SEC_COLORES[(i<0?0:i)%GB_SEC_COLORES.length]; }
+			// Las tomas de antes de que existieran las secciones caen en la primera.
+			function _gbSecDe(t){ return t.sec || (_gbSecciones[0] ? _gbSecciones[0].id : 's1'); }
+			function _gbTomasDe(id){
+			  const r=[];
+			  _gbTakes.forEach(function(t,i){ if(_gbSecDe(t)===id) r.push({t:t,i:i}); });
+			  return r;
+			}
+			function _gbNombreSec(n){
+			  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+			  return L[n%26] + (n>=26 ? String(Math.floor(n/26)+1) : '');
+			}
+			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ _gbSecActiva=id; gbRenderTracks(); } }
+			function gbSecNueva(){
+			  _gbSecSeq++;
+			  const id='s'+_gbSecSeq;
+			  _gbSecciones.push({id:id, nombre:_gbNombreSec(_gbSecciones.length)});
+			  _gbSecActiva=id; gbRenderTracks();
+			  _gbEstado('➕ Sección nueva. Graba algo y guárdalo aquí.');
+			}
+			function gbSecDuplicar(){
+			  const i=_gbSecIdx(_gbSecActiva); if(i<0) return;
+			  _gbSecSeq++;
+			  const nueva={id:'s'+_gbSecSeq, nombre:_gbSecciones[i].nombre+' (2)'};
+			  _gbSecciones.splice(i+1,0,nueva);
+			  // Copia profunda: cada toma con sus propios eventos, no la misma lista.
+			  const copias=_gbTomasDe(_gbSecciones[i].id).map(function(x){
+			    return Object.assign({},x.t,{ sec:nueva.id, events:x.t.events.map(function(e){ return Object.assign({},e); }) });
+			  });
+			  _gbTakes=_gbTakes.concat(copias);
+			  _gbSecActiva=nueva.id; gbRenderTracks();
+			  _gbEstado('⧉ Sección duplicada con sus '+copias.length+' pista(s).');
+			}
+			function gbSecMover(dir){
+			  const i=_gbSecIdx(_gbSecActiva), j=i+dir;
+			  if(i<0 || j<0 || j>=_gbSecciones.length) return;
+			  const tmp=_gbSecciones[i]; _gbSecciones[i]=_gbSecciones[j]; _gbSecciones[j]=tmp;
+			  gbRenderTracks();
+			}
+			function gbSecBorrar(){
+			  if(_gbSecciones.length<=1){ _gbEstado('La canción necesita al menos una sección.'); return; }
+			  const i=_gbSecIdx(_gbSecActiva); if(i<0) return;
+			  const id=_gbSecciones[i].id;
+			  _gbTakes=_gbTakes.filter(function(t){ return _gbSecDe(t)!==id; });
+			  _gbSecciones.splice(i,1);
+			  _gbSecActiva=_gbSecciones[Math.min(i,_gbSecciones.length-1)].id;
+			  gbRenderTracks();
+			}
+			// Renombrar sin ventanitas del navegador: el chip se vuelve un campo.
+			function gbSecRenombrar(){
+			  const i=_gbSecIdx(_gbSecActiva); if(i<0) return;
+			  const sec=_gbSecciones[i], chip=document.getElementById('gb-sec-'+sec.id);
+			  if(!chip) return;
+			  chip.innerHTML='<input id="gb-sec-inp" value="'+escapeHtml(sec.nombre)+'" maxlength="18" style="width:96px;background:transparent;border:none;color:#fff;font:inherit;font-weight:800;outline:none;">';
+			  const inp=document.getElementById('gb-sec-inp'); if(!inp) return;
+			  inp.focus(); inp.select();
+			  let hecho=false;
+			  const guardar=function(){ if(hecho) return; hecho=true; const v=inp.value.trim(); if(v) sec.nombre=v; gbRenderTracks(); };
+			  inp.onblur=guardar;
+			  inp.onkeydown=function(e){
+			    if(e.key==='Enter'){ e.preventDefault(); guardar(); }
+			    else if(e.key==='Escape'){ hecho=true; gbRenderTracks(); }
+			  };
+			}
+			function _gbEstado(txt){ const s=document.getElementById('gb-status'); if(s) s.textContent=txt; }
+			function _gbDuracionSec(id){
+			  let m=0;
+			  _gbTomasDe(id).forEach(function(x){
+			    if(!_gbPistaSuena(x.t)) return;
+			    const d=x.t.events.length?x.t.events[x.t.events.length-1].at:0;
+			    if(d>m) m=d;
+			  });
+			  return m;
+			}
+			// Toca el arreglo entero: cada sección empieza donde acaba la anterior.
+			function gbPlayCancion(){
+			  let off=0, sonando=0;
+			  _gbSecciones.forEach(function(sec){
+			    _gbTomasDe(sec.id).forEach(function(x){
+			      if(!_gbPistaSuena(x.t)) return;
+			      gbPlayTake(x.i, off); sonando++;
+			    });
+			    const d=_gbDuracionSec(sec.id);
+			    if(d>0) off += d + 400;   // un respiro entre secciones
+			  });
+			  if(!sonando){ _gbEstado('No hay nada que sonar: guarda alguna toma primero.'); return; }
+			  _gbEstado('▶ Canción entera: '+_gbSecciones.length+' sección(es), '+Math.round(off/1000)+' s.');
+			  _gbCabezal(off);
+			}
+			function _gbCabezal(ms){
+			  const ph=document.getElementById('gb-playhead');
+			  if(!ph || ms<=200) return;
+			  ph.style.transition='none'; ph.style.left=GB_LANE_X+'px'; ph.style.opacity='1';
+			  void ph.offsetWidth;
+			  ph.style.transition='left '+ms+'ms linear';
+			  ph.style.left=(GB_LANE_X+(ms/1000)*GB_PX_PER_SEC)+'px';
+			  setTimeout(function(){ ph.style.opacity='0'; },ms+400);
+			}
 			function gbSaveTake(){
 			  const s=document.getElementById('gb-status');
 			  if(!_gbRecorded.length){ if(s) s.textContent='No hay nada grabado: ⏺ graba algo con un instrumento primero.'; return; }
 			  const t0=_gbRecorded[0].time;
-			  _gbTakes.push({ name:_gbSelectedInstrument, muted:false, solo:false, vol:1, pan:0, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
+			  _gbTakes.push({ name:_gbSelectedInstrument, sec:_gbSecActiva, muted:false, solo:false, vol:1, pan:0, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
 			  gbRenderTracks();
 			  if(s) s.textContent='💾 Toma guardada en Pistas ('+_gbTakes.length+').';
 			}
@@ -18374,62 +18488,82 @@
 			  ultimo.connect(_gbOut());
 			  return g;
 			}
-			// Si hay alguna pista en solo, solo suenan las que esten en solo.
-			function _gbHaySolo(){ return _gbTakes.some(function(t){ return t.solo; }); }
-			function _gbPistaSuena(t){ return !t.muted && (!_gbHaySolo() || t.solo); }
-			function gbPlayTake(i){
+			// Si hay alguna pista en solo, solo suenan las que esten en solo. El solo
+			// se limita a su seccion: aislar el estribillo no debe callar la estrofa.
+			function _gbHaySolo(sec){ return _gbTakes.some(function(t){ return t.solo && _gbSecDe(t)===sec; }); }
+			function _gbPistaSuena(t){ return !t.muted && (!_gbHaySolo(_gbSecDe(t)) || t.solo); }
+			function gbPlayTake(i,desde){
 			  const t=_gbTakes[i];
 			  if(!t) return;
+			  const off=desde||0;   // desplazamiento cuando suena dentro de la cancion entera
 			  const canal=_gbCanalPista(t);
 			  t.events.forEach(function(ev){
 			    setTimeout(function(){
 			      _gbSalidaPista = canal;   // gbPlayNote/gbPlayDrum salen por este canal
 			      try{ ev.type==='drum' ? gbPlayDrum(ev.drumType,ev.freq,ev.vel) : gbPlayNote(ev.freq,ev.type,ev.vel); }
 			      finally{ _gbSalidaPista = null; }
-			    }, ev.at);
+			    }, off+ev.at);
 			  });
 			}
+			// Reproduce la seccion que se esta viendo (para la cancion entera,
+			// gbPlayCancion las encadena todas).
 			function gbPlayAllTakes(){
 			  let maxDur=0;
-			  _gbTakes.forEach(function(t,i){
-			    if(!_gbPistaSuena(t)) return;
-			    gbPlayTake(i);
-			    const d=t.events.length?t.events[t.events.length-1].at:0;
+			  _gbTomasDe(_gbSecActiva).forEach(function(x){
+			    if(!_gbPistaSuena(x.t)) return;
+			    gbPlayTake(x.i);
+			    const d=x.t.events.length?x.t.events[x.t.events.length-1].at:0;
 			    if(d>maxDur) maxDur=d;
 			  });
 			  // Cabezal rojo que recorre la línea de tiempo, como en el GarageBand de Mac
-			  const ph=document.getElementById('gb-playhead');
-			  if(ph && maxDur>200){
-			    ph.style.transition='none'; ph.style.left='150px'; ph.style.opacity='1';
-			    void ph.offsetWidth;
-			    ph.style.transition='left '+maxDur+'ms linear';
-			    ph.style.left=(150+(maxDur/1000)*GB_PX_PER_SEC)+'px';
-			    setTimeout(function(){ ph.style.opacity='0'; },maxDur+400);
-			  }
+			  _gbCabezal(maxDur);
 			}
 			function gbRenderTracks(){
 			  const el=document.getElementById('gb-tracks');
 			  if(!el) return;
+			  const tomas=_gbTomasDe(_gbSecActiva);
 			  let maxMs=4000;
-			  _gbTakes.forEach(function(t){ const d=t.events.length?t.events[t.events.length-1].at:0; if(d+800>maxMs) maxMs=d+800; });
+			  tomas.forEach(function(x){ const d=x.t.events.length?x.t.events[x.t.events.length-1].at:0; if(d+800>maxMs) maxMs=d+800; });
 			  const laneW=Math.max(560,(maxMs/1000)*GB_PX_PER_SEC+40);
 			  const barMs=240000/(parseInt(_gbBpm)||120); // 4 tiempos por compás
 			  const barW=(barMs/1000)*GB_PX_PER_SEC;
-			  let ruler='<div style="position:relative;height:20px;margin-left:192px;width:'+laneW+'px;border-bottom:1px solid #333;">';
+			  let ruler='<div style="position:relative;height:20px;margin-left:'+GB_LANE_X+'px;width:'+laneW+'px;border-bottom:1px solid #333;">';
 			  for(let b=0;b*barW<laneW;b++) ruler+='<span style="position:absolute;left:'+(b*barW)+'px;font-size:9px;color:#8e8e93;border-left:1px solid #444;padding-left:3px;">'+(b+1)+'</span>';
 			  ruler+='</div>';
-			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla las reproduce todas en capas.</div>';
-			  s+='<div style="display:flex;gap:8px;margin-bottom:14px;">'
+			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla reproduce esta sección en capas.</div>';
+			  // Barra de secciones: el arreglo de la canción (intro, estrofa, estribillo…)
+			  const secIdx=_gbSecIdx(_gbSecActiva);
+			  let chips='';
+			  _gbSecciones.forEach(function(sec,k){
+			    const act=sec.id===_gbSecActiva, col=_gbSecColor(sec.id), n=_gbTomasDe(sec.id).length;
+			    chips+='<button id="gb-sec-'+sec.id+'" class="gb-chip" onclick="gbSecIr(\''+sec.id+'\')" title="'+n+' pista(s)"'
+			      +' style="border-left:4px solid '+col+';font-weight:800;'+(act?'background:'+col+'33;color:#fff;box-shadow:inset 0 0 0 1px '+col+';':'opacity:.62;')+'">'
+			      +escapeHtml(sec.nombre)+'<span style="opacity:.55;font-weight:600;margin-left:6px;">'+n+'</span></button>';
+			  });
+			  s+='<div id="gb-sec-bar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">'
+			    +'<span style="font-size:10px;opacity:.45;letter-spacing:.6px;margin-right:2px;">SECCIONES</span>'
+			    +chips
+			    +'<span style="width:10px;"></span>'
+			    +'<button class="gb-chip" onclick="gbSecNueva()" title="Añadir una sección nueva">＋</button>'
+			    +'<button class="gb-chip" onclick="gbSecDuplicar()" title="Duplicar esta sección con sus pistas">⧉</button>'
+			    +'<button class="gb-chip" onclick="gbSecRenombrar()" title="Cambiar el nombre de esta sección">✎</button>'
+			    +'<button class="gb-chip" onclick="gbSecMover(-1)" title="Mover antes"'+(secIdx<=0?' disabled style="opacity:.3;"':'')+'>‹</button>'
+			    +'<button class="gb-chip" onclick="gbSecMover(1)" title="Mover después"'+(secIdx>=_gbSecciones.length-1?' disabled style="opacity:.3;"':'')+'>›</button>'
+			    +'<button class="gb-chip" onclick="gbSecBorrar()" title="Borrar esta sección y sus pistas" style="color:#ff6961;">✕</button>'
+			    +'</div>';
+			  s+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">'
 			    +'<button class="gb-chip" onclick="gbSaveTake()" style="background:linear-gradient(180deg,#4a4a4c,#38383a);">＋ Guardar toma actual</button>'
 			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
+			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'</div>';
-			  if(!_gbTakes.length){
-			    s+=ixVacio('🎚️','Sin pistas todavía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo aquí.');
+			  if(!tomas.length){
+			    s+=ixVacio('🎚️','Sección vacía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo a esta sección.');
 			    el.innerHTML=s; return;
 			  }
-			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(192+laneW)+'px;">'+ruler;
-			  _gbTakes.forEach(function(t,i){
+			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(GB_LANE_X+laneW)+'px;">'+ruler;
+			  tomas.forEach(function(x){
+			    const t=x.t, i=x.i;
 			    const durMs=t.events.length?Math.max(400,t.events[t.events.length-1].at):400;
 			    const w=Math.max(46,(durMs/1000)*GB_PX_PER_SEC);
 			    let bars='';
@@ -18452,7 +18586,7 @@
 			      +'</div>'
 			      +'</div>';
 			  });
-			  s+='<div id="gb-playhead" style="position:absolute;top:20px;bottom:6px;left:192px;width:2px;background:#ff3b30;box-shadow:0 0 6px #ff3b30;opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;"></div>';
+			  s+='<div id="gb-playhead" style="position:absolute;top:20px;bottom:6px;left:'+GB_LANE_X+'px;width:2px;background:#ff3b30;box-shadow:0 0 6px #ff3b30;opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;"></div>';
 			  s+='</div></div>';
 			  el.innerHTML=s;
 			}

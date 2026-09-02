@@ -21,15 +21,33 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-3. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+2. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-4. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+3. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
+4. **Guardar la canción de IXBand** entre sesiones: hoy `_gbTakes` y
+   `_gbSecciones` viven solo en memoria y se pierden al recargar.
 
 ---
 
 ## Hecho
+
+- Secciones de canción en Pistas (`_gbSecciones`, `_gbSecActiva`). Cada toma
+  lleva `sec`; la vista filtra por la sección activa pero sigue pasando el
+  índice global a los botones, así que mute/solo/volumen/borrar no cambiaron.
+  - Crear, renombrar (campo en línea, sin `prompt()`), reordenar y borrar.
+  - Duplicar hace **copia profunda** de los eventos: retocar el estribillo
+    repetido no toca el primero.
+  - `gbPlayCancion()` encadena las secciones en orden con `gbPlayTake(i,off)`.
+  - El solo se acotó a su sección (`_gbHaySolo(sec)`): aislar el estribillo ya
+    no calla la estrofa durante la canción entera.
+  - Las tomas de antes, sin `sec`, caen en la primera sección (`_gbSecDe`).
+  - Probado con `secciones_test.js`: 41/41.
+
+- **Bug encontrado de paso**: la regla de compases y el cabezal rojo empezaban
+  en 192px, pero el carril arranca en 324px desde que el mezclador metió su
+  columna de 132px. Ahora sale de `GB_LANE_X = GB_HDR_W + GB_MIX_W` y el test
+  lo mide en pantalla, no en el código, para que no se vuelva a descuadrar.
 
 - Afinador con micrófono en IXBand (`gbBuildAfinador`). Detecta el tono por
   autocorrelación (`_gbFrecuenciaDe`) con recorte de silencios e interpolación
