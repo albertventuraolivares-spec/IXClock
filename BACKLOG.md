@@ -21,21 +21,23 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
-   `_gbTakes` (ya existe `muted`, falta el resto).
-3. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-4. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-5. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+2. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
+3. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
+4. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-6. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-7. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+5. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+6. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-8. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+7. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Mezclador en Pistas: volumen y paneo por pista con nodos propios colgando del
+  bus maestro (`_gbCanalPista`), más botón Solo. `_gbSalidaPista` desvía la
+  salida de `_gbOut()` mientras se reproduce esa pista.
 
 - Escala de diseño (`--r-xs`…`--r-2xl`, `--sh-1`…`--sh-3`) junto a las variables
   que ya existían, y 52 radios casi-duplicados (7/9/11/13/18/22/26 px) alineados

@@ -14754,6 +14754,7 @@
 			    '🖼️ Pantallas vacías con gracia: Notas, Pistas de IXBand, el buscador de canales y Mi Nube ahora te dicen qué hacer cuando no hay nada, con su icono. La galería de Mi Nube antes no decía absolutamente nada',
 			    '👋 BIENVENIDA la primera vez: 3 pantallas cortas que explican qué es IXClocK, el gesto de 3 dedos y cómo instalarla como app. Solo sale una vez, y puedes volver a verla desde ❓ Ayuda',
 			    '✨ Acabado más parejo: las esquinas de los paneles usaban 12 medidas distintas al azar y la app se veía hecha a trozos. Ahora siguen una sola escala, y las ventanas comparten la misma sombra',
+			    '🎛️ MEZCLADOR en Pistas de IXBand: cada pista tiene su volumen y su paneo (izquierda/derecha), además de silenciar. Y botón SOLO para oír una sola pista y callar las demás',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -16470,14 +16471,19 @@
 			      +'.gb-smp-key{width:56px;height:96px;border-radius:0 0 8px 8px;border:1px solid #a9a9ad;border-top:none;background:linear-gradient(180deg,#fdfdfd,#e2e2e4);color:#8e8e93;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;}'
 			      +'.gb-smp-key:active{background:linear-gradient(180deg,#cfd6e6,#b9c2d8);}'
 			      +'.gb-seq-cell:active{transform:scale(.9);}'
+			      +'.gb-ms.sOn{background:#ffd60a;color:#000;}'
+			      +'.gb-mix{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 8px;flex-shrink:0;width:132px;}'
+			      +'.gb-mix label{display:flex;align-items:center;gap:5px;font-size:9px;color:#a1a1a6;}'
+			      +'.gb-mix input[type=range]{flex:1;height:3px;accent-color:#0a84ff;cursor:pointer;min-width:0;}'
+			      +'.gb-mix span{width:38px;text-align:right;font-variant-numeric:tabular-nums;}'
 			      +'.gb-kit-piece{cursor:pointer;transform-box:fill-box;transform-origin:center;transition:transform .07s ease,filter .07s ease;}'
 			      +'.gb-kit-piece:hover{filter:brightness(1.12);}'
 			      +'.gb-kit-piece.hit{transform:scale(.95);filter:brightness(1.75) drop-shadow(0 0 10px rgba(255,214,10,.75));}'
 			      +'.gb-ll-cell{height:62px;border:none;border-radius:10px;cursor:pointer;font-size:19px;position:relative;transition:transform .08s;}'
 			      +'.gb-ll-cell.on{box-shadow:0 0 0 2px #fff,0 0 14px 2px rgba(255,255,255,.25);animation:gbCellPulse 1s ease-in-out infinite;}'
 			      +'@keyframes gbCellPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}'
-			      +'.gb-track-hdr{width:150px;flex-shrink:0;display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#333335,#28282a);border-right:1px solid #000;padding:0 8px;border-radius:8px 0 0 8px;}'
-			      +'.gb-ms{width:22px;height:22px;border-radius:5px;border:1px solid #1c1c1e;background:#3a3a3c;color:#c8c8cc;font-size:10px;font-weight:800;cursor:pointer;}'
+			      +'.gb-track-hdr{width:192px;flex-shrink:0;display:flex;align-items:center;gap:6px;background:linear-gradient(180deg,#333335,#28282a);border-right:1px solid #000;padding:0 8px;border-radius:8px 0 0 8px;}'
+			      +'.gb-ms{width:21px;height:21px;flex-shrink:0;border-radius:5px;border:1px solid #1c1c1e;background:#3a3a3c;color:#c8c8cc;font-size:10px;font-weight:800;cursor:pointer;}'
 			      +'.gb-ms.mOn{background:#0a84ff;color:#fff;}'
 			      +'.gb-region{position:absolute;top:5px;bottom:5px;background:linear-gradient(180deg,#5dd97c,#2f9e4f);border:1px solid #1e7538;border-radius:6px;overflow:hidden;display:flex;align-items:center;padding:0 6px;gap:2px;box-shadow:0 2px 5px rgba(0,0,0,.35);}'
 			      +'.gb-region .bar{width:3px;background:rgba(0,40,10,.55);border-radius:2px;flex-shrink:0;}'
@@ -17665,7 +17671,8 @@
 			  const revIn=ctx.createGain(); revIn.gain.value=1; revIn.connect(conv);
 			  _gbBusIn=busIn; _gbReverbIn=revIn;
 			}
-			function _gbOut(){ _gbBuildBus(); return _gbBusIn || (_gbAudioCtx && _gbAudioCtx.destination); }
+			let _gbSalidaPista=null;   // canal de la pista que se esta reproduciendo
+			function _gbOut(){ if(_gbSalidaPista) return _gbSalidaPista; _gbBuildBus(); return _gbBusIn || (_gbAudioCtx && _gbAudioCtx.destination); }
 			function _gbReverbSend(node,amount){
 			  if(!amount) return; _gbBuildBus(); if(!_gbReverbIn) return;
 			  const g=_gbAudioCtx.createGain(); g.gain.value=amount;
@@ -18140,23 +18147,51 @@
 			  const s=document.getElementById('gb-status');
 			  if(!_gbRecorded.length){ if(s) s.textContent='No hay nada grabado: ⏺ graba algo con un instrumento primero.'; return; }
 			  const t0=_gbRecorded[0].time;
-			  _gbTakes.push({ name:_gbSelectedInstrument, muted:false, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
+			  _gbTakes.push({ name:_gbSelectedInstrument, muted:false, solo:false, vol:1, pan:0, events:_gbRecorded.map(function(e){ return Object.assign({},e,{at:e.time-t0}); }) });
 			  gbRenderTracks();
 			  if(s) s.textContent='💾 Toma guardada en Pistas ('+_gbTakes.length+').';
 			}
 			function gbToggleMute(i){ if(_gbTakes[i]){ _gbTakes[i].muted=!_gbTakes[i].muted; gbRenderTracks(); } }
+			function gbToggleSolo(i){ if(_gbTakes[i]){ _gbTakes[i].solo=!_gbTakes[i].solo; gbRenderTracks(); } }
+			function gbSetVol(i,v){ if(_gbTakes[i]){ _gbTakes[i].vol=Math.max(0,Math.min(1.5,parseFloat(v)||0)); const e=document.getElementById('gb-vol-'+i); if(e) e.textContent=Math.round(_gbTakes[i].vol*100)+'%'; } }
+			function gbSetPan(i,v){ if(_gbTakes[i]){ _gbTakes[i].pan=Math.max(-1,Math.min(1,parseFloat(v)||0)); const e=document.getElementById('gb-pan-'+i); if(e) e.textContent=_gbTextoPan(_gbTakes[i].pan); } }
+			function _gbTextoPan(p){ if(Math.abs(p)<.06) return 'Centro'; return (p<0?'Izq ':'Der ')+Math.round(Math.abs(p)*100)+'%'; }
 			function gbDeleteTake(i){ _gbTakes.splice(i,1); gbRenderTracks(); }
+			// Cada pista suena por su propio canal: volumen y paneo. Se enchufa al bus
+			// maestro, asi conserva la reverb y el limitador de toda la app.
+			function _gbCanalPista(t){
+			  if(!_gbAudioCtx) return null;
+			  const ctx=_gbAudioCtx;
+			  const g=ctx.createGain();
+			  g.gain.value = (t.vol==null?1:t.vol);
+			  let ultimo=g;
+			  if(ctx.createStereoPanner && t.pan){
+			    const p=ctx.createStereoPanner();
+			    p.pan.value=Math.max(-1,Math.min(1,t.pan));
+			    g.connect(p); ultimo=p;
+			  }
+			  ultimo.connect(_gbOut());
+			  return g;
+			}
+			// Si hay alguna pista en solo, solo suenan las que esten en solo.
+			function _gbHaySolo(){ return _gbTakes.some(function(t){ return t.solo; }); }
+			function _gbPistaSuena(t){ return !t.muted && (!_gbHaySolo() || t.solo); }
 			function gbPlayTake(i){
 			  const t=_gbTakes[i];
 			  if(!t) return;
+			  const canal=_gbCanalPista(t);
 			  t.events.forEach(function(ev){
-			    setTimeout(function(){ ev.type==='drum' ? gbPlayDrum(ev.drumType,ev.freq) : gbPlayNote(ev.freq,ev.type); }, ev.at);
+			    setTimeout(function(){
+			      _gbSalidaPista = canal;   // gbPlayNote/gbPlayDrum salen por este canal
+			      try{ ev.type==='drum' ? gbPlayDrum(ev.drumType,ev.freq,ev.vel) : gbPlayNote(ev.freq,ev.type,ev.vel); }
+			      finally{ _gbSalidaPista = null; }
+			    }, ev.at);
 			  });
 			}
 			function gbPlayAllTakes(){
 			  let maxDur=0;
 			  _gbTakes.forEach(function(t,i){
-			    if(t.muted) return;
+			    if(!_gbPistaSuena(t)) return;
 			    gbPlayTake(i);
 			    const d=t.events.length?t.events[t.events.length-1].at:0;
 			    if(d>maxDur) maxDur=d;
@@ -18179,7 +18214,7 @@
 			  const laneW=Math.max(560,(maxMs/1000)*GB_PX_PER_SEC+40);
 			  const barMs=240000/(parseInt(_gbBpm)||120); // 4 tiempos por compás
 			  const barW=(barMs/1000)*GB_PX_PER_SEC;
-			  let ruler='<div style="position:relative;height:20px;margin-left:150px;width:'+laneW+'px;border-bottom:1px solid #333;">';
+			  let ruler='<div style="position:relative;height:20px;margin-left:192px;width:'+laneW+'px;border-bottom:1px solid #333;">';
 			  for(let b=0;b*barW<laneW;b++) ruler+='<span style="position:absolute;left:'+(b*barW)+'px;font-size:9px;color:#8e8e93;border-left:1px solid #444;padding-left:3px;">'+(b+1)+'</span>';
 			  ruler+='</div>';
 			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla las reproduce todas en capas.</div>';
@@ -18192,7 +18227,7 @@
 			    s+=ixVacio('🎚️','Sin pistas todavía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo aquí.');
 			    el.innerHTML=s; return;
 			  }
-			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(150+laneW)+'px;">'+ruler;
+			  s+='<div style="position:relative;overflow-x:auto;padding-bottom:6px;"><div style="min-width:'+(192+laneW)+'px;">'+ruler;
 			  _gbTakes.forEach(function(t,i){
 			    const durMs=t.events.length?Math.max(400,t.events[t.events.length-1].at):400;
 			    const w=Math.max(46,(durMs/1000)*GB_PX_PER_SEC);
@@ -18203,14 +18238,20 @@
 			      +  '<span style="width:26px;height:26px;border-radius:8px;background:linear-gradient(180deg,#48484c,#333);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(GB_TRACK_ICONS[t.name]||'🎵')+'</span>'
 			      +  '<span style="flex:1;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+t.name+'</span>'
 			      +  '<button class="gb-ms'+(t.muted?' mOn':'')+'" onclick="gbToggleMute('+i+')" title="Silenciar">M</button>'
+			      +  '<button class="gb-ms'+(t.solo?' sOn':'')+'" onclick="gbToggleSolo('+i+')" title="Solo: silencia las demas">S</button>'
 			      +  '<button class="gb-ms" onclick="gbDeleteTake('+i+')" title="Borrar" style="color:#ff6961;">✕</button>'
+			      +'</div>'
+			      // Volumen y paneo de la pista
+			      +'<div class="gb-mix">'
+			      +  '<label title="Volumen">🔊<input type="range" min="0" max="1.5" step="0.05" value="'+(t.vol==null?1:t.vol)+'" oninput="gbSetVol('+i+',this.value)"><span id="gb-vol-'+i+'">'+Math.round((t.vol==null?1:t.vol)*100)+'%</span></label>'
+			      +  '<label title="Paneo: izquierda o derecha">🎚<input type="range" min="-1" max="1" step="0.1" value="'+(t.pan||0)+'" oninput="gbSetPan('+i+',this.value)"><span id="gb-pan-'+i+'">'+_gbTextoPan(t.pan||0)+'</span></label>'
 			      +'</div>'
 			      +'<div style="position:relative;width:'+laneW+'px;background:repeating-linear-gradient(90deg,#1c1c1e 0,#1c1c1e '+(barW-1)+'px,#2a2a2c '+(barW-1)+'px,#2a2a2c '+barW+'px);border-radius:0 8px 8px 0;cursor:pointer;" onclick="gbPlayTake('+i+')">'
 			      +  '<div class="gb-region" style="left:0;width:'+w+'px;">'+bars+'</div>'
 			      +'</div>'
 			      +'</div>';
 			  });
-			  s+='<div id="gb-playhead" style="position:absolute;top:20px;bottom:6px;left:150px;width:2px;background:#ff3b30;box-shadow:0 0 6px #ff3b30;opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;"></div>';
+			  s+='<div id="gb-playhead" style="position:absolute;top:20px;bottom:6px;left:192px;width:2px;background:#ff3b30;box-shadow:0 0 6px #ff3b30;opacity:0;pointer-events:none;z-index:3;transition:opacity .3s;"></div>';
 			  s+='</div></div>';
 			  el.innerHTML=s;
 			}
