@@ -156,6 +156,20 @@
 			  --sh-2:0 8px 24px rgba(0,0,0,.45);
 			  --sh-3:0 24px 60px rgba(0,0,0,.7);
 			}
+			/* Dedos, no ratón: en pantallas táctiles los botones diminutos son
+			   imposibles de acertar, y tanto Apple como Google piden un mínimo
+			   para aprobar una app. Solo se aplica con puntero grueso, así que en
+			   el ordenador no cambia nada. */
+			@media (pointer: coarse){
+			  button, [role="button"], .btn-option, .ui-lang-btn{
+			    min-width:40px; min-height:40px;
+			    touch-action:manipulation;   /* quita el retardo de medio segundo al tocar */
+			  }
+			  /* IXBand es un estudio con la pantalla muy apretada (cabeceras de
+			     pista de 192px con tres botones dentro): agrandarlos ahí sacaría
+			     los controles fuera de la pantalla. Se queda como está. */
+			  #garageband-modal button{ min-width:0; min-height:0; }
+			}
 			.glass{
 			  position:relative;overflow:hidden;
 			  background:linear-gradient(135deg,rgba(255,255,255,var(--glass-op1,.20)),rgba(255,255,255,var(--glass-op2,.04)) 55%,rgba(255,255,255,.10) 100%);
@@ -14779,6 +14793,7 @@
 			    '🎵 MIS CANCIONES ahora es de verdad tuya: guarda varias canciones («💾 Guardar en Mis canciones» desde Pistas), ábrelas, cámbiales el nombre, haz copias y bórralas. La que tienes abierta sale marcada en verde y todo lo que cambies se guarda en ella sola',
 			    '⬇️ EXPORTAR TU CANCIÓN a un archivo de audio: desde Pistas, «Exportar audio» graba la canción entera tal y como suena (con su reverb y su mezcla) y te la descarga con el nombre que le pusiste, lista para mandarla por WhatsApp o subirla donde quieras',
 			    '📤 Y un botón «Compartir» al lado, en móviles y tabletas: abre el menú del sistema para mandarla directamente por WhatsApp, correo o guardarla en Archivos, sin buscarla en la carpeta de descargas',
+			    '👆 BOTONES MÁS FÁCILES DE TOCAR en móvil y tableta: había 83 botones por debajo del tamaño mínimo que piden Apple y Google (uno medía 13×15 píxeles), y ahora ninguno baja de 40. En el ordenador no cambia nada, y también se quitó el medio segundo de retardo al tocar',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',

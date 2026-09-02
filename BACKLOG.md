@@ -29,6 +29,19 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Revisión general antes de publicar** (`pruebas/auditoria.js`, guardado en el
+  repo para poder repetirla). Abre las 13 apps y las 4 pestañas de
+  Configuración en 320, 390, 820 y 1440 px, los dos primeros con pantalla
+  táctil simulada. Resultado: **0 errores de JavaScript y 0 desbordes de
+  ancho** en los cuatro tamaños.
+  - Lo único que salió: 83 botones por debajo del mínimo táctil, uno de 13×15.
+    Arreglado con una regla `@media (pointer:coarse)` de 40×40 mínimo más
+    `touch-action:manipulation` (quita el retardo de 300 ms al tocar).
+  - IXBand queda excluido a propósito: sus cabeceras de pista son de 192px con
+    tres botones dentro y el mínimo los sacaría de la pantalla.
+  - `pruebas/syncheck.js` también se guardó en el repo. Nada de esa carpeta lo
+    carga `index.html`.
+
 - Exportar la canción a un archivo de audio (`gbExportarCancion`). Se graba la
   salida del maestro (`_gbBusOut`, la salida del compresor) con `MediaRecorder`
   mientras suena `gbPlayCancion()`, así el archivo lleva la reverb y la mezcla.
