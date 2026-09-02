@@ -16,38 +16,40 @@ empezar y se actualiza antes de subir.
 ## Pendiente
 
 ### Bugs y deuda
-1. **Quitar los `prompt()` que quedan.** Crear alarma y elegir tono todavía
-   abren ventanitas del navegador (`icaAddAlarm`, `icaPromptTone`). Igual que se
-   hizo con el buscador de ciudades: selector de hora propio y lista de tonos
-   que se puedan oír antes de elegir.
-2. **Estados vacíos sin gracia.** Varias apps no dicen nada cuando están vacías.
+1. **Estados vacíos sin gracia.** Varias apps no dicen nada cuando están vacías.
    Referencia: el de alarmas («No tienes ninguna alarma. Toca ＋…»).
    Revisar Notas, Mi Nube, Pistas de IXBand y el buscador de canales.
-3. **Estilos incoherentes.** Los paneles nuevos (descargas, ciudades, divisas) y
+2. **Estilos incoherentes.** Los paneles nuevos (descargas, ciudades, divisas) y
    los viejos usan radios, sombras y espaciados distintos. Unificar con
    variables CSS partiendo del `glass` que ya existe.
-4. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
+3. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
    espejos y avisa cuál falló, pero no se ha podido probar con red real. Si el
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-5. **Bienvenida de 3 pasos** la primera vez: qué es IXClocK, el gesto de 3
+4. **Bienvenida de 3 pasos** la primera vez: qué es IXClocK, el gesto de 3
    dedos y cómo instalarla. Guardar en `localStorage` para no repetirla.
-6. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
+5. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
    `_gbTakes` (ya existe `muted`, falta el resto).
-7. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-8. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-9. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+6. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
+7. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
+8. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-10. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-11. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+9. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+10. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-12. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+11. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Crear/editar alarma y el tono del temporizador: pantalla propia con selector
+  de hora, etiqueta y los 8 tonos audibles. Fuera los `prompt()` del navegador
+  (`icaPromptTone` era ya código muerto y se eliminó).
+- **Tercer XSS encontrado y arreglado**: `icaRenderAlarms` tampoco escapaba la
+  etiqueta. Lo cazó la prueba nueva de alarmas.
 
 - Atajo `/?app=browser` del manifest corregido a `/?app=navegador` (no abría nada).
 - Tarjeta «Buscador» renombrada a «Buscador de canales» (prometía búsqueda global).

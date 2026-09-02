@@ -12200,18 +12200,6 @@
 			  return t ? t.name : 'Radial';
 			}
 			// Selector por prompt numerado; hace una vista previa del tono elegido
-			function icaPromptTone(current){
-			  const list = ALARM_TONES.map((t,i)=>(i+1)+'. '+t.name).join('\n');
-			  const cur = ALARM_TONES.findIndex(t=>t.id===current);
-			  const ans = prompt('Tono de alarma:\n'+list, String(cur>=0?cur+1:1));
-			  if(!ans) return null;
-			  const n = parseInt(ans)-1;
-			  if(n>=0 && n<ALARM_TONES.length){
-			    try{ const stop = playAlarmTone(ALARM_TONES[n].id); setTimeout(stop, 1600); }catch(e){}
-			    return ALARM_TONES[n].id;
-			  }
-			  return null;
-			}
 			// Las alarmas creadas en la app de Reloj se guardaban pero NADIE las
 			// comprobaba, asi que nunca sonaban. Ahora usan el mismo timbre.
 			let _icaFired={};
@@ -14670,6 +14658,8 @@
 			    '🔐 Seguridad: una nota o una alarma con código dentro (por ejemplo <img onerror=...>) llegaba a EJECUTARSE al mostrarse. Ahora tu texto se muestra tal cual, como texto, sin ejecutar nada',
 			    '🛠️ El atajo «Navegador» del icono instalado no abría nada (apuntaba a un nombre que no existía). Ya funciona',
 			    '📡 La tarjeta «Buscador» decía que buscaba en todo IXClocK pero solo buscaba emisoras: ahora se llama «Buscador de canales» y dice lo que hace de verdad',
+			    '⏰ Crear una alarma ya no abre las ventanitas feas del navegador: tiene su propia pantalla con selector de hora y minutos, campo de etiqueta y los 8 tonos, que puedes OÍR tocándolos antes de elegir. Tocando una alarma la editas',
+			    '⏳ Lo mismo para el temporizador: etiqueta y tono con pantalla propia en vez de ventanitas',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18551,7 +18541,7 @@
 			    const ampm = +h >= 12 ? 'p.\u202fm.' : 'a.\u202fm.';
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
-			      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+a.label+' · '+icaToneName(a.tone)+' ›</div></div>'
+			      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+escapeHtml(a.label)+' · '+escapeHtml(icaToneName(a.tone))+' ›</div></div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
 			      +  '<button onclick="icaDeleteAlarm('+i+')" title="Borrar alarma" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;">🗑</button>'
@@ -18564,23 +18554,81 @@
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
 			  icaRenderAlarms();
 			}
-			function icaAddAlarm(){
-			  const t = prompt('Hora (formato 24h, ej: 7:30):','7:00');
-			  if(!t) return;
-			  const label = prompt('Etiqueta:','Alarma') || 'Alarma';
-			  const tone = icaPromptTone('radial') || 'radial';
-			  _icaAlarms.push({time:t,label:label,on:true,tone:tone});
-			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
-			  icaRenderAlarms();
+			// ── Crear alarma sin ventanitas del navegador ────────────────────────
+			// Antes se pedian hora, etiqueta y tono con tres prompt() seguidos, que
+			// en el movil salen feos y no dejan oir el tono antes de elegirlo.
+			let _icaEditIdx=null, _icaTonoPrueba=null;
+			function _icaCerrarHoja(){
+			  const h=document.getElementById('ica-alarm-sheet');
+			  if(h) h.remove();
+			  if(_icaTonoPrueba){ try{_icaTonoPrueba();}catch(e){} _icaTonoPrueba=null; }
 			}
-			// Cambiar el tono de una alarma existente tocando su etiqueta
-			function icaChangeAlarmTone(i){
-			  const tone = icaPromptTone(_icaAlarms[i].tone);
-			  if(!tone) return;
-			  _icaAlarms[i].tone = tone;
-			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
-			  icaRenderAlarms();
+			function icaProbarTono(id){
+			  if(_icaTonoPrueba){ try{_icaTonoPrueba();}catch(e){} _icaTonoPrueba=null; }
+			  document.querySelectorAll('.ica-tono').forEach(function(b){
+			    const on=b.dataset.t===id;
+			    b.style.background=on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)';
+			    b.style.borderColor=on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)';
+			  });
+			  const inp=document.getElementById('ica-alarm-tone'); if(inp) inp.value=id;
+			  try{ const stop=playAlarmTone(id); _icaTonoPrueba=stop; setTimeout(function(){ if(_icaTonoPrueba===stop){ try{stop();}catch(e){} _icaTonoPrueba=null; } },1800); }catch(e){}
 			}
+			function _icaHojaAlarma(idx){
+			  _icaCerrarHoja();
+			  _icaEditIdx = (typeof idx==='number') ? idx : null;
+			  const a = _icaEditIdx!==null ? _icaAlarms[_icaEditIdx] : null;
+			  const p = a && a.time ? String(a.time).split(':') : ['7','00'];
+			  const hh = String(parseInt(p[0],10)||7).padStart(2,'0');
+			  const mm = String(parseInt(p[1],10)||0).padStart(2,'0');
+			  const tono = (a && a.tone) || 'radial';
+			  const etiqueta = a ? a.label : 'Alarma';
+			  let opcH='', opcM='';
+			  for(let i=0;i<24;i++){ const v=String(i).padStart(2,'0'); opcH+='<option value="'+v+'"'+(v===hh?' selected':'')+'>'+v+'</option>'; }
+			  for(let i=0;i<60;i+=1){ const v=String(i).padStart(2,'0'); opcM+='<option value="'+v+'"'+(v===mm?' selected':'')+'>'+v+'</option>'; }
+			  const hoja=document.createElement('div');
+			  hoja.id='ica-alarm-sheet';
+			  hoja.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
+			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
+			  let s='<div style="width:min(400px,94vw);max-height:88vh;overflow:auto;background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
+			    +'<div style="font-size:17px;font-weight:800;margin-bottom:16px;text-align:center;">'+(_icaEditIdx!==null?'Editar alarma':'Nueva alarma')+'</div>'
+			    +'<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px;">'
+			    +  '<select id="ica-alarm-h" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcH+'</select>'
+			    +  '<span style="font-size:30px;font-weight:200;opacity:.6;">:</span>'
+			    +  '<select id="ica-alarm-m" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
+			    +'</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
+			    +'<input id="ica-alarm-label" type="text" maxlength="40" value="'+escapeHtml(etiqueta)+'" placeholder="Alarma" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;">'
+			    +'<input id="ica-alarm-tone" type="hidden" value="'+tono+'">'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
+			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
+			  ALARM_TONES.forEach(function(t){
+			    const on=t.id===tono;
+			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:11px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
+			  });
+			  s+='</div>'
+			    +'<div style="display:flex;gap:9px;">'
+			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;">Cancelar</button>'
+			    +  '<button onclick="icaGuardarAlarma()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:13px;cursor:pointer;">Guardar</button>'
+			    +'</div></div>';
+			  hoja.innerHTML=s;
+			  document.body.appendChild(hoja);
+			}
+			function icaGuardarAlarma(){
+			  const h=document.getElementById('ica-alarm-h'), m=document.getElementById('ica-alarm-m');
+			  const l=document.getElementById('ica-alarm-label'), t=document.getElementById('ica-alarm-tone');
+			  if(!h||!m) return;
+			  const alarma={ time: parseInt(h.value,10)+':'+m.value,
+			                 label: (l&&l.value.trim())||'Alarma',
+			                 on:true, tone:(t&&t.value)||'radial' };
+			  if(_icaEditIdx!==null && _icaAlarms[_icaEditIdx]) _icaAlarms[_icaEditIdx]=alarma;
+			  else _icaAlarms.push(alarma);
+			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
+			  _icaCerrarHoja();
+			  icaRenderAlarms();
+			  try{ ixToast(_icaEditIdx!==null?'Alarma actualizada':'⏰ Alarma creada'); }catch(e){}
+			}
+			function icaAddAlarm(){ _icaHojaAlarma(null); }
+			function icaChangeAlarmTone(i){ _icaHojaAlarma(i); }
 			function icaEditAlarms(){
 			  if(!_icaAlarms.length) return;
 			  const idx = prompt('Número de alarma a eliminar (1-'+_icaAlarms.length+'):');
@@ -18723,21 +18771,67 @@
 			let _icaTimerInterval=null, _icaTimerRemaining=0;
 			let _icaTimerLabel = localStorage.getItem('ica_timer_label') || 'Timer';
 			let _icaTimerTone = localStorage.getItem('ica_timer_tone') || 'radial';
+			// Etiqueta y tono del temporizador: hoja propia, no ventanitas del navegador.
 			function icaPickTimerLabel(){
-			  const v = prompt('Etiqueta del temporizador:', _icaTimerLabel);
-			  if(!v) return;
-			  _icaTimerLabel = v;
-			  localStorage.setItem('ica_timer_label', v);
-			  const el = document.getElementById('ica-timer-label-val');
-			  if(el) el.textContent = v;
+			  _icaHojaTexto('Etiqueta del temporizador', _icaTimerLabel, function(v){
+			    _icaTimerLabel=v;
+			    localStorage.setItem('ica_timer_label', v);
+			    const el=document.getElementById('ica-timer-label-val');
+			    if(el) el.textContent=v;
+			  });
+			}
+			// Hoja generica de una sola linea de texto.
+			function _icaHojaTexto(titulo, valor, alGuardar){
+			  _icaCerrarHoja();
+			  const hoja=document.createElement('div');
+			  hoja.id='ica-alarm-sheet';
+			  hoja.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
+			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
+			  hoja.innerHTML='<div style="width:min(380px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
+			    +'<div style="font-size:15px;font-weight:800;margin-bottom:14px;text-align:center;">'+escapeHtml(titulo)+'</div>'
+			    +'<input id="ica-hoja-txt" type="text" maxlength="40" value="'+escapeHtml(valor||'')+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:15px;padding:12px 14px;outline:none;box-sizing:border-box;margin-bottom:16px;">'
+			    +'<div style="display:flex;gap:9px;">'
+			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
+			    +  '<button id="ica-hoja-ok" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
+			    +'</div></div>';
+			  document.body.appendChild(hoja);
+			  const inp=document.getElementById('ica-hoja-txt');
+			  const ok=function(){ const v=(inp.value||'').trim(); if(v){ alGuardar(v); } _icaCerrarHoja(); };
+			  document.getElementById('ica-hoja-ok').onclick=ok;
+			  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') ok(); });
+			  inp.focus(); inp.select();
 			}
 			function icaPickTimerTone(){
-			  const tone = icaPromptTone(_icaTimerTone);
-			  if(!tone) return;
-			  _icaTimerTone = tone;
-			  localStorage.setItem('ica_timer_tone', tone);
-			  const el = document.getElementById('ica-timer-tone-val');
-			  if(el) el.textContent = icaToneName(tone);
+			  _icaCerrarHoja();
+			  const hoja=document.createElement('div');
+			  hoja.id='ica-alarm-sheet';
+			  hoja.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
+			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
+			  let s='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
+			    +'<div style="font-size:15px;font-weight:800;margin-bottom:4px;text-align:center;">Tono del temporizador</div>'
+			    +'<div style="font-size:11px;opacity:.5;text-align:center;margin-bottom:14px;">Tócalo para oírlo antes de elegir</div>'
+			    +'<input id="ica-alarm-tone" type="hidden" value="'+_icaTimerTone+'">'
+			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:18px;">';
+			  ALARM_TONES.forEach(function(t){
+			    const on=t.id===_icaTimerTone;
+			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:11px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
+			  });
+			  s+='</div><div style="display:flex;gap:9px;">'
+			    +'<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
+			    +'<button onclick="icaGuardarTonoTimer()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
+			    +'</div></div>';
+			  hoja.innerHTML=s;
+			  document.body.appendChild(hoja);
+			}
+			function icaGuardarTonoTimer(){
+			  const t=document.getElementById('ica-alarm-tone');
+			  if(t && t.value){
+			    _icaTimerTone=t.value;
+			    localStorage.setItem('ica_timer_tone', _icaTimerTone);
+			    const el=document.getElementById('ica-timer-tone-val');
+			    if(el) el.textContent=icaToneName(_icaTimerTone);
+			  }
+			  _icaCerrarHoja();
 			}
 			// Restaurar etiqueta/tono guardados en las celdas
 			(function(){
