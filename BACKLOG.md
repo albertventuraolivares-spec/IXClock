@@ -21,19 +21,21 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-3. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-4. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+2. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-5. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-6. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+3. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+4. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-7. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+5. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Cuenta atrás antes de grabar (un compás de claqueta con el número en pantalla,
+  reutilizando `_gbTick`) y compás configurable 4/4, 3/4, 6/8, 2/4 en `_gbCompas`,
+  que alimenta el LCD y la claqueta.
 
 - Mezclador en Pistas: volumen y paneo por pista con nodos propios colgando del
   bus maestro (`_gbCanalPista`), más botón Solo. `_gbSalidaPista` desvía la

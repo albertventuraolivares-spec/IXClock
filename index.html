@@ -14755,6 +14755,8 @@
 			    '👋 BIENVENIDA la primera vez: 3 pantallas cortas que explican qué es IXClocK, el gesto de 3 dedos y cómo instalarla como app. Solo sale una vez, y puedes volver a verla desde ❓ Ayuda',
 			    '✨ Acabado más parejo: las esquinas de los paneles usaban 12 medidas distintas al azar y la app se veía hecha a trozos. Ahora siguen una sola escala, y las ventanas comparten la misma sombra',
 			    '🎛️ MEZCLADOR en Pistas de IXBand: cada pista tiene su volumen y su paneo (izquierda/derecha), además de silenciar. Y botón SOLO para oír una sola pista y callar las demás',
+			    '1️⃣ CUENTA ATRÁS antes de grabar: pulsas ⏺ y suena un compás de claqueta con el número en grande, para saber dónde entrar. Se activa con el botón 1·2·3 y se cancela pulsando ⏺ otra vez',
+			    '🎼 COMPÁS configurable: 4/4, 3/4, 6/8 y 2/4. Cambia lo que cuenta el reloj de arriba y los golpes de la claqueta',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -16512,6 +16514,8 @@
 			    +    '</div>'
 			    +  '</div>'
 			    +  '<button class="gb-tb-btn" id="gb-metro-btn" onclick="gbMetro()" title="Metrónomo">🎵</button>'
+			    +  '<button class="gb-tb-btn" id="gb-count-btn" onclick="gbToggleCuentaAtras()" title="Cuenta atrás: un compás de claqueta antes de grabar">1·2·3</button>'
+			    +  '<button class="gb-tb-btn" id="gb-compas-btn" onclick="gbCambiarCompas()" title="Compás: 4/4, 3/4 o 6/8">4/4</button>'
 			    +  '<div style="flex:1;"></div>'
 			    +  '<div style="display:flex;gap:6px;">'
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" title="Instrumento">🎹</button>'
@@ -17850,6 +17854,55 @@
 			    const s=document.createElement('style');s.id='gb-blink-style';s.textContent='@keyframes gbRecBlink{0%,100%{opacity:1}50%{opacity:.3}}';document.head.appendChild(s);
 			  }
 			}
+			// ── Cuenta atrás antes de grabar ─────────────────────────────────────
+			// Sin esto hay que empezar a tocar a ciegas: se pulsa ⏺ y ya estas
+			// grabando, sin saber donde cae el primer tiempo.
+			let _gbCuentaAtras=false, _gbCuentaTimer=null;
+			// Compás: cambia los tiempos que cuenta el LCD y la claqueta.
+			const GB_COMPASES=[[4,'4/4'],[3,'3/4'],[6,'6/8'],[2,'2/4']];
+			function gbCambiarCompas(){
+			  const i=GB_COMPASES.findIndex(function(c){ return c[0]===_gbCompas; });
+			  const sig=GB_COMPASES[(i+1)%GB_COMPASES.length];
+			  _gbCompas=sig[0];
+			  const b=document.getElementById('gb-compas-btn'); if(b) b.textContent=sig[1];
+			  const st=document.getElementById('gb-status'); if(st) st.textContent='Compás '+sig[1]+' · '+sig[0]+' tiempos por compás';
+			}
+			function gbToggleCuentaAtras(){
+			  _gbCuentaAtras=!_gbCuentaAtras;
+			  const b=document.getElementById('gb-count-btn'); if(b) b.classList.toggle('on',_gbCuentaAtras);
+			  const st=document.getElementById('gb-status');
+			  if(st) st.textContent=_gbCuentaAtras?'1·2·3 Cuenta atrás activada: al grabar sonará un compás antes':'Cuenta atrás desactivada';
+			}
+			function _gbAvisoCuenta(n){
+			  let el=document.getElementById('gb-cuenta');
+			  if(!el){
+			    el=document.createElement('div'); el.id='gb-cuenta';
+			    el.style.cssText='position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:200;color:#fff;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:none;font-variant-numeric:tabular-nums;';
+			    const m=document.getElementById('garageband-modal');
+			    if(m){ if(getComputedStyle(m).position==='static') m.style.position='relative'; m.appendChild(el); }
+			    else return;
+			  }
+			  el.textContent=n>0?String(n):'';
+			  el.style.display=n>0?'flex':'none';
+			}
+			// Un compás de claqueta y, al acabar, empieza a grabar de verdad.
+			function gbCuentaAtrasYGraba(alTerminar){
+			  const tiempos=parseInt(_gbCompas||4,10)||4;
+			  const ms=60000/(parseInt(_gbBpm)||120);
+			  let i=0;
+			  const paso=function(){
+			    if(i>=tiempos){ _gbAvisoCuenta(0); _gbCuentaTimer=null; alTerminar(); return; }
+			    _gbAvisoCuenta(tiempos-i);
+			    try{ _gbTick(i===0); }catch(e){}
+			    i++;
+			    _gbCuentaTimer=setTimeout(paso, ms);
+			  };
+			  paso();
+			}
+			function gbCancelarCuenta(){
+			  if(_gbCuentaTimer){ clearTimeout(_gbCuentaTimer); _gbCuentaTimer=null; }
+			  _gbAvisoCuenta(0);
+			}
 			function gbPlay(){
 			  if(_gbRecorded.length===0)return;
 			  document.getElementById('gb-status').textContent='▶ Reproduciendo…';
@@ -17989,6 +18042,7 @@
 			}
 			// --- LCD de compás + tempo + metrónomo (la pantallita gris de GarageBand) ---
 			let _gbBeatStart=null,_gbMetroOn=false,_gbLastBeat=-1,_gbLCDTimer=null;
+			let _gbCompas=4;   // tiempos por compás; lo usan el LCD y la cuenta atrás
 			function gbTempo(d){
 			  _gbBpm=Math.max(60,Math.min(220,(parseInt(_gbBpm)||120)+d));
 			  const el=document.getElementById('gb-lcd-tempo'); if(el) el.textContent=_gbBpm;
@@ -18012,7 +18066,8 @@
 			    const running=_gbBeatStart && (_gbRecording || _gbLLTimer);
 			    if(!running){ el.textContent='1.1'; _gbLastBeat=-1; return; }
 			    const beats=(Date.now()-_gbBeatStart)/60000*(parseInt(_gbBpm)||120);
-			    const bar=Math.floor(beats/4)+1, beat=Math.floor(beats%4)+1;
+			    const tpc=parseInt(_gbCompas,10)||4;   // tiempos por compás
+			    const bar=Math.floor(beats/tpc)+1, beat=Math.floor(beats%tpc)+1;
 			    el.textContent=bar+'.'+beat;
 			    const bi=Math.floor(beats);
 			    if(bi!==_gbLastBeat){ _gbLastBeat=bi; if(_gbMetroOn) _gbTick(beat===1); }
@@ -18020,7 +18075,20 @@
 			}
 			// Al empezar/parar grabación arranca el contador del LCD
 			const _gbRecOrig=gbRecord;
-			gbRecord=function(){ _gbRecOrig(); _gbBeatStart=_gbRecording?Date.now():null; };
+			gbRecord=function(){
+			  // Si la cuenta atrás está puesta, primero suena un compás y luego graba.
+			  if(!_gbRecording && _gbCuentaAtras && !_gbCuentaTimer){
+			    const st=document.getElementById('gb-status');
+			    if(st) st.textContent='1·2·3 Preparado…';
+			    gbCuentaAtrasYGraba(function(){
+			      _gbRecOrig(); _gbBeatStart=_gbRecording?Date.now():null;
+			    });
+			    return;
+			  }
+			  // Pulsar ⏺ durante la cuenta atrás la cancela.
+			  if(_gbCuentaTimer){ gbCancelarCuenta(); const st=document.getElementById('gb-status'); if(st) st.textContent='Cuenta atrás cancelada'; return; }
+			  _gbRecOrig(); _gbBeatStart=_gbRecording?Date.now():null;
+			};
 			// --- LIVE LOOPS (estilo iPadOS): celdas de color por fila + columnas ---
 			const GB_LL_COLORS=['#30d158','#0a84ff','#ffd60a','#ff375f'];
 			const GB_LL_ICONS=['🥁','🎸','🎹','🎶'];
