@@ -14777,6 +14777,7 @@
 			    '💾 IXBand YA NO PIERDE TU CANCIÓN: las pistas, las secciones, el volumen, el paneo, el tempo y el compás se guardan solos en tu dispositivo y siguen ahí al volver a abrir. Antes, recargar la página lo borraba todo sin avisar. Hay un botón «Empezar de cero» para cuando quieras limpiar',
 			    '⌨️ ATAJOS DE TECLADO para quien la use en ordenador o con teclado: Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración, Esc cierra la ventana de encima, Ctrl/⌘+⇧+X cierra todas y Ctrl/⌘+/ enseña la lista. La lista también está en ❓ Ayuda',
 			    '🎵 MIS CANCIONES ahora es de verdad tuya: guarda varias canciones («💾 Guardar en Mis canciones» desde Pistas), ábrelas, cámbiales el nombre, haz copias y bórralas. La que tienes abierta sale marcada en verde y todo lo que cambies se guarda en ella sola',
+			    '⬇️ EXPORTAR TU CANCIÓN a un archivo de audio: desde Pistas, «Exportar audio» graba la canción entera tal y como suena (con su reverb y su mezcla) y te la descarga con el nombre que le pusiste, lista para mandarla por WhatsApp o subirla donde quieras',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -17819,6 +17820,7 @@
 			  const comp=ctx.createDynamicsCompressor();
 			  comp.threshold.value=-14; comp.knee.value=24; comp.ratio.value=3; comp.attack.value=.004; comp.release.value=.18;
 			  comp.connect(ctx.destination);
+			  _gbBusOut=comp;   // punto donde engancha la grabacion para exportar
 			  // Remix FX se intercala en el maestro (filtro DJ + repetidor).
 			  const rf=ctx.createBiquadFilter(); rf.type='lowpass'; rf.frequency.value=20000; rf.Q.value=1; rf.connect(comp);
 			  _gbRemixFilter=rf;
@@ -17828,6 +17830,7 @@
 			  const revIn=ctx.createGain(); revIn.gain.value=1; revIn.connect(conv);
 			  _gbBusIn=busIn; _gbReverbIn=revIn;
 			}
+			let _gbBusOut=null;        // salida del maestro, para poder exportar la mezcla
 			let _gbSalidaPista=null;   // canal de la pista que se esta reproduciendo
 			function _gbOut(){ if(_gbSalidaPista) return _gbSalidaPista; _gbBuildBus(); return _gbBusIn || (_gbAudioCtx && _gbAudioCtx.destination); }
 			function _gbReverbSend(node,amount){
@@ -18488,9 +18491,89 @@
 			    const d=_gbDuracionSec(sec.id);
 			    if(d>0) off += d + 400;   // un respiro entre secciones
 			  });
-			  if(!sonando){ _gbEstado('No hay nada que sonar: guarda alguna toma primero.'); return; }
+			  if(!sonando){ _gbEstado('No hay nada que sonar: guarda alguna toma primero.'); return 0; }
 			  _gbEstado('▶ Canción entera: '+_gbSecciones.length+' sección(es), '+Math.round(off/1000)+' s.');
 			  _gbCabezal(off);
+			  return off;
+			}
+			/* ── EXPORTAR LA CANCIÓN a un archivo de audio ────────────────────
+			   Se graba la salida del maestro mientras suena la canción entera, o
+			   sea lo mismo que oyes, con su reverb y su compresor. Va en tiempo
+			   real (una canción de 30 s tarda 30 s) porque los instrumentos se
+			   sintetizan sobre la marcha; no hay una mezcla ya hecha que copiar. */
+			let _gbExportando=false;
+			function _gbFormatoAudio(){
+			  if(typeof MediaRecorder==='undefined') return null;
+			  const opciones=[['audio/webm;codecs=opus','webm'],['audio/webm','webm'],
+			                  ['audio/mp4','m4a'],['audio/ogg;codecs=opus','ogg']];
+			  for(let i=0;i<opciones.length;i++){
+			    try{ if(MediaRecorder.isTypeSupported(opciones[i][0])) return opciones[i]; }catch(e){}
+			  }
+			  return null;
+			}
+			function gbExportarCancion(){
+			  if(_gbExportando){
+			    // Por toast y no en la linea de estado: ahi esta la cuenta atras
+			    // escribiendo cada medio segundo y el aviso se perderia al instante.
+			    try{ ixToast('Ya se está grabando la canción; espera a que acabe.'); }catch(e){}
+			    return false;
+			  }
+			  if(!_gbTakes.length){ _gbEstado('No hay nada que exportar: guarda alguna toma primero.'); return false; }
+			  const fmt=_gbFormatoAudio();
+			  if(!fmt){ _gbEstado('⚠️ Este navegador no puede grabar audio para exportar.'); return false; }
+			  if(!_gbAudioCtx){
+			    _gbAudioCtx = (typeof getAudioCtx==='function' ? getAudioCtx() : null) || new(window.AudioContext||window.webkitAudioContext)();
+			  }
+			  if(_gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
+			  _gbBuildBus();
+			  if(!_gbBusOut){ _gbEstado('⚠️ No se pudo preparar el audio para exportar.'); return false; }
+
+			  const dest=_gbAudioCtx.createMediaStreamDestination();
+			  _gbBusOut.connect(dest);
+			  let rec;
+			  try{ rec=new MediaRecorder(dest.stream,{mimeType:fmt[0]}); }
+			  catch(e){ try{ _gbBusOut.disconnect(dest); }catch(x){} _gbEstado('⚠️ No se pudo empezar a grabar.'); return false; }
+
+			  const trozos=[];
+			  rec.ondataavailable=function(e){ if(e.data && e.data.size) trozos.push(e.data); };
+			  rec.onstop=function(){
+			    // Se desconecta SIEMPRE, aunque algo haya fallado: si no, el maestro
+			    // se queda mandando audio a un destino que ya no escucha nadie.
+			    try{ _gbBusOut.disconnect(dest); }catch(e){}
+			    _gbExportando=false;
+			    const blob=new Blob(trozos,{type:fmt[0]});
+			    if(!blob.size){ _gbEstado('⚠️ La grabación salió vacía.'); gbRenderTracks(); return; }
+			    const nombre=(_gbNombreCancion()||'IXBand').replace(/[^\p{L}\p{N} _-]/gu,'').trim()||'IXBand';
+			    const url=URL.createObjectURL(blob);
+			    const a=document.createElement('a');
+			    a.href=url; a.download=nombre+'.'+fmt[1];
+			    document.body.appendChild(a); a.click();
+			    setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} },4000);
+			    _gbEstado('✅ Exportada: '+a.download+' ('+Math.round(blob.size/1024)+' KB). Búscala en tus descargas.');
+			    gbRenderTracks();
+			  };
+
+			  _gbExportando=true;
+			  gbRenderTracks();
+			  rec.start();
+			  const dur=gbPlayCancion()||0;
+			  if(!dur){ rec.stop(); return false; }
+			  // Un poco de margen al final para que no se corte la cola de la reverb.
+			  const total=dur+900;
+			  const fin=Date.now()+total;
+			  (function cuenta(){
+			    if(!_gbExportando) return;
+			    const quedan=Math.max(0,Math.ceil((fin-Date.now())/1000));
+			    _gbEstado('⏺ Grabando la canción para exportarla… '+quedan+' s');
+			    if(quedan>0) setTimeout(cuenta,500);
+			  })();
+			  setTimeout(function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} }, total);
+			  return true;
+			}
+			function _gbNombreCancion(){
+			  if(!_gbCancionActual) return null;
+			  const c=_gbCanciones.find(function(x){ return x.id===_gbCancionActual; });
+			  return c?c.nombre:null;
 			}
 			function _gbCabezal(ms){
 			  const ph=document.getElementById('gb-playhead');
@@ -18761,6 +18844,7 @@
 			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
+			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
 			    +'</div>';

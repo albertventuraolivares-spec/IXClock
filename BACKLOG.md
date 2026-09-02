@@ -23,13 +23,25 @@ empezar y se actualiza antes de subir.
 ### Funciones nuevas
 2. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
    pintadas en `#stations-container`. Valorar una fila «buscar en internet».
-3. **Exportar la canción de IXBand** a un archivo de audio, para poder
-   compartirla fuera de la app.
-4. **Compartir un enlace** de una canción, si cabe en la URL.
+3. **Compartir la canción** con `navigator.share`, ahora que el archivo existe.
+4. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
 
 ---
 
 ## Hecho
+
+- Exportar la canción a un archivo de audio (`gbExportarCancion`). Se graba la
+  salida del maestro (`_gbBusOut`, la salida del compresor) con `MediaRecorder`
+  mientras suena `gbPlayCancion()`, así el archivo lleva la reverb y la mezcla.
+  - Va en tiempo real a propósito: los instrumentos se sintetizan sobre la
+    marcha, no hay una mezcla ya hecha que copiar. Cuenta atrás en pantalla.
+  - Formato: el primero que soporte el navegador de webm/opus, mp4 o ogg.
+  - `_gbBusOut.disconnect(dest)` se hace **siempre** en `onstop`, también si
+    algo falla; si no, el maestro se queda mandando audio a un destino muerto.
+  - El aviso de «ya se está grabando» va por toast, no por la línea de estado,
+    porque ahí la cuenta atrás escribe cada medio segundo.
+  - Probado con `exportar_test.js`: 18/18, incluida una descarga real de 41 KB
+    con el nombre de la canción.
 
 - «Mis canciones» pasa a ser una lista de verdad (`_gbCanciones`, clave
   `ixband_canciones_v1`), encima de las plantillas de género que ya estaban.
