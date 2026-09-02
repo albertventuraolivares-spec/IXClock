@@ -21,16 +21,27 @@ empezar y se actualiza antes de subir.
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-2. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
-    apps, control del reproductor. (Ctrl+K ya existe, del buscador.)
-3. **Varias canciones guardadas** en IXBand, no solo la última: «Mis canciones»
+2. **Varias canciones guardadas** en IXBand, no solo la última: «Mis canciones»
    (`gbBuildSongs`) hoy es un selector de plantillas, no una lista de lo tuyo.
-4. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
+3. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
    pintadas en `#stations-container`. Valorar una fila «buscar en internet».
+4. **Exportar la canción de IXBand** a un archivo de audio, para poder
+   compartirla fuera de la app.
 
 ---
 
 ## Hecho
+
+- Atajos de teclado (`IX_ATAJOS`): Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración,
+  Esc cerrar la de encima, Ctrl/⌘+⇧+X cerrar todas, Ctrl/⌘+/ ver la lista.
+  Hay un botón «Ver atajos» en ❓ Ayuda.
+  - `ixCerrarVentanaDeArriba()` elige por `z-index`, que es lo que decide de
+    verdad cuál se ve encima; no se guarda el orden de apertura.
+  - `login-overlay` está excluido: Esc no puede echarte de la sesión.
+  - `_ixEscribiendo()` calla los atajos dentro de campos de texto.
+  - **X y no W** para cerrar todas: Ctrl+⇧+W cierra la ventana del navegador y
+    ninguna página puede impedirlo, así que ese atajo nunca llegaría.
+  - Probado con `atajos_test.js`: 14/14.
 
 - La canción de IXBand ya no se pierde al recargar. `gbGuardarCancion()` /
   `gbCargarCancion()` guardan pistas, secciones, tempo y compás en

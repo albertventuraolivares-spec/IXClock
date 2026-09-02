@@ -13114,6 +13114,11 @@
 			          <span style="flex:1;min-width:150px;font-size:12px;">¿Primera vez? Vuelve a ver la bienvenida con lo básico.</span>
 			          <button onclick="ixRepetirBienvenida()" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;cursor:pointer;">Ver bienvenida</button>
 			        </div>
+			        <div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+			          <span style="font-size:20px;">⌨️</span>
+			          <span style="flex:1;min-width:150px;font-size:12px;">¿Lo usas con teclado? Hay atajos: buscar, cerrar ventanas y más.</span>
+			          <button onclick="ixVerAtajos()" style="background:rgba(255,255,255,.14);border:none;color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;cursor:pointer;">Ver atajos</button>
+			        </div>
 			        <div style="font-weight:800;color:#fff;margin-bottom:4px;">🎸 IXBand (estudio de música)</div>
 			          Abre como el de verdad: <b>Mis canciones</b> con plantillas de género (EDM, Hip Hop, Dubstep, RnB, House, Chill, Rock, Electro Funk) que cargan <b>Live Loops</b> con sus ritmos y tempo. "Biblioteca de sonidos" trae el teclado grande con <b>45 instrumentos del mundo por categorías</b> (Teclados, Cuerdas, Viento, Metales, Percusión, Mundo y Electrónicos — cada uno con su propio sonido), <b>batería física</b> (el kit acústico que se toca tocando cada tambor) y de pads, <b>Drummer</b> (un baterista que toca grooves solo por estilo), <b>Beat Sequencer</b> (caja de ritmos de pasos), <b>Batería Smart</b> (arrastras los tambores: derecha = más complejo, arriba = más fuerte), Guitarra/Bajo/Cuerdas <b>Smart</b> con <b>cuerdas que se rasguean de verdad</b> (elige un acorde y arrastra el dedo o el lápiz, con <b>Autoplay</b> para que se toquen solas), <b>Amplificador</b> con pedalera (distorsión, fuzz, wah, chorus, delay, reverb), <b>Grabadora</b> de voz con efectos (eco, robot, ardilla, monstruo…), <b>Sampler</b> (graba un sonido y tócalo afinado) y sintetizador. El teclado trae <b>arpegiador</b> y una categoría <b>Asia</b> (Guzheng, Pipa, Dizi, Gong, Shakuhachi, Taiko…). En Live Loops tienes <b>Remix FX</b> (filtro de DJ, repetidor y wobble). Los instrumentos suenan realistas — reverb de sala, vibrato, ataque de verdad (aire, púa, martillo) y volumen según la fuerza del lápiz. Graba con ⏺, guarda tomas y mézclalas en la vista <b>Pistas</b> (estilo Mac). El LCD de arriba marca compás y tempo; 🎵 es el metrónomo.
 			        </div>
@@ -14770,6 +14775,7 @@
 			    '🔎 BUSCADOR DE VERDAD, el de la lupa del dock (o Ctrl+K): busca a la vez en apps, Configuración, notas, ciudades del reloj, alarmas, fondos, estilos de reloj y emisoras. Y al elegir hace la acción: abre la app, pone el fondo, añade la ciudad o te lleva al ajuste y te lo señala',
 			    '🔤 El buscador no distingue tildes: escribe «cancun» y encuentra «Cancún»',
 			    '💾 IXBand YA NO PIERDE TU CANCIÓN: las pistas, las secciones, el volumen, el paneo, el tempo y el compás se guardan solos en tu dispositivo y siguen ahí al volver a abrir. Antes, recargar la página lo borraba todo sin avisar. Hay un botón «Empezar de cero» para cuando quieras limpiar',
+			    '⌨️ ATAJOS DE TECLADO para quien la use en ordenador o con teclado: Ctrl/⌘+K buscar, Ctrl/⌘+, Configuración, Esc cierra la ventana de encima, Ctrl/⌘+⇧+X cierra todas y Ctrl/⌘+/ enseña la lista. La lista también está en ❓ Ayuda',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -20104,11 +20110,88 @@
 			  ixCerrarBusqueda();
 			  setTimeout(function(){ try{ x.ir(); }catch(e){} },60);
 			}
-			// Atajo del ordenador: Ctrl+K o ⌘K abre el buscador desde donde estés.
+			/* ── ATAJOS DE TECLADO ────────────────────────────────────────────
+			   Para quien use IXClocK en un ordenador o con teclado en la tableta.
+			   En el móvil no estorban: si no hay teclado, no se disparan.        */
+			const IX_ATAJOS=[
+			  {t:'Ctrl / ⌘ + K',       d:'Abrir el buscador'},
+			  {t:'Ctrl / ⌘ + ,',       d:'Abrir Configuración'},
+			  {t:'Esc',                d:'Cerrar la ventana de encima'},
+			  {t:'Ctrl / ⌘ + ⇧ + X',   d:'Cerrar TODAS las ventanas'},
+			  {t:'Ctrl / ⌘ + /',       d:'Ver esta lista de atajos'}
+			];
+			// Escribiendo en un campo, las letras son texto, no atajos.
+			function _ixEscribiendo(){
+			  const a=document.activeElement;
+			  if(!a) return false;
+			  const t=(a.tagName||'').toLowerCase();
+			  return t==='input' || t==='textarea' || t==='select' || a.isContentEditable===true;
+			}
+			// Cierra solo la de arriba del todo. Como no se guarda el orden en que se
+			// abrieron, se usa el z-index: es justo lo que decide cuál se ve encima,
+			// así que coincide con la que el usuario tiene delante.
+			function ixCerrarVentanaDeArriba(){
+			  let elegido=null, mayor=-1, modo='';
+			  function mirar(id,m){
+			    const el=document.getElementById(id);
+			    if(!el || id==='login-overlay') return;   // la de entrar no se cierra con Esc
+			    const abierta = m==='open' ? el.classList.contains('open')
+			                               : getComputedStyle(el).display!=='none';
+			    if(!abierta) return;
+			    const z=parseInt(getComputedStyle(el).zIndex)||0;
+			    if(z>=mayor){ mayor=z; elegido=el; modo=m; }
+			  }
+			  (_HOME_OPEN_PANELS||[]).forEach(function(id){ mirar(id,'open'); });
+			  (_HOME_DISPLAY_PANELS||[]).forEach(function(id){ mirar(id,'display'); });
+			  if(!elegido) return false;
+			  if(modo==='open') elegido.classList.remove('open'); else elegido.style.display='none';
+			  try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
+			  return true;
+			}
+			function ixVerAtajos(){
+			  let f='';
+			  IX_ATAJOS.forEach(function(a){
+			    f+='<div style="display:flex;align-items:center;gap:14px;padding:9px 4px;border-bottom:1px solid rgba(255,255,255,.06);">'
+			      +'<code style="flex-shrink:0;min-width:132px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-xs,8px);padding:5px 9px;font-size:11px;font-weight:700;">'+escapeHtml(a.t)+'</code>'
+			      +'<span style="font-size:12px;opacity:.75;">'+escapeHtml(a.d)+'</span></div>';
+			  });
+			  let ov=document.getElementById('ix-atajos');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-atajos';
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);';
+			    ov.onclick=function(e){ if(e.target===ov) ov.style.display='none'; };
+			    document.body.appendChild(ov);
+			  }
+			  ov.innerHTML='<div style="width:min(420px,94vw);background:rgba(28,28,30,.97);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-lg,16px);box-shadow:var(--sh-3,0 24px 60px rgba(0,0,0,.7));padding:18px 20px;">'
+			    +'<div style="font-size:15px;font-weight:800;margin-bottom:12px;">⌨️ Atajos de teclado</div>'
+			    +f
+			    +'<button onclick="document.getElementById(\'ix-atajos\').style.display=\'none\'" style="margin-top:14px;width:100%;padding:10px;border:none;border-radius:var(--r-md,12px);background:rgba(255,255,255,.12);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Entendido</button>'
+			    +'</div>';
+			  ov.style.display='flex';
+			}
 			document.addEventListener('keydown',function(e){
-			  if((e.ctrlKey||e.metaKey) && (e.key==='k'||e.key==='K')){
+			  const mod=e.ctrlKey||e.metaKey;
+			  if(mod && (e.key==='k'||e.key==='K')){
 			    e.preventDefault();
 			    _ixBusqAbierto ? ixCerrarBusqueda() : ixAbrirBusqueda();
+			    return;
+			  }
+			  if(mod && e.key===','){ e.preventDefault(); try{ if(!isSidebarVisible) toggleSidebar(); }catch(x){} return; }
+			  if(mod && e.key==='/'){ e.preventDefault(); ixVerAtajos(); return; }
+			  // X y no W: Ctrl+Mayus+W cierra la ventana del navegador y ninguna
+			  // pagina puede impedirlo, asi que el atajo nunca llegaria aqui.
+			  if(mod && e.shiftKey && (e.key||'').toLowerCase()==='x'){
+			    e.preventDefault();
+			    try{ ixCerrarTodasLasVentanas(); }catch(x){}
+			    return;
+			  }
+			  if(e.key==='Escape'){
+			    // El buscador y la hoja de atajos ya se cierran por su cuenta.
+			    if(_ixBusqAbierto || _ixEscribiendo()) return;
+			    const at=document.getElementById('ix-atajos');
+			    if(at && at.style.display!=='none' && at.style.display!==''){ at.style.display='none'; e.preventDefault(); return; }
+			    if(ixCerrarVentanaDeArriba()) e.preventDefault();
 			  }
 			});
 			ixOpenFromLink();
