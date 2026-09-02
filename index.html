@@ -10522,9 +10522,33 @@
 			  // Si un espejo se queda colgado sin dar error, se pasa al siguiente igualmente.
 			  const reloj=setTimeout(function(){ siguiente('tardó demasiado'); }, 15000);
 			  sc.onerror = function(){ siguiente('no responde o está bloqueado'); };
-			  sc.onload = function(){ if(hecho) return; hecho=true; clearTimeout(reloj); };
+			  sc.onload = function(){
+			    if(hecho) return; hecho=true; clearTimeout(reloj);
+			    // Que el loader se descargue NO quiere decir que el emulador arranque:
+			    // el loader trae luego los núcleos del mismo espejo, y si esos están
+			    // bloqueados la pantalla se quedaba en negro para siempre, sin un
+			    // mensaje ni un intento con el siguiente espejo. Se comprueba.
+			    if(hintText) hintText.textContent='⏳ Motor descargado de '+host+', arrancando…';
+			    setTimeout(function(){ _emuComprobarArranque(hint, hintText, i, host); }, 9000);
+			  };
 			  sc.src = base + 'loader.js';
 			  stage.appendChild(sc);
+			}
+			// ¿Arrancó de verdad? EmulatorJS deja su objeto en window.EJS_emulator y
+			// pinta un canvas dentro del contenedor del juego.
+			function _emuArranco(){
+			  if(window.EJS_emulator) return true;
+			  const g=document.getElementById('game');
+			  return !!(g && (g.querySelector('canvas') || g.children.length>0));
+			}
+			function _emuComprobarArranque(hint, hintText, i, host){
+			  const modal=document.getElementById('emu-modal');
+			  if(!modal || getComputedStyle(modal).display==='none') return;   // lo cerró
+			  if(_emuArranco()) return;                                        // todo bien
+			  _emuLog.push('• '+host+' — el motor se descargó pero no llegó a arrancar');
+			  // Se limpian las variables del intento fallido antes de probar otro espejo.
+			  try{ delete window.EJS_emulator; }catch(e){ window.EJS_emulator=undefined; }
+			  _emuLoadEngine(hint, hintText, i+1);
 			}
 			function closeEmulator(){
 			  emuTeardown();
@@ -14794,6 +14818,7 @@
 			    '⬇️ EXPORTAR TU CANCIÓN a un archivo de audio: desde Pistas, «Exportar audio» graba la canción entera tal y como suena (con su reverb y su mezcla) y te la descarga con el nombre que le pusiste, lista para mandarla por WhatsApp o subirla donde quieras',
 			    '📤 Y un botón «Compartir» al lado, en móviles y tabletas: abre el menú del sistema para mandarla directamente por WhatsApp, correo o guardarla en Archivos, sin buscarla en la carpeta de descargas',
 			    '👆 BOTONES MÁS FÁCILES DE TOCAR en móvil y tableta: había 83 botones por debajo del tamaño mínimo que piden Apple y Google (uno medía 13×15 píxeles), y ahora ninguno baja de 40. En el ordenador no cambia nada, y también se quitó el medio segundo de retardo al tocar',
+			    '🕹️ Emulador: si el motor se descargaba pero no llegaba a arrancar (porque su servidor sirve el arranque pero tiene bloqueado el resto), la pantalla se quedaba en negro para siempre sin decir nada. Ahora lo detecta, prueba el siguiente servidor y, si fallan todos, te dice cuál falló y por qué',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',

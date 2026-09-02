@@ -56,3 +56,17 @@ IXBand entero y el buscador.
 > Se apaga el servidor en vez de contar peticiones: el service worker refresca
 > en segundo plano lo que ya tiene guardado, y ese conteo daba falsos avisos.
 
+## `emulador.js`
+El motor del emulador se descarga de servidores de fuera y en este entorno no
+se puede llegar a ellos, así que no se puede probar «de verdad». Lo que sí se
+puede probar, y es lo que decide lo que ve el usuario, es cómo reacciona la app
+a cada caso. Levanta un servidor local que hace de espejo y se porta de tres
+maneras: no responder, servir un motor que se descarga pero no arranca, y
+servir uno que arranca.
+
+```
+node pruebas/emulador.js
+```
+
+Última pasada: **13/13**.
+

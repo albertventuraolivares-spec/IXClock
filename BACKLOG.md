@@ -16,18 +16,33 @@ empezar y se actualiza antes de subir.
 ## Pendiente
 
 ### Bugs y deuda
-1. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
-   espejos y avisa cuál falló, pero no se ha podido probar con red real. Si el
-   usuario pasa el mensaje de error, actuar en consecuencia.
+1. **El emulador sigue sin poderse arrancar de punta a punta desde aquí**: la
+   política de salida del entorno bloquea `cdn.emulatorjs.org` y
+   `cdn.jsdelivr.net` (comprobado con `curl`: connect_rejected). Lo que sí se
+   probó son los tres caminos de fallo, con espejos falsos locales, y ahí ya no
+   se queda colgado. Si el usuario pasa el mensaje que le sale ahora, dirá
+   exactamente qué espejo falló y por qué.
 
 ### Funciones nuevas
-2. **El buscador no busca emisoras del catálogo remoto**, solo las que ya están
-   pintadas en `#stations-container`. Valorar una fila «buscar en internet».
-3. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
+2. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
+3. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
+   es que el buscador se deje emisoras — se comprobó que ya encuentra las 185
+   de `STATIONS`, porque están todas pintadas desde el arranque. Sería una
+   función nueva, no un arreglo.
 
 ---
 
 ## Hecho
+
+- **Emulador: el fallo silencioso arreglado.** Que `loader.js` se descargara se
+  daba por bueno, pero el loader baja después los núcleos del mismo espejo; si
+  esos están bloqueados, la pantalla se quedaba negra para siempre, sin mensaje
+  y sin probar otro espejo. Ahora, 9 s después de la descarga, se comprueba que
+  el motor arrancó de verdad (`window.EJS_emulator` o un canvas dentro de
+  `#game`) y, si no, se pasa al siguiente espejo.
+  - Si se cierra el emulador mientras carga, deja de insistir.
+  - Probado con `pruebas/emulador.js` (13/13) usando espejos falsos locales:
+    uno caído, uno que se descarga pero no arranca y uno que sí arranca.
 
 - **Revisión general antes de publicar** (`pruebas/auditoria.js`, guardado en el
   repo para poder repetirla). Abre las 13 apps y las 4 pestañas de
