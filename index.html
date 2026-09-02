@@ -147,6 +147,15 @@
 			#brightness-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;background:#000;opacity:0;transition:opacity .3s ease;}
 
 			/* ===== LIQUID GLASS -- iOS 27 style ===== */
+			/* Escala de diseño: antes cada panel elegía su propio radio y su propia
+			   sombra (12 radios distintos), y la app se veía hecha a trozos. */
+			:root{
+			  --r-xs:8px; --r-sm:10px; --r-md:12px;
+			  --r-lg:16px; --r-xl:20px; --r-2xl:24px; --r-full:999px;
+			  --sh-1:0 2px 8px rgba(0,0,0,.3);
+			  --sh-2:0 8px 24px rgba(0,0,0,.45);
+			  --sh-3:0 24px 60px rgba(0,0,0,.7);
+			}
 			.glass{
 			  position:relative;overflow:hidden;
 			  background:linear-gradient(135deg,rgba(255,255,255,var(--glass-op1,.20)),rgba(255,255,255,var(--glass-op2,.04)) 55%,rgba(255,255,255,.10) 100%);
@@ -154,7 +163,7 @@
 			  -webkit-backdrop-filter:blur(var(--glass-blur,54px)) saturate(240%) brightness(1.12) contrast(1.05);
 			  border:1px solid var(--glass-border,rgba(255,255,255,.3));
 			  box-shadow:0 8px 36px rgba(0,0,0,.4),inset 0 1px 1.5px rgba(255,255,255,.45),inset 0 -1px 1.5px rgba(0,0,0,.2),inset 0 0 30px rgba(255,255,255,.04);
-			  border-radius:26px;
+			  border-radius:24px;
 			  transition:background .3s ease,border-color .3s ease,box-shadow .3s ease,backdrop-filter .3s ease;
 			}
 			.glass::before{
@@ -268,7 +277,7 @@
 			/* ======= iOS-STYLE APP ICON BUTTONS ======= */
 			.app-icon-btn{
 			  position:fixed;z-index:70;width:58px;height:58px;
-			  border-radius:13px; /* squircle Apple */
+			  border-radius:12px; /* squircle Apple */
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;
 			  border:none;transition:transform .2s ease,box-shadow .2s ease;
 			  box-shadow:0 6px 20px rgba(0,0,0,.45);
@@ -371,7 +380,7 @@
 
 			/* Alarm/Timer button – iOS Clock icon style */
 			#alarm-btn{
-			  position:fixed;bottom:26px;right:26px;z-index:70;width:58px;height:58px;border-radius:13px;
+			  position:fixed;bottom:26px;right:26px;z-index:70;width:58px;height:58px;border-radius:12px;
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0;
 			  background:#ffffff;box-shadow:0 6px 20px rgba(0,0,0,.4);border:none;
 			  transition:transform .2s ease;overflow:hidden;
@@ -648,7 +657,7 @@
 
 			/* Calculator button – iOS Calculator icon style */
 			#calc-btn{
-			  position:fixed;bottom:26px;left:calc(50% - 136px);z-index:70;width:58px;height:58px;border-radius:13px;
+			  position:fixed;bottom:26px;left:calc(50% - 136px);z-index:70;width:58px;height:58px;border-radius:12px;
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0;
 			  background:#1c1c1e;box-shadow:0 6px 20px rgba(0,0,0,.5);border:none;
 			  transition:transform .2s ease;overflow:hidden;
@@ -670,7 +679,7 @@
 
 			/* Notes button – iOS Notes icon style */
 			#notes-btn{
-			  position:fixed;bottom:26px;left:calc(50% - 66px);z-index:70;width:58px;height:58px;border-radius:13px;
+			  position:fixed;bottom:26px;left:calc(50% - 66px);z-index:70;width:58px;height:58px;border-radius:12px;
 			  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0;
 			  background:linear-gradient(180deg,#ffd60a 0%,#ffd60a 100%);box-shadow:0 6px 20px rgba(255,214,10,.4);border:none;
 			  transition:transform .2s ease;overflow:hidden;
@@ -750,8 +759,8 @@
 	</head>
 	<!-- ====== TOP APP DOCK ====== -->
 	<style>
-		#top-dock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(0,0,0,.42);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 8px 32px rgba(0,0,0,.55);max-width:94vw;overflow-x:auto;transition:gap .22s ease,padding .22s ease;}
-		.dock-btn{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;overflow:hidden;transition:transform .18s ease,width .22s ease,height .22s ease;flex-shrink:0;padding:0;}
+		#top-dock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(0,0,0,.42);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.55);max-width:94vw;overflow-x:auto;transition:gap .22s ease,padding .22s ease;}
+		.dock-btn{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;overflow:hidden;transition:transform .18s ease,width .22s ease,height .22s ease;flex-shrink:0;padding:0;}
 		.dock-btn:hover{transform:scale(1.1) translateY(-2px);}
 		.dock-btn:active{transform:scale(.94);}
 		.dock-btn svg{transition:width .22s ease,height .22s ease;}
@@ -1592,7 +1601,7 @@
 				<!-- IDIOMA DE LA INTERFAZ -->
 				<div
 					class="shrink-0"
-					style="background:rgba(10,132,255,.08);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(10,132,255,.25);"
+					style="background:rgba(10,132,255,.08);border-radius:16px;padding:12px 14px;border:1.5px solid rgba(10,132,255,.25);"
 				>
 					<div
 						style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;"
@@ -1616,7 +1625,7 @@
 				<div
 					id="siri-dialect-card"
 					class="shrink-0"
-					style="background:rgba(94,92,230,.1);border-radius:18px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
+					style="background:rgba(94,92,230,.1);border-radius:16px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
 					<div style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
 						🔮 Cómo habla IXA / el asistente
@@ -1726,7 +1735,7 @@
 				<div
 					id="easy-mode-banner"
 					onclick="setEasyMode(!_easyModeOn)"
-					style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:18px;cursor:pointer;transition:all .2s;background:rgba(52,199,89,.12);border:1.5px solid rgba(52,199,89,.35);flex-shrink:0;"
+					style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:16px;cursor:pointer;transition:all .2s;background:rgba(52,199,89,.12);border:1.5px solid rgba(52,199,89,.35);flex-shrink:0;"
 				>
 					<div>
 						<div
@@ -1804,7 +1813,7 @@
 				<!-- VISIBILIDAD -->
 				<div
 					class="shrink-0"
-					style="background:rgba(255,255,255,.05);border-radius:18px;padding:14px;border:1px solid rgba(255,255,255,.08);"
+					style="background:rgba(255,255,255,.05);border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,.08);"
 				>
 					<div
 						class="text-[9px] font-bold opacity-40 uppercase tracking-[0.2em] mb-3"
@@ -3431,7 +3440,7 @@
 					</div>
 				</div>
 				<div style="display:flex;align-items:center;gap:8px;">
-					<button id="emu-menu-genre" onclick="emuCycleMenuMusic()" title="Cambiar género" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:0 12px;height:36px;border-radius:18px;cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.03em;white-space:nowrap;">8-BIT CHIPTUNE</button>
+					<button id="emu-menu-genre" onclick="emuCycleMenuMusic()" title="Cambiar género" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:0 12px;height:36px;border-radius:16px;cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.03em;white-space:nowrap;">8-BIT CHIPTUNE</button>
 					<button id="emu-menu-music" onclick="emuToggleMenuMusic()" title="Música" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;">🎵</button>
 					<button onclick="closeEmuMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 				</div>
@@ -3442,7 +3451,7 @@
 				<div id="emu-carousel" style="display:flex;align-items:center;gap:18px;"></div>
 				<div style="display:flex;gap:14px;margin-top:34px;">
 					<button onclick="emuCarouselMove(-1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">◀</button>
-					<button onclick="emuCarouselSelect()" style="background:linear-gradient(135deg,#30d158,#0a84ff);border:none;color:#fff;padding:0 26px;height:52px;border-radius:26px;cursor:pointer;font-size:15px;font-weight:800;">▶ Jugar</button>
+					<button onclick="emuCarouselSelect()" style="background:linear-gradient(135deg,#30d158,#0a84ff);border:none;color:#fff;padding:0 26px;height:52px;border-radius:24px;cursor:pointer;font-size:15px;font-weight:800;">▶ Jugar</button>
 					<button onclick="emuCarouselMove(1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">▶</button>
 				</div>
 			</div>
@@ -4092,14 +4101,14 @@
 
 		<!-- ================= NOTES BUTTON ================= -->
 		<button id="dt-btn" onclick="toggleDeviceTracker()" title="Dispositivos"
-			style="position:fixed;bottom:26px;left:calc(50% + 74px);z-index:70;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(10,132,255,.3);transition:transform .2s ease;overflow:hidden;padding:0;background:#1c1c1e;">
+			style="position:fixed;bottom:26px;left:calc(50% + 74px);z-index:70;width:58px;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(10,132,255,.3);transition:transform .2s ease;overflow:hidden;padding:0;background:#1c1c1e;">
 			<span style="font-size:26px;">📱</span>
 		</button>
 		<button
 			id="notes-btn"
 			onclick="toggleNotesPanel()"
 			title="Notas"
-			style="position:fixed;bottom:26px;left:calc(50% - 62px);z-index:70;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(255,214,10,.4);transition:transform .2s ease;overflow:hidden;padding:0;font-size:0;background:#ffd60a;"
+			style="position:fixed;bottom:26px;left:calc(50% - 62px);z-index:70;width:58px;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 6px 20px rgba(255,214,10,.4);transition:transform .2s ease;overflow:hidden;padding:0;font-size:0;background:#ffd60a;"
 		>
 			<svg
 				width="48"
@@ -4506,16 +4515,16 @@
 				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
 				<div id="notes-draw-wrap" class="hidden flex-1 flex-col min-h-0">
 					<div id="notes-tools" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10">
-						<button class="notes-tool" data-tool="pen" onclick="notesTool('pen')" title="Bolígrafo" style="font-size:16px;padding:4px 7px;border-radius:9px;background:#0a84ff;border:none;cursor:pointer;">🖊️</button>
-						<button class="notes-tool" data-tool="pencil" onclick="notesTool('pencil')" title="Lápiz" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">✏️</button>
-						<button class="notes-tool" data-tool="marker" onclick="notesTool('marker')" title="Marcador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🖍️</button>
-						<button class="notes-tool" data-tool="highlighter" onclick="notesTool('highlighter')" title="Resaltador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🟡</button>
-						<button class="notes-tool" data-tool="eraser" onclick="notesTool('eraser')" title="Borrador" style="font-size:16px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🧽</button>
+						<button class="notes-tool" data-tool="pen" onclick="notesTool('pen')" title="Bolígrafo" style="font-size:16px;padding:4px 7px;border-radius:10px;background:#0a84ff;border:none;cursor:pointer;">🖊️</button>
+						<button class="notes-tool" data-tool="pencil" onclick="notesTool('pencil')" title="Lápiz" style="font-size:16px;padding:4px 7px;border-radius:10px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">✏️</button>
+						<button class="notes-tool" data-tool="marker" onclick="notesTool('marker')" title="Marcador" style="font-size:16px;padding:4px 7px;border-radius:10px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🖍️</button>
+						<button class="notes-tool" data-tool="highlighter" onclick="notesTool('highlighter')" title="Resaltador" style="font-size:16px;padding:4px 7px;border-radius:10px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🟡</button>
+						<button class="notes-tool" data-tool="eraser" onclick="notesTool('eraser')" title="Borrador" style="font-size:16px;padding:4px 7px;border-radius:10px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">🧽</button>
 						<span style="width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 2px;"></span>
 						<input type="range" id="notes-size" min="1" max="40" value="4" oninput="notesSetSize(this.value)" title="Grosor" style="width:70px;">
 						<span style="flex:1;"></span>
-						<button onclick="notesUndo()" title="Deshacer" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">↩️</button>
-						<button onclick="notesClearDraw()" title="Borrar todo" style="font-size:15px;padding:4px 7px;border-radius:9px;background:rgba(255,69,58,.2);border:none;cursor:pointer;">🗑️</button>
+						<button onclick="notesUndo()" title="Deshacer" style="font-size:15px;padding:4px 7px;border-radius:10px;background:rgba(255,255,255,.1);border:none;cursor:pointer;">↩️</button>
+						<button onclick="notesClearDraw()" title="Borrar todo" style="font-size:15px;padding:4px 7px;border-radius:10px;background:rgba(255,69,58,.2);border:none;cursor:pointer;">🗑️</button>
 					</div>
 					<div id="notes-colors" class="flex items-center gap-1.5 px-3 py-2 flex-wrap border-b border-white/10"></div>
 					<div class="flex-1 min-h-0 relative" style="background:#fafafa;">
@@ -5288,7 +5297,7 @@
 			.glow-gold{text-shadow:0 0 14px #e6c35c!important;}
 			.glow-cyan{text-shadow:0 0 14px #00e5ff!important;}
 			.long-shadow{text-shadow:1px 1px 0 rgba(0,0,0,.5),2px 2px 0 rgba(0,0,0,.45),3px 3px 0 rgba(0,0,0,.4),4px 4px 0 rgba(0,0,0,.35),5px 5px 10px rgba(0,0,0,.4)!important;}
-			.pill-alarm{background:rgba(0,0,0,.35);padding:10px 28px;border-radius:18px;border:3px solid #ff3b30;box-shadow:0 0 22px rgba(255,59,48,.5);display:inline-block;}
+			.pill-alarm{background:rgba(0,0,0,.35);padding:10px 28px;border-radius:16px;border:3px solid #ff3b30;box-shadow:0 0 22px rgba(255,59,48,.5);display:inline-block;}
 			.pill-clasico{background:rgba(255,255,255,.08);padding:8px 26px;border-radius:50px;border:1px solid rgba(255,255,255,.4);display:inline-block;}
 			.pill-vintage{background:rgba(60,40,20,.35);padding:10px 28px;border-radius:12px;border:4px double #c9a35c;display:inline-block;}
 			.pill-lcd{background:rgba(20,30,15,.55);padding:8px 22px;border-radius:8px;border:2px solid #5a7a1f;display:inline-block;}
@@ -8488,7 +8497,7 @@
 			      const isLive = s.type==='stream';
 			      const liveBadge = isLive ? `<span style="font-size:8px;background:#ff453a;color:#fff;padding:1px 4px;border-radius:4px;margin-left:4px;">LIVE</span>` : '';
 			      html += `<button id="station-${s.id}" class="station-btn" data-title="${(s.tags||'')+' '+s.title}" onclick="setStation('${s.id}');updateIpodUI(STATIONS.find(x=>x.id==='${s.id}'))" style="width:100%;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:3px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
-			        <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">${s.flag||'📻'}</div>
+			        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">${s.flag||'📻'}</div>
 			        <div style="text-align:left;flex:1;min-width:0;">
 			          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">${s.title}${liveBadge}</div>
 			          <div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.sub}</div>
@@ -8723,7 +8732,7 @@
 			  IX_ONB_PASOS.forEach(function(_,i){
 			    puntos+='<span style="width:7px;height:7px;border-radius:50%;background:'+(i===_ixOnbPaso?'#0a84ff':'rgba(255,255,255,.22)')+';"></span>';
 			  });
-			  d.innerHTML='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:26px;box-shadow:0 26px 70px rgba(0,0,0,.75);padding:28px 24px 22px;color:#fff;text-align:center;">'
+			  d.innerHTML='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:28px 24px 22px;color:#fff;text-align:center;">'
 			    +'<div style="font-size:52px;line-height:1;margin-bottom:14px;">'+p.icono+'</div>'
 			    +'<div style="font-size:20px;font-weight:800;margin-bottom:9px;">'+escapeHtml(p.titulo)+'</div>'
 			    +'<div style="font-size:13.5px;opacity:.62;line-height:1.6;margin-bottom:12px;">'+escapeHtml(p.texto)+'</div>'
@@ -9510,7 +9519,7 @@
 			    const safeName = escapeHtml((s.name || 'Emisora').trim().slice(0,60));
 			    const sub = escapeHtml([s.country, s.codec, s.bitrate ? s.bitrate+'kbps' : ''].filter(Boolean).join(' · '));
 			    return `<button onclick="playWorldStationFromResult(${i})" style="width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:5px;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
-			        <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">${flag}</div>
+			        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">${flag}</div>
 			        <div style="flex:1;min-width:0;">
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
 			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</div>
@@ -14477,8 +14486,8 @@
 			  }
 			  body.innerHTML=`
 			    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-			      <div style="flex:1;height:18px;background:rgba(255,255,255,.08);border-radius:9px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">
-			        <div style="height:100%;width:${pctNum}%;background:${barColor};border-radius:9px;transition:width .6s ease;"></div>
+			      <div style="flex:1;height:18px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">
+			        <div style="height:100%;width:${pctNum}%;background:${barColor};border-radius:10px;transition:width .6s ease;"></div>
 			      </div>
 			      <div style="font-size:22px;font-weight:900;color:#fff;min-width:70px;text-align:right;">${pctNum}%${est.charging?' ⚡':''}</div>
 			    </div>
@@ -14744,6 +14753,7 @@
 			    '⏳ Lo mismo para el temporizador: etiqueta y tono con pantalla propia en vez de ventanitas',
 			    '🖼️ Pantallas vacías con gracia: Notas, Pistas de IXBand, el buscador de canales y Mi Nube ahora te dicen qué hacer cuando no hay nada, con su icono. La galería de Mi Nube antes no decía absolutamente nada',
 			    '👋 BIENVENIDA la primera vez: 3 pantallas cortas que explican qué es IXClocK, el gesto de 3 dedos y cómo instalarla como app. Solo sale una vez, y puedes volver a verla desde ❓ Ayuda',
+			    '✨ Acabado más parejo: las esquinas de los paneles usaban 12 medidas distintas al azar y la app se veía hecha a trozos. Ahora siguen una sola escala, y las ventanas comparten la misma sombra',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -16414,7 +16424,7 @@
 			    st.textContent=''
 			      +'#garageband-modal{position:fixed;inset:0;z-index:5000;background:#161618;display:flex;flex-direction:column;font-family:-apple-system,sans-serif;color:#fff;user-select:none;-webkit-user-select:none;}'
 			      +'#gb-topbar{display:flex;align-items:center;gap:10px;padding:6px 12px;background:linear-gradient(180deg,#3a3a3c,#2b2b2d);border-bottom:1px solid #0a0a0a;flex-shrink:0;min-height:52px;}'
-			      +'.gb-tb-btn{background:linear-gradient(180deg,#4a4a4c,#38383a);border:1px solid #1c1c1e;color:#d8d8dc;width:36px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 rgba(255,255,255,.08) inset;}'
+			      +'.gb-tb-btn{background:linear-gradient(180deg,#4a4a4c,#38383a);border:1px solid #1c1c1e;color:#d8d8dc;width:36px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 rgba(255,255,255,.08) inset;}'
 			      +'.gb-tb-btn.on{background:linear-gradient(180deg,#0a84ff,#0060df);color:#fff;}'
 			      +'#gb-lcd{display:flex;align-items:stretch;background:#101211;border:1px solid #000;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.7) inset;padding:3px 10px;gap:12px;min-width:170px;}'
 			      +'.gb-lcd-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;}'
@@ -16443,7 +16453,7 @@
 			      +'.gb-seg{flex:1;border-bottom:1px solid #0f0f10;background:linear-gradient(180deg,#232325,#1c1c1e);position:relative;}'
 			      +'.gb-seg:after{content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:linear-gradient(90deg,transparent,#8e8e93,transparent);opacity:.5;}'
 			      +'.gb-seg.dn{background:linear-gradient(180deg,#3a3a44,#2b2b33);}'
-			      +'.gb-chordbtn{background:linear-gradient(180deg,#39393c,#2a2a2c);border:1px solid #000;color:#e8e8ec;padding:10px 16px;border-radius:9px;font-size:15px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;}'
+			      +'.gb-chordbtn{background:linear-gradient(180deg,#39393c,#2a2a2c);border:1px solid #000;color:#e8e8ec;padding:10px 16px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;}'
 			      +'.gb-chordbtn.on{background:linear-gradient(180deg,#0a84ff,#0060df);color:#fff;box-shadow:0 0 10px rgba(10,132,255,.5);}'
 			      +'.gb-string-row{flex:1;display:flex;align-items:center;cursor:pointer;min-height:26px;}'
 			      +'.gb-string{width:100%;border-radius:3px;background:linear-gradient(180deg,#d2d2d6,#7a7a80);box-shadow:0 1px 2px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.35);transform-origin:center;}'
@@ -16453,10 +16463,10 @@
 			      +'.gb-pedal .led{width:8px;height:8px;border-radius:50%;background:#3a3a3c;box-shadow:none;margin-top:2px;}'
 			      +'.gb-pedal.on{background:linear-gradient(180deg,#0a84ff,#0057b8);color:#fff;}'
 			      +'.gb-pedal.on .led{background:#ff453a;box-shadow:0 0 7px #ff453a;}'
-			      +'.gb-fx-card{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:11px;padding:10px 12px;color:#e8e8ec;cursor:pointer;}'
+			      +'.gb-fx-card{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:12px;padding:10px 12px;color:#e8e8ec;cursor:pointer;}'
 			      +'.gb-fx-card.on{background:linear-gradient(180deg,#0a84ff,#0057b8);border-color:#0a84ff;color:#fff;}'
 			      +'.gb-fx-card.on span{opacity:1 !important;}'
-			      +'.gb-sd-chip{padding:9px 13px;border-radius:11px;color:#0d0d0d;font-size:11px;font-weight:800;cursor:grab;user-select:none;touch-action:none;box-shadow:0 3px 8px rgba(0,0,0,.5);white-space:nowrap;}'
+			      +'.gb-sd-chip{padding:9px 13px;border-radius:12px;color:#0d0d0d;font-size:11px;font-weight:800;cursor:grab;user-select:none;touch-action:none;box-shadow:0 3px 8px rgba(0,0,0,.5);white-space:nowrap;}'
 			      +'.gb-smp-key{width:56px;height:96px;border-radius:0 0 8px 8px;border:1px solid #a9a9ad;border-top:none;background:linear-gradient(180deg,#fdfdfd,#e2e2e4);color:#8e8e93;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;}'
 			      +'.gb-smp-key:active{background:linear-gradient(180deg,#cfd6e6,#b9c2d8);}'
 			      +'.gb-seq-cell:active{transform:scale(.9);}'
@@ -16863,7 +16873,7 @@
 			    s+='<button class="gb-chip gb-drummer-chip'+(d.id===_gbDrummerStyle?' on':'')+'" data-d="'+d.id+'" onclick="gbDrummerPick(\''+d.id+'\')">'+d.name+'</button>';
 			  });
 			  s+='</div>';
-			  s+='<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;padding:22px;background:radial-gradient(120% 120% at 50% 0%,#2a2a2e,#151517);border-radius:18px;">'
+			  s+='<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;padding:22px;background:radial-gradient(120% 120% at 50% 0%,#2a2a2e,#151517);border-radius:16px;">'
 			    +'<button id="gb-drummer-play" onclick="gbDrummerToggle()" style="width:74px;height:74px;border-radius:50%;border:none;background:linear-gradient(180deg,#30d158,#20a848);color:#062;font-size:30px;font-weight:900;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);">▶</button>'
 			    +'<div style="display:flex;flex-direction:column;gap:6px;min-width:220px;">'
 			    +  '<div style="font-size:11px;opacity:.6;font-weight:700;">INTENSIDAD</div>'
@@ -17937,7 +17947,7 @@
 			  let s='<div style="display:flex;align-items:center;margin-bottom:18px;">'
 			    +'<div style="color:#0a84ff;font-size:15px;font-weight:600;">‹ Mis canciones</div>'
 			    +'<div style="flex:1;display:flex;justify-content:center;margin-right:110px;">'
-			    +  '<div style="display:flex;background:#1c1c1e;border:1px solid #333;border-radius:9px;overflow:hidden;">'
+			    +  '<div style="display:flex;background:#1c1c1e;border:1px solid #333;border-radius:10px;overflow:hidden;">'
 			    +    '<button id="gb-seg-ll" onclick="gbBuildSongs()" style="background:#48484c;border:none;color:#fff;padding:7px 22px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">LIVE LOOPS</button>'
 			    +    '<button onclick="gbView(\'tracks\')" style="background:transparent;border:none;color:#d8d8dc;padding:7px 22px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">PISTAS</button>'
 			    +  '</div>'
@@ -18047,7 +18057,7 @@
 			  for(let c=0;c<4;c++) s+='<button onclick="gbLLColumn('+c+')" style="background:#2c2c2e;border:1px solid #48484a;border-radius:8px;color:#d8d8dc;padding:5px;cursor:pointer;font-size:11px;font-weight:700;">▼ Col '+(c+1)+'</button>';
 			  GB_LL_ROWS.forEach(function(row,r){
 			    s+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">'
-			      +'<span style="width:34px;height:34px;border-radius:9px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+_gbLLIcon(row,r)+'</span>'+row.name+'</div>';
+			      +'<span style="width:34px;height:34px;border-radius:10px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+_gbLLIcon(row,r)+'</span>'+row.name+'</div>';
 			    row.cells.forEach(function(_,c){
 			      s+='<button class="gb-ll-cell" id="gb-ll-'+r+'-'+c+'" onclick="gbLLToggle('+r+','+c+')" style="background:'+GB_LL_COLORS[r]+'26;color:'+GB_LL_COLORS[r]+';">▶</button>';
 			    });
@@ -18190,7 +18200,7 @@
 			    for(let k=0;k<Math.min(24,t.events.length);k++) bars+='<span class="bar" style="height:'+(30+((k*37)%45))+'%;"></span>';
 			    s+='<div style="display:flex;height:52px;margin-top:6px;'+(t.muted?'opacity:.38;':'')+'">'
 			      +'<div class="gb-track-hdr">'
-			      +  '<span style="width:26px;height:26px;border-radius:7px;background:linear-gradient(180deg,#48484c,#333);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(GB_TRACK_ICONS[t.name]||'🎵')+'</span>'
+			      +  '<span style="width:26px;height:26px;border-radius:8px;background:linear-gradient(180deg,#48484c,#333);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(GB_TRACK_ICONS[t.name]||'🎵')+'</span>'
 			      +  '<span style="flex:1;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+t.name+'</span>'
 			      +  '<button class="gb-ms'+(t.muted?' mOn':'')+'" onclick="gbToggleMute('+i+')" title="Silenciar">M</button>'
 			      +  '<button class="gb-ms" onclick="gbDeleteTake('+i+')" title="Borrar" style="color:#ff6961;">✕</button>'
@@ -18688,12 +18698,12 @@
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
 			  ALARM_TONES.forEach(function(t){
 			    const on=t.id===tono;
-			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:11px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
+			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:12px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
 			  });
 			  s+='</div>'
 			    +'<div style="display:flex;gap:9px;">'
-			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;">Cancelar</button>'
-			    +  '<button onclick="icaGuardarAlarma()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:13px;cursor:pointer;">Guardar</button>'
+			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;">Cancelar</button>'
+			    +  '<button onclick="icaGuardarAlarma()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:800;padding:13px;cursor:pointer;">Guardar</button>'
 			    +'</div></div>';
 			  hoja.innerHTML=s;
 			  document.body.appendChild(hoja);
@@ -18872,12 +18882,12 @@
 			  hoja.id='ica-alarm-sheet';
 			  hoja.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
 			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
-			  hoja.innerHTML='<div style="width:min(380px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
+			  hoja.innerHTML='<div style="width:min(380px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
 			    +'<div style="font-size:15px;font-weight:800;margin-bottom:14px;text-align:center;">'+escapeHtml(titulo)+'</div>'
 			    +'<input id="ica-hoja-txt" type="text" maxlength="40" value="'+escapeHtml(valor||'')+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:15px;padding:12px 14px;outline:none;box-sizing:border-box;margin-bottom:16px;">'
 			    +'<div style="display:flex;gap:9px;">'
-			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
-			    +  '<button id="ica-hoja-ok" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
+			    +  '<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
+			    +  '<button id="ica-hoja-ok" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
 			    +'</div></div>';
 			  document.body.appendChild(hoja);
 			  const inp=document.getElementById('ica-hoja-txt');
@@ -18892,18 +18902,18 @@
 			  hoja.id='ica-alarm-sheet';
 			  hoja.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
 			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
-			  let s='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
+			  let s='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
 			    +'<div style="font-size:15px;font-weight:800;margin-bottom:4px;text-align:center;">Tono del temporizador</div>'
 			    +'<div style="font-size:11px;opacity:.5;text-align:center;margin-bottom:14px;">Tócalo para oírlo antes de elegir</div>'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+_icaTimerTone+'">'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:18px;">';
 			  ALARM_TONES.forEach(function(t){
 			    const on=t.id===_icaTimerTone;
-			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:11px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
+			    s+='<button class="ica-tono" data-t="'+t.id+'" onclick="icaProbarTono(\''+t.id+'\')" style="background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.12)')+';border-radius:12px;color:#fff;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;">🔔 '+t.name+'</button>';
 			  });
 			  s+='</div><div style="display:flex;gap:9px;">'
-			    +'<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
-			    +'<button onclick="icaGuardarTonoTimer()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
+			    +'<button onclick="_icaCerrarHoja()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:14px;font-weight:700;padding:12px;cursor:pointer;">Cancelar</button>'
+			    +'<button onclick="icaGuardarTonoTimer()" style="flex:1;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:800;padding:12px;cursor:pointer;">Guardar</button>'
 			    +'</div></div>';
 			  hoja.innerHTML=s;
 			  document.body.appendChild(hoja);
@@ -19357,12 +19367,12 @@
 			      +  '<div style="font-size:10px;opacity:.5;">'+a.d+'</div>'
 			      +  '<div id="ix-dlbar-'+a.id+'" style="display:none;height:5px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px;"><div id="ix-dlfill-'+a.id+'" style="height:100%;width:0%;background:#30d158;transition:width .2s;"></div></div>'
 			      +'</div>'
-			      +'<button onclick="ixOpenApp(\''+a.id+'\')" title="Abrir" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">Abrir</button>'
-			      +'<button onclick="ixCopyLink(\''+a.id+'\')" title="Copiar enlace de esta app" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">🔗 Enlace</button>'
-			      +'<button onclick="ixInstallApp(\''+a.id+'\')" title="Poner su icono en la pantalla de inicio" style="background:rgba(94,92,230,.25);border:1px solid rgba(94,92,230,.5);color:#c7c6ff;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">📲 Instalar</button>'
+			      +'<button onclick="ixOpenApp(\''+a.id+'\')" title="Abrir" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">Abrir</button>'
+			      +'<button onclick="ixCopyLink(\''+a.id+'\')" title="Copiar enlace de esta app" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">🔗 Enlace</button>'
+			      +'<button onclick="ixInstallApp(\''+a.id+'\')" title="Poner su icono en la pantalla de inicio" style="background:rgba(94,92,230,.25);border:1px solid rgba(94,92,230,.5);color:#c7c6ff;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">📲 Instalar</button>'
 			      +(dl
-			        ? '<button onclick="ixRemoveApp(\''+a.id+'\')" style="background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.4);color:#ff8a80;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">Borrar</button>'
-			        : '<button id="ix-dlbtn-'+a.id+'" onclick="ixDownloadOne(\''+a.id+'\')" style="background:rgba(48,209,88,.2);border:1px solid rgba(48,209,88,.45);color:#8ef0ab;padding:7px 11px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:700;">⬇️ Guardar</button>')
+			        ? '<button onclick="ixRemoveApp(\''+a.id+'\')" style="background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.4);color:#ff8a80;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">Borrar</button>'
+			        : '<button id="ix-dlbtn-'+a.id+'" onclick="ixDownloadOne(\''+a.id+'\')" style="background:rgba(48,209,88,.2);border:1px solid rgba(48,209,88,.45);color:#8ef0ab;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">⬇️ Guardar</button>')
 			      +'</div>';
 			  });
 			  s+='</div>';
@@ -19419,7 +19429,7 @@
 			function ixToast(msg){
 			  let t=document.getElementById('ix-toast');
 			  if(!t){ t=document.createElement('div'); t.id='ix-toast';
-			    t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,20,24,.96);color:#fff;padding:12px 18px;border-radius:13px;font-size:12px;font-weight:700;z-index:2147483000;box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:88vw;text-align:center;border:1px solid rgba(255,255,255,.12);';
+			    t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,20,24,.96);color:#fff;padding:12px 18px;border-radius:12px;font-size:12px;font-weight:700;z-index:2147483000;box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:88vw;text-align:center;border:1px solid rgba(255,255,255,.12);';
 			    document.body.appendChild(t); }
 			  t.textContent=msg; t.style.display='block';
 			  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },3200);

@@ -16,29 +16,31 @@ empezar y se actualiza antes de subir.
 ## Pendiente
 
 ### Bugs y deuda
-1. **Estilos incoherentes.** Los paneles nuevos (descargas, ciudades, divisas) y
-   los viejos usan radios, sombras y espaciados distintos. Unificar con
-   variables CSS partiendo del `glass` que ya existe.
-2. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
+1. **El emulador sigue sin confirmarse.** Ya usa `cdn.emulatorjs.org` + 3
    espejos y avisa cuál falló, pero no se ha podido probar con red real. Si el
    usuario pasa el mensaje de error, actuar en consecuencia.
 
 ### Funciones nuevas
-3. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
+2. **Mezclador de IXBand**: volumen, paneo, silencio y solo por pista de
    `_gbTakes` (ya existe `muted`, falta el resto).
-4. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
-5. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
-6. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
+3. **Cuenta atrás antes de grabar** en IXBand, reutilizando `_gbTick`.
+4. **Compás y tonalidad** en IXBand (4/4, 3/4, 6/8); el compás alimenta el LCD.
+5. **Afinador** con micrófono (autocorrelación), reutilizando el permiso que ya
    piden Grabadora y Sampler.
-7. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
-8. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
+6. **Secciones de canción** A/B/C en IXBand: crear, duplicar y reordenar.
+7. **Buscador global de verdad**, que busque en ajustes, apps, notas, ciudades
     y emisoras a la vez (hoy «Buscador de canales» solo busca emisoras).
-9. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
+8. **Atajos de teclado** para quien lo use con teclado: cerrar ventanas, abrir
     apps, control del reproductor.
 
 ---
 
 ## Hecho
+
+- Escala de diseño (`--r-xs`…`--r-2xl`, `--sh-1`…`--sh-3`) junto a las variables
+  que ya existían, y 52 radios casi-duplicados (7/9/11/13/18/22/26 px) alineados
+  a la escala. Sin tocar los 3px de las cuerdas ni los 999px de las píldoras.
+  Verificado con comparación de píxeles antes/después: máx. 1% de cambio.
 
 - Bienvenida de 3 pasos la primera vez (qué es, gesto de 3 dedos, instalar),
   con `ix_onboarding_v1` en localStorage y botón para repetirla en la Ayuda.
