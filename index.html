@@ -187,6 +187,24 @@
 			  --sh-2:0 8px 24px rgba(0,0,0,.45);
 			  --sh-3:0 24px 60px rgba(0,0,0,.7);
 			}
+			/* Fichas de la franja de resumen. Mismo tamano visual que la fase
+			   lunar, que ya vivia en esa linea, para que se lean como una sola
+			   cosa y no como tres anadidos sueltos. */
+			.ix-fr{
+			  display:inline-flex; align-items:center; gap:6px;
+			  font-size:10px; font-weight:700; letter-spacing:.12em;
+			  text-transform:uppercase; white-space:nowrap;
+			  min-width:0; max-width:100%; overflow:hidden;
+			}
+			.ix-fr .ix-fr-t{ overflow:hidden; text-overflow:ellipsis; min-width:0; }
+			.ix-fr[data-ir]{ cursor:pointer; }
+			.ix-fr[data-ir]:hover{ opacity:.6; }
+			.ix-fr .ix-fr-e{ font-size:13px; letter-spacing:normal; }
+			/* En movil la linea entera no cabe de una: se deja envolver y se
+			   aprieta el espaciado en vez de recortar datos. */
+			@media (max-width: 520px){
+			  .ix-fr{ letter-spacing:.08em; }
+			}
 			/* Dedos, no ratón: en pantallas táctiles los botones diminutos son
 			   imposibles de acertar, y tanto Apple como Google piden un mínimo
 			   para aprobar una app. Solo se aplica con puntero grueso, así que en
@@ -2529,26 +2547,37 @@
 			style="padding-top:80px;padding-bottom:80px;"
 		>
 			<div class="text-center z-10 w-full max-w-4xl">
+				<!-- Franja de resumen: clima, siguiente alarma, próxima festividad y
+				     fase lunar en una sola línea. La luna ya vivía aquí; las otras
+				     tres se calculaban pero estaban repartidas por la pantalla. -->
 				<div
-					class="flex items-center gap-3 mb-4 justify-center opacity-70"
-					id="luna-row"
+					class="flex items-center justify-center flex-wrap gap-x-3 gap-y-1 mb-4 opacity-70"
+					id="ix-franja"
 				>
+					<span class="ix-fr" id="fr-clima" style="display:none;"></span>
+					<span class="ix-fr" id="fr-alarma" style="display:none;"></span>
+					<span class="ix-fr" id="fr-fest" style="display:none;"></span>
 					<span
-						class="material-symbols-outlined text-base text-yellow-300"
-						id="moon-icon"
-						>brightness_3</span
+						class="flex items-center gap-3"
+						id="luna-row"
 					>
-					<span
-						class="text-[10px] font-bold tracking-[0.3em] uppercase"
-						id="luna-nombre"
-						>Luna Creciente</span
-					>
-					<span id="luna-sep">|</span>
-					<span
-						class="text-[10px] font-bold tracking-[0.3em] uppercase"
-						id="luna-detalles"
-						>Estación Orbital</span
-					>
+						<span
+							class="material-symbols-outlined text-base text-yellow-300"
+							id="moon-icon"
+							>brightness_3</span
+						>
+						<span
+							class="text-[10px] font-bold tracking-[0.3em] uppercase"
+							id="luna-nombre"
+							>Luna Creciente</span
+						>
+						<span id="luna-sep">|</span>
+						<span
+							class="text-[10px] font-bold tracking-[0.3em] uppercase"
+							id="luna-detalles"
+							>Estación Orbital</span
+						>
+					</span>
 				</div>
 				<div
 					class="clock-display flex items-baseline justify-center mb-6"
@@ -15067,6 +15096,13 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'1.9', fecha: '3 de septiembre de 2026', titulo:'Franja de resumen', cambios: [
+			    '➕ Encima del reloj, en una sola línea: el tiempo que hace, la siguiente alarma con lo que falta para que suene, la próxima festividad con los días que quedan y la fase lunar',
+			    '➕ Toca el clima o la festividad y te lleva a su panel, resaltado; toca la alarma y se abre el panel de alarmas',
+			    '➕ Cada dato de la franja se puede quitar por separado desde Ajustes → Visibilidad',
+			    '🛠️ La franja lee los datos de donde ya viven, así que no puede decir una temperatura distinta a la del panel de al lado',
+			    '🛠️ Si una alarma de hoy ya pasó, la franja cuenta la de mañana en vez de dar una hora en negativo',
+			  ]},
 			  { v:'1.7', fecha: '29 de julio de 2026', titulo:'IXBand como GarageBand', cambios: [
 			    '➕ Drummer: un baterista que toca solo. Elige el estilo (Rock, Pop, Hip Hop, House, Trap, Funk, Latin, Reggaetón, Balada) y la intensidad, y sigue el tempo del LCD',
 			    '➕ Beat Sequencer: la caja de ritmos de pasos de GarageBand — 8 sonidos × 16 casillas que prendes/apagas, con Limpiar y Aleatorio',
@@ -15341,6 +15377,9 @@
 			  {id:'siri-bar',       label:'Barra Search or Ask',   icon:'search',        sel:'#siri-text-bar'},
 			  {id:'date-display-el',label:'Fecha completa',        icon:'today',         sel:'#date-display'},
 			  {id:'luna-info',      label:'Luna (fase lunar)',      icon:'brightness_3',  sel:'#luna-row'},
+			  {id:'fr-clima',       label:'Franja: clima',          icon:'thermostat',    sel:'#fr-clima'},
+			  {id:'fr-alarma',      label:'Franja: siguiente alarma',icon:'alarm',        sel:'#fr-alarma'},
+			  {id:'fr-fest',        label:'Franja: próxima festividad',icon:'celebration',sel:'#fr-fest'},
 			  {id:'estacion-orbital',label:'Estación orbital',     icon:'satellite',     sel:'#luna-detalles'},
 			  {id:'profile-btn-vis',label:'Botón de usuario',      icon:'person',        sel:'#profile-btn'},
 			  {id:'panel-clima',    label:'Panel: Clima',          icon:'wb_sunny',      sel:'[data-panel="clima"]'},
@@ -15386,6 +15425,13 @@
 			  if(id === 'segundos-reloj'){
 			    window._segundosVisible = visible;
 			    return; // clock will pick this up on next tick
+			  }
+			  // Fichas de la franja: al volver a mostrarlas hay que repintarlas,
+			  // porque al ocultarlas se les vacia el contenido.
+			  if(id==='fr-clima' || id==='fr-alarma' || id==='fr-fest'){
+			    if(visible){ try{ ixPintarFranja(); }catch(e){} }
+			    else { const e2=document.getElementById(id); if(e2) e2.style.display='none'; }
+			    return;
 			  }
 			  // Special: estacion-orbital — only hides the text + separator, not the whole row
 			  if(id === 'estacion-orbital'){
@@ -20542,6 +20588,125 @@
 			function dtCloseDetail(){
 			  document.getElementById('dt-detail').classList.remove('open');
 			}
+
+			/* ===================== FRANJA DE RESUMEN =====================
+			   Clima, siguiente alarma, próxima festividad y fase lunar en la
+			   misma línea, encima del reloj. Los cuatro datos ya existían pero
+			   había que ir a buscarlos a cuatro sitios distintos.
+			   No se recalcula nada: se lee de donde ya vive cada dato
+			   (_lastWeatherRaw, alarms, obtenerFeriados) para que la franja no
+			   pueda contradecir al panel que tiene al lado. */
+			function _frClima(){
+			  if(typeof _lastWeatherRaw!=='object' || !_lastWeatherRaw || !_lastWeatherRaw.cur) return null;
+			  const c=_lastWeatherRaw.cur;
+			  if(typeof c.temperature_2m!=='number') return null;
+			  const t=Math.round(c.temperature_2m);
+			  return { emoji: ICA_CLIMA_EMOJI[c.weathercode] || '🌡️',
+			           texto: (_romanMode?toRoman(t):t)+'°' };
+			}
+			// La alarma habilitada que suena antes. Si la hora de hoy ya pasó,
+			// cuenta para mañana: es lo que va a pasar de verdad.
+			function _frAlarma(){
+			  if(typeof alarms==='undefined' || !Array.isArray(alarms)) return null;
+			  const now=new Date(), ahora=now.getHours()*60+now.getMinutes();
+			  let mejor=null, faltan=Infinity;
+			  alarms.forEach(a=>{
+			    if(!a || !a.enabled) return;
+			    if(typeof a.hour!=='number' || typeof a.minute!=='number') return;
+			    let en=(a.hour*60+a.minute)-ahora;
+			    if(en<0) en+=1440;
+			    if(en<faltan){ faltan=en; mejor=a; }
+			  });
+			  if(!mejor) return null;
+			  let cuanto;
+			  if(faltan===0) cuanto=_uiT('ahora');
+			  else if(faltan<60) cuanto=_uiT('en')+' '+faltan+' min';
+			  else cuanto=_uiT('en')+' '+Math.round(faltan/60)+' h';
+			  return { emoji:'⏰', texto: fmtAMPM(mejor.hour, mejor.minute)+' · '+cuanto };
+			}
+			// La festividad más cercana, de la misma tabla que pinta el panel.
+			function _frFest(){
+			  if(typeof obtenerFeriados!=='function') return null;
+			  const now=new Date();
+			  const hoy0=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			  let mejor=null, dias=Infinity;
+			  obtenerFeriados(now.getFullYear()).concat(obtenerFeriados(now.getFullYear()+1)).forEach(f=>{
+			    if(!f || isNaN(f.date)) return;
+			    const d=Math.round((f.date-hoy0)/86400000);
+			    if(d<0 || d>366) return;
+			    if(d<dias){ dias=d; mejor=f; }
+			  });
+			  if(!mejor) return null;
+			  const cuando = dias===0 ? _uiT('¡Hoy!')
+			               : dias===1 ? _uiT('Mañana')
+			               : dias+' '+_uiT('días');
+			  // Se recorta el NOMBRE, no la ficha entera: recortando por CSS lo
+			  // primero que se pierde es «· 2 días», que es justo el dato util.
+			  const lim = (typeof window!=='undefined' && window.innerWidth<520) ? 16 : 24;
+			  let nom=_uiT(mejor.name);
+			  if(nom.length>lim) nom=nom.slice(0,lim-1).replace(/[\s·,.]+$/,'')+'…';
+			  return { emoji: mejor.emoji, texto: nom+' · '+cuando, hoy: dias===0,
+			           titulo: _uiT(mejor.name)+' · '+cuando };
+			}
+			// Lleva a donde vive el dato entero. Si el panel está oculto por
+			// Visibilidad no se hace nada, en vez de desplazar a la nada.
+			function ixFranjaIr(que){
+			  const sel = que==='clima' ? '[data-panel="clima"]' : '[data-panel="festividades"]';
+			  const el = document.querySelector(sel);
+			  if(!el || getComputedStyle(el).display==='none') return;
+			  try{ el.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){ el.scrollIntoView(); }
+			  el.style.transition='box-shadow .35s';
+			  el.style.boxShadow='0 0 0 2px var(--accent-color, #0a84ff)';
+			  setTimeout(()=>{ el.style.boxShadow=''; }, 1200);
+			}
+			function _frPinta(id, dato, ir){
+			  const el=document.getElementById(id);
+			  if(!el) return;
+			  // Ocultar la ficha desde Visibilidad manda: si no, el siguiente
+			  // repintado (cada minuto) la volveria a sacar.
+			  const permitida = (function(){ try{ return _visState[id]!==false; }catch(e){ return true; } })();
+			  if(!dato || !permitida){ el.style.display='none'; el.innerHTML=''; el.removeAttribute('data-ir'); return; }
+			  el.style.display='';
+			  el.innerHTML='<span class="ix-fr-e">'+escapeHtml(dato.emoji)+'</span>'
+			              +'<span class="ix-fr-t">'+escapeHtml(dato.texto)+'</span>';
+			  el.title=dato.titulo || dato.texto;   // el globito, sin recortar
+			  if(ir){ el.setAttribute('data-ir', ir); el.onclick=()=>ixFranjaIr(ir); }
+			}
+			function ixPintarFranja(){
+			  try{
+			    _frPinta('fr-clima',  _frClima(),  'clima');
+			    const al=_frAlarma();
+			    _frPinta('fr-alarma', al, null);
+			    const elA=document.getElementById('fr-alarma');
+			    if(elA && al){ elA.setAttribute('data-ir','alarma'); elA.onclick=()=>{ try{ toggleAlarmPanel(); }catch(e){} }; }
+			    const fe=_frFest();
+			    _frPinta('fr-fest', fe, 'fest');
+			    const elF=document.getElementById('fr-fest');
+			    if(elF && fe && fe.hoy) elF.style.color='#ffd60a'; else if(elF) elF.style.color='';
+			  }catch(e){}
+			}
+			// Un minuto basta: el dato más rápido de los cuatro es «en N min».
+			setInterval(ixPintarFranja, 60000);
+			setTimeout(ixPintarFranja, 1500);
+			// Al girar el movil cambia cuanto cabe, asi que se vuelve a medir.
+			let _frResize=null;
+			window.addEventListener('resize', ()=>{ clearTimeout(_frResize); _frResize=setTimeout(ixPintarFranja, 200); });
+			// Poner o quitar una alarma tiene que verse ya, no al minuto.
+			if(typeof renderAlarms==='function'){
+			  const _frRA=renderAlarms;
+			  window.renderAlarms=function(){ const r=_frRA.apply(this, arguments); ixPintarFranja(); return r; };
+			}
+			// El clima tarda en llegar (geolocalización + red): en cuanto llega,
+			// la franja se entera sin esperar al siguiente minuto.
+			if(typeof fetchWeatherData==='function'){
+			  const _frFW=fetchWeatherData;
+			  window.fetchWeatherData=async function(){
+			    const r=await _frFW.apply(this, arguments);
+			    ixPintarFranja();
+			    return r;
+			  };
+			}
+
 			dtInit();
 
 			</script>

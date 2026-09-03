@@ -38,8 +38,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
-   fase lunar en una línea. Los cuatro datos ya se calculan, pero repartidos.
 6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
    (`cloudTab('backup')`). Que se haga sola cada X días y avise si hace mucho:
    todo vive en localStorage y un borrado de datos se lo lleva entero.
@@ -60,6 +58,22 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Franja de resumen arriba** (idea 5 del usuario). Encima del reloj, en una
+  sola línea: clima, siguiente alarma con lo que falta, próxima festividad con
+  los días que quedan, y la fase lunar (que ya vivía ahí).
+  - **No recalcula nada**: lee de `_lastWeatherRaw`, `alarms` y
+    `obtenerFeriados`, o sea de donde ya vive cada dato. Así la franja no puede
+    contradecir al panel que tiene al lado, y la prueba lo comprueba comparando
+    los dos textos, no mirando solo que salga algo.
+  - Si la alarma de hoy ya pasó, cuenta la de mañana en vez de dar horas en
+    negativo. Una alarma apagada no cuenta.
+  - Se recorta el **nombre** de la festividad, no la ficha entera: recortando
+    por CSS lo primero que se pierde es «· 2 días», que es justo el dato útil.
+    El globito (`title`) lo dice entero.
+  - Las tres fichas nuevas están en Visibilidad una a una, y ocultar **manda**
+    sobre el repintado de cada minuto (si no, volvían a salir solas).
+  - `pruebas/franja.js` (25/25). Suite completa 27/27 y auditoría sin avisos.
 
 - **Pantalla de inicio reordenable** (idea 4 del usuario). Los cuatro paneles de
   la barra derecha (clima, radio, festividades, pronóstico) llevan un asa y se
