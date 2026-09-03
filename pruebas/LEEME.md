@@ -7,6 +7,20 @@ tener que reescribirlos.
 
 Necesitan Playwright y el Chromium que ya viene en el entorno.
 
+## Ejecutarlas todas de golpe
+
+```
+sh pruebas/todas.sh
+```
+
+Pasa `syncheck` y después las 21 pruebas funcionales, una a una, y resume
+cuáles fallan. Las tres revisiones grandes (`auditoria`, `interaccion`,
+`calidad`) quedan fuera porque tardan varios minutos cada una; se lanzan a mano.
+
+Última pasada: **21 pasan, 0 fallan.**
+
+---
+
 ## `syncheck.js`
 Extrae los cinco bloques `<script>` de `index.html` y los pasa por el
 analizador de JavaScript. Detecta un paréntesis o una comilla mal puestos

@@ -4,6 +4,10 @@ Memoria entre tandas del trabajo automático. Cada tanda arranca en una sesión
 nueva **sin recuerdos**, así que este archivo es la única continuidad: se lee al
 empezar y se actualiza antes de subir.
 
+**Lo primero de cada tanda**: `sh pruebas/todas.sh` — pasa `syncheck` y las 21
+pruebas funcionales y dice cuáles fallan. Las tres revisiones grandes van
+aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.js`.
+
 **Reglas de cada tanda**
 - Un solo ítem, el primero de Pendiente.
 - Probarlo con Playwright + `syncheck` **antes** de subir.
