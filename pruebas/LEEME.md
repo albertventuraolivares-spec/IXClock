@@ -133,6 +133,22 @@ node pruebas/dormir.js
 
 Última pasada: **18/18**.
 
+## `interaccion.js`
+Barrido profundo. `auditoria.js` comprueba que cada app **abre**; esta pulsa
+todos los botones que hay dentro, uno a uno, en 21 pantallas (las 13 apps, las
+4 pestañas del reloj y las 4 de Configuración), y apunta cualquier error de
+JavaScript. Abrir una pantalla casi nunca falla; lo que falla es lo de dentro.
+
+Se pulsa llamando al `click()` del elemento y no con el ratón, para que no
+importe que algo quede tapado por otra capa. Se saltan los botones que borran
+o descargan, por su nombre.
+
+```
+node pruebas/interaccion.js
+```
+
+Última pasada: **234 botones pulsados, 0 errores.**
+
 ---
 
 ## Nota sobre fallos intermitentes
