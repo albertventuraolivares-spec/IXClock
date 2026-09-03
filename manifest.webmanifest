@@ -1,0 +1,31 @@
+{
+  "name": "IXClocK — Universal OS Dashboard",
+  "short_name": "IXClocK",
+  "description": "Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de música IXBand, todo en un mismo panel.",
+  "lang": "es",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b0b0f",
+  "theme_color": "#9333ea",
+  "categories": ["utilities", "productivity", "music", "entertainment"],
+  "icons": [
+    { "src": "favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "screenshot-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Panel de IXClocK en pantalla ancha" },
+    { "src": "screenshot-narrow.png", "sizes": "720x1280", "type": "image/png", "form_factor": "narrow", "label": "Panel de IXClocK en móvil" }
+  ],
+  "shortcuts": [
+    { "name": "IXBand", "short_name": "IXBand", "url": "/?app=ixband", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Navegador", "short_name": "Navegador", "url": "/?app=navegador", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}
