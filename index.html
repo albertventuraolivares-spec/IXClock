@@ -14840,6 +14840,7 @@
 			    '🌦️ EL RELOJ MUNDIAL AHORA DICE EL TIEMPO de cada ciudad: al lado de «Hoy» sale el sol, la lluvia o la nieve y los grados que hace allí. La hora aparece al instante como siempre y el tiempo llega solo un momento después. Los nombres salen en español: «Tokio», no «Tokyo»',
 			    '🕐 COMPARADOR DE HORAS para quedar con gente de otras ciudades: eliges una hora tuya y ves qué hora sería allí, en verde si es buena hora y en rojo si estarán durmiendo. Está debajo de tus relojes mundiales',
 			    '😴 DORMIR CON LA RADIO: en Timers eliges 15, 30, 45, 60 o 90 minutos y la música se va bajando sola hasta apagarse. No suena ninguna alarma, que es justo lo que no quieres cuando te estás durmiendo',
+			    '🎚️ Exportar también en WAV, sin comprimir, para abrir tu canción en un editor de audio de verdad. Pesa más, pero no pierde nada',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -18574,7 +18575,34 @@
 			  }
 			  return null;
 			}
-			function gbExportarCancion(){
+			/* WAV sin comprimir, para abrirlo en un editor de audio.
+			   Se graba igual que siempre (MediaRecorder da webm o mp4) y despues
+			   se descomprime y se vuelve a escribir como WAV. Hacerlo asi evita
+			   tener que reescribir todos los instrumentos para que sepan tocar
+			   fuera de la tarjeta de sonido, que es donde se sintetizan. */
+			function _gbBufferAWav(buf){
+			  const canales=Math.min(2,buf.numberOfChannels), n=buf.length, sr=buf.sampleRate;
+			  const datos=new ArrayBuffer(44+n*canales*2), v=new DataView(datos);
+			  const txt=function(pos,t){ for(let i=0;i<t.length;i++) v.setUint8(pos+i,t.charCodeAt(i)); };
+			  txt(0,'RIFF'); v.setUint32(4,36+n*canales*2,true); txt(8,'WAVE');
+			  txt(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true);      // 1 = PCM
+			  v.setUint16(22,canales,true); v.setUint32(24,sr,true);
+			  v.setUint32(28,sr*canales*2,true); v.setUint16(32,canales*2,true); v.setUint16(34,16,true);
+			  txt(36,'data'); v.setUint32(40,n*canales*2,true);
+			  const pistas=[];
+			  for(let c=0;c<canales;c++) pistas.push(buf.getChannelData(c));
+			  let pos=44;
+			  for(let i=0;i<n;i++){
+			    for(let c=0;c<canales;c++){
+			      // Recortar antes de convertir: fuera de [-1,1] daria un chasquido.
+			      let m=Math.max(-1,Math.min(1,pistas[c][i]));
+			      v.setInt16(pos, m<0 ? m*0x8000 : m*0x7FFF, true);
+			      pos+=2;
+			    }
+			  }
+			  return new Blob([datos],{type:'audio/wav'});
+			}
+			function gbExportarCancion(formato){
 			  if(_gbExportando){
 			    // Por toast y no en la linea de estado: ahi esta la cuenta atras
 			    // escribiendo cada medio segundo y el aviso se perderia al instante.
@@ -18599,6 +18627,7 @@
 
 			  const trozos=[];
 			  rec.ondataavailable=function(e){ if(e.data && e.data.size) trozos.push(e.data); };
+			  const quiereWav = (formato==='wav');
 			  rec.onstop=function(){
 			    // Se desconecta SIEMPRE, aunque algo haya fallado: si no, el maestro
 			    // se queda mandando audio a un destino que ya no escucha nadie.
@@ -18607,18 +18636,35 @@
 			    const blob=new Blob(trozos,{type:fmt[0]});
 			    if(!blob.size){ _gbEstado('⚠️ La grabación salió vacía.'); gbRenderTracks(); return; }
 			    const nombre=(_gbNombreCancion()||'IXBand').replace(/[^\p{L}\p{N} _-]/gu,'').trim()||'IXBand';
-			    const url=URL.createObjectURL(blob);
-			    const a=document.createElement('a');
-			    a.href=url; a.download=nombre+'.'+fmt[1];
-			    document.body.appendChild(a); a.click();
-			    setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} },4000);
+			    if(quiereWav){
+			      _gbEstado('⏳ Convirtiendo a WAV…');
+			      blob.arrayBuffer()
+			        .then(function(ab){ return _gbAudioCtx.decodeAudioData(ab); })
+			        .then(function(audio){ _gbEntregar(_gbBufferAWav(audio), nombre+'.wav'); })
+			        .catch(function(){
+			          // Si el navegador no sabe descomprimir lo que acaba de grabar,
+			          // mejor entregar el original que no entregar nada.
+			          _gbEntregar(blob, nombre+'.'+fmt[1]);
+			          _gbEstado('⚠️ No se pudo pasar a WAV; se guardó en '+fmt[1]+'.');
+			        });
+			      return;
+			    }
+			    _gbEntregar(blob, nombre+'.'+fmt[1]);
 			    // Se guarda para poder compartirla: navigator.share exige que la
 			    // llamada salga de un toque del usuario, y la exportacion acaba
 			    // medio minuto despues del suyo, asi que hace falta otro boton.
-			    _gbUltimoExport={ blob:blob, nombre:a.download, tipo:fmt[0] };
-			    _gbEstado('✅ Exportada: '+a.download+' ('+Math.round(blob.size/1024)+' KB). Búscala en tus descargas.');
-			    gbRenderTracks();
 			  };
+			  // Descargar y dejarla lista para compartir, venga en el formato que venga.
+			  function _gbEntregar(b, nombreArchivo){
+			    const url=URL.createObjectURL(b);
+			    const a=document.createElement('a');
+			    a.href=url; a.download=nombreArchivo;
+			    document.body.appendChild(a); a.click();
+			    setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} },4000);
+			    _gbUltimoExport={ blob:b, nombre:nombreArchivo, tipo:b.type||'application/octet-stream' };
+			    _gbEstado('✅ Exportada: '+nombreArchivo+' ('+Math.round(b.size/1024)+' KB). Búscala en tus descargas.');
+			    gbRenderTracks();
+			  }
 
 			  _gbExportando=true;
 			  gbRenderTracks();
@@ -18933,6 +18979,7 @@
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
+			    +'<button class="gb-chip" onclick="gbExportarCancion(\'wav\')" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Sin comprimir, para abrirla en un editor de audio. Pesa bastante más"')+'>⬇️ Exportar WAV</button>'
 			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'

@@ -24,8 +24,7 @@ empezar y se actualiza antes de subir.
    exactamente qué espejo falló y por qué.
 
 ### Funciones nuevas
-2. **Exportar a WAV** además de webm, para quien lo quiera abrir en un editor.
-3. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
+2. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
    es que el buscador se deje emisoras — se comprobó que ya encuentra las 185
    de `STATIONS`, porque están todas pintadas desde el arranque. Sería una
    función nueva, no un arreglo.
@@ -33,6 +32,16 @@ empezar y se actualiza antes de subir.
 ---
 
 ## Hecho
+
+- **Exportar en WAV** además de webm/mp4 (`_gbBufferAWav`). Se graba igual y
+  después se descomprime con `decodeAudioData` y se reescribe como PCM de 16
+  bits. Hacerlo así evita reescribir todos los instrumentos para que sepan
+  sonar fuera de la tarjeta de sonido, que es donde se sintetizan.
+  - Si el navegador no sabe descomprimir lo que él mismo acaba de grabar, se
+    entrega el original en vez de no entregar nada.
+  - Probado en `pruebas/exportar.js` (32/32) comprobando la cabecera del
+    archivo de verdad: RIFF/WAVE, PCM, 16 bits y que el tamaño declarado cuadra
+    con el real. 455 KB de WAV frente a 39 KB de webm.
 
 - **Dormir con la radio** (idea del usuario), en la pestaña Timers del reloj:
   15/30/45/60/90 minutos, cuenta atrás y cancelar. Un temporizador normal te
