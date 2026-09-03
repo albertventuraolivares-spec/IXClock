@@ -27,8 +27,40 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
    se queda colgado. Si el usuario pasa el mensaje que le sale ahora, dirá
    exactamente qué espejo falló y por qué.
 
-### Funciones nuevas
-2. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
+### Lista del usuario (3 de septiembre)
+Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
+misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
+
+2. **Ampliar los comandos de IXA.** El asistente ya suelta `[[ALARM time=""
+   label=""]]` al final de su respuesta y `extractAlarmTags` lo recoge, pero esa
+   tubería solo sirve para alarmas — comprobado: `[[ALARM` es la única etiqueta
+   del archivo. Añadir hermanas y sus manejadores: `[[TIMER]]`, `[[NOTA]]`,
+   `[[CIUDAD]]`, `[[ABRIR app]]`, `[[FONDO]]`, `[[RADIO]]`. Con eso funcionan
+   por voz «ponme 10 minutos», «apúntame que compre pan», «añade Tokio».
+3. **Favoritos en la radio.** Confirmado: existe `ix_browser_favorites` (del
+   navegador) y ninguno para emisoras. Guardar las tuyas y enseñarlas primero.
+4. **Pantalla de inicio reordenable.** El orden de los paneles es fijo. Arrastrar
+   para reordenar y poder ocultar los que no se usan, guardado en localStorage.
+5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
+   fase lunar en una línea. Los cuatro datos ya se calculan, pero repartidos.
+6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
+   (`cloudTab('backup')`). Que se haga sola cada X días y avise si hace mucho:
+   todo vive en localStorage y un borrado de datos se lo lleva entero.
+7. **Modo enfoque / pomodoro** 25/5, con el reloj a pantalla completa y sonido
+   ambiente. Reutiliza el temporizador, los ambientes y la pantalla completa.
+8. **Tema claro.** Confirmado: **cero** `prefers-color-scheme` y cero
+   `data-theme` en el archivo; todo es oscuro fijo. Que respete la preferencia
+   del sistema y, mejor aún, que cambie al amanecer/atardecer, que ya se
+   calcula para «es de mañana / tarde / noche». Va con la escala de diseño que
+   ya se unificó (`--r-*`, `--sh-*`): los colores serían el siguiente paso.
+9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
+   a las 9». El calendario y la cuenta atrás de festividades ya tienen motor de
+   fechas.
+10. **Organizar las notas**: carpetas y fijar arriba. Hoy solo hay buscador de
+    texto, y con muchas notas acaba siendo lo único que salva.
+
+### Otras
+11. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
    es que el buscador se deje emisoras — se comprobó que ya encuentra las 185
    de `STATIONS`, porque están todas pintadas desde el arranque. Sería una
    función nueva, no un arreglo.
