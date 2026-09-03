@@ -14,6 +14,13 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 - Si las pruebas fallan, **no subir**: anotarlo aquí y pasar al siguiente.
 - Solo la rama `claude/ixclock-html-page-jhfqhc`. Nunca `main`.
 - Anotar lo hecho en 🆕 Novedades (`IX_CHANGELOG` en `index.html`).
+- **Al final de cada tanda, sin falta** (lo pidió el usuario expresamente, con
+  capturas señalando los dos botones): abrir la PR, **fusionarla** a `main`
+  (`mcp__github__merge_pull_request`) y **comprobar que el despliegue de
+  producción de Netlify sale bien** (`mcp__Netlify__netlify-deploy-services-reader`).
+  Fusionar a `main` es lo que dispara la publicación; el botón «Publish deploy»
+  de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
+  reutiliza**: se abre una nueva.
 
 ---
 
