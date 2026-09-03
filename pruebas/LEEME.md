@@ -120,6 +120,19 @@ node pruebas/comparador.js
 
 Última pasada: **19/19**.
 
+## `dormir.js`
+El temporizador para dormir con la radio. En vez de esperar 30 minutos, mueve
+la hora de fin a mano y llama al tic: así se comprueba que el volumen **solo**
+baja en el último medio minuto, que al llegar a cero apaga la radio y **no**
+suena ninguna alarma, y que devuelve el volumen para que la próxima vez no
+arranque muda.
+
+```
+node pruebas/dormir.js
+```
+
+Última pasada: **18/18**.
+
 ---
 
 ## Nota sobre fallos intermitentes

@@ -34,6 +34,18 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Dormir con la radio** (idea del usuario), en la pestaña Timers del reloj:
+  15/30/45/60/90 minutos, cuenta atrás y cancelar. Un temporizador normal te
+  despierta; este hace lo contrario, así que **no suena ninguna alarma**.
+  - El volumen baja poco a poco durante el último medio minuto, para no cortar
+    la música de golpe cuando ya estás dormido.
+  - Al apagar **devuelve el volumen** que había: si no, la próxima vez que le
+    dieras al play la radio arrancaría muda y parecería rota.
+  - Pedir otro reemplaza al anterior; no se acumulan temporizadores.
+  - Añadido a la lista de `ixCerrarTodasLasVentanas()` (junto con
+    `gbAfinadorParar`, que faltaba desde que se hizo el afinador).
+  - Probado con `pruebas/dormir.js`: 18/18.
+
 - **Comparador de horas en el reloj mundial** (idea del usuario): eliges una
   hora tuya en una tira de 00 a 23 y sale qué hora sería en cada ciudad
   guardada, con el día de la semana y un color — verde 9-18, ámbar 7-9 y 18-22,

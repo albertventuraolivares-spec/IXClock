@@ -3779,6 +3779,16 @@
 					<button class="ica-sw-btn" onclick="icaTimerCancel()">Cancelar</button>
 					<button class="ica-sw-btn green" onclick="icaTimerStart()">Iniciar</button>
 				</div>
+				<!-- Dormir con la radio: apaga la musica, no suena ninguna alarma -->
+				<div class="ica-timer-recent">
+					<h3>😴 Dormir con la radio</h3>
+					<div style="font-size:11px;opacity:.45;margin:-4px 0 10px;">La música se va bajando sola y se apaga. No suena ninguna alarma.</div>
+					<div id="ica-dormir-botones" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+					<div id="ica-dormir-estado" style="display:none;margin-top:10px;align-items:center;justify-content:space-between;gap:10px;background:rgba(191,90,242,.14);border:1px solid rgba(191,90,242,.4);border-radius:12px;padding:11px 14px;">
+						<span style="font-size:13px;">Se apagará en <b id="ica-dormir-queda" style="font-variant-numeric:tabular-nums;">—</b></span>
+						<button onclick="icaDormirCancelar()" style="background:rgba(255,255,255,.14);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:9px;cursor:pointer;">Cancelar</button>
+					</div>
+				</div>
 				<div class="ica-timer-recent">
 					<h3>Recientes</h3>
 					<div id="ica-timer-recents" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -14685,7 +14695,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -14829,6 +14839,7 @@
 			    '🔒 Y lo mismo en las NOTAS MATEMÁTICAS de la calculadora y en el HISTORIAL DE ALARMAS: el texto que escribes ya no puede ejecutar nada al volver a la lista',
 			    '🌦️ EL RELOJ MUNDIAL AHORA DICE EL TIEMPO de cada ciudad: al lado de «Hoy» sale el sol, la lluvia o la nieve y los grados que hace allí. La hora aparece al instante como siempre y el tiempo llega solo un momento después. Los nombres salen en español: «Tokio», no «Tokyo»',
 			    '🕐 COMPARADOR DE HORAS para quedar con gente de otras ciudades: eliges una hora tuya y ves qué hora sería allí, en verde si es buena hora y en rojo si estarán durmiendo. Está debajo de tus relojes mundiales',
+			    '😴 DORMIR CON LA RADIO: en Timers eliges 15, 30, 45, 60 o 90 minutos y la música se va bajando sola hasta apagarse. No suena ninguna alarma, que es justo lo que no quieres cuando te estás durmiendo',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -19927,6 +19938,66 @@
 			    }
 			  },1000);
 			}
+			/* ── DORMIR CON LA RADIO ──────────────────────────────────────────
+			   Un temporizador normal despierta; este hace lo contrario. Baja el
+			   volumen poco a poco durante el ultimo medio minuto y apaga la
+			   musica, para no cortarla de golpe cuando ya estas dormido.       */
+			const ICA_DORMIR_MIN=[15,30,45,60,90];
+			let _icaDormirFin=null, _icaDormirTimer=null, _icaDormirVolPrevio=null;
+			function icaPintarDormirBotones(){
+			  const c=document.getElementById('ica-dormir-botones');
+			  if(!c) return;
+			  c.innerHTML=ICA_DORMIR_MIN.map(function(m){
+			    return '<button onclick="icaDormirEn('+m+')" style="flex:1;min-width:64px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:700;padding:11px 6px;border-radius:12px;cursor:pointer;">'+m+' min</button>';
+			  }).join('');
+			}
+			function icaDormirEn(min){
+			  icaDormirCancelar();
+			  _icaDormirFin=Date.now()+min*60000;
+			  _icaDormirTimer=setInterval(_icaDormirTic,1000);
+			  _icaDormirTic();
+			  try{ ixToast('😴 La radio se apagará en '+min+' minutos'); }catch(e){}
+			}
+			function _icaDormirAudio(){
+			  // El reproductor de emisoras; si no existe, no hay nada que bajar.
+			  return (typeof streamPlayer!=='undefined' && streamPlayer) ? streamPlayer : null;
+			}
+			function _icaDormirTic(){
+			  if(_icaDormirFin===null) return;
+			  const quedan=_icaDormirFin-Date.now();
+			  const est=document.getElementById('ica-dormir-estado');
+			  const txt=document.getElementById('ica-dormir-queda');
+			  if(est) est.style.display='flex';
+			  if(txt){
+			    const s=Math.max(0,Math.ceil(quedan/1000));
+			    txt.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+			  }
+			  const a=_icaDormirAudio();
+			  // Ultimos 30 segundos: se baja el volumen poco a poco.
+			  if(a && quedan<=30000 && quedan>0){
+			    if(_icaDormirVolPrevio===null) _icaDormirVolPrevio=a.volume;
+			    a.volume=Math.max(0, _icaDormirVolPrevio*(quedan/30000));
+			  }
+			  if(quedan<=0) icaDormirApagar();
+			}
+			function icaDormirApagar(){
+			  const a=_icaDormirAudio();
+			  try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
+			  // Se devuelve el volumen: si no, la proxima vez que le des al play
+			  // la radio arrancaria muda y pareceria que se ha roto.
+			  if(a && _icaDormirVolPrevio!==null) a.volume=_icaDormirVolPrevio;
+			  icaDormirCancelar();
+			  try{ ixToast('😴 Radio apagada. Buenas noches.'); }catch(e){}
+			}
+			function icaDormirCancelar(){
+			  if(_icaDormirTimer){ clearInterval(_icaDormirTimer); _icaDormirTimer=null; }
+			  const a=_icaDormirAudio();
+			  if(a && _icaDormirVolPrevio!==null) a.volume=_icaDormirVolPrevio;
+			  _icaDormirVolPrevio=null;
+			  _icaDormirFin=null;
+			  const est=document.getElementById('ica-dormir-estado');
+			  if(est) est.style.display='none';
+			}
 			function icaTimerCancel(){
 			  clearInterval(_icaTimerInterval);_icaTimerInterval=null;_icaTimerRemaining=0;
 			}
@@ -19936,6 +20007,7 @@
 			  el.innerHTML = recents.map(r=>'<div style="padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:14px;">'+r+'</div>').join('');
 			}
 			icaRenderRecents();
+			icaPintarDormirBotones();
 
 			
 
