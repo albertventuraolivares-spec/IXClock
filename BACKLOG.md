@@ -48,11 +48,6 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
    todo vive en localStorage y un borrado de datos se lo lleva entero.
 7. **Modo enfoque / pomodoro** 25/5, con el reloj a pantalla completa y sonido
    ambiente. Reutiliza el temporizador, los ambientes y la pantalla completa.
-8. **Tema claro.** Confirmado: **cero** `prefers-color-scheme` y cero
-   `data-theme` en el archivo; todo es oscuro fijo. Que respete la preferencia
-   del sistema y, mejor aún, que cambie al amanecer/atardecer, que ya se
-   calcula para «es de mañana / tarde / noche». Va con la escala de diseño que
-   ya se unificó (`--r-*`, `--sh-*`): los colores serían el siguiente paso.
 9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
    a las 9». El calendario y la cuenta atrás de festividades ya tienen motor de
    fechas.
@@ -68,6 +63,34 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Tema claro de verdad, y los colores unificados** (idea 8 del usuario; es la
+  continuación natural de la escala `--r-*` / `--sh-*` que ya se había hecho).
+  - Había un «modo claro» que no lo era: solo aclaraba los paneles. Medido,
+    **el 98 % del texto visible seguía siendo casi blanco** (1567 de 1599), así
+    que sobre fondo claro no se leía nada. Ahora es el **2 %**.
+  - Se añadieron fichas de color (`--txt`, `--txt-2`, `--txt-40`…`--txt-70`) y
+    se convirtieron **410 colores escritos a mano**, en el HTML y dentro de las
+    cadenas que genera el JavaScript. Los acentos (azul, verde, rojo) se quedan
+    igual: funcionan en los dos temas.
+  - El fondo: en claro se pone un velo blanco **por encima del fondo y por
+    debajo del contenido**, así el fondo se sigue reconociendo, apagado, y todo
+    lo de encima se lee.
+  - **Bug: el modo no se guardaba.** Elegías claro, recargabas y volvía a
+    oscuro. Ahora se guarda en `ix_modo`.
+  - Dos modos nuevos: **«Como el sistema»** (`prefers-color-scheme`, y reacciona
+    si lo cambias sobre la marcha) y **«Con el sol»** (claro de día, oscuro de
+    noche, usando el amanecer y el atardecer que la app ya calcula).
+  - Se avisa al navegador con `color-scheme` y se cambia el `theme-color` de la
+    barra del móvil.
+  - Comprobado que el tema **oscuro no cambia**: comparación de píxeles antes y
+    después en cuatro pantallas. IXBand 0,00 %, reloj 0,08 %, inicio 0,56 %
+    (el suelo de ruido entre dos capturas iguales es 0,33 %). Configuración
+    cambia un 10,85 % y es lo esperado: son los dos botones nuevos.
+  - Probado con `pruebas/tema.js`: 16/16.
+  - **Lo que queda**: los fondos de pantalla siguen siendo fotos oscuras. En
+    claro se ven apagadas bajo el velo. Un juego de fondos claros sería el
+    siguiente paso, pero es trabajo de diseño, no de código.
 
 - **«Todas las apps»: la mitad de la app era inalcanzable en un móvil.** El
   dock esconde 10 de sus 18 botones en modo compacto y el conmutador solo

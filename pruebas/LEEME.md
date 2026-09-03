@@ -21,9 +21,23 @@ Reintenta **una vez** lo que falla: lanzar 21 navegadores seguidos satura la
 máquina y de vez en cuando uno tarda de más al arrancar, y eso no es un fallo
 de la app. Lo que falla **dos** veces sí hay que mirarlo, y el resumen lo separa.
 
-Última pasada: **22 pasan, 0 fallan.**
+Última pasada: **23 pasan, 0 fallan.**
 
 ---
+
+## `tema.js`
+El tema claro. Lo que comprueba no es que el botón cambie de color, sino que en
+claro **se lea**: cuenta cuánto texto visible queda casi blanco. Antes del
+arreglo era el 98 %; ahora el 2 %. También comprueba que el modo se guarda al
+recargar (no se guardaba), que «como el sistema» sigue a `prefers-color-scheme`
+en las dos direcciones, y que «con el sol» da claro a mediodía y oscuro de
+noche.
+
+```
+node pruebas/tema.js
+```
+
+Última pasada: **16/16**.
 
 ## `lanzador.js`
 La rejilla con todas las apps. Comprueba en un móvil que el dock efectivamente
