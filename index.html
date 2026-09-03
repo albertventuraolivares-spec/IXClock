@@ -14824,6 +14824,7 @@
 			    '🕹️ Emulador: si el motor se descargaba pero no llegaba a arrancar (porque su servidor sirve el arranque pero tiene bloqueado el resto), la pantalla se quedaba en negro para siempre sin decir nada. Ahora lo detecta, prueba el siguiente servidor y, si fallan todos, te dice cuál falló y por qué',
 			    '🔒 Agujero de seguridad cerrado en el CALENDARIO: un evento escrito con código dentro se ejecutaba de verdad al abrir ese día. Ya no. Se revisaron de paso los 68 sitios donde la app pinta texto y se aseguró también el nombre del lugar en las alertas de terremoto, que llega de un servidor de fuera',
 			    '🔒 Y lo mismo en las NOTAS MATEMÁTICAS de la calculadora y en el HISTORIAL DE ALARMAS: el texto que escribes ya no puede ejecutar nada al volver a la lista',
+			    '🌦️ EL RELOJ MUNDIAL AHORA DICE EL TIEMPO de cada ciudad: al lado de «Hoy» sale el sol, la lluvia o la nieve y los grados que hace allí. La hora aparece al instante como siempre y el tiempo llega solo un momento después. Los nombres salen en español: «Tokio», no «Tokyo»',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -19198,6 +19199,59 @@
 
 			// --- World Clock ---
 			let _icaWorldClocks = JSON.parse(localStorage.getItem('ica_world_clocks')||'[]');
+			/* ── CLIMA DE CADA CIUDAD DEL RELOJ MUNDIAL ───────────────────────
+			   El reloj mundial decia la hora pero no el tiempo, que es justo lo
+			   otro que quieres saber de una ciudad lejana. Se pide una sola vez
+			   por ciudad y se guarda: las coordenadas para siempre (una ciudad no
+			   se mueve) y la temperatura durante 30 minutos.                    */
+			const ICA_CLIMA_EMOJI={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',
+			  61:'🌧️',63:'🌧️',65:'🌧️',66:'🌧️',67:'🌧️',71:'❄️',73:'❄️',75:'❄️',77:'❄️',
+			  80:'🌦️',81:'🌦️',82:'🌧️',85:'❄️',86:'❄️',95:'⛈️',96:'⛈️',99:'⛈️'};
+			const ICA_CLIMA_MIN=30*60*1000;   // 30 minutos
+			let _icaClima={}, _icaGeo={};
+			try{ _icaClima=JSON.parse(localStorage.getItem('ica_clima_v1')||'{}'); }catch(e){ _icaClima={}; }
+			try{ _icaGeo=JSON.parse(localStorage.getItem('ica_geo_v1')||'{}'); }catch(e){ _icaGeo={}; }
+			function _icaNombreDeTz(tz){
+			  const c=ICA_CITIES.find(function(x){ return x[1]===tz; });
+			  return c ? c[0] : tz.split('/').pop().replace(/_/g,' ');
+			}
+			// Coordenadas: se preguntan una vez por ciudad y se guardan para siempre.
+			async function _icaCoords(tz){
+			  if(_icaGeo[tz]) return _icaGeo[tz];
+			  const nombre=_icaNombreDeTz(tz);
+			  const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=es&name='+encodeURIComponent(nombre));
+			  const d=await r.json();
+			  const g=d && d.results && d.results[0];
+			  if(!g) throw new Error('sin coordenadas');
+			  _icaGeo[tz]={lat:g.latitude, lon:g.longitude};
+			  try{ localStorage.setItem('ica_geo_v1',JSON.stringify(_icaGeo)); }catch(e){}
+			  return _icaGeo[tz];
+			}
+			async function icaClimaDe(tz){
+			  const guardado=_icaClima[tz];
+			  if(guardado && (Date.now()-guardado.t)<ICA_CLIMA_MIN) return guardado;
+			  const c=await _icaCoords(tz);
+			  const r=await fetch('https://api.open-meteo.com/v1/forecast?current=temperature_2m,weathercode&latitude='+c.lat+'&longitude='+c.lon);
+			  const d=await r.json();
+			  if(!d || !d.current) throw new Error('sin datos');
+			  _icaClima[tz]={ temp:Math.round(d.current.temperature_2m), code:d.current.weathercode, t:Date.now() };
+			  try{ localStorage.setItem('ica_clima_v1',JSON.stringify(_icaClima)); }catch(e){}
+			  return _icaClima[tz];
+			}
+			// Se pide en segundo plano: la hora tiene que salir ya, sin esperar a la red.
+			function icaCargarClimas(){
+			  _icaWorldClocks.forEach(function(tz){
+			    icaClimaDe(tz).then(function(c){
+			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
+			      if(el) el.textContent=(ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°';
+			    }).catch(function(){
+			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
+			      if(el) el.textContent='';   // sin internet, simplemente no se enseña
+			    });
+			  });
+			}
+			// Un id de HTML no puede llevar barras: America/New_York -> America-New_York
+			function _icaIdSeguro(tz){ return tz.replace(/[^A-Za-z0-9_-]/g,'-'); }
 			function icaRenderWorldClocks(){
 			  const list = document.getElementById('ica-world-list');
 			  const empty = document.getElementById('ica-world-empty');
@@ -19211,15 +19265,24 @@
 			    const m = parts.find(p=>p.type==='minute').value;
 			    const dp = parts.find(p=>p.type==='dayPeriod');
 			    const ampm = dp ? dp.value : '';
-			    const city = tz.split('/').pop().replace(/_/g,' ');
+			    // El nombre en espanol de la lista de ciudades («Tokio», no «Tokyo»);
+			    // si la zona no esta en la lista, se saca de la propia zona horaria.
+			    const city = _icaNombreDeTz(tz);
 			    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08);">'
-			      +'<div><div style="font-size:13px;opacity:.5;">Hoy</div><div style="font-size:17px;font-weight:500;">'+city+'</div></div>'
+			      +'<div><div style="font-size:13px;opacity:.5;">Hoy <span id="ica-clima-'+_icaIdSeguro(tz)+'" style="margin-left:4px;">'+_icaClimaTexto(tz)+'</span></div><div style="font-size:17px;font-weight:500;">'+escapeHtml(city)+'</div></div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
 			      +  '<button onclick="icaRemoveWorldClock(&quot;'+tz+'&quot;)" title="Quitar" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;">✕</button>'
 			      +'</div>'
 			      +'</div>';
 			  }).join('');
+			  icaCargarClimas();
+			}
+			// Lo ya guardado se pinta al momento, aunque este caducado: es mejor un
+			// dato de hace un rato que un hueco vacio mientras llega el nuevo.
+			function _icaClimaTexto(tz){
+			  const c=_icaClima[tz];
+			  return c ? ((ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°') : '';
 			}
 			// ── Buscador de ciudades del reloj mundial ──────────────────────────
 			// Antes había que escribir de memoria «America/New_York» en un prompt.

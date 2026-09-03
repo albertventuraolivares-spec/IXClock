@@ -34,6 +34,19 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Clima de cada ciudad en el reloj mundial** (idea del usuario). Junto a
+  «Hoy» sale el emoji del tiempo y la temperatura de esa ciudad.
+  - Se pide en segundo plano: la hora aparece al instante, sin esperar la red.
+  - Las coordenadas se preguntan **una vez por ciudad** (geocoding de
+    open-meteo) y se guardan para siempre en `ica_geo_v1`; la temperatura se
+    guarda 30 minutos en `ica_clima_v1`. Lo guardado se pinta aunque esté
+    caducado, que es mejor que un hueco vacío mientras llega el dato nuevo.
+  - Sin internet, o si una ciudad no tiene coordenadas, simplemente no se
+    enseña el clima: la hora sigue saliendo igual.
+  - De paso, el nombre de la ciudad sale en español («Tokio», no «Tokyo»),
+    porque ya estaba en `ICA_CITIES`, y va escapado.
+  - Probado con `pruebas/clima.js`: 15/15, con las respuestas simuladas.
+
 - **Cuarto XSS encontrado y arreglado: los eventos del calendario.**
   `renderCalEvts` metía el texto que escribe el usuario en `innerHTML` sin
   escapar, así que un evento con `<img src=x onerror=...>` ejecutaba código de

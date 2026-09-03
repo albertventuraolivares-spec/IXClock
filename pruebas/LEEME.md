@@ -91,3 +91,30 @@ node pruebas/xss.js
 > **no se ejecutaba**, así que la prueba pasaba aunque el fallo siguiera ahí.
 > Cada caso se verifica revirtiendo el arreglo y comprobando que falla.
 
+## `clima.js`
+El clima de cada ciudad del reloj mundial. Los servidores de open-meteo están
+bloqueados en este entorno, así que las respuestas se sirven desde la propia
+prueba: así se comprueba que la app pide lo correcto, pinta lo que recibe,
+guarda las coordenadas para no volver a preguntar, y aguanta que la red falle
+o que una ciudad no exista en el buscador de coordenadas.
+
+```
+node pruebas/clima.js
+```
+
+Última pasada: **15/15**.
+
+> Al interceptar peticiones con Playwright, el `route` que lo bloquea todo va
+> **primero**: las rutas se prueban de la última registrada a la primera, así
+> que puesto al final se traga también los simulacros.
+
+---
+
+## Nota sobre fallos intermitentes
+
+Ejecutar toda la carpeta seguida levanta un navegador tras otro y la máquina se
+carga. Con eso, alguna prueba falla por tiempo de espera (el botón «Continuar
+como invitado» tarda más de la cuenta) aunque el código esté bien. **Antes de
+dar por buena una prueba fallida, vuelve a ejecutarla sola**: hasta ahora,
+todas las que fallaron en tanda pasaron 3 de 3 por separado.
+
