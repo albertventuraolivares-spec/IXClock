@@ -3701,6 +3701,9 @@
 				</div>
 				<div class="ica-empty" id="ica-world-empty">No hay ningún reloj mundial</div>
 				<div id="ica-world-list" style="display:flex;flex-direction:column;gap:0;"></div>
+				<!-- Comparador: a qué hora quedar con gente de otras ciudades -->
+				<button id="ica-comp-btn" onclick="icaToggleComparador()" style="display:none;margin-top:18px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700;padding:12px;border-radius:14px;cursor:pointer;">🕐 Comparar horas · ¿cuándo quedamos?</button>
+				<div id="ica-comparador" style="display:none;margin-top:14px;"></div>
 			</div>
 			<!-- === VIEW: Alarmas === -->
 			<div class="ica-view" id="ica-view-alarms">
@@ -14825,6 +14828,7 @@
 			    '🔒 Agujero de seguridad cerrado en el CALENDARIO: un evento escrito con código dentro se ejecutaba de verdad al abrir ese día. Ya no. Se revisaron de paso los 68 sitios donde la app pinta texto y se aseguró también el nombre del lugar en las alertas de terremoto, que llega de un servidor de fuera',
 			    '🔒 Y lo mismo en las NOTAS MATEMÁTICAS de la calculadora y en el HISTORIAL DE ALARMAS: el texto que escribes ya no puede ejecutar nada al volver a la lista',
 			    '🌦️ EL RELOJ MUNDIAL AHORA DICE EL TIEMPO de cada ciudad: al lado de «Hoy» sale el sol, la lluvia o la nieve y los grados que hace allí. La hora aparece al instante como siempre y el tiempo llega solo un momento después. Los nombres salen en español: «Tokio», no «Tokyo»',
+			    '🕐 COMPARADOR DE HORAS para quedar con gente de otras ciudades: eliges una hora tuya y ves qué hora sería allí, en verde si es buena hora y en rojo si estarán durmiendo. Está debajo de tus relojes mundiales',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -19211,6 +19215,9 @@
 			let _icaClima={}, _icaGeo={};
 			try{ _icaClima=JSON.parse(localStorage.getItem('ica_clima_v1')||'{}'); }catch(e){ _icaClima={}; }
 			try{ _icaGeo=JSON.parse(localStorage.getItem('ica_geo_v1')||'{}'); }catch(e){ _icaGeo={}; }
+			function _icaTzValida(tz){
+			  try{ new Intl.DateTimeFormat('es',{timeZone:tz}); return true; }catch(e){ return false; }
+			}
 			function _icaNombreDeTz(tz){
 			  const c=ICA_CITIES.find(function(x){ return x[1]===tz; });
 			  return c ? c[0] : tz.split('/').pop().replace(/_/g,' ');
@@ -19241,6 +19248,7 @@
 			// Se pide en segundo plano: la hora tiene que salir ya, sin esperar a la red.
 			function icaCargarClimas(){
 			  _icaWorldClocks.forEach(function(tz){
+			    if(!_icaTzValida(tz)) return;
 			    icaClimaDe(tz).then(function(c){
 			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
 			      if(el) el.textContent=(ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°';
@@ -19255,8 +19263,27 @@
 			function icaRenderWorldClocks(){
 			  const list = document.getElementById('ica-world-list');
 			  const empty = document.getElementById('ica-world-empty');
-			  if(!_icaWorldClocks.length){empty.style.display='flex';list.innerHTML='';return;}
+			  if(!_icaWorldClocks.length){
+			    empty.style.display='flex'; list.innerHTML='';
+			    const cb=document.getElementById('ica-comp-btn'); if(cb) cb.style.display='none';
+			    const cc=document.getElementById('ica-comparador'); if(cc) cc.style.display='none';
+			    return;
+			  }
 			  empty.style.display='none';
+			  // Una zona horaria que el navegador no conozca hace que Intl lance y
+			  // deje la lista ENTERA en blanco. Se descartan (y se olvidan) para que
+			  // un dato corrupto no se lleve por delante los demas relojes.
+			  const validas=_icaWorldClocks.filter(_icaTzValida);
+			  if(validas.length!==_icaWorldClocks.length){
+			    _icaWorldClocks=validas;
+			    try{ localStorage.setItem('ica_world_clocks',JSON.stringify(_icaWorldClocks)); }catch(e){}
+			    if(!validas.length){
+			      empty.style.display='flex'; list.innerHTML='';
+			      const cb0=document.getElementById('ica-comp-btn'); if(cb0) cb0.style.display='none';
+			      const cc0=document.getElementById('ica-comparador'); if(cc0) cc0.style.display='none';
+			      return;
+			    }
+			  }
 			  list.innerHTML = _icaWorldClocks.map((tz,i)=>{
 			    const now = new Date();
 			    const fmt = new Intl.DateTimeFormat('es',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:true});
@@ -19277,12 +19304,99 @@
 			      +'</div>';
 			  }).join('');
 			  icaCargarClimas();
+			  const cb=document.getElementById('ica-comp-btn');
+			  if(cb) cb.style.display=_icaWorldClocks.length?'block':'none';
+			  if(_icaCompAbierto) icaPintarComparador();
 			}
 			// Lo ya guardado se pinta al momento, aunque este caducado: es mejor un
 			// dato de hace un rato que un hueco vacio mientras llega el nuevo.
 			function _icaClimaTexto(tz){
 			  const c=_icaClima[tz];
 			  return c ? ((ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°') : '';
+			}
+			/* ── COMPARADOR DE HORAS ──────────────────────────────────────────
+			   Para quedar con alguien de otra ciudad no basta con ver su hora
+			   ahora: hace falta ver, para cada hora del día tuyo, qué hora sería
+			   allí y si es una hora decente. Eso es esta tabla: una fila por
+			   ciudad y una columna por hora, en verde lo razonable y en rojo lo
+			   que sería de madrugada.                                          */
+			let _icaCompAbierto=false, _icaCompHora=null;
+			function icaToggleComparador(){
+			  _icaCompAbierto=!_icaCompAbierto;
+			  const c=document.getElementById('ica-comparador');
+			  const b=document.getElementById('ica-comp-btn');
+			  if(c) c.style.display=_icaCompAbierto?'block':'none';
+			  if(b) b.textContent=_icaCompAbierto?'🕐 Ocultar comparación':'🕐 Comparar horas · ¿cuándo quedamos?';
+			  if(_icaCompAbierto){ if(_icaCompHora===null) _icaCompHora=new Date().getHours(); icaPintarComparador(); }
+			}
+			// La hora que marca ese reloj a las «hbase» de aquí.
+			function _icaHoraEn(tz, hbase){
+			  const d=new Date();
+			  d.setHours(hbase,0,0,0);
+			  const f=new Intl.DateTimeFormat('es',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'});
+			  const partes=f.formatToParts(d);
+			  const h=parseInt((partes.find(x=>x.type==='hour')||{}).value,10);
+			  const m=(partes.find(x=>x.type==='minute')||{}).value||'00';
+			  const dia=(partes.find(x=>x.type==='weekday')||{}).value||'';
+			  return {h:h, txt:String(h).padStart(2,'0')+':'+m, dia:dia};
+			}
+			// Verde: hora de trabajo. Ámbar: pronto o tarde pero se puede. Rojo: dormido.
+			function _icaColorHora(h){
+			  if(h>=9 && h<=18) return ['#30d158','rgba(48,209,88,.16)'];
+			  if((h>=7 && h<9) || (h>18 && h<=22)) return ['#ffd60a','rgba(255,214,10,.14)'];
+			  return ['#ff453a','rgba(255,69,58,.14)'];
+			}
+			function icaCompMover(d){
+			  _icaCompHora=((_icaCompHora===null?new Date().getHours():_icaCompHora)+d+24)%24;
+			  icaPintarComparador();
+			}
+			function icaCompElegir(h){ _icaCompHora=h; icaPintarComparador(); }
+			function icaPintarComparador(){
+			  const c=document.getElementById('ica-comparador');
+			  if(!c) return;
+			  if(!_icaWorldClocks.length){
+			    c.innerHTML='<div style="font-size:12px;opacity:.4;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
+			    return;
+			  }
+			  const hb=(_icaCompHora===null?new Date().getHours():_icaCompHora);
+			  const miTz=(function(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }catch(e){ return null; } })();
+			  if(!_icaWorldClocks.some(_icaTzValida)){
+			    c.innerHTML='<div style="font-size:12px;opacity:.4;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
+			    return;
+			  }
+			  // Selector de hora: una tira de horas del día, la elegida resaltada.
+			  let tira='';
+			  for(let h=0;h<24;h++){
+			    const sel=(h===hb);
+			    tira+='<button onclick="icaCompElegir('+h+')" style="flex-shrink:0;min-width:38px;padding:6px 4px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:'+(sel?'800':'600')+';'
+			      +(sel?'background:#0a84ff;color:#fff;':'background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);')+'">'+String(h).padStart(2,'0')+'</button>';
+			  }
+			  let filas='';
+			  // Primero tu ciudad, que es la referencia de la que salen las demás.
+			  const miCol=_icaColorHora(hb);
+			  filas+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(10,132,255,.14);border:1px solid rgba(10,132,255,.35);margin-bottom:6px;">'
+			    +'<span style="font-size:13px;font-weight:700;">📍 Aquí'+(miTz?' · '+escapeHtml(_icaNombreDeTz(miTz)):'')+'</span>'
+			    +'<span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:'+miCol[0]+';">'+String(hb).padStart(2,'0')+':00</span>'
+			    +'</div>';
+			  _icaWorldClocks.forEach(function(tz){
+			    if(!_icaTzValida(tz)) return;
+			    const r=_icaHoraEn(tz,hb), col=_icaColorHora(r.h);
+			    filas+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:'+col[1]+';margin-bottom:6px;">'
+			      +'<span style="font-size:13px;font-weight:600;">'+escapeHtml(_icaNombreDeTz(tz))+'</span>'
+			      +'<span style="display:flex;align-items:baseline;gap:7px;">'
+			      +  '<span style="font-size:10px;opacity:.5;text-transform:capitalize;">'+escapeHtml(r.dia)+'</span>'
+			      +  '<span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:'+col[0]+';">'+r.txt+'</span>'
+			      +'</span></div>';
+			  });
+			  c.innerHTML=
+			     '<div style="font-size:11px;opacity:.45;margin-bottom:8px;">Elige una hora tuya y mira qué hora sería en cada ciudad.</div>'
+			    +'<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">'+tira+'</div>'
+			    +filas
+			    +'<div style="display:flex;gap:14px;font-size:10px;opacity:.45;margin-top:8px;">'
+			    +  '<span><span style="color:#30d158;">●</span> buena hora</span>'
+			    +  '<span><span style="color:#ffd60a;">●</span> justo</span>'
+			    +  '<span><span style="color:#ff453a;">●</span> estarán durmiendo</span>'
+			    +'</div>';
 			}
 			// ── Buscador de ciudades del reloj mundial ──────────────────────────
 			// Antes había que escribir de memoria «America/New_York» en un prompt.

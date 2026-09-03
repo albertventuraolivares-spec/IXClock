@@ -34,6 +34,19 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Comparador de horas en el reloj mundial** (idea del usuario): eliges una
+  hora tuya en una tira de 00 a 23 y sale qué hora sería en cada ciudad
+  guardada, con el día de la semana y un color — verde 9-18, ámbar 7-9 y 18-22,
+  rojo el resto — para ver de un vistazo con quién se puede quedar.
+  - El botón solo aparece si hay alguna ciudad guardada.
+  - Probado con `pruebas/comparador.js`: 19/19, con la zona horaria del
+    navegador fijada y las horas calculadas aparte, no supuestas.
+
+- **Bug encontrado de paso**: una zona horaria que el navegador no conozca
+  hacía que `Intl` lanzara y dejara el reloj mundial **entero** en blanco (basta
+  un `ica_world_clocks` corrupto o una zona que se renombre). Ahora se
+  descartan, se olvidan del disco y los demás relojes siguen saliendo.
+
 - **Clima de cada ciudad en el reloj mundial** (idea del usuario). Junto a
   «Hoy» sale el emoji del tiempo y la temperatura de esa ciudad.
   - Se pide en segundo plano: la hora aparece al instante, sin esperar la red.

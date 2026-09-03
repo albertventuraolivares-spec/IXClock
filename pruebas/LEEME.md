@@ -108,6 +108,18 @@ node pruebas/clima.js
 > **primero**: las rutas se prueban de la última registrada a la primera, así
 > que puesto al final se traga también los simulacros.
 
+## `comparador.js`
+El comparador de horas del reloj mundial. Fija la zona horaria del navegador a
+`Europe/Madrid` para que el resultado no dependa de dónde se ejecute, y **la
+hora de cada ciudad se calcula aparte** con `Intl` en vez de darla por sabida:
+así la prueba sigue valiendo cuando cambie el horario de verano.
+
+```
+node pruebas/comparador.js
+```
+
+Última pasada: **19/19**.
+
 ---
 
 ## Nota sobre fallos intermitentes
