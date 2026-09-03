@@ -11919,7 +11919,18 @@
 			- Consejos de salud y bienestar (no eres médico, recomienda profesionales para temas médicos serios)
 			- Organización: listas, ideas, planificación
 			- Tecnología, programación, recetas, viajes, y cualquier otro tema
-			- Alarmas: si el usuario quiere programar una alarma, al FINAL de tu respuesta incluye exactamente: [[ALARM time="HH:MM" label="descripción"]] en formato 24h
+			ACCIONES: puedes HACER cosas en la app, no solo hablar. Si el usuario lo pide,
+			pon la etiqueta al FINAL de tu respuesta, tal cual, y sigue respondiendo normal
+			(la etiqueta no se le enseña a él). Una por acción; varias si hace falta:
+			- Alarma:      [[ALARM time="HH:MM" label="descripción"]]   (hora en formato 24h)
+			- Temporizador:[[TIMER min="10" label="descripción"]]        ("ponme 10 minutos")
+			- Nota:        [[NOTA texto="lo que hay que apuntar"]]       ("apúntame que compre pan")
+			- Reloj mundial:[[CIUDAD nombre="Tokio"]]                    ("añade Tokio")
+			- Abrir una app:[[ABRIR app="ixband"]]                        (ixband, mapas, navegador,
+			  juegos, emulador, radio, musica, vpn, bench, nube, brujula, buscador, buscar)
+			- Fondo:       [[FONDO nombre="tokio"]]                       ("ponme un fondo de Tokio")
+			- Radio:       [[RADIO nombre="jazz"]]                        ("pon jazz")
+			Si no te piden hacer nada, no pongas ninguna etiqueta.
 			Responde de forma concisa y útil. No repitas la pregunta del usuario.`;
 
 			/* ===== DIALECTO / PERSONALIDAD DEL ASISTENTE (Siri) =====
@@ -11980,14 +11991,121 @@
 			  box.scrollTop = box.scrollHeight;
 			  return div;
 			}
+			/* ── ACCIONES DEL ASISTENTE ───────────────────────────────────────
+			   El asistente ya sabia dejar [[ALARM]] al final de su respuesta, pero
+			   esa tuberia servia solo para alarmas. Aqui se generaliza: una tabla
+			   de etiquetas, cada una con lo que hace. Anadir una accion nueva es
+			   anadir una fila, no tocar el analizador.                          */
+			const IXA_ACCIONES = {
+			  ALARM:  { campos:['time','label'], hacer:function(a){
+			      const m=/^(\d{1,2}):(\d{2})$/.exec(a.time||''); if(!m) return null;
+			      const h=parseInt(m[1],10), mi=parseInt(m[2],10);
+			      if(h>23||mi>59) return null;
+			      addAlarm(h, mi, a.label||'Alarma');
+			      return '⏰ Alarma puesta a las '+String(h).padStart(2,'0')+':'+m[2]
+			             +(a.label?' — '+a.label:'');
+			    }},
+			  TIMER:  { campos:['min','label'], hacer:function(a){
+			      const min=parseFloat(a.min); if(!isFinite(min)||min<=0||min>1440) return null;
+			      const seg=Math.round(min*60);
+			      _icaTimerRemaining = seg;
+			      if(a.label) _icaTimerLabel = a.label;
+			      clearInterval(_icaTimerInterval);
+			      _icaTimerInterval = setInterval(function(){
+			        _icaTimerRemaining--;
+			        if(_icaTimerRemaining<=0){
+			          clearInterval(_icaTimerInterval); _icaTimerInterval=null;
+			          const ah=new Date();
+			          ringAlarm({hour:ah.getHours(), minute:ah.getMinutes(), label:_icaTimerLabel, tone:_icaTimerTone});
+			        }
+			      },1000);
+			      return '⏳ Temporizador de '+min+' minuto'+(min===1?'':'s')+(a.label?' — '+a.label:'');
+			    }},
+			  NOTA:   { campos:['texto'], hacer:function(a){
+			      const t=(a.texto||'').trim(); if(!t) return null;
+			      notes.push({id:'note-'+Date.now(), content:t, updatedAt:Date.now()});
+			      try{ saveNotes(); }catch(e){}
+			      try{ renderNotesList(); }catch(e){}
+			      return '📝 Apuntado: '+t;
+			    }},
+			  CIUDAD: { campos:['nombre'], hacer:function(a){
+			      const n=(a.nombre||'').trim(); if(!n) return null;
+			      const sin=function(x){ try{ return x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }catch(e){ return x.toLowerCase(); } };
+			      const c=ICA_CITIES.find(function(x){ return sin(x[0])===sin(n); })
+			           || ICA_CITIES.find(function(x){ return sin(x[0]).indexOf(sin(n))>=0; });
+			      if(!c) return null;
+			      icaPickCity(c[1]);
+			      return '🌍 '+c[0]+' añadida al reloj mundial';
+			    }},
+			  ABRIR:  { campos:['app'], hacer:function(a){
+			      const id=(a.app||'').trim().toLowerCase();
+			      const app=IX_APPS.find(function(x){ return x.id===id; })
+			             || IX_APPS.find(function(x){ return x.n.toLowerCase()===id; });
+			      if(!app) return null;
+			      const f=window[app.open];
+			      if(typeof f!=='function') return null;
+			      setTimeout(function(){ try{ f(); }catch(e){} }, 300);
+			      return '📱 Abriendo '+app.n;
+			    }},
+			  FONDO:  { campos:['nombre'], hacer:function(a){
+			      const n=(a.nombre||'').trim().toLowerCase(); if(!n) return null;
+			      const w=(typeof WALLPAPERS!=='undefined'?WALLPAPERS:[]).find(function(x){
+			        return (x.name||'').toLowerCase().indexOf(n)>=0 || (x.tags||'').toLowerCase().indexOf(n)>=0;
+			      });
+			      if(!w) return null;
+			      try{ setWallpaper(w.id); }catch(e){ return null; }
+			      return '🖼️ Fondo cambiado a '+w.name;
+			    }},
+			  RADIO:  { campos:['nombre'], hacer:function(a){
+			      const n=(a.nombre||'').trim().toLowerCase(); if(!n) return null;
+			      const st=(typeof STATIONS!=='undefined'?STATIONS:[]).find(function(x){
+			        return (x.title||'').toLowerCase().indexOf(n)>=0 || (x.tags||'').toLowerCase().indexOf(n)>=0;
+			      });
+			      if(!st) return null;
+			      try{ setStation(st.id); }catch(e){ return null; }
+			      return '📻 Sonando: '+st.title;
+			    }}
+			};
+			// Saca las etiquetas del texto y devuelve lo que hay que hacer.
+			function ixaExtraerAcciones(texto){
+			  const acciones=[];
+			  let limpio=texto;
+			  Object.keys(IXA_ACCIONES).forEach(function(nombre){
+			    const re=new RegExp('\\[\\[\\s*'+nombre+'\\s+([^\\]]*?)\\s*\\]\\]','gi');
+			    let m;
+			    while((m=re.exec(texto))!==null){
+			      const args={}; let am;
+			      const ra=/(\w+)\s*=\s*"([^"]*)"/g;
+			      while((am=ra.exec(m[1]))!==null) args[am[1].toLowerCase()]=am[2];
+			      acciones.push({tipo:nombre, args:args});
+			    }
+			    limpio=limpio.replace(re,'');
+			  });
+			  return { cleaned: limpio.replace(/\n{3,}/g,'\n\n').trim(), acciones: acciones };
+			}
+			// Ejecuta y devuelve un aviso por cada una que salio bien.
+			function ixaEjecutarAcciones(acciones){
+			  const hechas=[];
+			  (acciones||[]).forEach(function(a){
+			    const def=IXA_ACCIONES[a.tipo];
+			    if(!def) return;
+			    let r=null;
+			    try{ r=def.hacer(a.args); }catch(e){ r=null; }
+			    if(r) hechas.push(r);
+			  });
+			  return hechas;
+			}
+			// Se mantiene el nombre de antes: lo llama el chat y no hay que tocarlo.
 			function extractAlarmTags(text){
-			  const re = /\[\[ALARM\s+time="(\d{1,2}):(\d{2})"\s+label="([^"]*)"\]\]/gi;
-			  let m, found = [];
-			  while((m = re.exec(text)) !== null){
-			    found.push({hour: parseInt(m[1],10), minute: parseInt(m[2],10), label: m[3] || 'Alarma'});
-			  }
-			  const cleaned = text.replace(re, '').trim();
-			  return {cleaned, found};
+			  const r=ixaExtraerAcciones(text);
+			  // 'found' seguia siendo la lista de alarmas para no cambiar quien lo usa
+			  const found=[];
+			  r.acciones.forEach(function(a){
+			    if(a.tipo!=='ALARM') return;
+			    const m=/^(\d{1,2}):(\d{2})$/.exec(a.args.time||'');
+			    if(m) found.push({hour:parseInt(m[1],10), minute:parseInt(m[2],10), label:a.args.label||'Alarma'});
+			  });
+			  return { cleaned:r.cleaned, found:found, acciones:r.acciones };
 			}
 			/* ===== SIRI VOICE (Text-to-Speech) ===== */
 			let _siriVoiceEnabled = localStorage.getItem('siri_voice') !== 'off';
@@ -12103,15 +12221,16 @@
 			      rawReply = await callFreeAI(aiChatHistory, getAISystemPrompt());
 			    }
 			    if(!rawReply) rawReply = 'No pude generar una respuesta, intenta de nuevo.';
-			    const {cleaned, found} = extractAlarmTags(rawReply);
+			    const {cleaned, acciones} = extractAlarmTags(rawReply);
 			    const loadingEl = document.getElementById(loadingId);
 			    if(loadingEl) loadingEl.remove();
 			    appendAIMessage('bot', cleaned);
 			    aiChatHistory.push({role:'assistant', content:rawReply});
 			    siriSpeak(cleaned);
-			    found.forEach(a=>{
-			      addAlarm(a.hour, a.minute, a.label);
-			      appendAIMessage('bot', `⏰ Alarma: ${String(a.hour).padStart(2,'0')}:${String(a.minute).padStart(2,'0')} — ${a.label}`);
+			    // Hace lo que haya pedido (alarma, temporizador, nota, ciudad, abrir…)
+			    // y lo confirma en el chat, para que se vea que ha pasado de verdad.
+			    ixaEjecutarAcciones(acciones).forEach(function(aviso){
+			      appendAIMessage('bot', aviso);
 			    });
 			  }catch(e){
 			    const loadingEl = document.getElementById(loadingId);
@@ -14971,6 +15090,7 @@
 			    '☀️ TEMA CLARO DE VERDAD. El «modo claro» que había solo aclaraba los paneles: el 98% del texto seguía siendo casi blanco y no se leía nada. Ahora cambia toda la app, el fondo incluido',
 			    '🌅 Y dos modos más: «Como el sistema», que sigue lo que tengas puesto en el móvil, y «Con el sol», que se pone claro al amanecer y oscuro al atardecer según tu ciudad',
 			    '🛠️ El modo elegido ya SE GUARDA: antes ponías claro, recargabas y volvía a oscuro',
+			    '🗣️ EL ASISTENTE YA HACE COSAS, no solo contesta: «ponme 10 minutos», «apúntame que compre pan», «añade Tokio al reloj», «abre IXBand», «pon jazz» o «ponme un fondo de Tokio». Antes solo sabía poner alarmas',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',

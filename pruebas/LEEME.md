@@ -21,9 +21,25 @@ Reintenta **una vez** lo que falla: lanzar 21 navegadores seguidos satura la
 máquina y de vez en cuando uno tarda de más al arrancar, y eso no es un fallo
 de la app. Lo que falla **dos** veces sí hay que mirarlo, y el resumen lo separa.
 
-Última pasada: **23 pasan, 0 fallan.**
+Última pasada: **24 pasan, 0 fallan.**
 
 ---
+
+## `ixa.js`
+Las acciones del asistente. **No se llama al modelo**: se le da la respuesta ya
+escrita con las etiquetas, que es exactamente lo que llegaría de él, y se
+comprueba que la app *hace* lo que dicen — crear la alarma, poner el
+temporizador en marcha, apuntar la nota, añadir la ciudad — y que la etiqueta
+no acaba viéndose en el chat.
+
+Comprueba también lo que **no** debe pasar: una hora imposible, una ciudad o
+una app inventadas no rompen nada ni hacen nada a medias.
+
+```
+node pruebas/ixa.js
+```
+
+Última pasada: **21/21**.
 
 ## `tema.js`
 El tema claro. Lo que comprueba no es que el botón cambie de color, sino que en

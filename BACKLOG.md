@@ -31,12 +31,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-2. **Ampliar los comandos de IXA.** El asistente ya suelta `[[ALARM time=""
-   label=""]]` al final de su respuesta y `extractAlarmTags` lo recoge, pero esa
-   tubería solo sirve para alarmas — comprobado: `[[ALARM` es la única etiqueta
-   del archivo. Añadir hermanas y sus manejadores: `[[TIMER]]`, `[[NOTA]]`,
-   `[[CIUDAD]]`, `[[ABRIR app]]`, `[[FONDO]]`, `[[RADIO]]`. Con eso funcionan
-   por voz «ponme 10 minutos», «apúntame que compre pan», «añade Tokio».
 3. **Favoritos en la radio.** Confirmado: existe `ix_browser_favorites` (del
    navegador) y ninguno para emisoras. Guardar las tuyas y enseñarlas primero.
 4. **Pantalla de inicio reordenable.** El orden de los paneles es fijo. Arrastrar
@@ -63,6 +57,21 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **IXA ya hace cosas, no solo habla** (idea 1 del usuario). La tubería de
+  `[[ALARM]]` se generalizó a una tabla `IXA_ACCIONES`: añadir una acción nueva
+  es añadir una fila, no tocar el analizador.
+  - Seis etiquetas nuevas: `[[TIMER min label]]`, `[[NOTA texto]]`,
+    `[[CIUDAD nombre]]`, `[[ABRIR app]]`, `[[FONDO nombre]]`, `[[RADIO nombre]]`.
+    Funcionan «ponme 10 minutos», «apúntame que compre pan», «añade Tokio»,
+    «abre IXBand», «pon jazz».
+  - Cada acción se confirma en el chat, para que se vea que ha pasado de verdad.
+  - Lo que **no** debe pasar también está probado: una hora imposible, una
+    ciudad o una app inventadas no hacen nada ni rompen nada.
+  - `extractAlarmTags` conserva su nombre y su forma, así que lo que ya lo
+    usaba sigue igual.
+  - Probado con `pruebas/ixa.js`: 21/21, dándole al analizador la respuesta ya
+    escrita en vez de llamar al modelo.
 
 - **Tema claro de verdad, y los colores unificados** (idea 8 del usuario; es la
   continuación natural de la escala `--r-*` / `--sh-*` que ya se había hecho).
