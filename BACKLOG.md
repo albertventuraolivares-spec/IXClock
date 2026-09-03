@@ -33,6 +33,30 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Accesibilidad y legibilidad para las tiendas** (`pruebas/calidad.js`).
+  - **56 botones de solo icono** no decían qué hacían: un lector de pantalla
+    solo podía anunciar «botón». Ahora llevan `aria-label`, y la etiqueta sale
+    de lo que **hace** cada uno (su `onclick`), no del dibujo: «Emisora
+    anterior», «Mes siguiente», «Bajar el tempo»… Quedan 18 sin nombre, los del
+    teclado numérico de la calculadora (÷ × = …), que se leen solos.
+  - **201 textos** de 12px o menos estaban al 28-50 % de opacidad, ilegibles
+    sobre fondo oscuro. Subidos a un mínimo del 55 %. Comprobado con capturas
+    que el diseño no se descoloca.
+  - Rendimiento en un móvil simulado con el procesador 4× más lento: primer
+    pintado 260 ms, primer contenido 380 ms. No hacía falta tocar nada.
+
+- **Barrido profundo pulsando botones** (`pruebas/interaccion.js`): 234 botones
+  en 21 pantallas, **0 errores**. `auditoria.js` solo comprobaba que las apps
+  abrieran; lo que falla es lo de dentro.
+
+- **Fallos intermitentes de las pruebas: resueltos de raíz.** Esperaban una
+  cifra fija de segundos a que la página cargara; con la máquina cargada se
+  quedaba corta, la prueba empezaba a medias y salían errores de
+  «before initialization» que **no eran de la app**. Las 45 pruebas esperan
+  ahora a hechos (que exista una función del último bloque `<script>`, que la
+  pantalla de entrada haya desaparecido) y no a relojes. 17 pruebas seguidas
+  sin un solo fallo.
+
 - **Exportar en WAV** además de webm/mp4 (`_gbBufferAWav`). Se graba igual y
   después se descomprime con `decodeAudioData` y se reescribe como PCM de 16
   bits. Hacerlo así evita reescribir todos los instrumentos para que sepan

@@ -35,6 +35,8 @@ const BASE='http://localhost:9203/';
  await p.waitForTimeout(2600);
  await p.evaluate(()=>{try{_lrConfirm();}catch(e){}});
  try{ await p.click('text=Continuar como invitado',{timeout:3000}); }catch(e){}
+ await p.waitForFunction(()=>{ const l=document.getElementById('login-overlay');
+   return !l || getComputedStyle(l).display==='none'; }, null, {timeout:20000}).catch(()=>{});
  await p.waitForTimeout(2000);
  await p.evaluate(()=>{try{ixCerrarBienvenida();}catch(e){}});
 

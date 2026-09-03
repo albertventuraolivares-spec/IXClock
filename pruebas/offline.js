@@ -16,6 +16,8 @@ const srv=http.createServer((q,s)=>{peticiones++;let f=decodeURIComponent(q.url.
 
  // --- 1a visita: con red, se instala el service worker ---
  await p.goto('http://localhost:9201/',{waitUntil:'domcontentloaded'});
+ await p.waitForFunction(()=>typeof ixBuscarTodo==='function' && typeof openGarageBand==='function',
+   null, {timeout:30000}).catch(()=>{});
  await p.waitForTimeout(3000);
  const o={};
  o.swRegistrado = await p.evaluate(async()=>{

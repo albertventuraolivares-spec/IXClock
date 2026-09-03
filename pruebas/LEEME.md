@@ -149,13 +149,34 @@ node pruebas/interaccion.js
 
 Última pasada: **234 botones pulsados, 0 errores.**
 
+## `calidad.js`
+Rendimiento y accesibilidad: lo que miran las tiendas. Carga la app en un móvil
+simulado con el procesador **4 veces más lento** y mide el tiempo hasta el
+primer pintado, cuenta los botones que solo tienen un icono y no dicen qué
+hacen (un lector de pantalla no puede describirlos) y busca texto pequeño y
+demasiado pálido.
+
+```
+node pruebas/calidad.js
+```
+
+Última pasada: primer pintado **260 ms**, primer contenido **380 ms**,
+18 botones sin nombre (los del teclado numérico de la calculadora, que se leen
+solos), 12 textos flojos que vienen de reglas de la hoja de estilos.
+
 ---
 
-## Nota sobre fallos intermitentes
+## Fallos intermitentes: resuelto
 
-Ejecutar toda la carpeta seguida levanta un navegador tras otro y la máquina se
-carga. Con eso, alguna prueba falla por tiempo de espera (el botón «Continuar
-como invitado» tarda más de la cuenta) aunque el código esté bien. **Antes de
-dar por buena una prueba fallida, vuelve a ejecutarla sola**: hasta ahora,
-todas las que fallaron en tanda pasaron 3 de 3 por separado.
+Antes, ejecutar toda la carpeta seguida hacía fallar alguna prueba por tiempo
+de espera. La causa era esperar **una cifra fija de segundos** a que la página
+estuviera lista: con la máquina cargada esa cifra se quedaba corta, la prueba
+empezaba a medias y salían errores de «before initialization» que no eran de la
+app. Las 45 pruebas esperan ahora a **hechos** y no a relojes:
+
+- a que exista `ixBuscarTodo` (está en el último bloque `<script>`, así que si
+  existe es que ya se ejecutaron todos);
+- a que la pantalla de entrada haya desaparecido de verdad.
+
+Con eso, las 17 pruebas seguidas pasan sin un solo fallo.
 

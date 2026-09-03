@@ -39,9 +39,13 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
  });
 
  await p.goto('http://localhost:9205/',{waitUntil:'domcontentloaded'});
+ await p.waitForFunction(()=>typeof ixBuscarTodo==='function' && typeof openGarageBand==='function',
+   null, {timeout:30000}).catch(()=>{});
  await p.waitForTimeout(2600);
  await p.evaluate(()=>{try{_lrConfirm();}catch(e){}});
  try{ await p.click('text=Continuar como invitado',{timeout:3000}); }catch(e){}
+ await p.waitForFunction(()=>{ const l=document.getElementById('login-overlay');
+   return !l || getComputedStyle(l).display==='none'; }, null, {timeout:20000}).catch(()=>{});
  await p.waitForTimeout(2000);
  await p.evaluate(()=>{try{ixCerrarBienvenida();}catch(e){}});
 

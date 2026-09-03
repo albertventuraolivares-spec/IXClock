@@ -1610,7 +1610,7 @@
 		>
 			<h2 class="text-2xl font-bold mb-1">Personalizar</h2>
 			<p
-				class="text-[10px] opacity-50 mb-4 uppercase tracking-[0.2em] font-bold"
+				class="text-[10px] opacity-60 mb-4 uppercase tracking-[0.2em] font-bold"
 			>
 				Liquid Glass · Universal Dashboard
 			</p>
@@ -1625,7 +1625,7 @@
 					style="background:rgba(10,132,255,.08);border-radius:16px;padding:12px 14px;border:1.5px solid rgba(10,132,255,.25);"
 				>
 					<div
-						style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;"
+						style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;"
 					>
 						🌍 Idioma / Language / Langue
 					</div>
@@ -1648,11 +1648,11 @@
 					class="shrink-0"
 					style="background:rgba(94,92,230,.1);border-radius:16px;padding:12px 14px;border:1.5px solid rgba(94,92,230,.3);"
 				>
-					<div style="font-size:9px;font-weight:800;opacity:.5;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
+					<div style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px;">
 						🔮 Cómo habla IXA / el asistente
 					</div>
 					<div style="display:flex;flex-wrap:wrap;gap:6px;" id="siri-dialect-btns"></div>
-					<div style="font-size:10px;opacity:.5;margin-top:8px;line-height:1.4;">
+					<div style="font-size:10px;opacity:.55;margin-top:8px;line-height:1.4;">
 						Elige el acento y estilo del asistente. Ej.: <b>Dominicano</b> responde tipo "¿qué lo qué manito?". También cambia la voz al hablar.
 						Actual: <span id="siri-dialect-current" style="color:#a5a3ff;font-weight:700;">Español neutro</span>
 					</div>
@@ -1698,7 +1698,7 @@
 						style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"
 					>
 						<div
-							style="font-size:9px;font-weight:800;opacity:.4;text-transform:uppercase;letter-spacing:.12em;"
+							style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.12em;"
 						>
 							🔡 Tamaño de texto
 						</div>
@@ -1709,7 +1709,7 @@
 						>
 					</div>
 					<div style="display:flex;align-items:center;gap:8px;">
-						<span style="font-size:11px;opacity:.4;">A</span>
+						<span style="font-size:11px;opacity:.55;">A</span>
 						<input
 							type="range"
 							id="font-size-slider"
@@ -1812,19 +1812,19 @@
 					<label style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:4px 0;cursor:pointer;"><span>Mostrar estación y siglo</span><input type="checkbox" id="easy-show-extra" onchange="easySetToggle('easy_show_extra', this.checked)" style="width:18px;height:18px;cursor:pointer;"></label>
 					<div style="font-size:11px;font-weight:800;opacity:.75;margin:10px 0 4px;">🏠 Texto de “en casa”</div>
 					<input type="text" id="easy-home-text" placeholder="ESTÁS EN CASA" oninput="easySetHomeText(this.value)" maxlength="40" style="width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#fff;padding:8px 10px;font-size:12px;" />
-					<div style="font-size:9px;opacity:.4;margin-top:4px;">Déjalo vacío para ocultar esa línea.</div>
+					<div style="font-size:9px;opacity:.55;margin-top:4px;">Déjalo vacío para ocultar esa línea.</div>
 				</div>
 
 				<!-- AI Provider -->
 				<div class="shrink-0">
 					<div
-						class="text-[9px] font-bold opacity-40 uppercase tracking-[0.2em] mb-2"
+						class="text-[9px] font-bold opacity-60 uppercase tracking-[0.2em] mb-2"
 					>
 						Asistente IA
 					</div>
 					<div class="grid grid-cols-2 gap-2"></div>
 					<div
-						style="margin-top:6px;font-size:9px;opacity:.35;text-align:center;"
+						style="margin-top:6px;font-size:9px;opacity:.55;text-align:center;"
 					>
 						✅ IA gratuita vía Pollinations AI · Sin cuenta · Sin
 						pago
@@ -1837,7 +1837,7 @@
 					style="background:rgba(255,255,255,.05);border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,.08);"
 				>
 					<div
-						class="text-[9px] font-bold opacity-40 uppercase tracking-[0.2em] mb-3"
+						class="text-[9px] font-bold opacity-60 uppercase tracking-[0.2em] mb-3"
 					>
 						👁️ Mostrar / Ocultar
 					</div>
@@ -1944,7 +1944,7 @@
 							<span id="clock-stretch-label" style="font-size:11px;font-weight:700;color:#0a84ff;">100%</span>
 						</div>
 						<input type="range" min="100" max="200" value="100" id="clock-stretch-slider" oninput="setClockStretch(this.value)" style="width:100%;" />
-						<div style="font-size:9px;opacity:.4;margin-top:6px;">Como en iOS: estira los números del reloj hacia arriba</div>
+						<div style="font-size:9px;opacity:.55;margin-top:6px;">Como en iOS: estira los números del reloj hacia arriba</div>
 					</div>
 					<div class="relative mb-3 shrink-0">
 						<span
@@ -1974,33 +1974,33 @@
 				>
 					<!-- Apps: enlace propio, guardar sin internet e instalar -->
 					<div class="p-3.5 glass rounded-2xl">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">⬇️ Apps y descargas</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">⬇️ Apps y descargas</div>
 						<div id="ix-downloads"></div>
 					</div>
 					<!-- Botón de configuración: fijo u oculto -->
 					<div class="p-3.5 glass rounded-2xl">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">⚙️ Botón de configuración</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">⚙️ Botón de configuración</div>
 						<div class="flex gap-2">
 							<button id="sbm-fijo" class="btn-option flex-1 active" onclick="setSettingsBtnMode('fijo')">📌 Fijo (siempre visible)</button>
 							<button id="sbm-auto" class="btn-option flex-1" onclick="setSettingsBtnMode('auto')">👻 Se oculta solo</button>
 						</div>
-						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
+						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
 					</div>
 					<!-- Pantalla y barra de apps (movido desde el dock) -->
 					<div class="p-3.5 glass rounded-2xl">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">🖥️ Pantalla y apps</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">🖥️ Pantalla y apps</div>
 						<button id="cfg-fullscreen-btn" class="btn-option w-full" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
-						<p class="text-[10px] opacity-40 mt-2 mb-3 leading-relaxed">Ocupa toda la pantalla (sin barras del navegador). Toca otra vez para salir.</p>
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2">▦ Barra de apps</div>
+						<p class="text-[10px] opacity-60 mt-2 mb-3 leading-relaxed">Ocupa toda la pantalla (sin barras del navegador). Toca otra vez para salir.</p>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">▦ Barra de apps</div>
 						<div class="flex gap-2">
 							<button id="dockmode-all" class="btn-option flex-1" onclick="setDockMode(false)">▦ Todas</button>
 							<button id="dockmode-compact" class="btn-option flex-1 active" onclick="setDockMode(true)">▪ Compacta</button>
 						</div>
-						<p class="text-[10px] opacity-40 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
+						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
 					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2"
 						>
 							Color del Reloj
 						</div>
@@ -2011,7 +2011,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-2">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2"
 						>
 							🖊️ Color de las Letras
 						</div>
@@ -2035,7 +2035,7 @@
 							/>
 							<span
 								id="text-color-hex"
-								style="font-size:10px;opacity:.45;font-family:monospace;"
+								style="font-size:10px;opacity:.55;font-family:monospace;"
 								>#ffffff</span
 							>
 							<button
@@ -2065,7 +2065,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-2">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-2"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2"
 						>
 							🔢 Estilo de Números
 						</div>
@@ -2090,7 +2090,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-2" id="clocktime-card">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1"
 						>
 							🕐 Hora del Reloj
 						</div>
@@ -2118,7 +2118,7 @@
 								<button class="btn-option" onclick="applyManualClockTime()" style="font-size:10px;padding:6px 10px;">✔ Aplicar</button>
 							</div>
 						</div>
-						<div id="clockmode-status" style="font-size:9px;opacity:.4;">Mostrando tu hora local automáticamente.</div>
+						<div id="clockmode-status" style="font-size:9px;opacity:.55;">Mostrando tu hora local automáticamente.</div>
 					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
@@ -2138,7 +2138,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-3">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1"
 						>
 							✨ Liquid Glass
 						</div>
@@ -2199,7 +2199,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-2">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1"
 						>
 							Sonido y Ambiente
 						</div>
@@ -2234,7 +2234,7 @@
 									value="8"
 									style="width:58px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:4px 8px;text-align:center;outline:none;"
 								/>
-								<span style="font-size:11px;opacity:.5;"
+								<span style="font-size:11px;opacity:.55;"
 									>h</span
 								>
 								<label
@@ -2249,11 +2249,11 @@
 									value="22"
 									style="width:58px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:4px 8px;text-align:center;outline:none;"
 								/>
-								<span style="font-size:11px;opacity:.5;"
+								<span style="font-size:11px;opacity:.55;"
 									>h</span
 								>
 							</div>
-							<div style="font-size:9px;opacity:.4;">
+							<div style="font-size:9px;opacity:.55;">
 								Ejemplo: Desde 8 hasta 22 → pita de 8:00 AM a
 								10:00 PM
 							</div>
@@ -2261,7 +2261,7 @@
 					</div>
 					<div class="p-3.5 glass rounded-2xl space-y-2" id="opinion-card">
 						<div
-							class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1"
+							class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1"
 						>
 							💬 Mi Opinión
 						</div>
@@ -2284,10 +2284,10 @@
 							</div>
 						</div>
 						<div id="opinion-edit-mode" class="hidden space-y-2">
-							<div style="font-size:10px;opacity:.5;">¿Cuántas estrellas le pondrías?</div>
+							<div style="font-size:10px;opacity:.55;">¿Cuántas estrellas le pondrías?</div>
 							<div id="opinion-stars-input" style="font-size:24px;letter-spacing:4px;cursor:pointer;"></div>
 							<textarea id="opinion-textarea" rows="4" placeholder="Escribe aquí tu opinión..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2 text-xs outline-none resize-none"></textarea>
-							<div style="font-size:9px;opacity:.45;">Al guardar, tu opinión se PUBLICA y todos los visitantes de IXClock podrán verla.</div>
+							<div style="font-size:9px;opacity:.55;">Al guardar, tu opinión se PUBLICA y todos los visitantes de IXClock podrán verla.</div>
 							<div class="flex gap-2">
 								<button class="btn-option flex-1" onclick="opinionSave()">💾 Guardar y publicar</button>
 								<button class="btn-option flex-1" onclick="opinionCancelEdit()">Cancelar</button>
@@ -2298,7 +2298,7 @@
 						<div style="border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:8px;">
 							<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🌍 Opiniones de todos</div>
 							<div id="public-opinions" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
-								<div style="font-size:10px;opacity:.4;">Cargando opiniones…</div>
+								<div style="font-size:10px;opacity:.55;">Cargando opiniones…</div>
 							</div>
 						</div>
 					</div>
@@ -2314,127 +2314,127 @@
 
 					<!-- Intro -->
 					<div class="p-3.5 glass rounded-2xl">
-						<div class="text-[10px] font-bold opacity-50 tracking-widest mb-2">IXClocK -- Universal OS Dashboard</div>
+						<div class="text-[10px] font-bold opacity-60 tracking-widest mb-2">IXClocK -- Universal OS Dashboard</div>
 						<p class="text-xs opacity-70 leading-relaxed">Panel de control visual con reloj, clima, música, IA, alarmas, notas, traductor, mapas y más. Todo funciona sin registro ni API key propia.</p>
 					</div>
 
 					<!-- Reloj -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🕒 Reloj &amp; Fecha</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🕒 Reloj &amp; Fecha</div>
 						<p class="text-xs opacity-70 leading-relaxed">Haz clic en el reloj para cambiar entre modo <b>Digital</b>, <b>Analógico</b> y <b>Flip</b>. En <i>Relojes</i> puedes elegir estilo de fuente, color y si se muestran segundos. Activa el modo Romano para ver números romanos.</p>
 					</div>
 
 					<!-- Fondos -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🖼️ Fondos de Pantalla</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🖼️ Fondos de Pantalla</div>
 						<p class="text-xs opacity-70 leading-relaxed">Más de 30 fondos con efecto Ken Burns (zoom suave). Cambia el fondo desde la cuadrícula en la pestaña <i>Fondos</i>. También puedes subir tu propia imagen con el botón 📁.</p>
 					</div>
 
 					<!-- Clima -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🌤️ Clima</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🌤️ Clima</div>
 						<p class="text-xs opacity-70 leading-relaxed">El clima se actualiza automáticamente usando tu ubicación (Open-Meteo + OpenStreetMap). Acepta el permiso de ubicación cuando el navegador lo solicite. Muestra temperatura, humedad, viento, UV, probabilidad de lluvia y pronóstico horario.</p>
 					</div>
 
 					<!-- Alarmas -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">⏰ Alarmas &amp; Temporizador</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">⏰ Alarmas &amp; Temporizador</div>
 						<p class="text-xs opacity-70 leading-relaxed">Abre el panel con el icono ⏰ en la barra superior. Crea alarmas con hora, etiqueta y días de repetición. El temporizador hace cuenta regresiva y emite un sonido al terminar. Las alarmas se guardan localmente en tu navegador.</p>
 					</div>
 
 					<!-- Calculadora -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🧮 Calculadora</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🧮 Calculadora</div>
 						<p class="text-xs opacity-70 leading-relaxed">Cuatro modos: <b>Básica</b>, <b>Científica</b> (sin, cos, √, ^…), <b>Programador</b> (bin/oct/hex) y <b>Conversión de unidades</b>. Abre con el icono 🧮 de la barra superior.</p>
 					</div>
 
 					<!-- Notas -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">📝 Notas</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">📝 Notas</div>
 						<p class="text-xs opacity-70 leading-relaxed">Panel de notas rápidas con soporte para múltiples notas, etiquetas de color y búsqueda. Las notas persisten entre sesiones gracias al almacenamiento local.</p>
 					</div>
 
 					<!-- IA -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">❇️ Asistente IA</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">❇️ Asistente IA</div>
 						<p class="text-xs opacity-70 leading-relaxed">Chat con IA usando Pollinations AI (gratuito, sin API key). Escribe tu pregunta y pulsa Enter o el botón Enviar. Historial de conversación visible en el panel flotante.</p>
 					</div>
 
 					<!-- Siri / Voz -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔮 IXA de Voz (asistente)</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🔮 IXA de Voz (asistente)</div>
 						<p class="text-xs opacity-70 leading-relaxed">Pulsa el icono del micrófono para activar el reconocimiento de voz (Web Speech API). Habla en español y el asistente responderá también en voz alta. Requiere Chrome o Safari con permiso de micrófono.</p>
 					</div>
 
 					<!-- Traductor -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🌐 Traductor</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🌐 Traductor</div>
 						<p class="text-xs opacity-70 leading-relaxed">Traduce entre más de 30 idiomas (Google gratis, con MyMemory de respaldo). Selecciona idioma origen y destino, escribe o pega el texto y pulsa Traducir. Ahora con tiempo límite para que no se quede cargando.</p>
 					</div>
 
 					<!-- Radio y Música -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎵 Radio &amp; Música</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🎵 Radio &amp; Música</div>
 						<p class="text-xs opacity-70 leading-relaxed">Estaciones fijas + buscador mundial 🌎 (Radio-Browser, +30.000 emisoras seguras, con "Cargar más"). Filtra por país, idioma y género. El botón 🎧 abre apps de música (Spotify, Apple Music…). El volumen y el arrastre están en el mini-reproductor de música. También hay sonidos ambiente en el panel de clima.</p>
 					</div>
 
 					<!-- TV Mundial -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">📺 TV Mundial</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">📺 TV Mundial</div>
 						<p class="text-xs opacity-70 leading-relaxed">+12.000 canales gratis (iptv-org). "🌐 Todos los canales" busca en todo el catálogo; "🎯 País + idioma + deporte" combina filtros; también Deportes, 4K y apps gratis (FIFA+ En vivo, ViX, Claro Sports). Canales solo-http (como Canal 9 / Color Visión de RD) se reproducen vía proxy.</p>
 					</div>
 
 					<!-- Navegador -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🌐 Navegador</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🌐 Navegador</div>
 						<p class="text-xs opacity-70 leading-relaxed">Navega sin salir de la app. Pestañas, favoritos, zoom y modo escritorio. Botón <b>⊞</b> para abrir en ventana flotante (varias páginas a la vez) y <b>&lt;/&gt;</b> para ver el HTML de la página. Si un sitio con anti-bots no carga, usa "Intentar con proxy ↺".</p>
 					</div>
 
 					<!-- VPN -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🛡️ VPN</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🛡️ VPN</div>
 						<p class="text-xs opacity-70 leading-relaxed">Servicios VPN gratis reales (Proton VPN, Windscribe, hide.me, Cloudflare WARP, Tor) que se abren dentro de la app. Una web no puede ser un VPN de sistema; para cambiar tu IP dentro del navegador usa "Navegar por proxy".</p>
 					</div>
 
 					<!-- Barra de apps -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🔲 Barra de apps</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🔲 Barra de apps</div>
 						<p class="text-xs opacity-70 leading-relaxed">El primer botón de la barra superior muestra <b>todas</b> las apps o esconde algunas para dejar más espacio (púlsalo de nuevo para alternar). La app funciona en vertical y horizontal, en móvil y pantallas grandes.</p>
 					</div>
 
 					<!-- Mapas -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🗺️ Mapas</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🗺️ Mapas</div>
 						<p class="text-xs opacity-70 leading-relaxed">Mapa interactivo con Leaflet.js y OpenStreetMap (sin coste). Acepta la ubicación para centrar el mapa en tu posición. Puedes hacer zoom y arrastrar como en cualquier mapa.</p>
 					</div>
 
 					<!-- GarageBand -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎹 IXBand</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🎹 IXBand</div>
 						<p class="text-xs opacity-70 leading-relaxed">Mini teclado virtual con Web Audio API. Elige instrumento (piano, sintetizador, guitarra…) y toca con el ratón o el teclado. Las notas se generan en tiempo real sin archivos de audio.</p>
 					</div>
 
 					<!-- Brújula -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🧭 Brújula</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🧭 Brújula</div>
 						<p class="text-xs opacity-70 leading-relaxed">Usa el sensor de orientación del dispositivo (funciona mejor en móviles). En escritorio muestra coordenadas GPS si el navegador lo permite.</p>
 					</div>
 
 					<!-- iCloud / Backup -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">☁️ Mi Nube · Respaldo local</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">☁️ Mi Nube · Respaldo local</div>
 						<p class="text-xs opacity-70 leading-relaxed">Guarda y restaura tu configuración (fondo, estilo de reloj, colores, notas, alarmas) en el almacenamiento local del navegador. No requiere cuenta ni conexión extra.</p>
 					</div>
 
 					<!-- Personalización -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">🎨 Personalización</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">🎨 Personalización</div>
 						<p class="text-xs opacity-70 leading-relaxed">Desde este panel: cambia idioma (ES/EN/FR/DE/PT/IT), modo oscuro/claro, formato 12h/24h, tamaño de fuente, visibilidad de cada sección y ajustes del efecto Liquid Glass (blur, saturación, brillo).</p>
 					</div>
 
 					<!-- Atajos -->
 					<div class="p-3.5 glass rounded-2xl space-y-1.5">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">⌨️ Atajos de Teclado</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">⌨️ Atajos de Teclado</div>
 						<div class="space-y-1 text-xs opacity-70">
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Esc</kbd></span><span>Cerrar panel activo</span></div>
 							<div class="flex justify-between"><span><kbd class="bg-white/10 px-1 rounded">Alt + C</kbd></span><span>Abrir Calculadora</span></div>
@@ -2452,12 +2452,12 @@
 					<div class="p-3.5 glass rounded-2xl" style="border:1.5px solid rgba(94,92,230,.35);background:rgba(94,92,230,.08);">
 						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">💜 Acerca de IXClocK</div>
 						<p class="text-xs opacity-80 leading-relaxed">Creado por <b>Albert</b>, con la ayuda de su papá <b>Neftalí</b> y su tío <b>Carlos</b>. 🛠️❤️</p>
-						<p class="text-[11px] opacity-45 leading-relaxed mt-2">Un dashboard universal hecho con cariño, en familia.</p>
+						<p class="text-[11px] opacity-60 leading-relaxed mt-2">Un dashboard universal hecho con cariño, en familia.</p>
 					</div>
 
 					<!-- Info técnica -->
 					<div class="p-3.5 glass rounded-2xl">
-						<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">ℹ️ Información</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-1">ℹ️ Información</div>
 						<p class="text-xs opacity-50 leading-relaxed">Sin servidor • Sin cookies de terceros • Todo en un solo archivo HTML • APIs gratuitas: Open-Meteo, MyMemory, Pollinations AI, OpenStreetMap.</p>
 					</div>
 
@@ -2628,14 +2628,14 @@
 						style="width:180px;"
 						onkeydown="if(event.key==='Enter')saveStatus()"
 					/>
-					<button
+					<button aria-label="Guardar"
 						onclick="saveStatus()"
 						class="w-7 h-7 rounded-full flex items-center justify-center text-white"
 						style="background:#0a84ff;border:none;cursor:pointer;"
 					>
 						✓
 					</button>
-					<button
+					<button aria-label="Cerrar"
 						onclick="closeStatusEdit()"
 						class="w-7 h-7 rounded-full flex items-center justify-center text-white/60"
 						style="background:rgba(255,255,255,.1);border:none;cursor:pointer;"
@@ -2666,7 +2666,7 @@
 					></div>
 					<div
 						id="holiday-banner-pais"
-						class="text-[10px] opacity-50 mt-0.5"
+						class="text-[10px] opacity-60 mt-0.5"
 					></div>
 				</div>
 			</div>
@@ -2677,7 +2677,7 @@
 			>
 				<div class="flex justify-between items-center mb-5 px-1">
 					<h4
-						class="text-[9px] font-bold uppercase tracking-[0.3em] opacity-40"
+						class="text-[9px] font-bold uppercase tracking-[0.3em] opacity-60"
 					>
 						Pronóstico por Horas
 					</h4>
@@ -2714,7 +2714,7 @@
 						>Actualizado: hace
 						<span id="last-updated-mins">—</span> minutos</span
 					>
-					<button
+					<button aria-label="Volver a detectar la ubicación"
 						onclick="detectarUbicacion()"
 						style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:15px;padding:0;line-height:1;transition:transform .2s;"
 						onmouseenter="this.style.transform='rotate(180deg)'"
@@ -2745,7 +2745,7 @@
 				class="bg-white/5 rounded-[2rem] p-6 border border-white/10 shrink-0 glass-hover"
 			>
 				<h3
-					class="text-[9px] font-bold tracking-[0.2em] opacity-40 mb-4 uppercase"
+					class="text-[9px] font-bold tracking-[0.2em] opacity-60 mb-4 uppercase"
 				>
 					Clima Hiperlocal
 				</h3>
@@ -2803,7 +2803,7 @@
 					onclick="toggleRadioPanel()"
 				>
 					<h3
-						class="text-[9px] font-bold tracking-[0.2em] opacity-40 uppercase"
+						class="text-[9px] font-bold tracking-[0.2em] opacity-60 uppercase"
 					>
 						🎵 Sonidos &amp; Radio
 					</h3>
@@ -2865,7 +2865,7 @@
 				style="max-height:340px;"
 			>
 				<h3
-					class="text-[9px] font-bold tracking-[0.2em] opacity-40 mb-3 uppercase sticky top-0 bg-transparent"
+					class="text-[9px] font-bold tracking-[0.2em] opacity-60 mb-3 uppercase sticky top-0 bg-transparent"
 				>
 					🎉 Próximas Festividades
 				</h3>
@@ -2878,12 +2878,12 @@
 			>
 				<div class="flex items-center justify-between mb-2">
 					<div
-						class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-50"
+						class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60"
 					>
 						Pronóstico
 					</div>
 					<div
-						class="text-[9px] font-bold opacity-50"
+						class="text-[9px] font-bold opacity-60"
 						id="weather-updated"
 					>
 						Actualizando…
@@ -2929,7 +2929,7 @@
 				<div>
 					<div class="text-sm font-bold">❇️Asistente IA</div>
 					<div
-						class="text-[9px] opacity-50 uppercase tracking-widest"
+						class="text-[9px] opacity-60 uppercase tracking-widest"
 					>
 						Tareas · Salud y Peso
 					</div>
@@ -2989,7 +2989,7 @@
 				<div>
 					<div class="text-sm font-bold">🌐 Traductor</div>
 					<div
-						class="text-[9px] opacity-50 uppercase tracking-widest"
+						class="text-[9px] opacity-60 uppercase tracking-widest"
 					>
 						MyMemory · Sin cuenta · Gratis
 					</div>
@@ -3204,12 +3204,12 @@
 				>
 					<span
 						id="trans-char-count"
-						style="font-size:9px;opacity:.35;"
+						style="font-size:9px;opacity:.55;"
 						>0 / 500</span
 					>
 					<button
 						onclick="clearTranslator()"
-						style="font-size:10px;opacity:.4;background:none;border:none;color:#fff;cursor:pointer;"
+						style="font-size:10px;opacity:.55;background:none;border:none;color:#fff;cursor:pointer;"
 						title="Limpiar"
 					>
 						✕ Limpiar
@@ -3248,7 +3248,7 @@
 				</div>
 				<div
 					id="trans-status"
-					style="font-size:9px;opacity:.4;text-align:center;margin-top:4px;min-height:12px;"
+					style="font-size:9px;opacity:.55;text-align:center;margin-top:4px;min-height:12px;"
 				></div>
 			</div>
 		</div>
@@ -3261,7 +3261,7 @@
 				<div>
 					<div class="text-sm font-bold">📺 TV Mundial</div>
 					<div
-						class="text-[9px] opacity-50 uppercase tracking-widest"
+						class="text-[9px] opacity-60 uppercase tracking-widest"
 					>
 						iptv-org · Canales en vivo, gratis
 					</div>
@@ -3326,16 +3326,16 @@
 				</button>
 			</div>
 			<div style="padding:12px 16px 0;">
-				<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🆓 Gratis, sin suscripción</div>
+				<div style="font-size:10px;font-weight:700;opacity:.55;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🆓 Gratis, sin suscripción</div>
 				<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="tv-free-apps-grid"></div>
-				<div style="font-size:9px;opacity:.4;margin-top:8px;">Se abren en ventana flotante. No incluyen contenido pirata.</div>
+				<div style="font-size:9px;opacity:.55;margin-top:8px;">Se abren en ventana flotante. No incluyen contenido pirata.</div>
 			</div>
 			<div
 				id="tv-results"
 				style="overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;flex:1;"
 			>
 				<div
-					style="text-align:center;padding:24px 10px;opacity:.45;font-size:12px;"
+					style="text-align:center;padding:24px 10px;opacity:.55;font-size:12px;"
 				>
 					Elige un país para ver sus canales de TV en vivo.
 				</div>
@@ -3360,7 +3360,7 @@
 					>
 						⛶
 					</button>
-					<button
+					<button aria-label="Cerrar"
 						onclick="closeTVPlayer()"
 						style="background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:0;"
 					>
@@ -3386,7 +3386,7 @@
 			<div class="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
 				<div>
 					<div class="text-sm font-bold">🎮 Juegos</div>
-					<div class="text-[9px] opacity-50 uppercase tracking-widest">Mini-juegos gratis · Sin internet</div>
+					<div class="text-[9px] opacity-60 uppercase tracking-widest">Mini-juegos gratis · Sin internet</div>
 				</div>
 				<button class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center" onclick="toggleGamesPanel()">
 					<span class="material-symbols-outlined text-base">close</span>
@@ -3395,35 +3395,35 @@
 			<div style="overflow-y:auto;padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px;">
 				<div>
 					<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-						<div style="font-size:10px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.08em;">👥 Jugadores</div>
-						<div id="gamepad-status" style="font-size:9px;opacity:.5;">🎮 Sin mando</div>
+						<div style="font-size:10px;font-weight:700;opacity:.55;text-transform:uppercase;letter-spacing:.08em;">👥 Jugadores</div>
+						<div id="gamepad-status" style="font-size:9px;opacity:.55;">🎮 Sin mando</div>
 					</div>
 					<div id="players-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
 					<div style="display:flex;gap:6px;">
 						<input id="new-player-input" placeholder="Nombre de jugador…" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12px;" onkeydown="if(event.key==='Enter') addPlayerFromInput()" />
 						<button onclick="addPlayerFromInput()" style="padding:8px 12px;border-radius:10px;background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">+ Añadir</button>
 					</div>
-					<div style="font-size:9px;opacity:.4;margin-top:6px;">Regístrense del 1 al que quieran: se usan para jugar contra un amigo y en el modo torneo (pase y juegue).</div>
+					<div style="font-size:9px;opacity:.55;margin-top:6px;">Regístrense del 1 al que quieran: se usan para jugar contra un amigo y en el modo torneo (pase y juegue).</div>
 				</div>
 				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Jugar ahora</div>
+					<div style="font-size:10px;font-weight:700;opacity:.55;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Jugar ahora</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-grid"></div>
 				</div>
 				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🌐 Más juegos en línea</div>
+					<div style="font-size:10px;font-weight:700;opacity:.55;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">🌐 Más juegos en línea</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-external-grid"></div>
-					<div style="font-size:9px;opacity:.4;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
+					<div style="font-size:9px;opacity:.55;margin-top:8px;text-align:center;">Se abren dentro de la app, sin salir de aquí</div>
 				</div>
 				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">☁️ Cloud Gaming (Fortnite, Call of Duty, AAA)</div>
+					<div style="font-size:10px;font-weight:700;opacity:.55;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">☁️ Cloud Gaming (Fortnite, Call of Duty, AAA)</div>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="games-cloud-grid"></div>
-					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Los juegos AAA (Fortnite, Call of Duty, FC/FIFA, GTA…) no caben en una web, pero <b>se transmiten por internet</b> y se juegan <b>dentro del navegador de la app</b> con tu propia cuenta. Xbox Cloud Gaming es gratis con cuenta Microsoft; Fortnite ahí es gratis.</div>
+					<div style="font-size:9px;opacity:.55;margin-top:8px;line-height:1.5;">Los juegos AAA (Fortnite, Call of Duty, FC/FIFA, GTA…) no caben en una web, pero <b>se transmiten por internet</b> y se juegan <b>dentro del navegador de la app</b> con tu propia cuenta. Xbox Cloud Gaming es gratis con cuenta Microsoft; Fortnite ahí es gratis.</div>
 				</div>
 				<div>
-					<div style="font-size:10px;font-weight:700;opacity:.5;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro (en la app)</div>
+					<div style="font-size:10px;font-weight:700;opacity:.55;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.08em;">🕹️ Emulador de consolas retro (en la app)</div>
 					<button onclick="openEmuMenu()" style="width:100%;padding:12px;border-radius:14px;background:linear-gradient(135deg,#5e5ce6,#0a84ff,#30d5c8);border:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 16px rgba(94,92,230,.4);">🎮 Modo Batocera (menú de consolas)</button>
 					<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="emu-consoles-grid"></div>
-					<div style="font-size:9px;opacity:.42;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS.</div>
+					<div style="font-size:9px;opacity:.55;margin-top:8px;line-height:1.5;">Elige la consola y carga <b>tu propio juego</b> (ROM que poseas legalmente). No se incluye ningún juego. Motor: EmulatorJS.</div>
 				</div>
 			</div>
 		</div>
@@ -3438,7 +3438,7 @@
 					<label id="emu-load-label" style="background:#0a84ff;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:10px;cursor:pointer;">📂 Cargar juego (ROM)
 						<input id="emu-rom-input" type="file" style="display:none;" onchange="emuLoadRom(this)">
 					</label>
-					<button onclick="closeEmulator()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+					<button aria-label="Cerrar" onclick="closeEmulator()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 				</div>
 			</div>
 			<div id="emu-stage" style="flex:1;position:relative;background:#000;overflow:hidden;">
@@ -3463,7 +3463,7 @@
 				<div style="display:flex;align-items:center;gap:8px;">
 					<button id="emu-menu-genre" onclick="emuCycleMenuMusic()" title="Cambiar género" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:0 12px;height:36px;border-radius:16px;cursor:pointer;font-size:10px;font-weight:800;letter-spacing:.03em;white-space:nowrap;">8-BIT CHIPTUNE</button>
 					<button id="emu-menu-music" onclick="emuToggleMenuMusic()" title="Música" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;">🎵</button>
-					<button onclick="closeEmuMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+					<button aria-label="Cerrar" onclick="closeEmuMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 				</div>
 			</div>
 			<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
@@ -3471,9 +3471,9 @@
 				<div id="emu-carousel-ext" style="color:rgba(255,255,255,.45);font-size:12px;margin-bottom:26px;min-height:16px;">—</div>
 				<div id="emu-carousel" style="display:flex;align-items:center;gap:18px;"></div>
 				<div style="display:flex;gap:14px;margin-top:34px;">
-					<button onclick="emuCarouselMove(-1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">◀</button>
+					<button aria-label="Consola anterior" onclick="emuCarouselMove(-1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">◀</button>
 					<button onclick="emuCarouselSelect()" style="background:linear-gradient(135deg,#30d158,#0a84ff);border:none;color:#fff;padding:0 26px;height:52px;border-radius:24px;cursor:pointer;font-size:15px;font-weight:800;">▶ Jugar</button>
-					<button onclick="emuCarouselMove(1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">▶</button>
+					<button aria-label="Consola siguiente" onclick="emuCarouselMove(1)" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:52px;height:52px;border-radius:50%;cursor:pointer;font-size:22px;">▶</button>
 				</div>
 			</div>
 			<div style="text-align:center;color:rgba(255,255,255,.35);font-size:11px;padding:12px;flex-shrink:0;">← → para moverte · Enter para jugar · Cargas tu propio juego (ROM). Solo consolas que corren en el navegador.</div>
@@ -3597,7 +3597,7 @@
 				class="flex-1 overflow-y-auto hidden flex-col min-h-0 p-3 gap-2"
 			>
 				<div
-					style="font-size:9px;font-weight:800;opacity:.4;text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px;"
+					style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px;"
 				>
 					Hora en el mundo
 				</div>
@@ -3688,12 +3688,12 @@
 		
 		<!-- ================= iOS CLOCK APP ================= -->
 		<div id="ios-clock-app">
-			<button class="ica-close-btn" onclick="toggleIOSClockApp()">✕</button>
+			<button aria-label="Cerrar" class="ica-close-btn" onclick="toggleIOSClockApp()">✕</button>
 			<!-- === VIEW: Reloj Mundial === -->
 			<div class="ica-view active" id="ica-view-world">
 				<div class="ica-header">
 					<h1>Reloj mundial</h1>
-					<button class="ica-header-btn" onclick="icaAddWorldClock()">+</button>
+					<button aria-label="Añadir una ciudad" class="ica-header-btn" onclick="icaAddWorldClock()">+</button>
 				</div>
 				<div id="ica-city-search" style="display:none;padding:0 0 10px;">
 					<input id="ica-city-input" type="text" placeholder="Escribe una ciudad: Tokio, Madrid, Nueva York…" oninput="icaCitySearch(this.value)" autocomplete="off" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:#fff;font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;">
@@ -3710,7 +3710,7 @@
 				<div class="ica-header">
 					<button style="background:none;border:none;color:#ff9f0a;font-size:15px;cursor:pointer;" onclick="icaEditAlarms()">Editar</button>
 					<h1 style="position:absolute;left:16px;top:90px;">Alarmas</h1>
-					<button class="ica-header-btn" onclick="icaAddAlarm()">+</button>
+					<button aria-label="Añadir una alarma" class="ica-header-btn" onclick="icaAddAlarm()">+</button>
 				</div>
 				<div style="height:30px;"></div>
 				<div class="ica-sleep-block">
@@ -3782,7 +3782,7 @@
 				<!-- Dormir con la radio: apaga la musica, no suena ninguna alarma -->
 				<div class="ica-timer-recent">
 					<h3>😴 Dormir con la radio</h3>
-					<div style="font-size:11px;opacity:.45;margin:-4px 0 10px;">La música se va bajando sola y se apaga. No suena ninguna alarma.</div>
+					<div style="font-size:11px;opacity:.55;margin:-4px 0 10px;">La música se va bajando sola y se apaga. No suena ninguna alarma.</div>
 					<div id="ica-dormir-botones" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
 					<div id="ica-dormir-estado" style="display:none;margin-top:10px;align-items:center;justify-content:space-between;gap:10px;background:rgba(191,90,242,.14);border:1px solid rgba(191,90,242,.4);border-radius:12px;padding:11px 14px;">
 						<span style="font-size:13px;">Se apagará en <b id="ica-dormir-queda" style="font-variant-numeric:tabular-nums;">—</b></span>
@@ -3819,10 +3819,10 @@
 
 		<!-- ================= DEVICE TRACKER (MacTracker-style) ================= -->
 		<div id="device-tracker-app">
-			<button class="ica-close-btn" onclick="toggleDeviceTracker()" style="z-index:10;">✕</button>
+			<button aria-label="Cerrar" class="ica-close-btn" onclick="toggleDeviceTracker()" style="z-index:10;">✕</button>
 			<div style="padding:60px 16px 10px;">
 				<h1 style="font-size:30px;font-weight:700;margin:0;">Dispositivos</h1>
-				<p style="font-size:12px;opacity:.4;margin-top:4px;">Todos los dispositivos Apple, Windows, Android y Linux</p>
+				<p style="font-size:12px;opacity:.55;margin-top:4px;">Todos los dispositivos Apple, Windows, Android y Linux</p>
 			</div>
 			<div class="dt-sidebar" id="dt-categories"></div>
 			<input class="dt-search" placeholder="Buscar dispositivo..." oninput="dtSearch(this.value)" id="dt-search-input" />
@@ -3930,7 +3930,7 @@
 					<option value="currency">💱 Divisas</option>
 					<option value="math">📊 Notas Mat.</option>
 				</select>
-				<button
+				<button aria-label="Cerrar"
 					onclick="toggleCalcPanel()"
 					style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;"
 				>
@@ -3942,7 +3942,7 @@
 			<div style="padding:10px 16px 6px;">
 				<div
 					id="calc-expr"
-					style="font-size:11px;opacity:.5;text-align:right;min-height:16px;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+					style="font-size:11px;opacity:.55;text-align:right;min-height:16px;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
 				></div>
 				<div
 					id="calc-display"
@@ -4007,7 +4007,7 @@
 							style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;font-size:1.5rem;padding:8px;text-align:center;outline:none;width:100%;"
 						/>
 					</div>
-					<button
+					<button aria-label="Intercambiar las unidades"
 						onclick="swapUnits()"
 						style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;"
 					>
@@ -4030,7 +4030,7 @@
 				</div>
 				<div
 					id="unit-formula"
-					style="font-size:10px;opacity:.45;text-align:center;font-family:'JetBrains Mono',monospace;"
+					style="font-size:10px;opacity:.55;text-align:center;font-family:'JetBrains Mono',monospace;"
 				></div>
 			</div>
 
@@ -4075,7 +4075,7 @@
 				</div>
 				<div
 					id="currency-rate-info"
-					style="font-size:9px;opacity:.4;text-align:center;font-family:'JetBrains Mono',monospace;"
+					style="font-size:9px;opacity:.55;text-align:center;font-family:'JetBrains Mono',monospace;"
 				></div>
 			</div>
 
@@ -4089,19 +4089,19 @@
 					<div style="text-align:center;padding:10px 0 6px;">
 						<div style="font-size:28px;margin-bottom:4px;">📝</div>
 						<div style="font-size:15px;font-weight:700;">Notas Matemáticas</div>
-						<div style="font-size:11px;opacity:.5;margin-top:4px;">Escribe ecuaciones, grafica funciones y resuelve problemas</div>
+						<div style="font-size:11px;opacity:.55;margin-top:4px;">Escribe ecuaciones, grafica funciones y resuelve problemas</div>
 					</div>
 					<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
 						<button onclick="mathStartNew()" style="padding:12px;border-radius:12px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.3);color:#0a84ff;font-size:12px;font-weight:600;cursor:pointer;">+ Nueva nota</button>
 						<button onclick="mathShowHistory()" style="padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Historial</button>
 					</div>
-					<div style="font-size:10px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Ejemplos</div>
+					<div style="font-size:10px;opacity:.55;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Ejemplos</div>
 					<div style="display:flex;flex-direction:column;gap:4px;" id="math-examples">
 						<div onclick="mathLoadExample('y = x^2 - 4')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">y = x^2 - 4</div>
 						<div onclick="mathLoadExample('y = sin(x) * 2')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">y = sin(x) * 2</div>
 						<div onclick="mathLoadExample('a = 5\nb = 3\nc = a^2 + b^2')" style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;opacity:.7;">a = 5, b = 3, c = a^2 + b^2</div>
 					</div>
-					<div style="font-size:10px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Notas guardadas</div>
+					<div style="font-size:10px;opacity:.55;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;">Notas guardadas</div>
 					<div id="math-saved-list" style="display:flex;flex-direction:column;gap:4px;max-height:100px;overflow-y:auto;"></div>
 				</div>
 				<!-- Workspace (hidden initially) -->
@@ -4242,7 +4242,7 @@
 				<div
 					style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"
 				>
-					<button
+					<button aria-label="Cerrar el reproductor"
 						onclick="document.getElementById('ipod-player').style.display='none'"
 						style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;padding:0;"
 					>
@@ -4277,20 +4277,20 @@
 				<div
 					style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:12px;"
 				>
-					<button
+					<button aria-label="Emisora anterior"
 						onclick="prevStation()"
 						style="background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0;"
 					>
 						⏮
 					</button>
-					<button
+					<button aria-label="Reproducir o pausar"
 						id="ipod-play-btn"
 						onclick="toggleIpodPlay()"
 						style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
 					>
 						▶
 					</button>
-					<button
+					<button aria-label="Emisora siguiente"
 						onclick="nextStation()"
 						style="background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0;"
 					>
@@ -4300,12 +4300,12 @@
 				<!-- Volume -->
 				<div style="margin-top:10px;padding:0 4px;">
 				  <div style="display:flex;align-items:center;gap:6px;">
-				    <span style="font-size:11px;opacity:.4;">🔈</span>
+				    <span style="font-size:11px;opacity:.55;">🔈</span>
 				    <input type="range" min="0" max="200" value="70" id="ipod-volume" oninput="setIpodVolume(this.value)" style="flex:1;accent-color:#0a84ff;height:4px;cursor:pointer;"/>
-				    <span style="font-size:11px;opacity:.4;">🔊</span>
+				    <span style="font-size:11px;opacity:.55;">🔊</span>
 				    <span id="ipod-vol-pct" style="font-size:10px;color:rgba(255,255,255,.5);min-width:28px;text-align:right;">70%</span>
 				  </div>
-				  <div style="font-size:9px;opacity:.28;text-align:center;margin-top:2px;">0 ──────── 100% normal ──────── 200% boost</div>
+				  <div style="font-size:9px;opacity:.55;text-align:center;margin-top:2px;">0 ──────── 100% normal ──────── 200% boost</div>
 				</div>
 				<!-- Archivo local (MP3/MP4) -->
 				<input
@@ -4380,7 +4380,7 @@
 					—
 				</div>
 				<div style="display:flex;gap:6px;align-items:center;">
-					<button
+					<button aria-label="Mes anterior"
 						onclick="calNav(-1)"
 						style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;"
 					>
@@ -4392,13 +4392,13 @@
 					>
 						Hoy
 					</button>
-					<button
+					<button aria-label="Mes siguiente"
 						onclick="calNav(1)"
 						style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;"
 					>
 						›
 					</button>
-					<button
+					<button aria-label="Cerrar"
 						onclick="toggleCalendar()"
 						style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;"
 					>
@@ -4410,13 +4410,13 @@
 			<div
 				style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;padding:10px 14px 4px;gap:2px;"
 			>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">LUN</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">MAR</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">MIÉ</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">JUE</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">VIE</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">SÁB</div>
-				<div style="font-size:9px;font-weight:700;opacity:.4;">DOM</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">LUN</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">MAR</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">MIÉ</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">JUE</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">VIE</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">SÁB</div>
+				<div style="font-size:9px;font-weight:700;opacity:.55;">DOM</div>
 			</div>
 			<div
 				id="cal-grid"
@@ -4428,7 +4428,7 @@
 				id="cal-events-area"
 			>
 				<div
-					style="font-size:10px;font-weight:700;opacity:.4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;"
+					style="font-size:10px;font-weight:700;opacity:.55;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;"
 					id="cal-selected-label"
 				>
 					Selecciona un día
@@ -4444,7 +4444,7 @@
 						placeholder="Agregar evento…"
 						style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:12px;padding:7px 10px;outline:none;"
 					/>
-					<button
+					<button aria-label="Añadir evento"
 						onclick="addCalEvent()"
 						style="background:#0a84ff;border:none;color:#fff;padding:7px 12px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;"
 					>
@@ -4515,7 +4515,7 @@
 					id="notes-list"
 				></div>
 				<div
-					class="flex items-center justify-between px-4 py-2.5 border-t border-white/10 text-[11px] opacity-50"
+					class="flex items-center justify-between px-4 py-2.5 border-t border-white/10 text-[11px] opacity-60"
 				>
 					<span id="notes-count">0 notas</span>
 					<button
@@ -4532,7 +4532,7 @@
 			</div>
 			<div id="notes-edit-view" class="flex-1 hidden flex-col min-h-0">
 				<div class="flex items-center justify-between px-3 pt-1 pb-1">
-					<span class="text-[11px] opacity-40" id="notes-edit-date">Hoy</span>
+					<span class="text-[11px] opacity-60" id="notes-edit-date">Hoy</span>
 					<div class="flex gap-1">
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:#fff;">🎨 Dibujar</button>
@@ -4568,7 +4568,7 @@
 				<div
 					class="flex items-center justify-between px-4 py-2.5 border-t border-white/10"
 				>
-					<span class="text-[11px] opacity-40" id="notes-wordcount"
+					<span class="text-[11px] opacity-60" id="notes-wordcount"
 						>0 palabras</span
 					>
 					<button
@@ -7757,7 +7757,7 @@
 			  data.forEach(d=>{
 			    const el=document.createElement('div');
 			    el.className='space-y-2.5';
-			    el.innerHTML=`<div class="text-[9px] opacity-40">${d.h}</div><span class="material-symbols-outlined ${d.c} text-2xl">${d.i}</span><div class="text-base font-bold">${d.t}</div>`;
+			    el.innerHTML=`<div class="text-[9px] opacity-60">${d.h}</div><span class="material-symbols-outlined ${d.c} text-2xl">${d.i}</span><div class="text-base font-bold">${d.t}</div>`;
 			    cont.appendChild(el);
 			  });
 			}
@@ -8526,7 +8526,7 @@
 
 			  Object.entries(byCountry).forEach(([country, sts])=>{
 			    const flag = sts[0].flag || '🌍';
-			    html += `<div style="font-size:9px;font-weight:800;opacity:.4;text-transform:uppercase;letter-spacing:.1em;padding:8px 2px 4px;">${flag} ${country}</div>`;
+			    html += `<div style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.1em;padding:8px 2px 4px;">${flag} ${country}</div>`;
 			    sts.forEach(s=>{
 			      const isLive = s.type==='stream';
 			      const liveBadge = isLive ? `<span style="font-size:8px;background:#ff453a;color:#fff;padding:1px 4px;border-radius:4px;margin-left:4px;">LIVE</span>` : '';
@@ -8650,7 +8650,7 @@
 			      <div style="width:340px;max-height:80vh;background:rgba(28,28,30,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);">
 			          <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🌍 Emisoras por País</div>
-			          <div style="font-size:11px;opacity:.45;">Elige qué países mostrar</div>
+			          <div style="font-size:11px;opacity:.55;">Elige qué países mostrar</div>
 			        </div>
 			        <div id="country-list" style="overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;max-height:50vh;"></div>
 			        <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;">
@@ -8668,7 +8668,7 @@
 			    const stationsInCountry = country==='Todos' ? ALL_RADIO_STATIONS.length : ALL_RADIO_STATIONS.filter(s=>s.country===country).length;
 			    const row = document.createElement('div');
 			    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);cursor:pointer;border:1px solid '+(isEnabled?'rgba(52,199,89,.4)':'rgba(255,255,255,.1)')+';';
-			    row.innerHTML=`<div><div style="font-size:13px;font-weight:700;color:#fff;">${country==='Todos'?'🌍 Todo el Mundo':country}</div><div style="font-size:10px;opacity:.45;">${stationsInCountry} emisora${stationsInCountry!==1?'s':''}</div></div><div style="width:22px;height:22px;border-radius:50%;background:${isEnabled?'#34c759':'rgba(255,255,255,.1)'};display:flex;align-items:center;justify-content:center;font-size:13px;">${isEnabled?'✓':''}</div>`;
+			    row.innerHTML=`<div><div style="font-size:13px;font-weight:700;color:#fff;">${country==='Todos'?'🌍 Todo el Mundo':country}</div><div style="font-size:10px;opacity:.55;">${stationsInCountry} emisora${stationsInCountry!==1?'s':''}</div></div><div style="width:22px;height:22px;border-radius:50%;background:${isEnabled?'#34c759':'rgba(255,255,255,.1)'};display:flex;align-items:center;justify-content:center;font-size:13px;">${isEnabled?'✓':''}</div>`;
 			    row.onclick=()=>{
 			      if(country==='Todos'){
 			        enabledCountries = enabledCountries.includes('Todos') ? ['RD','US','Mundo'] : ['Todos'];
@@ -8730,7 +8730,7 @@
 			  return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:38px 22px;gap:7px;">'
 			    +'<div style="font-size:40px;line-height:1;opacity:.75;">'+icono+'</div>'
 			    +'<div style="font-size:14px;font-weight:800;color:#e8e8ec;">'+escapeHtml(titulo)+'</div>'
-			    +(texto?'<div style="font-size:12px;opacity:.45;max-width:280px;line-height:1.55;">'+escapeHtml(texto)+'</div>':'')
+			    +(texto?'<div style="font-size:12px;opacity:.55;max-width:280px;line-height:1.55;">'+escapeHtml(texto)+'</div>':'')
 			    +(accion?'<div style="margin-top:10px;">'+accion+'</div>':'')
 			    +'</div>';
 			}
@@ -8825,9 +8825,9 @@
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
 			          <div>
 			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🌎 Emisoras del Mundo</div>
-			            <div style="font-size:11px;opacity:.45;">Directorio Radio-Browser · Miles de emisoras reales</div>
+			            <div style="font-size:11px;opacity:.55;">Directorio Radio-Browser · Miles de emisoras reales</div>
 			          </div>
-			          <button onclick="closeWorldRadioModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			          <button aria-label="Cerrar" onclick="closeWorldRadioModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
 			        </div>
 			        <div style="padding:12px 16px 0;display:flex;flex-direction:column;gap:8px;">
 			          <input id="world-radio-search" type="text" placeholder="Nombre de la emisora (opcional)…" onkeydown="if(event.key==='Enter')searchWorldStations()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;">
@@ -8840,7 +8840,7 @@
 			          <button onclick="searchWorldStations()" style="padding:10px;border-radius:12px;background:rgba(10,132,255,.25);border:1px solid rgba(10,132,255,.4);color:#0a84ff;font-weight:700;font-size:12px;cursor:pointer;">🔍 Buscar</button>
 			        </div>
 			        <div id="world-radio-results" style="overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;flex:1;max-height:42vh;">
-			          <div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando emisoras…</div>
+			          <div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando emisoras…</div>
 			        </div>
 			      </div>`;
 			    document.body.appendChild(modal);
@@ -8893,9 +8893,9 @@
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
 			          <div>
 			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🎧 Música bajo demanda</div>
-			            <div style="font-size:11px;opacity:.45;">Con tu propia cuenta · Se abre en ventana flotante</div>
+			            <div style="font-size:11px;opacity:.55;">Con tu propia cuenta · Se abre en ventana flotante</div>
 			          </div>
-			          <button onclick="closeMusicAppsModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			          <button aria-label="Cerrar" onclick="closeMusicAppsModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
 			        </div>
 			        <div style="padding:14px 16px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
 			          ${MUSIC_APPS.map(a=>`<div class="game-tile" onclick="openBrowserWindow('${a.url}');closeMusicAppsModal()">
@@ -8938,21 +8938,21 @@
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
 			          <div>
 			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🛡️ VPN</div>
-			            <div style="font-size:11px;opacity:.45;">Servicios VPN gratis · Se abren dentro de la app</div>
+			            <div style="font-size:11px;opacity:.55;">Servicios VPN gratis · Se abren dentro de la app</div>
 			          </div>
-			          <button onclick="closeVpnModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			          <button aria-label="Cerrar" onclick="closeVpnModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
 			        </div>
 			        <div style="overflow-y:auto;padding:12px 16px 8px;">
 			          ${VPN_APPS.map((a,i)=>`<div onclick="_vpnOpen(${i})" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:14px;padding:11px 12px;cursor:pointer;margin-bottom:7px;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
 			            <div style="font-size:24px;flex-shrink:0;">${a.icon}</div>
 			            <div style="flex:1;min-width:0;">
 			              <div style="font-size:13px;font-weight:700;color:#fff;">${escapeHtml(a.name)}</div>
-			              <div style="font-size:10px;opacity:.5;">${escapeHtml(a.note)}</div>
+			              <div style="font-size:10px;opacity:.55;">${escapeHtml(a.note)}</div>
 			            </div>
 			            <span style="font-size:14px;opacity:.5;flex-shrink:0;">↗</span>
 			          </div>`).join('')}
 			        </div>
-			        <div style="padding:6px 18px 16px;font-size:9px;opacity:.4;line-height:1.5;">Nota: una app web no puede bloquear anuncios ni enrutar el tráfico como un servicio de sistema. Un VPN por sí solo NO bloquea anuncios — para eso están AdGuard/NextDNS/1.1.1.1 (DNS que sí bloquean ads en todo el dispositivo, gratis, se configuran una vez). "Navegar por proxy" cambia tu IP para las webs que abras aquí dentro.</div>
+			        <div style="padding:6px 18px 16px;font-size:9px;opacity:.55;line-height:1.5;">Nota: una app web no puede bloquear anuncios ni enrutar el tráfico como un servicio de sistema. Un VPN por sí solo NO bloquea anuncios — para eso están AdGuard/NextDNS/1.1.1.1 (DNS que sí bloquean ads en todo el dispositivo, gratis, se configuran una vez). "Navegar por proxy" cambia tu IP para las webs que abras aquí dentro.</div>
 			      </div>`;
 			    document.body.appendChild(modal);
 			  }
@@ -8984,7 +8984,7 @@
 			        <div style="font-size:17px;font-weight:800;color:#fff;">🔥 IXBench</div>
 			        <div style="font-size:10px;color:rgba(255,255,255,.4);">Benchmark de rendimiento del dispositivo</div>
 			      </div>
-			      <button onclick="document.getElementById('bench-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			      <button aria-label="Cerrar" onclick="document.getElementById('bench-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
 			    </div>
 			    <div style="overflow-y:auto;padding:16px 20px;" id="bench-content">
 			      <div id="bench-score-ring" style="display:flex;justify-content:center;margin-bottom:16px;">
@@ -9512,7 +9512,7 @@
 			  if(!results) return;
 			  const token = ++_worldSearchToken;
 			  if(!append){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Buscando emisoras…</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Buscando emisoras…</div>';
 			  } else {
 			    const btn = document.getElementById('world-load-more');
 			    if(btn){ btn.textContent = '⏳ Cargando…'; btn.disabled = true; }
@@ -9547,7 +9547,7 @@
 			    results.innerHTML = ixVacio('📡','Sin resultados','Prueba con otro término o cambia el país.');
 			    return;
 			  }
-			  const countNote = `<div style="text-align:center;padding:2px 0 8px;opacity:.4;font-size:10px;">✅ ${_lastWorldResults.length} emisoras seguras (verificadas activas)</div>`;
+			  const countNote = `<div style="text-align:center;padding:2px 0 8px;opacity:.55;font-size:10px;">✅ ${_lastWorldResults.length} emisoras seguras (verificadas activas)</div>`;
 			  const listHtml = _lastWorldResults.map((s,i)=>{
 			    const flag = countryCodeToFlag(s.countrycode);
 			    const safeName = escapeHtml((s.name || 'Emisora').trim().slice(0,60));
@@ -9556,7 +9556,7 @@
 			        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">${flag}</div>
 			        <div style="flex:1;min-width:0;">
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
-			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</div>
+			          <div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</div>
 			        </div>
 			        <span style="font-size:16px;flex-shrink:0;">▶️</span>
 			      </button>`;
@@ -9676,10 +9676,10 @@
 			  const results = document.getElementById('tv-results');
 			  if(!results) return;
 			  if(!code){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Elige primero un país de la lista.</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.55;font-size:12px;">Elige primero un país de la lista.</div>';
 			    return;
 			  }
-			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales…</div>';
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando canales…</div>';
 			  try{
 			    const ctrl = new AbortController();
 			    const timer = setTimeout(()=>ctrl.abort(), 10000);
@@ -9705,7 +9705,7 @@
 			  _tvActiveSearchMode = 'sports';
 			  const results = document.getElementById('tv-results');
 			  if(!results) return;
-			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales de deportes y Mundiales…</div>';
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando canales de deportes y Mundiales…</div>';
 			  try{
 			    const ctrl = new AbortController();
 			    const timer = setTimeout(()=>ctrl.abort(), 10000);
@@ -9772,7 +9772,7 @@
 			  if(!results) return;
 			  const q = (document.getElementById('tv-search')||{}).value?.trim().toLowerCase() || '';
 			  if(!_allChannelsCache){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando catálogo completo (12,000+ canales)…</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando catálogo completo (12,000+ canales)…</div>';
 			    try{
 			      const ctrl = new AbortController();
 			      const timer = setTimeout(()=>ctrl.abort(), 25000);
@@ -9808,7 +9808,7 @@
 			    note.textContent = `Mostrando ${ALL_CHANNELS_RENDER_CAP} de ${total} canales. Escribe arriba para filtrar (ej. "news", "sport", "HBO").`;
 			    results.insertBefore(note, results.firstChild);
 			  } else if(total === 0){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Sin canales que coincidan con “'+escapeHtml(q)+'”.</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.55;font-size:12px;">Sin canales que coincidan con “'+escapeHtml(q)+'”.</div>';
 			  }
 			}
 
@@ -9821,7 +9821,7 @@
 			  const results = document.getElementById('tv-results');
 			  if(!results) return;
 			  if(!_allChannelsCache){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales famosos del mundo…</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando canales famosos del mundo…</div>';
 			    try{
 			      const ctrl = new AbortController();
 			      const timer = setTimeout(()=>ctrl.abort(), 25000);
@@ -9857,7 +9857,7 @@
 			  _tvActiveSearchMode = '4k';
 			  const results = document.getElementById('tv-results');
 			  if(!results) return;
-			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.5;font-size:12px;">⏳ Cargando canales 4K / UHD…</div>';
+			  results.innerHTML = '<div style="text-align:center;padding:24px 0;opacity:.55;font-size:12px;">⏳ Cargando canales 4K / UHD…</div>';
 			  try{
 			    const ctrl = new AbortController();
 			    const timer = setTimeout(()=>ctrl.abort(), 12000);
@@ -9941,9 +9941,9 @@
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:flex-start;">
 			          <div>
 			            <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">🎯 Elegir canal</div>
-			            <div style="font-size:11px;opacity:.45;">País + idioma + deporte (opcional)</div>
+			            <div style="font-size:11px;opacity:.55;">País + idioma + deporte (opcional)</div>
 			          </div>
-			          <button onclick="closeSmartFinderModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+			          <button aria-label="Cerrar" onclick="closeSmartFinderModal()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
 			        </div>
 			        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
 			          <select id="smart-country-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:12px;padding:9px 12px;outline:none;">
@@ -9958,7 +9958,7 @@
 			            Solo canales deportivos
 			          </label>
 			          <button onclick="searchSmartFinder()" style="padding:10px;border-radius:12px;background:rgba(255,214,10,.22);border:1px solid rgba(255,214,10,.45);color:#ffd60a;font-weight:700;font-size:12px;cursor:pointer;margin-top:4px;">🔍 Buscar canal</button>
-			          <div id="smart-finder-status" style="font-size:10px;opacity:.5;text-align:center;min-height:14px;"></div>
+			          <div id="smart-finder-status" style="font-size:10px;opacity:.55;text-align:center;min-height:14px;"></div>
 			        </div>
 			      </div>`;
 			    document.body.appendChild(modal);
@@ -10076,7 +10076,7 @@
 			  const results = document.getElementById('tv-results');
 			  if(!results) return;
 			  if(!_lastTVResults.length){
-			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.5;font-size:12px;">Sin canales disponibles para esta búsqueda.</div>';
+			    results.innerHTML = '<div style="text-align:center;padding:24px 10px;opacity:.55;font-size:12px;">Sin canales disponibles para esta búsqueda.</div>';
 			    return;
 			  }
 			  results.innerHTML = _lastTVResults.map((c,i)=>{
@@ -10089,7 +10089,7 @@
 			        ${thumb}
 			        <div style="flex:1;min-width:0;">
 			          <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
-			          <div style="font-size:9px;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
+			          <div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeGroup}</div>
 			        </div>
 			        <span style="font-size:8px;background:${c.officialUrl?'#af82ff':'#ff453a'};color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;white-space:nowrap;">${c.officialUrl?'WEB OFICIAL':'LIVE'}</span>
 			      </button>`;
@@ -10998,8 +10998,8 @@
 			        <span>SPEED: <span id="snake-spd" style="color:rgba(0,255,255,.7);">1x</span></span>
 			      </div>
 			      <div id="snake-dpad" style="display:grid;grid-template-columns:repeat(3,44px);gap:4px;margin-top:4px;">
-			        <div></div><button class="snake-dp" data-dir="up">▲</button><div></div>
-			        <button class="snake-dp" data-dir="left">◀</button><button class="snake-dp" data-dir="down">▼</button><button class="snake-dp" data-dir="right">▶</button>
+			        <div></div><button aria-label="Arriba" class="snake-dp" data-dir="up">▲</button><div></div>
+			        <button aria-label="Izquierda" class="snake-dp" data-dir="left">◀</button><button aria-label="Abajo" class="snake-dp" data-dir="down">▼</button><button aria-label="Derecha" class="snake-dp" data-dir="right">▶</button>
 			      </div>
 			      <style>.snake-dp{width:44px;height:44px;background:rgba(0,255,255,.08);border:1px solid rgba(0,255,255,.25);border-radius:6px;color:#0ff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}.snake-dp:active{background:rgba(0,255,255,.3);transform:scale(.94);}</style>
 			    </div>
@@ -11530,9 +11530,9 @@
 			  let p1Choice = null;
 			  function btnHtml(){
 			    return `<div style="display:flex;gap:14px;">
-			      <button class="rps-btn" data-v="✊" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✊</button>
-			      <button class="rps-btn" data-v="✋" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✋</button>
-			      <button class="rps-btn" data-v="✌️" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✌️</button>
+			      <button aria-label="Piedra" class="rps-btn" data-v="✊" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✊</button>
+			      <button aria-label="Papel" class="rps-btn" data-v="✋" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✋</button>
+			      <button aria-label="Tijera" class="rps-btn" data-v="✌️" style="font-size:32px;background:rgba(255,255,255,.08);border:none;border-radius:14px;padding:14px 18px;cursor:pointer;">✌️</button>
 			    </div>`;
 			  }
 			  function scoreLabel(){
@@ -12864,7 +12864,7 @@
 			    if(!r.ok) throw new Error('HTTP ' + r.status);
 			    const list = await r.json();
 			    if(!Array.isArray(list) || !list.length){
-			      box.innerHTML = '<div style="font-size:10px;opacity:.4;">Aún no hay opiniones publicadas. ¡Sé el primero!</div>';
+			      box.innerHTML = '<div style="font-size:10px;opacity:.55;">Aún no hay opiniones publicadas. ¡Sé el primero!</div>';
 			      return;
 			    }
 			    box.innerHTML = list.map(o=>{
@@ -12876,7 +12876,7 @@
 			        + '</div>';
 			    }).join('');
 			  }catch(e){
-			    box.innerHTML = '<div style="font-size:10px;opacity:.4;">No se pudieron cargar las opiniones (revisa tu conexión).</div>';
+			    box.innerHTML = '<div style="font-size:10px;opacity:.55;">No se pudieron cargar las opiniones (revisa tu conexión).</div>';
 			  }
 			}
 			function opinionDelete(){
@@ -13120,7 +13120,7 @@
 			    <div style="width:100%;max-width:420px;max-height:86vh;background:rgba(28,28,32,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
 			      <div style="padding:18px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;">
 			        <div style="font-size:17px;font-weight:800;color:#fff;">❓ Guía rápida de IXClocK</div>
-			        <button onclick="closeLoginHelp()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			        <button aria-label="Cerrar" onclick="closeLoginHelp()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
 			      </div>
 			      <div style="overflow-y:auto;padding:16px 20px 20px;font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;">
 			        <div style="margin-bottom:16px;border:1px solid rgba(48,209,88,.3);border-radius:12px;padding:10px 12px;">
@@ -13993,14 +13993,14 @@
 			function renderCalEvts(key){
 			  const list=document.getElementById('cal-events-list');list.innerHTML='';
 			  const evts=calEvts[key]||[];
-			  if(!evts.length){list.innerHTML='<div style="font-size:11px;opacity:.3;text-align:center;padding:6px;">Sin eventos</div>';return;}
+			  if(!evts.length){list.innerHTML='<div style="font-size:11px;opacity:.55;text-align:center;padding:6px;">Sin eventos</div>';return;}
 			  evts.forEach((ev,i)=>{
 			    const row=document.createElement('div');
 			    // El texto del evento lo escribe el usuario: se escapa antes de pintarlo.
 			    // Sin esto, un evento con <img src=x onerror=...> ejecutaba codigo de
 			    // verdad cada vez que se abria ese dia del calendario.
 			    row.style.cssText='display:flex;align-items:center;gap:8px;background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.3);border-radius:10px;padding:7px 10px;font-size:12px;';
-			    row.innerHTML='<span style="flex:1;">'+escapeHtml(ev)+'</span><button onclick="delCalEvt(\''+key+'\','+i+')" style="background:none;border:none;color:rgba(255,80,80,.8);cursor:pointer;font-size:14px;">✕</button>';
+			    row.innerHTML='<span style="flex:1;">'+escapeHtml(ev)+'</span><button aria-label="Cerrar" onclick="delCalEvt(\''+key+'\','+i+')" style="background:none;border:none;color:rgba(255,80,80,.8);cursor:pointer;font-size:14px;">✕</button>';
 			    list.appendChild(row);
 			  });
 			}
@@ -14351,7 +14351,7 @@
 			    const hourLabel = i===0 ? 'Ahora' : (currentTimeFormat==='12h' ? fmtTimeStr(h.toString().padStart(2,'0')+':00') : (_romanMode ? toRoman(h)+':·' : h.toString().padStart(2,'0')+':00'));
 			    const tempDisp = (_romanMode ? toRoman(temp) : temp)+'°';
 			    const rpDisp   = (_romanMode ? toRoman(rp) : rp)+'%';
-			    col.innerHTML='<div style="font-size:10px;opacity:.5;">'+hourLabel+'</div><div style="font-size:1.1rem;">'+(rp>50?'🌧️':rp>25?'🌦️':'🌤️')+'</div><div style="font-size:12px;font-weight:700;">'+tempDisp+'</div><div style="font-size:9px;color:#0a84ff;">'+rpDisp+'</div>';
+			    col.innerHTML='<div style="font-size:10px;opacity:.55;">'+hourLabel+'</div><div style="font-size:1.1rem;">'+(rp>50?'🌧️':rp>25?'🌦️':'🌤️')+'</div><div style="font-size:12px;font-weight:700;">'+tempDisp+'</div><div style="font-size:9px;color:#0a84ff;">'+rpDisp+'</div>';
 			    container.appendChild(col);
 			  }
 			  window._weatherLat=lat; window._weatherLon=lon;
@@ -14395,7 +14395,7 @@
 			      const col=document.createElement('div');
 			      col.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;';
 			      const hourLabel=i===0?'Ahora':(currentTimeFormat==='12h'?fmtTimeStr(h.toString().padStart(2,'0')+':00'):(_romanMode?toRoman(h)+':·':h.toString().padStart(2,'0')+':00'));
-			      col.innerHTML='<div style="font-size:10px;opacity:.5;">'+hourLabel+'</div><div style="font-size:1.1rem;">'+(rp>50?'🌧️':rp>25?'🌦️':'🌤️')+'</div><div style="font-size:12px;font-weight:700;">'+R(temp)+'°</div><div style="font-size:9px;color:#0a84ff;">'+R(rp)+'%</div>';
+			      col.innerHTML='<div style="font-size:10px;opacity:.55;">'+hourLabel+'</div><div style="font-size:1.1rem;">'+(rp>50?'🌧️':rp>25?'🌦️':'🌤️')+'</div><div style="font-size:12px;font-weight:700;">'+R(temp)+'°</div><div style="font-size:9px;color:#0a84ff;">'+R(rp)+'%</div>';
 			      container.appendChild(col);
 			    }
 			  }
@@ -14573,7 +14573,7 @@
 			      <div style="width:100%;max-width:360px;background:rgba(28,28,32,.97);border-radius:24px;border:1px solid rgba(255,255,255,.15);box-shadow:0 24px 60px rgba(0,0,0,.7);overflow:hidden;">
 			        <div style="padding:16px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;">
 			          <div style="font-size:16px;font-weight:800;color:#fff;">🔋 Batería</div>
-			          <button onclick="document.getElementById('battery-panel-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
+			          <button aria-label="Cerrar" onclick="document.getElementById('battery-panel-modal').style.display='none'" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button>
 			        </div>
 			        <div id="battery-panel-body" style="padding:16px 20px 20px;color:#fff;"></div>
 			      </div>`;
@@ -14841,6 +14841,8 @@
 			    '🕐 COMPARADOR DE HORAS para quedar con gente de otras ciudades: eliges una hora tuya y ves qué hora sería allí, en verde si es buena hora y en rojo si estarán durmiendo. Está debajo de tus relojes mundiales',
 			    '😴 DORMIR CON LA RADIO: en Timers eliges 15, 30, 45, 60 o 90 minutos y la música se va bajando sola hasta apagarse. No suena ninguna alarma, que es justo lo que no quieres cuando te estás durmiendo',
 			    '🎚️ Exportar también en WAV, sin comprimir, para abrir tu canción en un editor de audio de verdad. Pesa más, pero no pierde nada',
+			    '👁️ SE LEE MEJOR: los textos pequeños de toda la app estaban tan apagados que casi no se veían (algunos al 28% sobre fondo oscuro). Ahora tienen contraste suficiente sin cambiar el diseño',
+			    '♿ Y 56 botones que solo tenían un icono ahora dicen lo que hacen, para quien use la app con un lector de pantalla',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -14904,7 +14906,7 @@
 			  if(!el || !IX_CHANGELOG.length) return;
 			  let s = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'
 			    + '<div class="text-[11px] font-bold tracking-widest" style="color:#30d158;">\ud83c\udd95 NOVEDADES</div>'
-			    + '<div style="font-size:9px;opacity:.45;font-weight:700;">DIARIO DE ACTUALIZACIONES</div></div>';
+			    + '<div style="font-size:9px;opacity:.55;font-weight:700;">DIARIO DE ACTUALIZACIONES</div></div>';
 			  /* línea de tiempo vertical (estilo tablero de updates de un juego) */
 			  s += '<div style="position:relative;padding-left:20px;">'
 			    + '<div style="position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,rgba(48,209,88,.55),rgba(255,255,255,.08));border-radius:2px;"></div>';
@@ -14918,7 +14920,7 @@
 			    s += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">';
 			    if(e.v) s += '<span style="font-size:9px;font-weight:800;letter-spacing:.5px;color:#30d158;background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.35);padding:1px 6px;border-radius:6px;">v' + e.v + '</span>';
 			    if(nuevo) s += '<span class="nov-nuevo" style="font-size:8px;font-weight:900;letter-spacing:.6px;color:#0b1f11;background:#30d158;padding:1px 6px;border-radius:6px;">NUEVO</span>';
-			    s += '<span style="font-size:9px;opacity:.5;font-weight:700;">' + e.fecha + '</span></div>';
+			    s += '<span style="font-size:9px;opacity:.55;font-weight:700;">' + e.fecha + '</span></div>';
 			    /* título de la versión */
 			    if(e.titulo) s += '<div style="font-size:12.5px;font-weight:800;margin-bottom:6px;opacity:.95;">' + e.titulo + '</div>';
 			    /* cambios con etiqueta de categoría a color */
@@ -15016,7 +15018,7 @@
 			        <span style="font-size:1.3rem;">${city.flag}</span>
 			        <div>
 			          <div style="font-size:12px;font-weight:700;">${city.name}</div>
-			          <div style="font-size:9px;opacity:.45;">${dateStr}</div>
+			          <div style="font-size:9px;opacity:.55;">${dateStr}</div>
 			        </div>
 			      </div>
 			      <div style="font-size:1.05rem;font-weight:300;font-family:monospace;letter-spacing:.03em;">${timeStr}</div>`;
@@ -15342,7 +15344,7 @@
 			  alert.id='quake-alert';
 			  const color = mag>=6.0 ? '#ff453a' : mag>=5.0 ? '#ff9f0a' : '#ffd60a';
 			  alert.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:14px 22px;border-radius:20px;background:rgba(0,0,0,.85);border:2px solid '+color+';backdrop-filter:blur(20px);display:flex;align-items:center;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.7);max-width:420px;animation:quakeShake .4s ease-in-out 3;';
-			  alert.innerHTML='<div style="font-size:2.2rem;">🌍</div><div><div style="font-size:13px;font-weight:800;color:'+color+';">⚠️ ALERTA DE TERREMOTO · M'+mag.toFixed(1)+'</div><div style="font-size:11px;margin-top:3px;opacity:.8;">'+escapeHtml(place)+'</div><div style="font-size:10px;opacity:.55;margin-top:2px;">Hace '+minAgo+' minuto'+(minAgo!==1?'s':'')+'</div></div><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>';
+			  alert.innerHTML='<div style="font-size:2.2rem;">🌍</div><div><div style="font-size:13px;font-weight:800;color:'+color+';">⚠️ ALERTA DE TERREMOTO · M'+mag.toFixed(1)+'</div><div style="font-size:11px;margin-top:3px;opacity:.8;">'+escapeHtml(place)+'</div><div style="font-size:10px;opacity:.55;margin-top:2px;">Hace '+minAgo+' minuto'+(minAgo!==1?'s':'')+'</div></div><button aria-label="Cerrar" onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>';
 			  document.body.appendChild(alert);
 			  setTimeout(()=>{ if(alert.parentNode) alert.remove(); }, 30000);
 			  // Vibrate if supported
@@ -15394,7 +15396,7 @@
 			        <option value="satellite">🛰️ Satélite</option>
 			        <option value="transit">🚇 Tránsito</option>
 			      </select>
-			      <button onclick="document.getElementById('apple-maps-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+			      <button aria-label="Cerrar" onclick="document.getElementById('apple-maps-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			    </div>
 			    <div id="amap-container" style="flex:1;position:relative;">
 			      <div id="amap-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#1c1c2e;flex-direction:column;gap:12px;z-index:5;">
@@ -15404,7 +15406,7 @@
 			      <div id="amap-directions" style="display:none;position:absolute;top:12px;left:12px;z-index:8;background:rgba(28,28,30,.96);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;width:280px;max-width:82vw;box-shadow:0 10px 30px rgba(0,0,0,.5);">
 			        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
 			          <span style="font-size:13px;font-weight:800;color:#fff;">🧭 Cómo llegar</span>
-			          <button onclick="amapToggleDirections()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;">✕</button>
+			          <button aria-label="Cerrar" onclick="amapToggleDirections()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;">✕</button>
 			        </div>
 			        <input id="amap-from" type="text" placeholder="Origen (o 📍 mi ubicación)" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:12px;padding:8px 10px;outline:none;margin-bottom:6px;">
 			        <input id="amap-to" type="text" placeholder="Destino" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:12px;padding:8px 10px;outline:none;margin-bottom:6px;" onkeydown="if(event.key==='Enter')amapRoute()">
@@ -15612,14 +15614,14 @@
 			    +  '<div id="amap-nav-text" style="font-size:14px;font-weight:800;margin-top:5px;line-height:1.35;">—</div>'
 			    +  '<div id="amap-nav-dist" style="font-size:11px;opacity:.85;margin-top:4px;">—</div>'
 			    +'</div>'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">INDICACIONES ('+_amapSteps.length+')</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">INDICACIONES ('+_amapSteps.length+')</div>'
 			    +'<div style="max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:5px;">';
 			  _amapSteps.forEach(function(st,i){
 			    const mv=_amapManeuver(st);
 			    s+='<div id="amap-step-'+i+'" onclick="amapGoStep('+i+')" style="display:flex;gap:9px;align-items:flex-start;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.06);cursor:pointer;border:1px solid transparent;">'
 			      +'<span style="font-size:17px;line-height:1.2;width:22px;text-align:center;flex-shrink:0;">'+mv[0]+'</span>'
 			      +'<div style="flex:1;min-width:0;"><div style="font-size:11.5px;line-height:1.4;">'+mv[1]+'</div>'
-			      +'<div style="font-size:10px;opacity:.5;margin-top:2px;">'+_amapDist(st.distance||0)+'</div></div></div>';
+			      +'<div style="font-size:10px;opacity:.55;margin-top:2px;">'+_amapDist(st.distance||0)+'</div></div></div>';
 			  });
 			  s+='</div>';
 			  box.innerHTML=s;
@@ -15761,7 +15763,7 @@
 			      <button onclick="browserToggleOptionsMenu()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Más opciones">⋯</button>
 			      <button onclick="browserViewSource()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:34px;height:30px;border-radius:14px;cursor:pointer;font-size:12px;font-weight:800;" title="Ver el HTML de la página">&lt;/&gt;</button>
 			      <button onclick="openBrowserWindow(getActiveTab()&&getActiveTab().url||'')" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;" title="Abrir en ventana flotante">⊞</button>
-			      <button onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+			      <button aria-label="Cerrar" onclick="document.getElementById('browser-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			    </div>
 			    <div id="browser-tabbar" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(20,20,22,.95);overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
 			    <div id="browser-favbar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:rgba(20,20,22,.85);overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;"></div>
@@ -15791,7 +15793,7 @@
 			      <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:24px;padding:10px 16px;width:100%;max-width:420px;box-shadow:0 2px 10px rgba(0,0,0,.3);">
 			        <span style="font-size:1rem;">🔍</span>
 			        <input class="browser-home-search" type="text" placeholder="Buscar en Google o escribir una URL" autocomplete="off" style="flex:1;border:none;outline:none;font-size:14px;color:#222;background:transparent;" onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
-			        <button class="browser-home-go" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
+			        <button aria-label="Ir a la dirección" class="browser-home-go" style="background:#4285F4;border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;">➜</button>
 			      </div>
 			      <div style="font-size:12px;opacity:.55;max-width:320px;">Casi todos los sitios se muestran aquí mismo, sin salir de la app. Algunos con protección anti-bot muy estricta (como Amazon) pueden no cargar del todo dentro del navegador embebido — en ese caso probá "Intentar con proxy ↺".</div>
 			    </div>
@@ -15800,7 +15802,7 @@
 			      <div class="browser-stuck-banner" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:8px 10px 8px 14px;align-items:center;gap:10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:90%;">
 			        <span class="browser-stuck-msg">¿Tenés problemas con esta página? Probá cargarla con el proxy:</span>
 			        <button class="browser-stuck-proxy" onclick="browserRetryViaProxy()" style="background:#34c759;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;font-size:12px;cursor:pointer;">Intentar con proxy ↺</button>
-			        <button class="browser-stuck-dismiss" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 2px;">✕</button>
+			        <button aria-label="Cerrar" class="browser-stuck-dismiss" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 2px;">✕</button>
 			      </div>
 			    </div>
 			    <div class="browser-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:20px;background:#1c1c2e;">
@@ -16028,7 +16030,7 @@
 			    overlay=document.createElement('div');
 			    overlay.id='browser-source-overlay';
 			    overlay.style.cssText='position:absolute;inset:0;z-index:40;background:#0d0d12;display:flex;flex-direction:column;';
-			    overlay.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1c1c22;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;"><span style="color:#9ad;font-size:12px;font-weight:700;">&lt;/&gt; Código HTML</span><button onclick="document.getElementById(\'browser-source-overlay\').style.display=\'none\'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">✕</button></div><pre id="browser-source-pre" style="flex:1;overflow:auto;margin:0;padding:14px;color:#c8e1ff;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;"></pre>';
+			    overlay.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1c1c22;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;"><span style="color:#9ad;font-size:12px;font-weight:700;">&lt;/&gt; Código HTML</span><button aria-label="Cerrar" onclick="document.getElementById(\'browser-source-overlay\').style.display=\'none\'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">✕</button></div><pre id="browser-source-pre" style="flex:1;overflow:auto;margin:0;padding:14px;color:#c8e1ff;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;"></pre>';
 			    const cont=document.getElementById('browser-container');
 			    if(cont) cont.appendChild(overlay);
 			  }
@@ -16265,8 +16267,8 @@
 			      <span class="bwin-title" style="flex:1;font-size:11px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;pointer-events:none;">Nueva ventana</span>
 			    </div>
 			    <div class="bwin-toolbar" style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(20,20,22,.95);flex-shrink:0;">
-			      <button class="bwin-back" onclick="_bwinGoBack(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.4;" title="Atrás">◀</button>
-			      <button class="bwin-fwd" onclick="_bwinGoFwd(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.4;" title="Adelante">▶</button>
+			      <button class="bwin-back" onclick="_bwinGoBack(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.55;" title="Atrás">◀</button>
+			      <button class="bwin-fwd" onclick="_bwinGoFwd(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:11px;opacity:.55;" title="Adelante">▶</button>
 			      <button onclick="_bwinReload(${id})" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;" title="Recargar">⟳</button>
 			      <input class="bwin-url" type="text" placeholder="Dirección…" autocomplete="off" style="flex:1;min-width:60px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:16px;color:#fff;font-size:11px;padding:5px 10px;outline:none;" onkeydown="if(event.key==='Enter')_bwinLoadNav(${id},this.value)">
 			      <button onclick="_bwinLoadNav(${id},document.getElementById('bwin-${id}').querySelector('.bwin-url').value)" style="background:#0a84ff;border:none;color:#fff;padding:5px 10px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">Ir</button>
@@ -16277,17 +16279,17 @@
 			      <div class="bwin-home" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;padding:16px;text-align:center;">
 			        <div style="font-size:2rem;">🌐</div>
 			        <input class="bwin-home-input" type="text" placeholder="Buscar o escribir una URL" autocomplete="off" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:16px;color:#fff;font-size:12px;padding:8px 12px;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter')_bwinLoadNav(${id},this.value)">
-			        <div style="font-size:10px;opacity:.45;">Casi todos los sitios funcionan aquí. Para los que no, usá el botón ↺ proxy.</div>
+			        <div style="font-size:10px;opacity:.55;">Casi todos los sitios funcionan aquí. Para los que no, usá el botón ↺ proxy.</div>
 			      </div>
 			      <div class="bwin-stuck" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(20,20,30,.92);color:#fff;border-radius:12px;padding:6px 8px 6px 12px;align-items:center;gap:8px;font-size:11px;box-shadow:0 4px 14px rgba(0,0,0,.4);max-width:92%;">
 			        <span class="bwin-stuck-msg" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">¿Tenés problemas?</span>
 			        <button class="bwin-stuck-proxy" onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">↺ Proxy</button>
-			        <button onclick="this.closest('.bwin-stuck').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;">✕</button>
+			        <button aria-label="Cerrar" onclick="this.closest('.bwin-stuck').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;">✕</button>
 			      </div>
 			      <div class="bwin-blocked" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#1c1c2e;color:#fff;text-align:center;padding:16px;">
 			        <div style="font-size:2.5rem;">🚫</div>
 			        <div style="font-size:13px;font-weight:700;">No se pudo cargar</div>
-			        <div class="bwin-blocked-url" style="font-size:10px;opacity:.45;word-break:break-all;max-width:260px;"></div>
+			        <div class="bwin-blocked-url" style="font-size:10px;opacity:.55;word-break:break-all;max-width:260px;"></div>
 			        <button onclick="_bwinRetryProxy(${id})" style="background:#34c759;color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">↺ Intentar con proxy</button>
 			      </div>
 			    </div>
@@ -16592,9 +16594,9 @@
 			    +    '<div class="gb-lcd-cell"><span class="gb-lcd-num" id="gb-lcd-beat">1.1</span><span class="gb-lcd-lbl">Compás</span></div>'
 			    +    '<div style="width:1px;background:#233026;margin:4px 0;"></div>'
 			    +    '<div class="gb-lcd-cell" style="flex-direction:row;gap:4px;align-items:center;">'
-			    +      '<button class="gb-lcd-mini" onclick="gbTempo(-4)">−</button>'
+			    +      '<button aria-label="Bajar el tempo" class="gb-lcd-mini" onclick="gbTempo(-4)">−</button>'
 			    +      '<div class="gb-lcd-cell"><span class="gb-lcd-num" id="gb-lcd-tempo" style="font-size:17px;">120</span><span class="gb-lcd-lbl">Tempo</span></div>'
-			    +      '<button class="gb-lcd-mini" onclick="gbTempo(4)">+</button>'
+			    +      '<button aria-label="Subir el tempo" class="gb-lcd-mini" onclick="gbTempo(4)">+</button>'
 			    +    '</div>'
 			    +  '</div>'
 			    +  '<button class="gb-tb-btn" id="gb-metro-btn" onclick="gbMetro()" title="Metrónomo">🎵</button>'
@@ -16667,7 +16669,7 @@
 			function gbBuildBrowser(){
 			  const el=document.getElementById('gb-browser');
 			  let s='<div style="font-size:19px;font-weight:800;margin-bottom:4px;">Explorador de sonidos</div>'
-			    +'<div style="font-size:11px;opacity:.45;margin-bottom:20px;">Elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
+			    +'<div style="font-size:11px;opacity:.55;margin-bottom:20px;">Elige un instrumento táctil, Live Loops o la vista de Pistas.</div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:900px;">';
 			  GB_BROWSER_CARDS.forEach(function(c){
 			    s+='<div class="gb-card" onclick="gbOpenInstrument(\''+c.id+'\')"><span class="i">'+c.icon+'</span><span class="n">'+c.n+'</span><span class="d">'+c.d+'</span></div>';
@@ -16689,54 +16691,54 @@
 			    document.getElementById('gb-status').textContent='🎹 Teclado · toca y desliza (glissando) · ⏺ para grabar';
 			  } else if(id==='drums'){
 			    document.getElementById('gb-drums-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Batería</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca cada tambor y plato · el Hi-Hat abre si le das arriba · ⏺ para grabar</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Batería</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Toca cada tambor y plato · el Hi-Hat abre si le das arriba · ⏺ para grabar</span>';
 			    gbBuildDrums(); _gbSelectedInstrument='drums';
 			    document.getElementById('gb-status').textContent='🥁 Batería física · toca los tambores y platos como en la de verdad';
 			  } else if(id==='smartguitar'||id==='smartbass'||id==='smartstrings'){
 			    document.getElementById('gb-chord-area').style.display='flex';
 			    const kind=id==='smartguitar'?'guitar':id==='smartbass'?'bass':'strings';
 			    const nm=id==='smartguitar'?'🎸 Guitarra Smart':id==='smartbass'?'🎸 Bajo Smart':'🎻 Cuerdas Smart';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">'+nm+'</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Elige un acorde arriba y RASGUEA las cuerdas: arrastra el dedo o el lápiz</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">'+nm+'</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Elige un acorde arriba y RASGUEA las cuerdas: arrastra el dedo o el lápiz</span>';
 			    gbBuildStrings(kind); _gbSelectedInstrument=kind;
 			    document.getElementById('gb-status').textContent=nm+' · rasguea las cuerdas de verdad, como en el iPad';
 			  } else if(id==='synth'){
 			    document.getElementById('gb-synth-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎛️ Sintetizador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Elige la onda y ajusta la envolvente</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎛️ Sintetizador</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Elige la onda y ajusta la envolvente</span>';
 			    gbBuildSynth(); _gbSelectedInstrument='synth';
 			    document.getElementById('gb-status').textContent='🎛️ Sintetizador listo';
 			  } else if(id==='drummer'){
 			    document.getElementById('gb-drummer-area').style.display='flex';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Drummer</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Un baterista que toca solo · elige el estilo y la intensidad</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥁 Drummer</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Un baterista que toca solo · elige el estilo y la intensidad</span>';
 			    gbBuildDrummer(); _gbSelectedInstrument='drums';
 			    document.getElementById('gb-status').textContent='🥁 Drummer · pulsa ▶ y elige el estilo';
 			  } else if(id==='beatseq'){
 			    document.getElementById('gb-beatseq-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎚️ Beat Sequencer</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Caja de ritmos: prende las casillas y pulsa ▶</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎚️ Beat Sequencer</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Caja de ritmos: prende las casillas y pulsa ▶</span>';
 			    gbBuildBeatSeq(); _gbSelectedInstrument='drums';
 			    document.getElementById('gb-status').textContent='🎚️ Beat Sequencer · dibuja tu ritmo';
 			  } else if(id==='smartdrums'){
 			    document.getElementById('gb-smartdrums-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥅 Batería Smart</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Arrastra cada tambor a la cuadrícula: derecha = más complejo, arriba = más fuerte</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🥅 Batería Smart</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Arrastra cada tambor a la cuadrícula: derecha = más complejo, arriba = más fuerte</span>';
 			    gbBuildSmartDrums(); _gbSelectedInstrument='drums';
 			    document.getElementById('gb-status').textContent='🥅 Batería Smart · arrastra los tambores y pulsa ▶';
 			  } else if(id==='audiorec'){
 			    document.getElementById('gb-audiorec-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎤 Grabadora</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Graba tu voz y ponle efectos de estudio</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎤 Grabadora</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Graba tu voz y ponle efectos de estudio</span>';
 			    gbBuildAudioRec(); _gbSelectedInstrument='voz';
 			    document.getElementById('gb-status').textContent='🎤 Grabadora · pulsa el micrófono para grabar';
 			  } else if(id==='amp'){
 			    document.getElementById('gb-amp-area').style.display='flex';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🔊 Amplificador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Elige ampli y pedales, y toca las cuerdas de abajo</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🔊 Amplificador</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Elige ampli y pedales, y toca las cuerdas de abajo</span>';
 			    gbBuildAmp(); _gbSelectedInstrument='guitar';
 			    document.getElementById('gb-status').textContent='🔊 Amplificador · enciende pedales y rasguea';
 			  } else if(id==='sampler'){
 			    document.getElementById('gb-sampler-area').style.display='block';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎵 Sampler</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Graba un sonido corto y tócalo como instrumento</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎵 Sampler</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Graba un sonido corto y tócalo como instrumento</span>';
 			    gbBuildSampler(); _gbSelectedInstrument='sample';
 			    document.getElementById('gb-status').textContent='🎵 Sampler · graba un sonido y toca el teclado';
 			  } else if(id==='tuner'){
 			    document.getElementById('gb-tuner-area').style.display='flex';
-			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎯 Afinador</span><span style="font-size:10px;opacity:.4;margin-left:8px;">Toca una nota cerca del micrófono</span>';
+			    bar.innerHTML='<span style="font-size:12px;font-weight:800;">🎯 Afinador</span><span style="font-size:10px;opacity:.55;margin-left:8px;">Toca una nota cerca del micrófono</span>';
 			    gbBuildAfinador(); _gbSelectedInstrument='tuner';
 			    document.getElementById('gb-status').textContent='🎯 Afinador · pulsa Escuchar';
 			  }
@@ -16977,7 +16979,7 @@
 			  });
 			  s+='</div>';
 			  s+='<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;padding:22px;background:radial-gradient(120% 120% at 50% 0%,#2a2a2e,#151517);border-radius:16px;">'
-			    +'<button id="gb-drummer-play" onclick="gbDrummerToggle()" style="width:74px;height:74px;border-radius:50%;border:none;background:linear-gradient(180deg,#30d158,#20a848);color:#062;font-size:30px;font-weight:900;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);">▶</button>'
+			    +'<button aria-label="Tocar o parar el baterista" id="gb-drummer-play" onclick="gbDrummerToggle()" style="width:74px;height:74px;border-radius:50%;border:none;background:linear-gradient(180deg,#30d158,#20a848);color:#062;font-size:30px;font-weight:900;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);">▶</button>'
 			    +'<div style="display:flex;flex-direction:column;gap:6px;min-width:220px;">'
 			    +  '<div style="font-size:11px;opacity:.6;font-weight:700;">INTENSIDAD</div>'
 			    +  '<input type="range" min="1" max="3" step="1" value="'+_gbDrummerInt+'" oninput="_gbDrummerInt=+this.value;document.getElementById(\'gb-drummer-intlbl\').textContent=[\'\',\'Suave\',\'Normal\',\'Potente\'][this.value];" style="width:100%;">'
@@ -16985,7 +16987,7 @@
 			    +'</div>'
 			    +'<div id="gb-drummer-viz" style="display:flex;gap:5px;align-items:flex-end;height:52px;"></div>'
 			    +'</div>';
-			  s+='<div style="font-size:11px;opacity:.45;text-align:center;">El baterista sigue el tempo del LCD de arriba. Sube la intensidad para un ritmo más lleno y fuerte.</div>';
+			  s+='<div style="font-size:11px;opacity:.55;text-align:center;">El baterista sigue el tempo del LCD de arriba. Sube la intensidad para un ritmo más lleno y fuerte.</div>';
 			  area.innerHTML=s;
 			  const viz=document.getElementById('gb-drummer-viz');
 			  if(viz){ for(let i=0;i<7;i++){ const b=document.createElement('div'); b.className='gb-viz-bar'; b.style.cssText='width:7px;height:12px;border-radius:3px;background:#30d158;opacity:.5;'; viz.appendChild(b); } }
@@ -17046,7 +17048,7 @@
 			    +'<button id="gb-seq-play" onclick="gbSeqToggle()" style="background:linear-gradient(180deg,#30d158,#20a848);border:none;color:#062;font-weight:900;padding:8px 18px;border-radius:10px;cursor:pointer;font-size:14px;">▶ Tocar</button>'
 			    +'<button class="gb-chip" onclick="gbSeqClear()">🧹 Limpiar</button>'
 			    +'<button class="gb-chip" onclick="gbSeqRandom()">🎲 Aleatorio</button>'
-			    +'<span style="font-size:11px;opacity:.45;">Prende casillas y pulsa Tocar. Sigue el tempo del LCD.</span></div>';
+			    +'<span style="font-size:11px;opacity:.55;">Prende casillas y pulsa Tocar. Sigue el tempo del LCD.</span></div>';
 			  s+='<div style="display:inline-block;min-width:100%;">';
 			  GB_SEQ_ROWS.forEach(function(row,r){
 			    s+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
@@ -17174,12 +17176,12 @@
 			  const area=document.getElementById('gb-amp-area');
 			  _gbAmpOn=true; _gbRefreshAmp();
 			  let s='<div style="padding:14px 16px 4px;">'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:7px;">AMPLIFICADOR</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:7px;">AMPLIFICADOR</div>'
 			    +'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">';
 			  GB_AMPS.forEach(function(a,i){
 			    s+='<button class="gb-chip gb-amp-chip'+(a.id===_gbAmpModel?' on':'')+'" onclick="gbAmpPick('+i+')">'+a.n+'</button>';
 			  });
-			  s+='</div><div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:7px;">PEDALES</div>'
+			  s+='</div><div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:7px;">PEDALES</div>'
 			    +'<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:10px;">';
 			  GB_PEDALS.forEach(function(pd,i){
 			    s+='<button class="gb-pedal'+(_gbPedals[pd.id]?' on':'')+'" id="gb-pedal-'+pd.id+'" onclick="gbPedalToggle('+i+')">'
@@ -17209,17 +17211,17 @@
 			    +'<button id="gb-sd-play" onclick="gbSmartDrumsToggle()" style="background:linear-gradient(180deg,#30d158,#20a848);border:none;color:#062;font-weight:900;padding:8px 18px;border-radius:10px;cursor:pointer;font-size:14px;">▶ Tocar</button>'
 			    +'<button class="gb-chip" onclick="gbSmartDrumsRandom()">🎲 Aleatorio</button>'
 			    +'<button class="gb-chip" onclick="gbSmartDrumsClear()">🧹 Vaciar</button>'
-			    +'<span style="font-size:11px;opacity:.45;">Arrastra cada tambor dentro del cuadro.</span></div>'
+			    +'<span style="font-size:11px;opacity:.55;">Arrastra cada tambor dentro del cuadro.</span></div>'
 			    +'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
 			    +'<div id="gb-sd-grid" style="position:relative;width:min(560px,86vw);height:min(360px,50vh);background:linear-gradient(180deg,#1a1a1d,#101012);border:1px solid #38383a;border-radius:14px;overflow:hidden;touch-action:none;">'
 			    +  '<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:25% 25%;"></div>'
-			    +  '<div style="position:absolute;left:8px;top:8px;font-size:9px;opacity:.4;font-weight:800;">FUERTE</div>'
-			    +  '<div style="position:absolute;left:8px;bottom:8px;font-size:9px;opacity:.4;font-weight:800;">SUAVE</div>'
-			    +  '<div style="position:absolute;right:8px;bottom:8px;font-size:9px;opacity:.4;font-weight:800;">COMPLEJO</div>'
-			    +  '<div style="position:absolute;left:8px;bottom:22px;font-size:9px;opacity:.4;font-weight:800;">SIMPLE</div>'
+			    +  '<div style="position:absolute;left:8px;top:8px;font-size:9px;opacity:.55;font-weight:800;">FUERTE</div>'
+			    +  '<div style="position:absolute;left:8px;bottom:8px;font-size:9px;opacity:.55;font-weight:800;">SUAVE</div>'
+			    +  '<div style="position:absolute;right:8px;bottom:8px;font-size:9px;opacity:.55;font-weight:800;">COMPLEJO</div>'
+			    +  '<div style="position:absolute;left:8px;bottom:22px;font-size:9px;opacity:.55;font-weight:800;">SIMPLE</div>'
 			    +'</div>'
 			    +'<div id="gb-sd-tray" style="display:flex;flex-direction:column;gap:7px;">'
-			    +  '<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;">TAMBORES</div></div>'
+			    +  '<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;">TAMBORES</div></div>'
 			    +'</div></div>';
 			  area.innerHTML=s;
 			  const grid=document.getElementById('gb-sd-grid'), tray=document.getElementById('gb-sd-tray');
@@ -17290,17 +17292,17 @@
 			  const area=document.getElementById('gb-audiorec-area');
 			  let s='<div style="padding:18px;max-width:820px;margin:0 auto;">'
 			    +'<div style="display:flex;align-items:center;gap:18px;justify-content:center;margin-bottom:18px;flex-wrap:wrap;">'
-			    +  '<button id="gb-mic-btn" onclick="gbMicToggle()" style="width:82px;height:82px;border-radius:50%;border:none;background:linear-gradient(180deg,#ff453a,#d0342b);color:#fff;font-size:34px;cursor:pointer;box-shadow:0 6px 18px rgba(255,69,58,.35);">🎤</button>'
+			    +  '<button aria-label="Grabar con el micrófono" id="gb-mic-btn" onclick="gbMicToggle()" style="width:82px;height:82px;border-radius:50%;border:none;background:linear-gradient(180deg,#ff453a,#d0342b);color:#fff;font-size:34px;cursor:pointer;box-shadow:0 6px 18px rgba(255,69,58,.35);">🎤</button>'
 			    +  '<button class="gb-chip" onclick="gbVoicePlay()" style="padding:11px 20px;font-size:14px;">▶ Escuchar</button>'
 			    +  '<button class="gb-chip" onclick="gbVoiceStop()" style="padding:11px 20px;font-size:14px;">⏹ Parar</button>'
 			    +'</div>'
 			    +'<div id="gb-mic-status" style="text-align:center;font-size:12px;opacity:.55;margin-bottom:18px;">Pulsa el micrófono para grabar tu voz.</div>'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:8px;">EFECTO</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:8px;">EFECTO</div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">';
 			  GB_VOICE_FX.forEach(function(f,i){
 			    s+='<button class="gb-fx-card'+(f.id===_gbVoiceFX?' on':'')+'" id="gb-fx-'+f.id+'" onclick="gbVoiceFXPick('+i+')">'
 			      +'<span style="font-weight:800;font-size:12px;">'+f.n+'</span>'
-			      +'<span style="font-size:10px;opacity:.5;">'+f.d+'</span></button>';
+			      +'<span style="font-size:10px;opacity:.55;">'+f.d+'</span></button>';
 			  });
 			  s+='</div></div>';
 			  area.innerHTML=s;
@@ -17436,9 +17438,9 @@
 			    +  '<div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.45);"></div>'
 			    +  '<div id="gb-af-aguja" style="position:absolute;left:50%;top:0;bottom:0;width:6px;border-radius:3px;background:#8e8e93;transform:translateX(-50%);transition:left .08s linear,background .15s;"></div>'
 			    +'</div>'
-			    +'<div style="display:flex;justify-content:space-between;width:min(420px,88vw);font-size:10px;opacity:.4;"><span>♭ bajo</span><span>afinado</span><span>alto ♯</span></div>'
+			    +'<div style="display:flex;justify-content:space-between;width:min(420px,88vw);font-size:10px;opacity:.55;"><span>♭ bajo</span><span>afinado</span><span>alto ♯</span></div>'
 			    +'<button id="gb-af-btn" onclick="gbAfinadorToggle()" style="margin-top:8px;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;font-size:14px;padding:13px 30px;border-radius:var(--r-md,12px);cursor:pointer;">🎤 Escuchar</button>'
-			    +'<div style="font-size:11px;opacity:.4;text-align:center;max-width:300px;line-height:1.5;">Toca una cuerda o una nota cerca del micrófono. La aguja al centro y en verde significa que está afinada.</div>';
+			    +'<div style="font-size:11px;opacity:.55;text-align:center;max-width:300px;line-height:1.5;">Toca una cuerda o una nota cerca del micrófono. La aguja al centro y en verde significa que está afinada.</div>';
 			}
 			function gbAfinadorToggle(){ _gbAfOn ? gbAfinadorParar() : gbAfinadorEmpezar(); }
 			function gbAfinadorEmpezar(){
@@ -17517,7 +17519,7 @@
 			  const area=document.getElementById('gb-sampler-area');
 			  let s='<div style="padding:18px;max-width:820px;margin:0 auto;">'
 			    +'<div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:14px;">'
-			    +  '<button id="gb-smp-btn" onclick="gbSamplerToggle()" style="width:72px;height:72px;border-radius:50%;border:none;background:linear-gradient(180deg,#ff9f0a,#d97d00);color:#fff;font-size:30px;cursor:pointer;box-shadow:0 6px 16px rgba(255,159,10,.35);">🎤</button>'
+			    +  '<button aria-label="Grabar un sonido" id="gb-smp-btn" onclick="gbSamplerToggle()" style="width:72px;height:72px;border-radius:50%;border:none;background:linear-gradient(180deg,#ff9f0a,#d97d00);color:#fff;font-size:30px;cursor:pointer;box-shadow:0 6px 16px rgba(255,159,10,.35);">🎤</button>'
 			    +  '<div style="font-size:12px;opacity:.6;max-width:340px;">Graba un sonido corto (tu voz, una palmada, lo que sea) y luego tócalo como si fuera un instrumento: cada tecla lo reproduce a otra altura.</div>'
 			    +'</div>'
 			    +'<div id="gb-smp-status" style="text-align:center;font-size:12px;opacity:.55;margin-bottom:16px;">Sin sonido grabado todavía.</div>'
@@ -17711,9 +17713,9 @@
 			  const _apAt=s.length;
 			  // AUTOPLAY: patrones que se tocan solos al elegir acorde (como en GarageBand)
 			  s+='<div style="display:flex;gap:6px;align-items:center;padding:0 9px 9px;flex-wrap:wrap;">'
-			    +'<span style="font-size:9px;font-weight:800;opacity:.45;letter-spacing:.08em;">AUTOPLAY</span>';
+			    +'<span style="font-size:9px;font-weight:800;opacity:.55;letter-spacing:.08em;">AUTOPLAY</span>';
 			  GB_AUTOPLAY.forEach(function(a,i){ s+='<button class="gb-chip gb-auto-chip'+(i===_gbAutoplay?' on':'')+'" onclick="gbAutoplaySet('+i+')">'+a.n+'</button>'; });
-			  s+='<button class="gb-chip" onclick="gbAutoplayStop()">⏹</button></div>';
+			  s+='<button aria-label="Parar" class="gb-chip" onclick="gbAutoplayStop()">⏹</button></div>';
 			  if(noAutoplay) s=s.slice(0,_apAt);
 			  s+='<div class="gb-strings-wrap" style="position:relative;flex:1;display:flex;flex-direction:column;justify-content:space-around;padding:14px 20px;touch-action:none;">';
 			  for(let i=0;i<n;i++){
@@ -18236,7 +18238,7 @@
 			  // Tus canciones guardadas, antes que las plantillas: lo tuyo primero.
 			  gbCargarLista();
 			  if(_gbCanciones.length){
-			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.45;margin-bottom:12px;">TUS CANCIONES</div>';
+			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.55;margin-bottom:12px;">TUS CANCIONES</div>';
 			    s+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:22px 18px;max-width:980px;margin-bottom:34px;">';
 			    _gbCanciones.forEach(function(c){
 			      const d=c.datos||{}, nt=(d.takes||[]).length, ns=(d.secciones||[]).length;
@@ -18254,7 +18256,7 @@
 			        +'</div></div>';
 			    });
 			    s+='</div>';
-			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.45;margin-bottom:12px;">EMPEZAR UNA NUEVA</div>';
+			    s+='<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.55;margin-bottom:12px;">EMPEZAR UNA NUEVA</div>';
 			  }
 			  s+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:30px 22px;max-width:980px;">';
 			  s+='<div onclick="gbOpenTemplate(\'new\')" style="cursor:pointer;text-align:center;">'
@@ -18371,7 +18373,7 @@
 			];
 			let _gbLLActive={}, _gbLLTimer=null, _gbLLStep=0;
 			function gbBuildLiveLoops(container){
-			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">LIVE LOOPS (estilo iPad) — toca una celda para activarla en bucle, o dispara una COLUMNA entera con ▼. Varias filas suenan juntas al tempo del LCD.</div>';
+			  let s='<div style="font-size:11px;opacity:.55;margin-bottom:12px;">LIVE LOOPS (estilo iPad) — toca una celda para activarla en bucle, o dispara una COLUMNA entera con ▼. Varias filas suenan juntas al tempo del LCD.</div>';
 			  s+='<div style="display:grid;grid-template-columns:130px repeat(4,1fr);gap:8px;max-width:820px;">';
 			  s+='<div></div>';
 			  for(let c=0;c<4;c++) s+='<button onclick="gbLLColumn('+c+')" style="background:#2c2c2e;border:1px solid #48484a;border-radius:8px;color:#d8d8dc;padding:5px;cursor:pointer;font-size:11px;font-weight:700;">▼ Col '+(c+1)+'</button>';
@@ -18379,13 +18381,13 @@
 			    s+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">'
 			      +'<span style="width:34px;height:34px;border-radius:10px;background:'+GB_LL_COLORS[r]+'2e;border:1px solid '+GB_LL_COLORS[r]+'55;display:flex;align-items:center;justify-content:center;font-size:16px;">'+_gbLLIcon(row,r)+'</span>'+row.name+'</div>';
 			    row.cells.forEach(function(_,c){
-			      s+='<button class="gb-ll-cell" id="gb-ll-'+r+'-'+c+'" onclick="gbLLToggle('+r+','+c+')" style="background:'+GB_LL_COLORS[r]+'26;color:'+GB_LL_COLORS[r]+';">▶</button>';
+			      s+='<button aria-label="Reproducir" class="gb-ll-cell" id="gb-ll-'+r+'-'+c+'" onclick="gbLLToggle('+r+','+c+')" style="background:'+GB_LL_COLORS[r]+'26;color:'+GB_LL_COLORS[r]+';">▶</button>';
 			    });
 			  });
 			  s+='</div><div style="margin-top:14px;"><button class="gb-chip" onclick="gbLLStopAll()" style="padding:9px 16px;">⏹ Parar todo</button></div>';
 			  // REMIX FX: los efectos de DJ de Live Loops
 			  s+='<div style="margin-top:18px;padding:14px;background:linear-gradient(180deg,#1e1e21,#151517);border:1px solid #333;border-radius:14px;max-width:820px;">'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:10px;">REMIX FX</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:10px;">REMIX FX</div>'
 			    +'<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">'
 			    +  '<label style="font-size:11px;opacity:.6;display:flex;flex-direction:column;gap:4px;">Filtro DJ<input type="range" id="gb-remix-filter" min="0" max="100" value="100" oninput="gbRemixFilter(this.value)" style="width:180px;"></label>'
 			    +  '<button class="gb-chip" id="gb-remix-rep" onclick="gbRemixRepeat()">🔂 Repetidor</button>'
@@ -18951,7 +18953,7 @@
 			  let ruler='<div style="position:relative;height:20px;margin-left:'+GB_LANE_X+'px;width:'+laneW+'px;border-bottom:1px solid #333;">';
 			  for(let b=0;b*barW<laneW;b++) ruler+='<span style="position:absolute;left:'+(b*barW)+'px;font-size:9px;color:#8e8e93;border-left:1px solid #444;padding-left:3px;">'+(b+1)+'</span>';
 			  ruler+='</div>';
-			  let s='<div style="font-size:11px;opacity:.5;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla reproduce esta sección en capas.</div>';
+			  let s='<div style="font-size:11px;opacity:.55;margin-bottom:12px;">PISTAS (estilo Mac) — cada toma grabada es una región verde en la línea de tiempo. M la silencia; ▶ Mezcla reproduce esta sección en capas.</div>';
 			  // Barra de secciones: el arreglo de la canción (intro, estrofa, estribillo…)
 			  const secIdx=_gbSecIdx(_gbSecActiva);
 			  let chips='';
@@ -18962,7 +18964,7 @@
 			      +escapeHtml(sec.nombre)+'<span style="opacity:.55;font-weight:600;margin-left:6px;">'+n+'</span></button>';
 			  });
 			  s+='<div id="gb-sec-bar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">'
-			    +'<span style="font-size:10px;opacity:.45;letter-spacing:.6px;margin-right:2px;">SECCIONES</span>'
+			    +'<span style="font-size:10px;opacity:.55;letter-spacing:.6px;margin-right:2px;">SECCIONES</span>'
 			    +chips
 			    +'<span style="width:10px;"></span>'
 			    +'<button class="gb-chip" onclick="gbSecNueva()" title="Añadir una sección nueva">＋</button>'
@@ -18982,7 +18984,7 @@
 			    +'<button class="gb-chip" onclick="gbExportarCancion(\'wav\')" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Sin comprimir, para abrirla en un editor de audio. Pesa bastante más"')+'>⬇️ Exportar WAV</button>'
 			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
-			    +'<span style="font-size:10px;opacity:.35;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
+			    +'<span style="font-size:10px;opacity:.55;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
 			    +'</div>';
 			  if(!tomas.length){
 			    s+=ixVacio('🎚️','Sección vacía','Toca un instrumento con ⏺ activado y luego pulsa «＋ Guardar toma actual» para traerlo a esta sección.');
@@ -19032,12 +19034,12 @@
 			  modal.innerHTML=`
 			    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
 			      <span style="font-weight:800;font-size:14px;">🧭 Brújula</span>
-			      <button onclick="openCompass()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:16px;">✕</button>
+			      <button aria-label="Cerrar" onclick="openCompass()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:16px;">✕</button>
 			    </div>
 			    <canvas id="compass-canvas" width="180" height="180" style="border-radius:50%;background:#1c1c1e;"></canvas>
 			    <div id="compass-heading" style="font-size:2rem;font-weight:200;letter-spacing:-.02em;color:#fff;">0°</div>
 			    <div id="compass-dir" style="font-size:13px;font-weight:700;color:#ff453a;letter-spacing:.15em;">NORTE</div>
-			    <div style="font-size:10px;opacity:.4;text-align:center;">Requiere sensor de orientación del dispositivo</div>
+			    <div style="font-size:10px;opacity:.55;text-align:center;">Requiere sensor de orientación del dispositivo</div>
 			    <button onclick="requestCompassPermission()" style="background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;padding:8px 16px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;width:100%;">Activar sensor</button>
 			  `;
 			  document.body.appendChild(modal);
@@ -19116,8 +19118,8 @@
 			  modal.innerHTML=`
 			    <div style="width:480px;max-height:80vh;background:rgba(18,18,22,.97);border-radius:24px;border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
 			      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);">
-			        <div><div style="font-size:16px;font-weight:800;">☁️ Mi Nube</div><div style="font-size:11px;opacity:.4;margin-top:2px;">Tus datos guardados localmente</div></div>
-			        <button onclick="document.getElementById('cloud-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+			        <div><div style="font-size:16px;font-weight:800;">☁️ Mi Nube</div><div style="font-size:11px;opacity:.55;margin-top:2px;">Tus datos guardados localmente</div></div>
+			        <button aria-label="Cerrar" onclick="document.getElementById('cloud-modal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
 			      </div>
 			      <!-- Tabs -->
 			      <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.08);">
@@ -19147,10 +19149,10 @@
 			    const v=localStorage.getItem(k);
 			    if(!v)return '';
 			    let display=v;try{const parsed=JSON.parse(v);if(typeof parsed==='object')display=JSON.stringify(parsed).slice(0,40)+'…';}catch(e){}
-			    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;font-size:12px;"><div><div style="font-weight:700;color:#fff;margin-bottom:2px;">${k}</div><div style="opacity:.45;font-size:10px;font-family:monospace;">${display.slice(0,60)}</div></div><button onclick="if(confirm('Eliminar ${k}?'))localStorage.removeItem('${k}')" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff453a;padding:4px 8px;border-radius:8px;cursor:pointer;font-size:10px;white-space:nowrap;">Borrar</button></div>`;
+			    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;font-size:12px;"><div><div style="font-weight:700;color:#fff;margin-bottom:2px;">${k}</div><div style="opacity:.55;font-size:10px;font-family:monospace;">${display.slice(0,60)}</div></div><button onclick="if(confirm('Eliminar ${k}?'))localStorage.removeItem('${k}')" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff453a;padding:4px 8px;border-radius:8px;cursor:pointer;font-size:10px;white-space:nowrap;">Borrar</button></div>`;
 			  }).filter(Boolean).join('');
 			  const totalKB=(JSON.stringify(localStorage).length/1024).toFixed(1);
-			  cont.innerHTML=`<div style="font-size:11px;opacity:.4;margin-bottom:12px;">${totalKB} KB guardados · ${Object.keys(localStorage).length} elementos</div>${rows||ixVacio('☁️','Sin datos guardados','Cuando uses la app, aquí verás lo que se guarda en tu dispositivo.')}`;
+			  cont.innerHTML=`<div style="font-size:11px;opacity:.55;margin-bottom:12px;">${totalKB} KB guardados · ${Object.keys(localStorage).length} elementos</div>${rows||ixVacio('☁️','Sin datos guardados','Cuando uses la app, aquí verás lo que se guarda en tu dispositivo.')}`;
 			}
 			function renderCloudGallery(cont){
 			  const custom=JSON.parse(localStorage.getItem('custom_wallpapers')||'[]');
@@ -19165,7 +19167,7 @@
 			  `;
 			  if(!custom.length) html+='</div>'+ixVacio('🖼️','Tu galería está vacía','Sube una foto tuya con el botón de arriba y podrás ponerla de fondo de pantalla.')+'<div style="display:none;">';
 			  custom.forEach((wp,i)=>{
-			    html+=`<div style="position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;cursor:pointer;" onclick="setWallpaper('custom_${i}')"><img src="${wp.url}" style="width:100%;height:100%;object-fit:cover;"><button onclick="event.stopPropagation();removeCustomWallpaper(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button></div>`;
+			    html+=`<div style="position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;cursor:pointer;" onclick="setWallpaper('custom_${i}')"><img src="${wp.url}" style="width:100%;height:100%;object-fit:cover;"><button aria-label="Cerrar" onclick="event.stopPropagation();removeCustomWallpaper(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button></div>`;
 			  });
 			  html+='</div>';
 			  cont.innerHTML=html;
@@ -19413,13 +19415,13 @@
 			  const c=document.getElementById('ica-comparador');
 			  if(!c) return;
 			  if(!_icaWorldClocks.length){
-			    c.innerHTML='<div style="font-size:12px;opacity:.4;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
+			    c.innerHTML='<div style="font-size:12px;opacity:.55;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
 			    return;
 			  }
 			  const hb=(_icaCompHora===null?new Date().getHours():_icaCompHora);
 			  const miTz=(function(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }catch(e){ return null; } })();
 			  if(!_icaWorldClocks.some(_icaTzValida)){
-			    c.innerHTML='<div style="font-size:12px;opacity:.4;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
+			    c.innerHTML='<div style="font-size:12px;opacity:.55;padding:10px 0;">Añade alguna ciudad para poder comparar.</div>';
 			    return;
 			  }
 			  // Selector de hora: una tira de horas del día, la elegida resaltada.
@@ -19442,15 +19444,15 @@
 			    filas+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:'+col[1]+';margin-bottom:6px;">'
 			      +'<span style="font-size:13px;font-weight:600;">'+escapeHtml(_icaNombreDeTz(tz))+'</span>'
 			      +'<span style="display:flex;align-items:baseline;gap:7px;">'
-			      +  '<span style="font-size:10px;opacity:.5;text-transform:capitalize;">'+escapeHtml(r.dia)+'</span>'
+			      +  '<span style="font-size:10px;opacity:.55;text-transform:capitalize;">'+escapeHtml(r.dia)+'</span>'
 			      +  '<span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:'+col[0]+';">'+r.txt+'</span>'
 			      +'</span></div>';
 			  });
 			  c.innerHTML=
-			     '<div style="font-size:11px;opacity:.45;margin-bottom:8px;">Elige una hora tuya y mira qué hora sería en cada ciudad.</div>'
+			     '<div style="font-size:11px;opacity:.55;margin-bottom:8px;">Elige una hora tuya y mira qué hora sería en cada ciudad.</div>'
 			    +'<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">'+tira+'</div>'
 			    +filas
-			    +'<div style="display:flex;gap:14px;font-size:10px;opacity:.45;margin-top:8px;">'
+			    +'<div style="display:flex;gap:14px;font-size:10px;opacity:.55;margin-top:8px;">'
 			    +  '<span><span style="color:#30d158;">●</span> buena hora</span>'
 			    +  '<span><span style="color:#ffd60a;">●</span> justo</span>'
 			    +  '<span><span style="color:#ff453a;">●</span> estarán durmiendo</span>'
@@ -19543,7 +19545,7 @@
 			              .slice(0,12).map(function(z){ return [z.split('/').pop().replace(/_/g,' '), z, '🌐']; });
 			  }
 			  hits=hits.slice(0,14);
-			  if(!hits.length){ box.style.display='block'; box.innerHTML='<div style="padding:12px;opacity:.45;font-size:12px;">No se encontró esa ciudad.</div>'; return; }
+			  if(!hits.length){ box.style.display='block'; box.innerHTML='<div style="padding:12px;opacity:.55;font-size:12px;">No se encontró esa ciudad.</div>'; return; }
 			  box.style.display='block';
 			  box.innerHTML=hits.map(function(c){
 			    let hora='';
@@ -19552,7 +19554,7 @@
 			    return '<div onclick="icaPickCity(\''+c[1].replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07);">'
 			      +'<span style="font-size:18px;">'+c[2]+'</span>'
 			      +'<span style="flex:1;font-size:14px;">'+c[0]+'</span>'
-			      +'<span style="font-size:12px;opacity:.5;">'+hora+'</span>'
+			      +'<span style="font-size:12px;opacity:.55;">'+hora+'</span>'
 			      +(ya?'<span style="font-size:11px;color:#30d158;">✓</span>':'<span style="font-size:16px;opacity:.5;">＋</span>')
 			      +'</div>';
 			  }).join('');
@@ -19666,10 +19668,10 @@
 			    +  '<span style="font-size:30px;font-weight:200;opacity:.6;">:</span>'
 			    +  '<select id="ica-alarm-m" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
 			    +'</div>'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
 			    +'<input id="ica-alarm-label" type="text" maxlength="40" value="'+escapeHtml(etiqueta)+'" placeholder="Alarma" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;">'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+tono+'">'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.5;letter-spacing:.08em;margin-bottom:6px;">TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
 			  ALARM_TONES.forEach(function(t){
 			    const on=t.id===tono;
@@ -19879,7 +19881,7 @@
 			  hoja.addEventListener('click',function(e){ if(e.target===hoja) _icaCerrarHoja(); });
 			  let s='<div style="width:min(400px,94vw);background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:#fff;">'
 			    +'<div style="font-size:15px;font-weight:800;margin-bottom:4px;text-align:center;">Tono del temporizador</div>'
-			    +'<div style="font-size:11px;opacity:.5;text-align:center;margin-bottom:14px;">Tócalo para oírlo antes de elegir</div>'
+			    +'<div style="font-size:11px;opacity:.55;text-align:center;margin-bottom:14px;">Tócalo para oírlo antes de elegir</div>'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+_icaTimerTone+'">'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:18px;">';
 			  ALARM_TONES.forEach(function(t){
@@ -20092,7 +20094,7 @@
 			function mathRenderSaved(){
 			  const el=document.getElementById('math-saved-list');
 			  const saved=JSON.parse(localStorage.getItem('math_notes')||'[]');
-			  if(!saved.length){el.innerHTML='<div style="font-size:11px;opacity:.3;">Sin notas guardadas</div>';return;}
+			  if(!saved.length){el.innerHTML='<div style="font-size:11px;opacity:.55;">Sin notas guardadas</div>';return;}
 			  // El texto de la nota lo escribe el usuario: se escapa antes de pintarlo.
 			  el.innerHTML=saved.map((n,i)=>
 			    '<div onclick="mathLoadSaved('+i+')" style="padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:\'JetBrains Mono\',monospace;cursor:pointer;opacity:.7;display:flex;justify-content:space-between;"><span>'+escapeHtml(String(n.text||'').split('\n')[0].substring(0,25))+'</span><span style=\"opacity:.4\">'+escapeHtml(String(n.date||''))+'</span></div>'
@@ -20116,7 +20118,7 @@
 			  const el=document.getElementById('ica-alarm-history');
 			  if(!el) return;
 			  const hist=JSON.parse(localStorage.getItem('ica_alarm_history')||'[]');
-			  if(!hist.length){el.innerHTML='<div style="font-size:12px;opacity:.3;">Sin historial</div>';return;}
+			  if(!hist.length){el.innerHTML='<div style="font-size:12px;opacity:.55;">Sin historial</div>';return;}
 			  // La etiqueta de la alarma la escribe el usuario: se escapa igual que en
 			  // la lista de alarmas, que ya se habia arreglado antes.
 			  el.innerHTML=hist.map(h=>
@@ -20207,7 +20209,7 @@
 			  });
 			  let html = '';
 			  Object.keys(grouped).forEach(group=>{
-			    html += '<div style="font-size:11px;opacity:.4;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:16px 0 6px;">'+group+'</div>';
+			    html += '<div style="font-size:11px;opacity:.55;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:16px 0 6px;">'+group+'</div>';
 			    grouped[group].forEach((d,i)=>{
 			      const idx = DT_DEVICES.indexOf(d);
 			      html += '<div class="dt-item" onclick="dtShowDetail('+idx+')">'
@@ -20396,7 +20398,7 @@
 			    +'<button onclick="ixRemoveAll()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e8e8ec;font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer;font-size:12px;">🗑️ Borrar todas</button>'
 			    +'<span style="font-size:11px;opacity:.55;">'+totalDl+' de '+IX_APPS.length+' guardadas · '+ixFmtMB(totalBytes)+'</span></div>'
 			    +'<div id="ix-dl-allbar" style="display:none;height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:14px;"><div id="ix-dl-allfill" style="height:100%;width:0%;background:linear-gradient(90deg,#0a84ff,#30d158);transition:width .2s;"></div></div>'
-			    +'<div style="font-size:11px;opacity:.5;margin-bottom:10px;line-height:1.5;">Cada app tiene su propio enlace: ábrelo y entras directo a esa app. «Guardar» la deja lista para usarla sin internet, y «Instalar» le pone su icono en tu pantalla de inicio.</div>'
+			    +'<div style="font-size:11px;opacity:.55;margin-bottom:10px;line-height:1.5;">Cada app tiene su propio enlace: ábrelo y entras directo a esa app. «Guardar» la deja lista para usarla sin internet, y «Instalar» le pone su icono en tu pantalla de inicio.</div>'
 			    +'<div style="display:grid;gap:9px;">';
 			  IX_APPS.forEach(function(a){
 			    const dl=ixIsDownloaded(a.id), sz=ixDlSize(a.id);
@@ -20404,7 +20406,7 @@
 			      +'<span style="font-size:22px;">'+a.icon+'</span>'
 			      +'<div style="flex:1;min-width:150px;">'
 			      +  '<div style="font-size:13px;font-weight:800;">'+a.n+(dl?' <span style="color:#30d158;font-size:10px;">✓ guardada'+(sz?' · '+ixFmtMB(sz):'')+'</span>':'')+'</div>'
-			      +  '<div style="font-size:10px;opacity:.5;">'+a.d+'</div>'
+			      +  '<div style="font-size:10px;opacity:.55;">'+a.d+'</div>'
 			      +  '<div id="ix-dlbar-'+a.id+'" style="display:none;height:5px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px;"><div id="ix-dlfill-'+a.id+'" style="height:100%;width:0%;background:#30d158;transition:width .2s;"></div></div>'
 			      +'</div>'
 			      +'<button onclick="ixOpenApp(\''+a.id+'\')" title="Abrir" style="background:rgba(255,255,255,.1);border:none;color:#e8e8ec;padding:7px 11px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;">Abrir</button>'
@@ -20631,10 +20633,10 @@
 			      +  '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);">'
 			      +    '<span style="font-size:17px;opacity:.6;">🔎</span>'
 			      +    '<input id="ix-busq-inp" placeholder="Buscar en todo IXClocK: apps, ajustes, notas, ciudades, fondos…" autocomplete="off" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;">'
-			      +    '<button onclick="ixCerrarBusqueda()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:13px;flex-shrink:0;">✕</button>'
+			      +    '<button aria-label="Cerrar" onclick="ixCerrarBusqueda()" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;font-size:13px;flex-shrink:0;">✕</button>'
 			      +  '</div>'
 			      +  '<div id="ix-busq-res" style="flex:1;overflow-y:auto;padding:8px;"></div>'
-			      +  '<div style="padding:8px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;opacity:.4;">↑ ↓ para moverte · Enter para abrir · Esc para salir</div>'
+			      +  '<div style="padding:8px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;opacity:.55;">↑ ↓ para moverte · Enter para abrir · Esc para salir</div>'
 			      +'</div>';
 			    document.body.appendChild(ov);
 			    const inp=ov.querySelector('#ix-busq-inp');
@@ -20656,7 +20658,7 @@
 			  if(!caja) return;
 			  _ixBusqRes=ixBuscarTodo(q);
 			  if(!(q||'').trim()){
-			    caja.innerHTML='<div style="padding:26px 16px;text-align:center;font-size:12px;opacity:.45;line-height:1.7;">Escribe para buscar en toda la app.<br>Apps, ajustes, notas, ciudades del reloj, alarmas, fondos, relojes y emisoras.</div>';
+			    caja.innerHTML='<div style="padding:26px 16px;text-align:center;font-size:12px;opacity:.55;line-height:1.7;">Escribe para buscar en toda la app.<br>Apps, ajustes, notas, ciudades del reloj, alarmas, fondos, relojes y emisoras.</div>';
 			    return;
 			  }
 			  if(!_ixBusqRes.length){
@@ -20667,13 +20669,13 @@
 			  _ixBusqRes.forEach(function(x,i){
 			    if(x.grupo!==grupo){
 			      grupo=x.grupo;
-			      html+='<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.4;padding:10px 10px 5px;">'+escapeHtml(grupo)+'</div>';
+			      html+='<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.55;padding:10px 10px 5px;">'+escapeHtml(grupo)+'</div>';
 			    }
 			    html+='<div class="ix-busq-fila" data-i="'+i+'" onclick="ixBusquedaIr('+i+')" style="display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm,10px);cursor:pointer;'+(i===_ixBusqSel?'background:rgba(10,132,255,.28);':'')+'">'
 			      +'<span style="font-size:17px;width:24px;text-align:center;flex-shrink:0;">'+escapeHtml(x.icono||'•')+'</span>'
 			      +'<span style="flex:1;min-width:0;">'
 			      +  '<span style="display:block;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(x.titulo||'')+'</span>'
-			      +  '<span style="display:block;font-size:10px;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(x.sub||'')+'</span>'
+			      +  '<span style="display:block;font-size:10px;opacity:.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(x.sub||'')+'</span>'
 			      +'</span></div>';
 			  });
 			  caja.innerHTML=html;
