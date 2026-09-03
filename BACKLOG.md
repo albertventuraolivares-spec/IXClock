@@ -38,13 +38,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
-   fase lunar en una línea. Los cuatro datos ya se calculan, pero repartidos.
-6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
-   (`cloudTab('backup')`). Que se haga sola cada X días y avise si hace mucho:
-   todo vive en localStorage y un borrado de datos se lo lleva entero.
-7. **Modo enfoque / pomodoro** 25/5, con el reloj a pantalla completa y sonido
-   ambiente. Reutiliza el temporizador, los ambientes y la pantalla completa.
 9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
    a las 9». El calendario y la cuenta atrás de festividades ya tienen motor de
    fechas.
@@ -60,6 +53,58 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Modo Enfoque / pomodoro** (idea 7 del usuario). 25/5 con descanso largo cada
+  4, también 50/10 y 15/3. A pantalla completa, con sonido de ambiente de los
+  que ya trae la radio, contador de sesiones del día y el tiempo en la pestaña.
+  - **La cuenta atrás va por reloj (`Date.now`), no restando un segundo por
+    tic.** Los navegadores frenan los temporizadores de las pestañas que no
+    miras, y un pomodoro se usa justo así: 25 minutos acabarían siendo 40. La
+    prueba adelanta el reloj a mano y comprueba que la cuenta lo sigue.
+  - Redondeo hacia arriba: recién empezado tiene que poner 25:00, no 24:59.
+  - Esc sale del enfoque y **no** cierra lo que hubiera debajo (listener en
+    fase de captura, antes que el atajo general).
+  - Al salir se para el sonido, el temporizador, el bloqueo de pantalla y se
+    devuelve el título de la pestaña.
+  - De paso: `checkIcaAlarms` se protegía con `typeof _icaAlarms==='undefined'`,
+    y `typeof` **no** protege de una `let` aún sin inicializar — también lanza.
+    Con la carga cortada a medias reventaba cada minuto en punto.
+  - `pruebas/enfoque.js` (28/28).
+
+- **Copia de seguridad automática** (idea 6 del usuario). Una copia sola cada 3
+  días, las 3 últimas, en Mi Nube → Respaldo, con botón para volver a cualquiera.
+  - Va en **IndexedDB, no en localStorage**: si estuviera en localStorage se la
+    llevaría por delante justo lo de lo que protege (el botón rojo de esa misma
+    pantalla, o un `localStorage.clear()`). La prueba borra de verdad y luego
+    restaura, en vez de comprobar que se guardó un JSON.
+  - Las tres cosas que se llevan datos por delante —botón rojo, importar un
+    archivo, volver a una copia— guardan antes una copia. Todas reversibles.
+  - No apila copias idénticas (huella del contenido). Ojo con esto: la primera
+    versión escribía `ix_copia_ultima` en localStorage, o sea que **cambiaba lo
+    que estaba copiando** y nunca dos copias salían iguales.
+  - **Lo que NO cubre, y se dice en pantalla**: borrar los datos del navegador
+    o cambiar de móvil se lleva también IndexedDB. Para eso está el archivo, y
+    el navegador no deja bajarlo solo (exige un gesto tuyo), así que lo que se
+    hace es avisar si hace más de 30 días que no lo bajas.
+  - De paso: `cloudTab()` reventaba si se llamaba con Mi Nube cerrada, e
+    importar un archivo que no era un respaldo pisaba los datos sin avisar.
+  - `pruebas/copia.js` (25/25). Suite completa 28/28, auditoría sin avisos.
+
+- **Franja de resumen arriba** (idea 5 del usuario). Encima del reloj, en una
+  sola línea: clima, siguiente alarma con lo que falta, próxima festividad con
+  los días que quedan, y la fase lunar (que ya vivía ahí).
+  - **No recalcula nada**: lee de `_lastWeatherRaw`, `alarms` y
+    `obtenerFeriados`, o sea de donde ya vive cada dato. Así la franja no puede
+    contradecir al panel que tiene al lado, y la prueba lo comprueba comparando
+    los dos textos, no mirando solo que salga algo.
+  - Si la alarma de hoy ya pasó, cuenta la de mañana en vez de dar horas en
+    negativo. Una alarma apagada no cuenta.
+  - Se recorta el **nombre** de la festividad, no la ficha entera: recortando
+    por CSS lo primero que se pierde es «· 2 días», que es justo el dato útil.
+    El globito (`title`) lo dice entero.
+  - Las tres fichas nuevas están en Visibilidad una a una, y ocultar **manda**
+    sobre el repintado de cada minuto (si no, volvían a salir solas).
+  - `pruebas/franja.js` (25/25). Suite completa 27/27 y auditoría sin avisos.
 
 - **Pantalla de inicio reordenable** (idea 4 del usuario). Los cuatro paneles de
   la barra derecha (clima, radio, festividades, pronóstico) llevan un asa y se

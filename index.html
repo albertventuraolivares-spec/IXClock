@@ -187,6 +187,24 @@
 			  --sh-2:0 8px 24px rgba(0,0,0,.45);
 			  --sh-3:0 24px 60px rgba(0,0,0,.7);
 			}
+			/* Fichas de la franja de resumen. Mismo tamano visual que la fase
+			   lunar, que ya vivia en esa linea, para que se lean como una sola
+			   cosa y no como tres anadidos sueltos. */
+			.ix-fr{
+			  display:inline-flex; align-items:center; gap:6px;
+			  font-size:10px; font-weight:700; letter-spacing:.12em;
+			  text-transform:uppercase; white-space:nowrap;
+			  min-width:0; max-width:100%; overflow:hidden;
+			}
+			.ix-fr .ix-fr-t{ overflow:hidden; text-overflow:ellipsis; min-width:0; }
+			.ix-fr[data-ir]{ cursor:pointer; }
+			.ix-fr[data-ir]:hover{ opacity:.6; }
+			.ix-fr .ix-fr-e{ font-size:13px; letter-spacing:normal; }
+			/* En movil la linea entera no cabe de una: se deja envolver y se
+			   aprieta el espaciado en vez de recortar datos. */
+			@media (max-width: 520px){
+			  .ix-fr{ letter-spacing:.08em; }
+			}
 			/* Dedos, no ratón: en pantallas táctiles los botones diminutos son
 			   imposibles de acertar, y tanto Apple como Google piden un mínimo
 			   para aprobar una app. Solo se aplica con puntero grueso, así que en
@@ -2529,26 +2547,37 @@
 			style="padding-top:80px;padding-bottom:80px;"
 		>
 			<div class="text-center z-10 w-full max-w-4xl">
+				<!-- Franja de resumen: clima, siguiente alarma, próxima festividad y
+				     fase lunar en una sola línea. La luna ya vivía aquí; las otras
+				     tres se calculaban pero estaban repartidas por la pantalla. -->
 				<div
-					class="flex items-center gap-3 mb-4 justify-center opacity-70"
-					id="luna-row"
+					class="flex items-center justify-center flex-wrap gap-x-3 gap-y-1 mb-4 opacity-70"
+					id="ix-franja"
 				>
+					<span class="ix-fr" id="fr-clima" style="display:none;"></span>
+					<span class="ix-fr" id="fr-alarma" style="display:none;"></span>
+					<span class="ix-fr" id="fr-fest" style="display:none;"></span>
 					<span
-						class="material-symbols-outlined text-base text-yellow-300"
-						id="moon-icon"
-						>brightness_3</span
+						class="flex items-center gap-3"
+						id="luna-row"
 					>
-					<span
-						class="text-[10px] font-bold tracking-[0.3em] uppercase"
-						id="luna-nombre"
-						>Luna Creciente</span
-					>
-					<span id="luna-sep">|</span>
-					<span
-						class="text-[10px] font-bold tracking-[0.3em] uppercase"
-						id="luna-detalles"
-						>Estación Orbital</span
-					>
+						<span
+							class="material-symbols-outlined text-base text-yellow-300"
+							id="moon-icon"
+							>brightness_3</span
+						>
+						<span
+							class="text-[10px] font-bold tracking-[0.3em] uppercase"
+							id="luna-nombre"
+							>Luna Creciente</span
+						>
+						<span id="luna-sep">|</span>
+						<span
+							class="text-[10px] font-bold tracking-[0.3em] uppercase"
+							id="luna-detalles"
+							>Estación Orbital</span
+						>
+					</span>
 				</div>
 				<div
 					class="clock-display flex items-baseline justify-center mb-6"
@@ -4918,7 +4947,9 @@
 			    view_sidebar:'🗂️', volume_down:'🔉', volume_up:'🔊', wb_sunny:'☀️',
 			    air:'💨', fireplace:'🔥', local_cafe:'☕', nights_stay:'🌙',
 			    park:'🌳', piano:'🎹', self_improvement:'🧘', thunderstorm:'⛈️',
-			    water_drop:'💧', waves:'🌊', blur_on:'🌫️'
+			    water_drop:'💧', waves:'🌊', blur_on:'🌫️',
+			    radio:'📻', celebration:'🎉', thermostat:'🌡️', alarm:'⏰',
+			    backup:'💾', history:'🕘', download:'⬇️'
 			  };
 			  function ligaturesBroken(){
 			    const test=document.createElement('span');
@@ -12627,9 +12658,14 @@
 			let _icaFired={};
 			function checkIcaAlarms(now){
 			  if(now.getSeconds()!==0) return;
-			  if(typeof _icaAlarms==='undefined' || !_icaAlarms.length) return;
+			  // Ojo: `typeof` NO protege de una `let` todavia sin inicializar —
+			  // tambien lanza. Si la carga se corta antes de declararla, esto
+			  // reventaba cada minuto en punto.
+			  let lista;
+			  try{ lista=_icaAlarms; }catch(e){ return; }
+			  if(!lista || !lista.length) return;
 			  const key=now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
-			  _icaAlarms.forEach(function(a,i){
+			  lista.forEach(function(a,i){
 			    if(!a || !a.on || !a.time) return;
 			    const p=String(a.time).split(':');
 			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
@@ -15067,6 +15103,29 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.1', fecha: '3 de septiembre de 2026', titulo:'Modo Enfoque', cambios: [
+			    '➕ Pomodoro a pantalla completa: 25 de trabajo y 5 de descanso, con uno largo cada 4. También 50/10 y 15/3',
+			    '➕ Con sonido de ambiente mientras trabajas (café, lluvia, bosque, ruido blanco o piano) y silencio en el descanso',
+			    '➕ Cuenta las sesiones que llevas hoy, y el tiempo que queda se ve en la pestaña del navegador',
+			    '➕ Se abre desde Todas las apps o buscando «enfoque». Esc sale',
+			    '🛠️ La cuenta atrás va por reloj y no por tics, así que si te vas a otra pestaña —que es justo para lo que sirve— sigue siendo exacta',
+			    '🛠️ El móvil no se apaga solo mientras dura la sesión',
+			  ]},
+			  { v:'2.0', fecha: '3 de septiembre de 2026', titulo:'Copia de seguridad automática', cambios: [
+			    '➕ La app se guarda sola una copia de todo cada 3 días, y guarda las 3 últimas. Están en Mi Nube → Respaldo, con la fecha y un botón para volver a cualquiera de ellas',
+			    '➕ El botón rojo de «Borrar todos los datos» guarda una copia justo antes de borrar: si te equivocas, ya no lo pierdes todo',
+			    '➕ Importar un archivo y volver a una copia también guardan antes lo que tenías, así que los dos se pueden deshacer',
+			    '➕ Aviso si hace más de un mes que no bajas el archivo: la copia de dentro del móvil no sirve si cambias de móvil',
+			    '🛠️ La copia automática vive fuera de los datos normales, así que aguanta un borrado que se lleve todo lo demás',
+			    '🛠️ Importar un archivo que no era un respaldo ya no pisa tus datos: avisa y no toca nada',
+			  ]},
+			  { v:'1.9', fecha: '3 de septiembre de 2026', titulo:'Franja de resumen', cambios: [
+			    '➕ Encima del reloj, en una sola línea: el tiempo que hace, la siguiente alarma con lo que falta para que suene, la próxima festividad con los días que quedan y la fase lunar',
+			    '➕ Toca el clima o la festividad y te lleva a su panel, resaltado; toca la alarma y se abre el panel de alarmas',
+			    '➕ Cada dato de la franja se puede quitar por separado desde Ajustes → Visibilidad',
+			    '🛠️ La franja lee los datos de donde ya viven, así que no puede decir una temperatura distinta a la del panel de al lado',
+			    '🛠️ Si una alarma de hoy ya pasó, la franja cuenta la de mañana en vez de dar una hora en negativo',
+			  ]},
 			  { v:'1.7', fecha: '29 de julio de 2026', titulo:'IXBand como GarageBand', cambios: [
 			    '➕ Drummer: un baterista que toca solo. Elige el estilo (Rock, Pop, Hip Hop, House, Trap, Funk, Latin, Reggaetón, Balada) y la intensidad, y sigue el tempo del LCD',
 			    '➕ Beat Sequencer: la caja de ritmos de pasos de GarageBand — 8 sonidos × 16 casillas que prendes/apagas, con Limpiar y Aleatorio',
@@ -15341,6 +15400,9 @@
 			  {id:'siri-bar',       label:'Barra Search or Ask',   icon:'search',        sel:'#siri-text-bar'},
 			  {id:'date-display-el',label:'Fecha completa',        icon:'today',         sel:'#date-display'},
 			  {id:'luna-info',      label:'Luna (fase lunar)',      icon:'brightness_3',  sel:'#luna-row'},
+			  {id:'fr-clima',       label:'Franja: clima',          icon:'thermostat',    sel:'#fr-clima'},
+			  {id:'fr-alarma',      label:'Franja: siguiente alarma',icon:'alarm',        sel:'#fr-alarma'},
+			  {id:'fr-fest',        label:'Franja: próxima festividad',icon:'celebration',sel:'#fr-fest'},
 			  {id:'estacion-orbital',label:'Estación orbital',     icon:'satellite',     sel:'#luna-detalles'},
 			  {id:'profile-btn-vis',label:'Botón de usuario',      icon:'person',        sel:'#profile-btn'},
 			  {id:'panel-clima',    label:'Panel: Clima',          icon:'wb_sunny',      sel:'[data-panel="clima"]'},
@@ -15386,6 +15448,13 @@
 			  if(id === 'segundos-reloj'){
 			    window._segundosVisible = visible;
 			    return; // clock will pick this up on next tick
+			  }
+			  // Fichas de la franja: al volver a mostrarlas hay que repintarlas,
+			  // porque al ocultarlas se les vacia el contenido.
+			  if(id==='fr-clima' || id==='fr-alarma' || id==='fr-fest'){
+			    if(visible){ try{ ixPintarFranja(); }catch(e){} }
+			    else { const e2=document.getElementById(id); if(e2) e2.style.display='none'; }
+			    return;
 			  }
 			  // Special: estacion-orbital — only hides the text + separator, not the whole row
 			  if(id === 'estacion-orbital'){
@@ -19439,6 +19508,7 @@
 			    if(b){b.style.background=t===tab?'rgba(10,132,255,.15)':'none';b.style.color=t===tab?'#0a84ff':'var(--txt-40)';b.style.borderBottom=t===tab?'2px solid #0a84ff':'none';}
 			  });
 			  const cont=document.getElementById('cloud-content');
+			  if(!cont) return;   // se puede llamar con Mi Nube cerrada (p. ej. al borrar todo)
 			  if(tab==='data') renderCloudData(cont);
 			  else if(tab==='gallery') renderCloudGallery(cont);
 			  else renderCloudBackup(cont);
@@ -19504,22 +19574,79 @@
 			  cloudTab('gallery');
 			}
 			function renderCloudBackup(cont){
+			  const dias=ixCopiaDiasDescarga();
+			  const viejo = dias===null || dias*86400000>=IX_COPIA_AVISA;
+			  const cuandoBajaste = dias===null ? _uiT('nunca')
+			                      : dias===0 ? _uiT('hoy')
+			                      : dias===1 ? _uiT('ayer')
+			                      : _uiT('hace')+' '+dias+' '+_uiT('días');
 			  cont.innerHTML=`
 			    <div style="display:flex;flex-direction:column;gap:12px;">
-			      <button onclick="exportAllData()" style="width:100%;padding:14px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#30d158;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">⬇️ Exportar todos mis datos (JSON)</button>
-			      <label style="display:block;width:100%;padding:14px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;text-align:center;box-sizing:border-box;">
-			        ⬆️ Importar datos (JSON)
+			      <div id="ix-copias-auto" style="background:rgba(255,255,255,.04);border:1px solid var(--glass-border,rgba(255,255,255,.1));border-radius:var(--r-lg);padding:14px;">
+			        <div style="font-size:12px;font-weight:800;margin-bottom:4px;">🕘 ${_uiT('Copias automáticas')}</div>
+			        <div style="font-size:11px;color:var(--txt-45);line-height:1.5;">${_uiT('Se guarda una sola cada 3 días, aquí en el dispositivo. Aguanta el botón rojo de abajo y un fallo de la app, pero NO aguanta borrar los datos del navegador ni perder el móvil: para eso, baja el archivo.')}</div>
+			        <div id="ix-copias-lista" style="margin-top:10px;font-size:11px;color:var(--txt-45);">${_uiT('Cargando…')}</div>
+			      </div>
+			      ${viejo ? `<div style="background:rgba(255,159,10,.12);border:1px solid rgba(255,159,10,.4);border-radius:var(--r-lg);padding:12px;font-size:11.5px;color:#ff9f0a;line-height:1.5;">
+			        ⚠️ ${_uiT('Última descarga del archivo:')} <b>${cuandoBajaste}</b>. ${_uiT('Es la única copia que sobrevive si borras los datos del navegador o cambias de móvil.')}
+			      </div>` : `<div style="font-size:11px;color:var(--txt-45);text-align:center;">${_uiT('Última descarga del archivo:')} ${cuandoBajaste}</div>`}
+			      <button onclick="exportAllData()" style="width:100%;padding:14px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#30d158;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;">⬇️ ${_uiT('Exportar todos mis datos (JSON)')}</button>
+			      <label style="display:block;width:100%;padding:14px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;text-align:center;box-sizing:border-box;">
+			        ⬆️ ${_uiT('Importar datos (JSON)')}
 			        <input type="file" accept=".json" onchange="importAllData(event)" style="display:none;">
 			      </label>
-			      <button onclick="if(confirm(_uiT('¿Borrar TODOS los datos guardados?'))){localStorage.clear();alert(_uiT('Datos borrados'));cloudTab('data');}" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">🗑️ Borrar todos los datos</button>
+			      <button onclick="ixBorrarTodo()" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;">🗑️ ${_uiT('Borrar todos los datos')}</button>
 			    </div>
 			  `;
+			  ixCopiaPintarLista();
+			}
+			async function ixCopiaPintarLista(){
+			  const cont=document.getElementById('ix-copias-lista');
+			  if(!cont) return;
+			  const lista=await ixCopiaLista();
+			  if(!lista.length){
+			    cont.innerHTML='<span style="opacity:.6;">'+_uiT('Todavía no hay ninguna. Se hará sola en cuanto lleves un rato usando la app.')+'</span>'
+			      +'<div style="margin-top:8px;"><button onclick="ixCopiaAhoraMismo()" style="padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--glass-border,rgba(255,255,255,.15));background:rgba(255,255,255,.06);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+_uiT('Hacer una ahora')+'</button></div>';
+			    return;
+			  }
+			  cont.innerHTML = lista.map(c=>{
+			    const f=new Date(c.id);
+			    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);">'
+			      +'<div style="min-width:0;"><div style="color:var(--txt);font-weight:700;font-size:11.5px;">'+escapeHtml(f.toLocaleString())+'</div>'
+			      +'<div style="font-size:10px;opacity:.55;">'+c.claves+' '+_uiT('datos')+' · '+_ixCopiaTam(c.bytes)+'</div></div>'
+			      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+			      +'<button onclick="ixCopiaRestaurar('+c.id+')" style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid rgba(10,132,255,.4);background:rgba(10,132,255,.15);color:#0a84ff;font-size:10.5px;font-weight:700;cursor:pointer;">'+_uiT('Volver a esta')+'</button>'
+			      +'<button onclick="ixCopiaBorrar('+c.id+')" title="'+_uiT('Borrar esta copia')+'" style="padding:6px 9px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--txt-45);font-size:10.5px;cursor:pointer;">✕</button>'
+			      +'</div></div>';
+			  }).join('')
+			  + '<div style="margin-top:8px;"><button onclick="ixCopiaAhoraMismo()" style="padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--glass-border,rgba(255,255,255,.15));background:rgba(255,255,255,.06);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+_uiT('Hacer una ahora')+'</button></div>';
+			}
+			async function ixCopiaAhoraMismo(){
+			  const r=await ixCopiaHacer('manual');
+			  if(!r.ok) alert(_uiT('No se pudo guardar la copia')+': '+r.error);
+			  else if(r.saltada) alert(_uiT('No ha cambiado nada desde la última copia.'));
+			  ixCopiaPintarLista();
+			}
+			// El boton rojo hace una copia ANTES de borrar. Es el unico sitio de la
+			// app donde un clic se lleva todo por delante.
+			async function ixBorrarTodo(){
+			  if(!confirm(_uiT('¿Borrar TODOS los datos guardados?'))) return;
+			  const r=await ixCopiaHacer('antes-de-borrar');
+			  localStorage.clear();
+			  alert(r.ok ? _uiT('Datos borrados. Se guardó una copia por si acaso: está en Respaldo → Copias automáticas.')
+			             : _uiT('Datos borrados'));
+			  cloudTab('backup');
 			}
 			function exportAllData(){
 			  const data={};
 			  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);data[k]=localStorage.getItem(k);}
 			  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-			  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mi_dashboard_datos.json';a.click();
+			  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+			  a.download='ixclock_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+			  setTimeout(()=>URL.revokeObjectURL(a.href), 30000);
+			  // Se apunta la fecha: es lo que mira el aviso de «hace mucho que no
+			  // bajas una copia».
+			  try{ localStorage.setItem('ix_copia_descarga', String(Date.now())); }catch(e){}
 			}
 			function importAllData(event){
 			  const file=event.target.files[0];if(!file)return;
@@ -19527,13 +19654,151 @@
 			  reader.onload=e=>{
 			    try{
 			      const data=JSON.parse(e.target.result);
-			      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k,v));
+			      if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('no es un respaldo');
+			      // Copia de lo de AHORA antes de mezclar: si el archivo era el
+			      // que no era, todavia se puede volver.
+			      try{ ixCopiaHacer('antes-de-importar'); }catch(e2){}
+			      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)));
 			      alert(_uiT('✅ Datos restaurados correctamente. Recargando…'));
 			      setTimeout(()=>location.reload(),500);
 			    }catch(err){alert(_uiT('❌ Error: archivo inválido'));}
 			  };
 			  reader.readAsText(file);
 			}
+
+			/* ===================== COPIA DE SEGURIDAD AUTOMÁTICA =====================
+			   Todo lo del usuario (alarmas, notas, favoritas, canciones de IXBand,
+			   fondos propios…) vive en localStorage, y localStorage se borra
+			   entero con un clic: el botón «Borrar todos los datos» de esta misma
+			   pantalla, o «borrar datos del navegador».
+
+			   La copia automática se guarda en IndexedDB, que es otro almacén: NO
+			   se lo lleva un localStorage.clear(), ni un fallo de la app que deje
+			   una clave hecha un desastre. Lo que sí se lo lleva es «borrar datos
+			   del sitio», porque eso borra los dos. Por eso, además, se avisa
+			   cuando hace mucho que no se baja el archivo: ese es el único
+			   respaldo que sobrevive a perder el móvil, y ese no se puede hacer
+			   solo (el navegador exige que la descarga la pidas tú).           */
+			const IX_COPIA_DB='ixclock_copias', IX_COPIA_ST='copias';
+			const IX_COPIA_CADA=3*86400000;      // una copia cada 3 dias
+			const IX_COPIA_MAX=3;                // se guardan las 3 ultimas
+			const IX_COPIA_AVISA=30*86400000;    // avisa si hace 30 dias que no bajas el archivo
+			const IX_COPIA_TOPE=8*1024*1024;     // por encima de esto no se guarda
+
+			function _ixCopiaDB(){
+			  return new Promise((res,rej)=>{
+			    let req;
+			    try{ req=indexedDB.open(IX_COPIA_DB,1); }catch(e){ return rej(e); }
+			    req.onupgradeneeded=()=>{
+			      const db=req.result;
+			      if(!db.objectStoreNames.contains(IX_COPIA_ST)) db.createObjectStore(IX_COPIA_ST,{keyPath:'id'});
+			    };
+			    req.onsuccess=()=>res(req.result);
+			    req.onerror=()=>rej(req.error);
+			    req.onblocked=()=>rej(new Error('bloqueada'));
+			  });
+			}
+			function _ixCopiaTx(modo, fn){
+			  return _ixCopiaDB().then(db=>new Promise((res,rej)=>{
+			    const tx=db.transaction(IX_COPIA_ST, modo);
+			    const r=fn(tx.objectStore(IX_COPIA_ST));
+			    tx.oncomplete=()=>{ db.close(); res(r&&r.result!==undefined?r.result:r); };
+			    tx.onerror=()=>{ db.close(); rej(tx.error); };
+			    tx.onabort=()=>{ db.close(); rej(tx.error||new Error('abortada')); };
+			  }));
+			}
+			// Todo lo que hay ahora mismo, tal cual, sin elegir por nosotros: una
+			// copia a la que le falten los fondos no es una copia.
+			function _ixCopiaAhora(){
+			  const datos={};
+			  for(let i=0;i<localStorage.length;i++){
+			    const k=localStorage.key(i);
+			    if(k) datos[k]=localStorage.getItem(k);
+			  }
+			  return datos;
+			}
+			// Huella barata para no guardar tres copias idénticas seguidas.
+			function _ixCopiaHuella(txt){
+			  let h=5381;
+			  for(let i=0;i<txt.length;i++) h=((h*33)^txt.charCodeAt(i))>>>0;
+			  return txt.length+'-'+h.toString(36);
+			}
+			async function ixCopiaLista(){
+			  try{
+			    const todo=await _ixCopiaTx('readonly', st=>st.getAll());
+			    const arr=(todo&&todo.result)||todo||[];
+			    return arr.slice().sort((a,b)=>b.id-a.id);
+			  }catch(e){ return []; }
+			}
+			async function ixCopiaHacer(motivo){
+			  let datos, txt;
+			  try{
+			    datos=_ixCopiaAhora();
+			    txt=JSON.stringify(datos);
+			  }catch(e){ return {ok:false, error:'no se pudo leer'}; }
+			  if(txt.length>IX_COPIA_TOPE) return {ok:false, error:'demasiado grande'};
+			  const huella=_ixCopiaHuella(txt);
+			  const previas=await ixCopiaLista();
+			  if(previas[0] && previas[0].huella===huella)
+			    return {ok:true, saltada:true, id:previas[0].id};
+			  const reg={id:Date.now(), motivo:motivo||'auto', huella:huella,
+			             claves:Object.keys(datos).length, bytes:txt.length, datos:txt};
+			  try{
+			    await _ixCopiaTx('readwrite', st=>{
+			      st.put(reg);
+			      previas.slice(IX_COPIA_MAX-1).forEach(v=>st.delete(v.id));
+			    });
+			  }catch(e){ return {ok:false, error:(e&&e.name)||'sin sitio'}; }
+			  return {ok:true, id:reg.id, bytes:reg.bytes, claves:reg.claves};
+			}
+			async function ixCopiaRestaurar(id){
+			  const lista=await ixCopiaLista();
+			  const c=lista.find(x=>String(x.id)===String(id));
+			  if(!c){ alert(_uiT('Esa copia ya no está.')); return false; }
+			  let datos;
+			  try{ datos=JSON.parse(c.datos); }catch(e){ alert(_uiT('Esa copia está dañada.')); return false; }
+			  const cuando=new Date(c.id).toLocaleString();
+			  if(!confirm(_uiT('Volver a la copia del')+' '+cuando+'?\n'+
+			              _uiT('Lo de ahora se reemplaza por lo de esa fecha.'))) return false;
+			  // Antes de pisar nada, una copia de lo de AHORA: si te equivocas de
+			  // copia, todavia puedes volver.
+			  await ixCopiaHacer('antes-de-restaurar');
+			  try{
+			    localStorage.clear();
+			    Object.entries(datos).forEach(([k,v])=>localStorage.setItem(k,v));
+			  }catch(e){ alert(_uiT('No se pudo restaurar: no hay sitio.')); return false; }
+			  alert(_uiT('✅ Datos restaurados correctamente. Recargando…'));
+			  setTimeout(()=>location.reload(), 500);
+			  return true;
+			}
+			async function ixCopiaBorrar(id){
+			  try{ await _ixCopiaTx('readwrite', st=>st.delete(Number(id))); }catch(e){}
+			  if(typeof cloudTab==='function') cloudTab('backup');
+			}
+			// Dias desde la ultima descarga del archivo. null = nunca se ha bajado.
+			function ixCopiaDiasDescarga(){
+			  const t=parseInt(localStorage.getItem('ix_copia_descarga')||'0',10);
+			  if(!t) return null;
+			  return Math.floor((Date.now()-t)/86400000);
+			}
+			function _ixCopiaTam(b){
+			  return b>=1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB';
+			}
+			// Arranque: si toca, se hace una copia. Con retraso, para no competir
+			// con lo que se esta cargando en pantalla.
+			function ixCopiaArrancar(){
+			  if(typeof indexedDB==='undefined' || !indexedDB) return;
+			  setTimeout(async()=>{
+			    try{
+			      const lista=await ixCopiaLista();
+			      const ultima=lista[0] ? lista[0].id : 0;
+			      if(Date.now()-ultima >= IX_COPIA_CADA) await ixCopiaHacer('auto');
+			    }catch(e){}
+			  }, 8000);
+			}
+			if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ixCopiaArrancar);
+			else ixCopiaArrancar();
+
 			function refreshCloudPanel(){cloudTab('data');}
 
 			/* ═══════════════════════════════════════════
@@ -20542,6 +20807,125 @@
 			function dtCloseDetail(){
 			  document.getElementById('dt-detail').classList.remove('open');
 			}
+
+			/* ===================== FRANJA DE RESUMEN =====================
+			   Clima, siguiente alarma, próxima festividad y fase lunar en la
+			   misma línea, encima del reloj. Los cuatro datos ya existían pero
+			   había que ir a buscarlos a cuatro sitios distintos.
+			   No se recalcula nada: se lee de donde ya vive cada dato
+			   (_lastWeatherRaw, alarms, obtenerFeriados) para que la franja no
+			   pueda contradecir al panel que tiene al lado. */
+			function _frClima(){
+			  if(typeof _lastWeatherRaw!=='object' || !_lastWeatherRaw || !_lastWeatherRaw.cur) return null;
+			  const c=_lastWeatherRaw.cur;
+			  if(typeof c.temperature_2m!=='number') return null;
+			  const t=Math.round(c.temperature_2m);
+			  return { emoji: ICA_CLIMA_EMOJI[c.weathercode] || '🌡️',
+			           texto: (_romanMode?toRoman(t):t)+'°' };
+			}
+			// La alarma habilitada que suena antes. Si la hora de hoy ya pasó,
+			// cuenta para mañana: es lo que va a pasar de verdad.
+			function _frAlarma(){
+			  if(typeof alarms==='undefined' || !Array.isArray(alarms)) return null;
+			  const now=new Date(), ahora=now.getHours()*60+now.getMinutes();
+			  let mejor=null, faltan=Infinity;
+			  alarms.forEach(a=>{
+			    if(!a || !a.enabled) return;
+			    if(typeof a.hour!=='number' || typeof a.minute!=='number') return;
+			    let en=(a.hour*60+a.minute)-ahora;
+			    if(en<0) en+=1440;
+			    if(en<faltan){ faltan=en; mejor=a; }
+			  });
+			  if(!mejor) return null;
+			  let cuanto;
+			  if(faltan===0) cuanto=_uiT('ahora');
+			  else if(faltan<60) cuanto=_uiT('en')+' '+faltan+' min';
+			  else cuanto=_uiT('en')+' '+Math.round(faltan/60)+' h';
+			  return { emoji:'⏰', texto: fmtAMPM(mejor.hour, mejor.minute)+' · '+cuanto };
+			}
+			// La festividad más cercana, de la misma tabla que pinta el panel.
+			function _frFest(){
+			  if(typeof obtenerFeriados!=='function') return null;
+			  const now=new Date();
+			  const hoy0=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			  let mejor=null, dias=Infinity;
+			  obtenerFeriados(now.getFullYear()).concat(obtenerFeriados(now.getFullYear()+1)).forEach(f=>{
+			    if(!f || isNaN(f.date)) return;
+			    const d=Math.round((f.date-hoy0)/86400000);
+			    if(d<0 || d>366) return;
+			    if(d<dias){ dias=d; mejor=f; }
+			  });
+			  if(!mejor) return null;
+			  const cuando = dias===0 ? _uiT('¡Hoy!')
+			               : dias===1 ? _uiT('Mañana')
+			               : dias+' '+_uiT('días');
+			  // Se recorta el NOMBRE, no la ficha entera: recortando por CSS lo
+			  // primero que se pierde es «· 2 días», que es justo el dato util.
+			  const lim = (typeof window!=='undefined' && window.innerWidth<520) ? 16 : 24;
+			  let nom=_uiT(mejor.name);
+			  if(nom.length>lim) nom=nom.slice(0,lim-1).replace(/[\s·,.]+$/,'')+'…';
+			  return { emoji: mejor.emoji, texto: nom+' · '+cuando, hoy: dias===0,
+			           titulo: _uiT(mejor.name)+' · '+cuando };
+			}
+			// Lleva a donde vive el dato entero. Si el panel está oculto por
+			// Visibilidad no se hace nada, en vez de desplazar a la nada.
+			function ixFranjaIr(que){
+			  const sel = que==='clima' ? '[data-panel="clima"]' : '[data-panel="festividades"]';
+			  const el = document.querySelector(sel);
+			  if(!el || getComputedStyle(el).display==='none') return;
+			  try{ el.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){ el.scrollIntoView(); }
+			  el.style.transition='box-shadow .35s';
+			  el.style.boxShadow='0 0 0 2px var(--accent-color, #0a84ff)';
+			  setTimeout(()=>{ el.style.boxShadow=''; }, 1200);
+			}
+			function _frPinta(id, dato, ir){
+			  const el=document.getElementById(id);
+			  if(!el) return;
+			  // Ocultar la ficha desde Visibilidad manda: si no, el siguiente
+			  // repintado (cada minuto) la volveria a sacar.
+			  const permitida = (function(){ try{ return _visState[id]!==false; }catch(e){ return true; } })();
+			  if(!dato || !permitida){ el.style.display='none'; el.innerHTML=''; el.removeAttribute('data-ir'); return; }
+			  el.style.display='';
+			  el.innerHTML='<span class="ix-fr-e">'+escapeHtml(dato.emoji)+'</span>'
+			              +'<span class="ix-fr-t">'+escapeHtml(dato.texto)+'</span>';
+			  el.title=dato.titulo || dato.texto;   // el globito, sin recortar
+			  if(ir){ el.setAttribute('data-ir', ir); el.onclick=()=>ixFranjaIr(ir); }
+			}
+			function ixPintarFranja(){
+			  try{
+			    _frPinta('fr-clima',  _frClima(),  'clima');
+			    const al=_frAlarma();
+			    _frPinta('fr-alarma', al, null);
+			    const elA=document.getElementById('fr-alarma');
+			    if(elA && al){ elA.setAttribute('data-ir','alarma'); elA.onclick=()=>{ try{ toggleAlarmPanel(); }catch(e){} }; }
+			    const fe=_frFest();
+			    _frPinta('fr-fest', fe, 'fest');
+			    const elF=document.getElementById('fr-fest');
+			    if(elF && fe && fe.hoy) elF.style.color='#ffd60a'; else if(elF) elF.style.color='';
+			  }catch(e){}
+			}
+			// Un minuto basta: el dato más rápido de los cuatro es «en N min».
+			setInterval(ixPintarFranja, 60000);
+			setTimeout(ixPintarFranja, 1500);
+			// Al girar el movil cambia cuanto cabe, asi que se vuelve a medir.
+			let _frResize=null;
+			window.addEventListener('resize', ()=>{ clearTimeout(_frResize); _frResize=setTimeout(ixPintarFranja, 200); });
+			// Poner o quitar una alarma tiene que verse ya, no al minuto.
+			if(typeof renderAlarms==='function'){
+			  const _frRA=renderAlarms;
+			  window.renderAlarms=function(){ const r=_frRA.apply(this, arguments); ixPintarFranja(); return r; };
+			}
+			// El clima tarda en llegar (geolocalización + red): en cuanto llega,
+			// la franja se entera sin esperar al siguiente minuto.
+			if(typeof fetchWeatherData==='function'){
+			  const _frFW=fetchWeatherData;
+			  window.fetchWeatherData=async function(){
+			    const r=await _frFW.apply(this, arguments);
+			    ixPintarFranja();
+			    return r;
+			  };
+			}
+
 			dtInit();
 
 			</script>
@@ -20607,6 +20991,230 @@
 			// Cada app tiene su enlace (?app=id). Si entras por ese enlace, la app se
 			// abre sola. Y cada una puede guardarse en el dispositivo para funcionar
 			// sin conexión (assets = lo que necesita bajarse de fuera).
+
+			/* ===================== MODO ENFOQUE (pomodoro) =====================
+			   25 de trabajo, 5 de descanso, y uno largo cada 4. El reloj a
+			   pantalla completa y, si quieres, un sonido de ambiente de los que
+			   ya trae la radio.
+
+			   La cuenta NO se lleva restando un segundo por tic: los navegadores
+			   frenan los temporizadores de las pestañas que no estás mirando, y
+			   justo eso es lo que pasa en un pomodoro —te vas a trabajar a otra
+			   pestaña—, así que 25 minutos acabarian siendo 40. Se guarda la HORA
+			   de fin y cada tic se mira el reloj.                             */
+			const IX_ENF_PRESETS=[
+			  {id:'25', n:'25 / 5',  trabajo:25, corto:5,  largo:15, cada:4},
+			  {id:'50', n:'50 / 10', trabajo:50, corto:10, largo:20, cada:2},
+			  {id:'15', n:'15 / 3',  trabajo:15, corto:3,  largo:10, cada:4},
+			];
+			const IX_ENF_SONIDOS=[
+			  {id:'',            n:'Sin sonido', e:'🔇'},
+			  {id:'white_noise', n:'Ruido blanco', e:'⬜'},
+			  {id:'cafe',        n:'Café',         e:'☕'},
+			  {id:'rain',        n:'Lluvia',       e:'🌧️'},
+			  {id:'forest',      n:'Bosque',       e:'🌲'},
+			  {id:'piano_soft',  n:'Piano suave',  e:'🎹'},
+			];
+			const IX_ENF_CLAVE='ix_enfoque_v1';
+			let _enfCfg={preset:'25', sonido:'', hechos:0, dia:''};
+			try{ Object.assign(_enfCfg, JSON.parse(localStorage.getItem(IX_ENF_CLAVE)||'{}')||{}); }catch(e){}
+			let _enfFase='trabajo', _enfFin=0, _enfQueda=0, _enfTic=null, _enfPausado=false, _enfWake=null;
+
+			function _enfHoy(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+			function _enfGuardar(){
+			  try{ localStorage.setItem(IX_ENF_CLAVE, JSON.stringify(_enfCfg)); }catch(e){}
+			}
+			function _enfPreset(){ return IX_ENF_PRESETS.find(p=>p.id===_enfCfg.preset) || IX_ENF_PRESETS[0]; }
+			function _enfMin(fase){
+			  const p=_enfPreset();
+			  return fase==='trabajo' ? p.trabajo : fase==='largo' ? p.largo : p.corto;
+			}
+			function _enfMMSS(seg){
+			  seg=Math.max(0, Math.ceil(seg - 0.0001));
+			  const m=Math.floor(seg/60), s=seg%60;
+			  return m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
+			}
+			// El unico sitio donde se decide cuanto queda: la hora de fin menos la de
+			// ahora. Asi da igual que el navegador frene los temporizadores.
+			function _enfRestante(){
+			  if(_enfPausado) return _enfQueda;
+			  return Math.max(0, (_enfFin - Date.now())/1000);
+			}
+			function ixEnfoqueAbierto(){
+			  const ov=document.getElementById('ix-enfoque');
+			  return !!ov && ov.style.display!=='none';
+			}
+			function _enfSonidoOn(){
+			  if(!_enfCfg.sonido) return;
+			  try{ setStation(_enfCfg.sonido); }catch(e){}
+			}
+			function _enfSonidoOff(){
+			  try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
+			}
+			// Un toque corto al cambiar de fase: el tono de alarma suena en bucle,
+			// asi que se para solo a los dos segundos.
+			function _enfAviso(){
+			  try{
+			    const parar=playAlarmTone('campana');
+			    setTimeout(()=>{ try{ parar&&parar(); }catch(e){} }, 2000);
+			  }catch(e){}
+			}
+			function _enfEmpezarFase(fase){
+			  _enfFase=fase;
+			  _enfPausado=false;
+			  _enfQueda=_enfMin(fase)*60;
+			  _enfFin=Date.now()+_enfQueda*1000;
+			  // El ambiente acompaña al trabajo; en el descanso, silencio.
+			  if(fase==='trabajo') _enfSonidoOn(); else _enfSonidoOff();
+			  ixEnfoquePintar();
+			}
+			function _enfSiguienteFase(){
+			  if(_enfFase==='trabajo'){
+			    if(_enfCfg.dia!==_enfHoy()){ _enfCfg.dia=_enfHoy(); _enfCfg.hechos=0; }
+			    _enfCfg.hechos=(_enfCfg.hechos||0)+1;
+			    _enfGuardar();
+			    const p=_enfPreset();
+			    _enfEmpezarFase(_enfCfg.hechos % p.cada === 0 ? 'largo' : 'corto');
+			  } else {
+			    _enfEmpezarFase('trabajo');
+			  }
+			}
+			function _enfBucle(){
+			  if(!ixEnfoqueAbierto()) return;
+			  const q=_enfRestante();
+			  if(!_enfPausado && q<=0){ _enfAviso(); _enfSiguienteFase(); return; }
+			  ixEnfoquePintar();
+			}
+			async function _enfWakeOn(){
+			  try{ if(navigator.wakeLock) _enfWake=await navigator.wakeLock.request('screen'); }catch(e){ _enfWake=null; }
+			}
+			function _enfWakeOff(){
+			  try{ if(_enfWake){ _enfWake.release(); _enfWake=null; } }catch(e){}
+			}
+			function ixEnfoquePausar(){
+			  if(_enfPausado){
+			    _enfPausado=false;
+			    _enfFin=Date.now()+_enfQueda*1000;
+			    if(_enfFase==='trabajo') _enfSonidoOn();
+			  } else {
+			    _enfQueda=_enfRestante();
+			    _enfPausado=true;
+			    _enfSonidoOff();
+			  }
+			  ixEnfoquePintar();
+			}
+			function ixEnfoqueSaltar(){ _enfAviso(); _enfSiguienteFase(); }
+			function _enfRehacer(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(ov) ov.innerHTML='';
+			  ixEnfoquePintar();
+			}
+			function ixEnfoquePreset(id){
+			  _enfCfg.preset=id; _enfGuardar();
+			  _enfEmpezarFase(_enfFase);
+			  _enfRehacer();
+			}
+			function ixEnfoqueSonido(id){
+			  _enfCfg.sonido=id; _enfGuardar();
+			  if(!_enfPausado && _enfFase==='trabajo'){ if(id) _enfSonidoOn(); else _enfSonidoOff(); }
+			  else _enfSonidoOff();
+			  _enfRehacer();
+			}
+			let _enfTitulo='';
+			function ixEnfoqueSalir(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(ov) ov.style.display='none';
+			  clearInterval(_enfTic); _enfTic=null;
+			  _enfSonidoOff();
+			  _enfWakeOff();
+			  if(_enfTitulo) document.title=_enfTitulo;   // la pestana vuelve a llamarse como antes
+			}
+			function ixEnfoquePintar(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(!ov) return;
+			  const p=_enfPreset();
+			  const q=_enfRestante();
+			  const total=_enfMin(_enfFase)*60;
+			  const hechos=(_enfCfg.dia===_enfHoy() ? (_enfCfg.hechos||0) : 0);
+			  const enCiclo=p.cada ? (hechos % p.cada) : 0;
+			  const titulo=_enfFase==='trabajo' ? _uiT('Enfoque')
+			             : _enfFase==='largo'   ? _uiT('Descanso largo') : _uiT('Descanso');
+			  const color=_enfFase==='trabajo' ? '#ff453a' : '#30d158';
+			  document.title=_enfMMSS(q)+' · '+titulo;
+			  const rel=document.getElementById('enf-tiempo');
+			  if(rel){
+			    // Ya existe: se cambia solo lo que cambia, para no rehacer el DOM
+			    // cada segundo (y no perder el foco de los botones).
+			    rel.textContent=_enfMMSS(q);
+			    const t=document.getElementById('enf-fase'); if(t){ t.textContent=titulo; t.style.color=color; }
+			    const b=document.getElementById('enf-barra'); if(b) b.style.width=(total? (100-100*q/total):0).toFixed(1)+'%';
+			    if(b) b.style.background=color;
+			    const pa=document.getElementById('enf-pausa'); if(pa) pa.textContent=_enfPausado?('▶ '+_uiT('Reanudar')):('⏸ '+_uiT('Pausar'));
+			    const pu=document.getElementById('enf-puntos');
+			    if(pu) pu.innerHTML=_enfPuntos(p, enCiclo);
+			    const hs=document.getElementById('enf-hechos');
+			    if(hs) hs.textContent=hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy');
+			    return;
+			  }
+			  ov.innerHTML=
+			     '<button onclick="ixEnfoqueSalir()" title="'+_uiT('Salir')+'" style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:16px;cursor:pointer;">✕</button>'
+			    +'<div style="display:flex;flex-direction:column;align-items:center;gap:18px;width:min(560px,92vw);">'
+			    +  '<div id="enf-fase" style="font-size:12px;font-weight:800;letter-spacing:.34em;text-transform:uppercase;color:'+color+';">'+escapeHtml(titulo)+'</div>'
+			    +  '<div id="enf-tiempo" style="font-size:clamp(64px,18vw,150px);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em;">'+_enfMMSS(q)+'</div>'
+			    +  '<div style="width:100%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div id="enf-barra" style="height:100%;width:0;background:'+color+';transition:width .9s linear;"></div></div>'
+			    +  '<div id="enf-puntos" style="display:flex;gap:8px;">'+_enfPuntos(p, enCiclo)+'</div>'
+			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy')+'</div>'
+			    +  '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">'
+			    +    '<button id="enf-pausa" onclick="ixEnfoquePausar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:none;background:var(--txt);color:#000;font-size:13px;font-weight:800;cursor:pointer;">⏸ '+_uiT('Pausar')+'</button>'
+			    +    '<button onclick="ixEnfoqueSaltar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⏭ '+_uiT('Saltar')+'</button>'
+			    +    '<button onclick="toggleFullscreen()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⛛ '+_uiT('Pantalla completa')+'</button>'
+			    +  '</div>'
+			    +  '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px;">'
+			    +    IX_ENF_PRESETS.map(x=>'<button onclick="ixEnfoquePreset(\''+x.id+'\')" style="padding:7px 13px;border-radius:var(--r-full,999px);border:1px solid '+(x.id===_enfCfg.preset?'rgba(255,255,255,.5)':'rgba(255,255,255,.14)')+';background:'+(x.id===_enfCfg.preset?'rgba(255,255,255,.16)':'transparent')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+escapeHtml(x.n)+'</button>').join('')
+			    +  '</div>'
+			    +  '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">'
+			    +    IX_ENF_SONIDOS.map(x=>'<button onclick="ixEnfoqueSonido(\''+x.id+'\')" title="'+escapeHtml(x.n)+'" style="padding:7px 11px;border-radius:var(--r-full,999px);border:1px solid '+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.5)':'rgba(255,255,255,.14)')+';background:'+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.16)':'transparent')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+x.e+' '+escapeHtml(x.n)+'</button>').join('')
+			    +  '</div>'
+			    +'</div>';
+			}
+			function _enfPuntos(p, enCiclo){
+			  let h='';
+			  for(let i=0;i<p.cada;i++){
+			    const lleno = i<enCiclo;
+			    h+='<span style="width:9px;height:9px;border-radius:50%;background:'+(lleno?'var(--txt)':'rgba(255,255,255,.22)')+';"></span>';
+			  }
+			  return h;
+			}
+			function ixAbrirEnfoque(){
+			  let ov=document.getElementById('ix-enfoque');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-enfoque';
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482300;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(0,0,0,.86);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);color:var(--txt);';
+			    document.body.appendChild(ov);
+			  }
+			  ov.innerHTML='';           // se vuelve a construir entero al abrir
+			  ov.style.display='flex';
+			  if(!_enfTitulo) _enfTitulo=document.title;
+			  if(_enfCfg.dia!==_enfHoy()){ _enfCfg.dia=_enfHoy(); _enfCfg.hechos=0; _enfGuardar(); }
+			  _enfEmpezarFase('trabajo');
+			  clearInterval(_enfTic);
+			  _enfTic=setInterval(_enfBucle, 500);
+			  _enfWakeOn();
+			}
+			// Esc sale del modo enfoque, no de la ventana que hubiera debajo. En
+			// captura, para llegar antes que el atajo general.
+			document.addEventListener('keydown', function(e){
+			  if(e.key!=='Escape' || !ixEnfoqueAbierto()) return;
+			  e.stopPropagation();
+			  ixEnfoqueSalir();
+			}, true);
+			// Al volver a la pestaña, lo que se ve tiene que ser la hora buena ya,
+			// sin esperar medio segundo al siguiente tic.
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden && ixEnfoqueAbierto()) _enfBucle();
+			});
+
 			const IX_APPS = [
 			  { id:'ixband',   n:'IXBand',        icon:'🎸', d:'Estudio de música con instrumentos del mundo', open:'openGarageBand',
 			    assets:[] },
@@ -20623,7 +21231,8 @@
 			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
 			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] },
-			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] }
+			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
+			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] }
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [
