@@ -795,6 +795,16 @@
 		#siri-fs-hint{position:absolute;bottom:8%;color:rgba(255,255,255,.4);font-size:12px;}
 	</style>
 	<div id="top-dock">
+		<!-- Todas las apps y buscar: los dos SIN .dock-secondary, porque en modo
+		     compacto se ocultan 10 de los 17 botones y estos dos son justo los
+		     que dan acceso a lo que se ha ocultado. -->
+		<button
+			class="dock-btn"
+			onclick="ixAbrirLanzador()"
+			title="Todas las apps"
+			aria-label="Todas las apps"
+			style="background:linear-gradient(135deg,#3a3a3c,#1c1c1e);box-shadow:0 3px 12px rgba(0,0,0,.4);color:#fff;font-size:18px;"
+		>⊞</button>
 		<!-- Buscar en toda la app (sin .dock-secondary: no se oculta en modo compacto) -->
 		<button
 			class="dock-btn"
@@ -5356,6 +5366,19 @@
 			  .btn-settings{width:42px;height:42px;}
 			}
 			/* Pantallas MUY pequeñas (relojes, cosas mini < 380px) */
+			/* El engranaje de Configuracion esta fijo en la esquina (22px + 46 de
+			   ancho) y con z-index 9700, o sea por encima de la barra. En pantallas
+			   estrechas la barra llega hasta esa esquina y el engranaje queda ENCIMA
+			   de su primer boton: los toques se los comia el y ese boton no se podia
+			   pulsar. Medido: se pisaban a 320, 390 y 430px; a partir de 768 no. */
+			@media (max-width:640px){
+			  /* No basta con dar relleno: la barra se desplaza en horizontal y el
+			     relleno no reserva sitio al lado que esta fuera de vista. Lo que
+			     funciona es que la barra NO llegue a las esquinas: se estrecha para
+			     quedar centrada entre los dos botones fijos, que miden 46px cada
+			     uno a 22px del borde. Sigue desplazandose, solo que en menos ancho. */
+			  #top-dock{max-width:calc(100vw - 150px) !important;}
+			}
 			@media (max-width:380px){
 			  :root{--clock-size:3.4rem;}
 			  #top-dock{gap:4px !important;overflow-x:auto;max-width:100vw;}
@@ -14657,6 +14680,7 @@
 			        <div style="font-size:40px;margin-bottom:10px;">🕐</div>
 			        <div style="font-size:15px;font-weight:800;margin-bottom:4px;">Sin apps recientes</div>
 			        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px;">Todavía no abriste ninguna app en esta sesión.</div>
+			        <button onclick="closeAppSwitcher();ixAbrirLanzador();" style="padding:10px 24px;border-radius:999px;background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-right:8px;">⊞ Ver todas las apps</button>
 			        <button onclick="closeAppSwitcher()" style="padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Cerrar</button>
 			        <div>${_ixBotonCerrarTodo()}</div>
 			      </div>`;
@@ -14843,6 +14867,8 @@
 			    '🎚️ Exportar también en WAV, sin comprimir, para abrir tu canción en un editor de audio de verdad. Pesa más, pero no pierde nada',
 			    '👁️ SE LEE MEJOR: los textos pequeños de toda la app estaban tan apagados que casi no se veían (algunos al 28% sobre fondo oscuro). Ahora tienen contraste suficiente sin cambiar el diseño',
 			    '♿ Y 56 botones que solo tenían un icono ahora dicen lo que hacen, para quien use la app con un lector de pantalla',
+			    '⊞ TODAS LAS APPS EN UN SITIO: en el móvil la barra de arriba escondía 10 de sus 18 botones, así que si entrabas por primera vez no había forma de encontrar IXBand, Mapas o Notas. Ahora el botón ⊞ abre una rejilla con las 13 apps, con su nombre y para qué sirve cada una',
+			    '🛠️ Y arreglado un fallo que llevaba tiempo ahí: en el móvil el engranaje de Configuración quedaba justo ENCIMA del primer botón de la barra y ese botón no se podía pulsar; los toques se los quedaba el engranaje',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -20621,6 +20647,54 @@
 			  orden.forEach(function(g){ out=out.concat(cajas[g]); });
 			  return out.slice(0,40);
 			}
+			/* ── TODAS LAS APPS ───────────────────────────────────────────────
+			   En un movil la barra de arriba solo enseña 7 de sus 17 botones, y
+			   el conmutador solo lista lo que ya has abierto. Con eso, alguien
+			   que entra por primera vez no puede llegar a IXBand, Mapas, Notas
+			   ni a la mitad de la app: existen, pero no hay forma de verlas.
+			   Esto es la rejilla con todas, sin tener que saber que estan.    */
+			function ixAbrirLanzador(){
+			  let ov=document.getElementById('ix-lanzador');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-lanzador';
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147481500;display:flex;flex-direction:column;background:rgba(0,0,0,.6);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);padding:6vh 16px 16px;overflow-y:auto;';
+			    ov.addEventListener('click',function(e){ if(e.target===ov) ixCerrarLanzador(); });
+			    document.body.appendChild(ov);
+			  }
+			  let tarjetas='';
+			  IX_APPS.forEach(function(a){
+			    tarjetas+='<button onclick="ixLanzarApp(\''+a.id+'\')" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-lg,16px);padding:16px 10px;cursor:pointer;color:#fff;text-align:center;">'
+			      +'<span style="font-size:34px;line-height:1;">'+escapeHtml(a.icon)+'</span>'
+			      +'<span style="font-size:12px;font-weight:700;">'+escapeHtml(a.n)+'</span>'
+			      +'<span style="font-size:9px;opacity:.55;line-height:1.35;">'+escapeHtml(a.d)+'</span>'
+			      +'</button>';
+			  });
+			  ov.innerHTML=
+			     '<div style="width:min(720px,100%);margin:0 auto;">'
+			    +  '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'
+			    +    '<div><div style="font-size:20px;font-weight:800;color:#fff;">Todas las apps</div>'
+			    +    '<div style="font-size:11px;opacity:.55;color:#fff;">'+IX_APPS.length+' aplicaciones dentro de IXClocK</div></div>'
+			    +    '<button aria-label="Cerrar" onclick="ixCerrarLanzador()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);border:none;color:#fff;cursor:pointer;font-size:15px;flex-shrink:0;">✕</button>'
+			    +  '</div>'
+			    +  '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;">'+tarjetas+'</div>'
+			    +  '<div style="margin-top:18px;text-align:center;font-size:11px;opacity:.55;color:#fff;">Cada app tiene su propio enlace y se puede guardar para usar sin internet, en Configuración → Más.</div>'
+			    +'</div>';
+			  ov.style.display='flex';
+			}
+			function ixCerrarLanzador(){
+			  const ov=document.getElementById('ix-lanzador');
+			  if(ov) ov.style.display='none';
+			}
+			function ixLanzarApp(id){
+			  const a=IX_APPS.find(function(x){ return x.id===id; });
+			  ixCerrarLanzador();
+			  if(!a) return;
+			  setTimeout(function(){
+			    const f=window[a.open];
+			    if(typeof f==='function'){ try{ f(); }catch(e){} }
+			  },60);
+			}
 			function ixAbrirBusqueda(){
 			  let ov=document.getElementById('ix-busqueda');
 			  if(!ov){
@@ -20705,6 +20779,7 @@
 			  {t:'Ctrl / ⌘ + ,',       d:'Abrir Configuración'},
 			  {t:'Esc',                d:'Cerrar la ventana de encima'},
 			  {t:'Ctrl / ⌘ + ⇧ + X',   d:'Cerrar TODAS las ventanas'},
+			  {t:'Ctrl / ⌘ + ⇧ + A',   d:'Ver todas las apps'},
 			  {t:'Ctrl / ⌘ + /',       d:'Ver esta lista de atajos'}
 			];
 			// Escribiendo en un campo, las letras son texto, no atajos.
@@ -20766,6 +20841,7 @@
 			  }
 			  if(mod && e.key===','){ e.preventDefault(); try{ if(!isSidebarVisible) toggleSidebar(); }catch(x){} return; }
 			  if(mod && e.key==='/'){ e.preventDefault(); ixVerAtajos(); return; }
+			  if(mod && e.shiftKey && (e.key||'').toLowerCase()==='a'){ e.preventDefault(); ixAbrirLanzador(); return; }
 			  // X y no W: Ctrl+Mayus+W cierra la ventana del navegador y ninguna
 			  // pagina puede impedirlo, asi que el atajo nunca llegaria aqui.
 			  if(mod && e.shiftKey && (e.key||'').toLowerCase()==='x'){
@@ -20776,6 +20852,8 @@
 			  if(e.key==='Escape'){
 			    // El buscador y la hoja de atajos ya se cierran por su cuenta.
 			    if(_ixBusqAbierto || _ixEscribiendo()) return;
+			    const lz=document.getElementById('ix-lanzador');
+			    if(lz && lz.style.display!=='none' && lz.style.display!==''){ ixCerrarLanzador(); e.preventDefault(); return; }
 			    const at=document.getElementById('ix-atajos');
 			    if(at && at.style.display!=='none' && at.style.display!==''){ at.style.display='none'; e.preventDefault(); return; }
 			    if(ixCerrarVentanaDeArriba()) e.preventDefault();

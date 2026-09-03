@@ -37,6 +37,29 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 
 ## Hecho
 
+- **«Todas las apps»: la mitad de la app era inalcanzable en un móvil.** El
+  dock esconde 10 de sus 18 botones en modo compacto y el conmutador solo
+  lista lo que ya has abierto, así que alguien que entra por primera vez en un
+  teléfono no podía llegar a IXBand, Mapas, Notas ni a la mayoría: existían,
+  pero no había forma de verlas.
+  - `ixAbrirLanzador()` pinta las 13 de `IX_APPS` en una rejilla. Se llega por
+    el botón ⊞ del dock (sin `.dock-secondary`, para que no se oculte
+    justamente él), por Ctrl/⌘+⇧+A y desde el conmutador vacío.
+  - Probado con `pruebas/lanzador.js`: 15/15.
+
+- **Dos bugs de toque descubiertos al probarlo**: el engranaje de Configuración
+  (fijo en la esquina, `z-index:9700`) quedaba **encima** del primer botón del
+  dock en pantallas de 320-430px, y ese botón no se podía pulsar — los toques
+  se los quedaba el engranaje. Antes le pasaba al botón de buscar y nadie lo
+  había visto.
+  - No basta con dar relleno: la barra se desplaza en horizontal y el relleno
+    no reserva sitio en el lado que queda fuera de vista. Lo que funciona es
+    estrechar la barra (`max-width:calc(100vw - 150px)`) para que quede
+    centrada entre los dos botones fijos de las esquinas.
+  - Medido en 320/390/430/768/1280px: 0 botones tapados en los cinco.
+  - Cuidado al medir esto: un botón desplazado fuera de la barra **no está
+    tapado, está escondido**, y contarlo daba falsos positivos.
+
 - **Accesibilidad y legibilidad para las tiendas** (`pruebas/calidad.js`).
   - **56 botones de solo icono** no decían qué hacían: un lector de pantalla
     solo podía anunciar «botón». Ahora llevan `aria-label`, y la etiqueta sale

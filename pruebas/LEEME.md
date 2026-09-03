@@ -17,9 +17,25 @@ Pasa `syncheck` y después las 21 pruebas funcionales, una a una, y resume
 cuáles fallan. Las tres revisiones grandes (`auditoria`, `interaccion`,
 `calidad`) quedan fuera porque tardan varios minutos cada una; se lanzan a mano.
 
-Última pasada: **21 pasan, 0 fallan.**
+Reintenta **una vez** lo que falla: lanzar 21 navegadores seguidos satura la
+máquina y de vez en cuando uno tarda de más al arrancar, y eso no es un fallo
+de la app. Lo que falla **dos** veces sí hay que mirarlo, y el resumen lo separa.
+
+Última pasada: **22 pasan, 0 fallan.**
 
 ---
+
+## `lanzador.js`
+La rejilla con todas las apps. Comprueba en un móvil que el dock efectivamente
+esconde la mayoría de sus botones, que el botón ⊞ **no** se esconde, que la
+rejilla lista las 13 apps, que pulsar una la abre de verdad, y que el
+conmutador vacío deja de ser un callejón sin salida.
+
+```
+node pruebas/lanzador.js
+```
+
+Última pasada: **15/15**.
 
 ## `syncheck.js`
 Extrae los cinco bloques `<script>` de `index.html` y los pasa por el
