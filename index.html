@@ -8621,6 +8621,48 @@
 			  const idx=STATIONS.findIndex(s=>s.id===currentStation);
 			  setStation(STATIONS[(idx-1+STATIONS.length)%STATIONS.length].id);
 			}
+			/* ── FAVORITOS DE EMISORAS ────────────────────────────────────────
+			   El navegador ya tenia favoritos (ix_browser_favorites) pero la radio
+			   no. Con miles de emisoras, sin esto cada vez se empieza de cero y hay
+			   que volver a buscar la tuya. Se guardan por id y salen las primeras. */
+			let _radioFavs=(function(){
+			  try{ const v=JSON.parse(localStorage.getItem('ix_radio_favorites')); return Array.isArray(v)?v:[]; }
+			  catch(e){ return []; }
+			})();
+			function _guardarRadioFavs(){
+			  try{ localStorage.setItem('ix_radio_favorites', JSON.stringify(_radioFavs)); }catch(e){}
+			}
+			function esFavoritaRadio(id){ return _radioFavs.indexOf(id)>=0; }
+			function toggleFavoritaRadio(id, ev){
+			  // Sin esto, tocar la estrella tambien pondria la emisora a sonar:
+			  // la estrella esta DENTRO del boton de la emisora.
+			  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+			  const i=_radioFavs.indexOf(id);
+			  if(i>=0) _radioFavs.splice(i,1); else _radioFavs.push(id);
+			  _guardarRadioFavs();
+			  renderStations();
+			  try{ ixToast(i>=0 ? '☆ Quitada de favoritas' : '★ Guardada en favoritas'); }catch(e){}
+			}
+			// La ficha de una emisora. Se usa igual en favoritas y en la lista normal.
+			function _radioFicha(s){
+			  const fav=esFavoritaRadio(s.id);
+			  const isLive = s.type==='stream';
+			  const liveBadge = isLive ? '<span style="font-size:8px;background:#ff453a;color:var(--txt);padding:1px 4px;border-radius:4px;margin-left:4px;">LIVE</span>' : '';
+			  return '<button id="station-'+s.id+'" class="station-btn" data-title="'+escapeHtml((s.tags||'')+' '+s.title)+'"'
+			    +' onclick="setStation(\''+s.id+'\');updateIpodUI(STATIONS.find(x=>x.id===\''+s.id+'\'))"'
+			    +' style="width:100%;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:3px;transition:background .15s;"'
+			    +' onmouseover="this.style.background=\'rgba(255,255,255,.1)\'" onmouseout="this.style.background=\'rgba(255,255,255,.05)\'">'
+			    +'<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">'+(s.flag||'📻')+'</div>'
+			    +'<div style="text-align:left;flex:1;min-width:0;">'
+			    +  '<div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);">'+escapeHtml(s.title||'')+liveBadge+'</div>'
+			    +  '<div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(s.sub||'')+'</div>'
+			    +'</div>'
+			    +'<span role="button" tabindex="0" aria-label="'+(fav?'Quitar de favoritas':'Guardar en favoritas')+'"'
+			    +' title="'+(fav?'Quitar de favoritas':'Guardar en favoritas')+'"'
+			    +' onclick="toggleFavoritaRadio(\''+s.id+'\',event)"'
+			    +' style="flex-shrink:0;font-size:15px;line-height:1;padding:6px;border-radius:8px;cursor:pointer;'+(fav?'color:#ffd60a;':'color:var(--txt-40);')+'">'+(fav?'★':'☆')+'</span>'
+			    +'</button>';
+			}
 			function renderStations(){
 			  STATIONS = getVisibleStations();
 			  const cont = document.getElementById('stations-container');
@@ -8639,27 +8681,31 @@
 			    <button onclick="const p=document.getElementById('ipod-player');p.style.display=p.style.display==='flex'?'none':'flex';" style="padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;" title="iPod">🎵</button>
 			  </div>`;
 
-			  // Group by country
+			  // Group by country. Las favoritas se sacan de su pais: si salieran en
+			  // los dos sitios habria dos elementos con el mismo id y setStation solo
+			  // encontraria uno, asi que la emisora activa se marcaria a medias.
 			  const byCountry = {};
 			  STATIONS.forEach(s=>{
+			    if(esFavoritaRadio(s.id)) return;
 			    if(!byCountry[s.country]) byCountry[s.country] = [];
 			    byCountry[s.country].push(s);
 			  });
 
+			  // Tus favoritas, arriba del todo. Se buscan por id en la lista visible;
+			  // una favorita de un pais que ahora esta filtrado simplemente no sale.
+			  const favs = _radioFavs.map(function(id){ return STATIONS.find(function(x){ return x.id===id; }); })
+			                         .filter(Boolean);
+			  if(favs.length){
+			    html += '<div style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.1em;padding:8px 2px 4px;">★ Tus favoritas</div>';
+			    favs.forEach(function(s){ html += _radioFicha(s); });
+			    html += '<div style="height:1px;background:rgba(255,255,255,.1);margin:10px 2px 4px;"></div>';
+			  }
+
 			  Object.entries(byCountry).forEach(([country, sts])=>{
+			    if(!sts.length) return;
 			    const flag = sts[0].flag || '🌍';
 			    html += `<div style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.1em;padding:8px 2px 4px;">${flag} ${country}</div>`;
-			    sts.forEach(s=>{
-			      const isLive = s.type==='stream';
-			      const liveBadge = isLive ? `<span style="font-size:8px;background:#ff453a;color:var(--txt);padding:1px 4px;border-radius:4px;margin-left:4px;">LIVE</span>` : '';
-			      html += `<button id="station-${s.id}" class="station-btn" data-title="${(s.tags||'')+' '+s.title}" onclick="setStation('${s.id}');updateIpodUI(STATIONS.find(x=>x.id==='${s.id}'))" style="width:100%;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:3px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
-			        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">${s.flag||'📻'}</div>
-			        <div style="text-align:left;flex:1;min-width:0;">
-			          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);">${s.title}${liveBadge}</div>
-			          <div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.sub}</div>
-			        </div>
-			      </button>`;
-			    });
+			    sts.forEach(function(s){ html += _radioFicha(s); });
 			  });
 
 			  cont.innerHTML = html;
@@ -15091,6 +15137,7 @@
 			    '🌅 Y dos modos más: «Como el sistema», que sigue lo que tengas puesto en el móvil, y «Con el sol», que se pone claro al amanecer y oscuro al atardecer según tu ciudad',
 			    '🛠️ El modo elegido ya SE GUARDA: antes ponías claro, recargabas y volvía a oscuro',
 			    '🗣️ EL ASISTENTE YA HACE COSAS, no solo contesta: «ponme 10 minutos», «apúntame que compre pan», «añade Tokio al reloj», «abre IXBand», «pon jazz» o «ponme un fondo de Tokio». Antes solo sabía poner alarmas',
+			    '⭐ FAVORITOS EN LA RADIO: toca la estrella de una emisora y se te guarda arriba del todo, en «Tus favoritas». Con tantas emisoras, antes había que volver a buscarla cada vez',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',

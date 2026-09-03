@@ -31,8 +31,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-3. **Favoritos en la radio.** Confirmado: existe `ix_browser_favorites` (del
-   navegador) y ninguno para emisoras. Guardar las tuyas y enseñarlas primero.
 4. **Pantalla de inicio reordenable.** El orden de los paneles es fijo. Arrastrar
    para reordenar y poder ocultar los que no se usan, guardado en localStorage.
 5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
@@ -57,6 +55,18 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Favoritos en la radio** (idea 2 del usuario). Cada emisora lleva una
+  estrella; las tuyas salen en «★ Tus favoritas», arriba del todo. Se guardan
+  en `ix_radio_favorites`, igual que los del navegador.
+  - La estrella va **dentro** del botón de la emisora, así que sin
+    `stopPropagation` tocarla también la pondría a sonar. Probado.
+  - Una favorita se **saca** de su país en vez de salir dos veces: si saliera
+    en los dos sitios habría dos elementos con el mismo `id` y `setStation`
+    (que usa `getElementById`) solo encontraría uno, dejando la emisora activa
+    marcada a medias.
+  - Un país que se queda sin emisoras ya no deja su título suelto.
+  - Probado con `pruebas/radiofavs.js`: 17/17.
 
 - **IXA ya hace cosas, no solo habla** (idea 1 del usuario). La tubería de
   `[[ALARM]]` se generalizó a una tabla `IXA_ACCIONES`: añadir una acción nueva
