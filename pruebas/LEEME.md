@@ -70,3 +70,24 @@ node pruebas/emulador.js
 
 Última pasada: **13/13**.
 
+## `xss.js`
+El texto que escribe el usuario (notas, eventos del calendario, nombres de
+secciones y canciones) y el que llega de servidores de fuera (el sitio de un
+terremoto) no puede ejecutar código al pintarse en pantalla.
+
+Cada caso comprueba **dos** cosas: que el código no se ejecuta y que el texto
+**sí se ve**, para que no se pueda aprobar la prueba simplemente no pintando
+nada. Y antes de todo hay un caso de control que mete el mismo código sin
+escapar: si ese no se ejecuta, la prueba no vale y avisa.
+
+```
+node pruebas/xss.js
+```
+
+Última pasada: **16/16**.
+
+> Cuidado con la longitud del payload: en las notas matemáticas el título se
+> corta a 25 caracteres, y con un payload largo la etiqueta quedaba partida y
+> **no se ejecutaba**, así que la prueba pasaba aunque el fallo siguiera ahí.
+> Cada caso se verifica revirtiendo el arreglo y comprobando que falla.
+

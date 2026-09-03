@@ -34,6 +34,31 @@ empezar y se actualiza antes de subir.
 
 ## Hecho
 
+- **Cuarto XSS encontrado y arreglado: los eventos del calendario.**
+  `renderCalEvts` metía el texto que escribe el usuario en `innerHTML` sin
+  escapar, así que un evento con `<img src=x onerror=...>` ejecutaba código de
+  verdad cada vez que se abría ese día. Comprobado revirtiendo el arreglo: la
+  prueba falla con el código viejo y pasa con el nuevo.
+  - De paso, el sitio del terremoto (`showEarthquakeAlert`) también se escapa:
+    ese texto viene de un servidor de fuera.
+  - Barrido completo de los 68 `innerHTML` que interpolan algo: el resto solo
+    mete datos de la propia app (iconos, nombres de ciudad, etiquetas fijas) o
+    ya usaba `escapeHtml`. El chat de la IA usa `innerText`, que es seguro.
+  - `gbBuildSongs` reventaba si se llamaba con IXBand cerrado; ahora sale sin
+    hacer nada, como el resto de funciones que pintan.
+  - **Quinto y sexto, avisados por el usuario y confirmados**: las notas de
+    «Notas Matemáticas» (`mathRenderSaved`) y la etiqueta del historial de
+    alarmas (`icaRenderHistory`). Los dos se me habían escapado en el primer
+    barrido porque mi patrón solo miraba la línea de la asignación, y ahí el
+    texto se monta en un `.map()` de varias líneas. El barrido se rehízo por
+    bloques y ya no tiene ese punto ciego.
+  - En las notas matemáticas el título se corta a 25 caracteres: con un payload
+    largo la etiqueta queda partida y **no** se ejecuta, así que la primera
+    prueba pasaba aunque el fallo estuviera. Con uno de 25 justos sí entra, y
+    ahí se ve que era explotable de verdad.
+  - Probado con `pruebas/xss.js`: 16/16, con un caso de control y revirtiendo
+    cada arreglo para comprobar que la prueba lo detecta.
+
 - **Emulador: el fallo silencioso arreglado.** Que `loader.js` se descargara se
   daba por bueno, pero el loader baja después los núcleos del mismo espejo; si
   esos están bloqueados, la pantalla se quedaba negra para siempre, sin mensaje

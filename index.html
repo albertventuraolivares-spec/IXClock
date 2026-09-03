@@ -13983,8 +13983,11 @@
 			  if(!evts.length){list.innerHTML='<div style="font-size:11px;opacity:.3;text-align:center;padding:6px;">Sin eventos</div>';return;}
 			  evts.forEach((ev,i)=>{
 			    const row=document.createElement('div');
+			    // El texto del evento lo escribe el usuario: se escapa antes de pintarlo.
+			    // Sin esto, un evento con <img src=x onerror=...> ejecutaba codigo de
+			    // verdad cada vez que se abria ese dia del calendario.
 			    row.style.cssText='display:flex;align-items:center;gap:8px;background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.3);border-radius:10px;padding:7px 10px;font-size:12px;';
-			    row.innerHTML='<span style="flex:1;">'+ev+'</span><button onclick="delCalEvt(\''+key+'\','+i+')" style="background:none;border:none;color:rgba(255,80,80,.8);cursor:pointer;font-size:14px;">✕</button>';
+			    row.innerHTML='<span style="flex:1;">'+escapeHtml(ev)+'</span><button onclick="delCalEvt(\''+key+'\','+i+')" style="background:none;border:none;color:rgba(255,80,80,.8);cursor:pointer;font-size:14px;">✕</button>';
 			    list.appendChild(row);
 			  });
 			}
@@ -14819,6 +14822,8 @@
 			    '📤 Y un botón «Compartir» al lado, en móviles y tabletas: abre el menú del sistema para mandarla directamente por WhatsApp, correo o guardarla en Archivos, sin buscarla en la carpeta de descargas',
 			    '👆 BOTONES MÁS FÁCILES DE TOCAR en móvil y tableta: había 83 botones por debajo del tamaño mínimo que piden Apple y Google (uno medía 13×15 píxeles), y ahora ninguno baja de 40. En el ordenador no cambia nada, y también se quitó el medio segundo de retardo al tocar',
 			    '🕹️ Emulador: si el motor se descargaba pero no llegaba a arrancar (porque su servidor sirve el arranque pero tiene bloqueado el resto), la pantalla se quedaba en negro para siempre sin decir nada. Ahora lo detecta, prueba el siguiente servidor y, si fallan todos, te dice cuál falló y por qué',
+			    '🔒 Agujero de seguridad cerrado en el CALENDARIO: un evento escrito con código dentro se ejecutaba de verdad al abrir ese día. Ya no. Se revisaron de paso los 68 sitios donde la app pinta texto y se aseguró también el nombre del lugar en las alertas de terremoto, que llega de un servidor de fuera',
+			    '🔒 Y lo mismo en las NOTAS MATEMÁTICAS de la calculadora y en el HISTORIAL DE ALARMAS: el texto que escribes ya no puede ejecutar nada al volver a la lista',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -15320,7 +15325,7 @@
 			  alert.id='quake-alert';
 			  const color = mag>=6.0 ? '#ff453a' : mag>=5.0 ? '#ff9f0a' : '#ffd60a';
 			  alert.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:14px 22px;border-radius:20px;background:rgba(0,0,0,.85);border:2px solid '+color+';backdrop-filter:blur(20px);display:flex;align-items:center;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.7);max-width:420px;animation:quakeShake .4s ease-in-out 3;';
-			  alert.innerHTML='<div style="font-size:2.2rem;">🌍</div><div><div style="font-size:13px;font-weight:800;color:'+color+';">⚠️ ALERTA DE TERREMOTO · M'+mag.toFixed(1)+'</div><div style="font-size:11px;margin-top:3px;opacity:.8;">'+place+'</div><div style="font-size:10px;opacity:.55;margin-top:2px;">Hace '+minAgo+' minuto'+(minAgo!==1?'s':'')+'</div></div><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>';
+			  alert.innerHTML='<div style="font-size:2.2rem;">🌍</div><div><div style="font-size:13px;font-weight:800;color:'+color+';">⚠️ ALERTA DE TERREMOTO · M'+mag.toFixed(1)+'</div><div style="font-size:11px;margin-top:3px;opacity:.8;">'+escapeHtml(place)+'</div><div style="font-size:10px;opacity:.55;margin-top:2px;">Hace '+minAgo+' minuto'+(minAgo!==1?'s':'')+'</div></div><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>';
 			  document.body.appendChild(alert);
 			  setTimeout(()=>{ if(alert.parentNode) alert.remove(); }, 30000);
 			  // Vibrate if supported
@@ -18202,6 +18207,7 @@
 			];
 			function gbBuildSongs(){
 			  const el=document.getElementById('gb-songs');
+			  if(!el) return;   // se llama al guardar o borrar, y IXBand puede no estar abierto
 			  let s='<div style="display:flex;align-items:center;margin-bottom:18px;">'
 			    +'<div style="color:#0a84ff;font-size:15px;font-weight:600;">‹ Mis canciones</div>'
 			    +'<div style="flex:1;display:flex;justify-content:center;margin-right:110px;">'
@@ -19791,8 +19797,9 @@
 			  const el=document.getElementById('math-saved-list');
 			  const saved=JSON.parse(localStorage.getItem('math_notes')||'[]');
 			  if(!saved.length){el.innerHTML='<div style="font-size:11px;opacity:.3;">Sin notas guardadas</div>';return;}
+			  // El texto de la nota lo escribe el usuario: se escapa antes de pintarlo.
 			  el.innerHTML=saved.map((n,i)=>
-			    '<div onclick="mathLoadSaved('+i+')" style="padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:\'JetBrains Mono\',monospace;cursor:pointer;opacity:.7;display:flex;justify-content:space-between;"><span>'+n.text.split('\n')[0].substring(0,25)+'</span><span style=\"opacity:.4\">'+n.date+'</span></div>'
+			    '<div onclick="mathLoadSaved('+i+')" style="padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);font-size:11px;font-family:\'JetBrains Mono\',monospace;cursor:pointer;opacity:.7;display:flex;justify-content:space-between;"><span>'+escapeHtml(String(n.text||'').split('\n')[0].substring(0,25))+'</span><span style=\"opacity:.4\">'+escapeHtml(String(n.date||''))+'</span></div>'
 			  ).join('');
 			}
 			function mathLoadSaved(i){
@@ -19814,8 +19821,10 @@
 			  if(!el) return;
 			  const hist=JSON.parse(localStorage.getItem('ica_alarm_history')||'[]');
 			  if(!hist.length){el.innerHTML='<div style="font-size:12px;opacity:.3;">Sin historial</div>';return;}
+			  // La etiqueta de la alarma la escribe el usuario: se escapa igual que en
+			  // la lista de alarmas, que ya se habia arreglado antes.
 			  el.innerHTML=hist.map(h=>
-			    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;"><div><span style=\"font-size:15px;font-weight:300\">'+h.time+'</span> <span style=\"font-size:11px;opacity:.5\">'+h.label+'</span></div><span style=\"font-size:10px;opacity:.3\">'+h.date+'</span></div>'
+			    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;"><div><span style=\"font-size:15px;font-weight:300\">'+escapeHtml(String(h.time||''))+'</span> <span style=\"font-size:11px;opacity:.5\">'+escapeHtml(String(h.label||''))+'</span></div><span style=\"font-size:10px;opacity:.3\">'+escapeHtml(String(h.date||''))+'</span></div>'
 			  ).join('');
 			}
 			icaRenderHistory();
