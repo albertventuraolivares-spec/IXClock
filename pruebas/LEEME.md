@@ -21,9 +21,36 @@ Reintenta **una vez** lo que falla: lanzar 21 navegadores seguidos satura la
 máquina y de vez en cuando uno tarda de más al arrancar, y eso no es un fallo
 de la app. Lo que falla **dos** veces sí hay que mirarlo, y el resumen lo separa.
 
-Última pasada: **24 pasan, 0 fallan.**
+Última pasada: **26 pasan, 0 fallan.**
 
 ---
+
+## `paneles.js`
+Reordenar los paneles de inicio arrastrando. **Se arrastra con el ratón de
+verdad**, no llamando a funciones, y en varios pasos: un salto seco no dispara
+los `pointermove` intermedios y el panel no llegaría a moverse.
+
+```
+node pruebas/paneles.js
+```
+
+Última pasada: **13/13**.
+
+## `radiofavs.js`
+Favoritos de emisoras. Lo que más importa aquí son dos cosas que se rompen
+fácil: que tocar la estrella **no** ponga la emisora a sonar (la estrella está
+dentro del botón de la emisora) y que una favorita **no** salga dos veces —
+saldría con el mismo `id` en dos sitios y `setStation` solo encontraría uno.
+
+```
+node pruebas/radiofavs.js
+```
+
+Última pasada: **17/17**.
+
+> El panel de radio viene plegado: hay que abrirlo antes o las estrellas
+> existen pero no se ven. Y el título va en mayúsculas por CSS, así que
+> `innerText` las devuelve en mayúsculas y comparar con «Tus favoritas» falla.
 
 ## `ixa.js`
 Las acciones del asistente. **No se llama al modelo**: se le da la respuesta ya

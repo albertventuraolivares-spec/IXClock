@@ -14,6 +14,13 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 - Si las pruebas fallan, **no subir**: anotarlo aquí y pasar al siguiente.
 - Solo la rama `claude/ixclock-html-page-jhfqhc`. Nunca `main`.
 - Anotar lo hecho en 🆕 Novedades (`IX_CHANGELOG` en `index.html`).
+- **Al final de cada tanda, sin falta** (lo pidió el usuario expresamente, con
+  capturas señalando los dos botones): abrir la PR, **fusionarla** a `main`
+  (`mcp__github__merge_pull_request`) y **comprobar que el despliegue de
+  producción de Netlify sale bien** (`mcp__Netlify__netlify-deploy-services-reader`).
+  Fusionar a `main` es lo que dispara la publicación; el botón «Publish deploy»
+  de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
+  reutiliza**: se abre una nueva.
 
 ---
 
@@ -31,10 +38,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-3. **Favoritos en la radio.** Confirmado: existe `ix_browser_favorites` (del
-   navegador) y ninguno para emisoras. Guardar las tuyas y enseñarlas primero.
-4. **Pantalla de inicio reordenable.** El orden de los paneles es fijo. Arrastrar
-   para reordenar y poder ocultar los que no se usan, guardado en localStorage.
 5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
    fase lunar en una línea. Los cuatro datos ya se calculan, pero repartidos.
 6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
@@ -57,6 +60,31 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Pantalla de inicio reordenable** (idea 4 del usuario). Los cuatro paneles de
+  la barra derecha (clima, radio, festividades, pronóstico) llevan un asa y se
+  arrastran para cambiar el orden, que se guarda en `ix_orden_paneles`.
+  - Se usan **eventos de puntero** y no la API de arrastrar del navegador,
+    porque esa no funciona con el dedo: así el ratón y la pantalla táctil van
+    por el mismo camino. En táctil el asa se ve siempre, porque no hay «pasar
+    el ratón por encima».
+  - Un panel guardado que ya no exista se ignora, y uno nuevo se queda donde
+    estaba en vez de desaparecer. Un guardado corrupto se ignora entero.
+  - Ocultar ya existía (`VISIBILITY_ITEMS`) pero solo la barra entera; ahora los
+    cuatro paneles están ahí uno a uno.
+  - Probado con `pruebas/paneles.js`: 13/13, arrastrando con el ratón de verdad.
+
+- **Favoritos en la radio** (idea 2 del usuario). Cada emisora lleva una
+  estrella; las tuyas salen en «★ Tus favoritas», arriba del todo. Se guardan
+  en `ix_radio_favorites`, igual que los del navegador.
+  - La estrella va **dentro** del botón de la emisora, así que sin
+    `stopPropagation` tocarla también la pondría a sonar. Probado.
+  - Una favorita se **saca** de su país en vez de salir dos veces: si saliera
+    en los dos sitios habría dos elementos con el mismo `id` y `setStation`
+    (que usa `getElementById`) solo encontraría uno, dejando la emisora activa
+    marcada a medias.
+  - Un país que se queda sin emisoras ya no deja su título suelto.
+  - Probado con `pruebas/radiofavs.js`: 17/17.
 
 - **IXA ya hace cosas, no solo habla** (idea 1 del usuario). La tubería de
   `[[ALARM]]` se generalizó a una tabla `IXA_ACCIONES`: añadir una acción nueva
