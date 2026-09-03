@@ -21,9 +21,20 @@ Reintenta **una vez** lo que falla: lanzar 21 navegadores seguidos satura la
 máquina y de vez en cuando uno tarda de más al arrancar, y eso no es un fallo
 de la app. Lo que falla **dos** veces sí hay que mirarlo, y el resumen lo separa.
 
-Última pasada: **25 pasan, 0 fallan.**
+Última pasada: **26 pasan, 0 fallan.**
 
 ---
+
+## `paneles.js`
+Reordenar los paneles de inicio arrastrando. **Se arrastra con el ratón de
+verdad**, no llamando a funciones, y en varios pasos: un salto seco no dispara
+los `pointermove` intermedios y el panel no llegaría a moverse.
+
+```
+node pruebas/paneles.js
+```
+
+Última pasada: **13/13**.
 
 ## `radiofavs.js`
 Favoritos de emisoras. Lo que más importa aquí son dos cosas que se rompen

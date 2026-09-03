@@ -31,8 +31,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-4. **Pantalla de inicio reordenable.** El orden de los paneles es fijo. Arrastrar
-   para reordenar y poder ocultar los que no se usan, guardado en localStorage.
 5. **Franja de resumen arriba**: clima, siguiente alarma, próxima festividad y
    fase lunar en una línea. Los cuatro datos ya se calculan, pero repartidos.
 6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
@@ -55,6 +53,19 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Pantalla de inicio reordenable** (idea 4 del usuario). Los cuatro paneles de
+  la barra derecha (clima, radio, festividades, pronóstico) llevan un asa y se
+  arrastran para cambiar el orden, que se guarda en `ix_orden_paneles`.
+  - Se usan **eventos de puntero** y no la API de arrastrar del navegador,
+    porque esa no funciona con el dedo: así el ratón y la pantalla táctil van
+    por el mismo camino. En táctil el asa se ve siempre, porque no hay «pasar
+    el ratón por encima».
+  - Un panel guardado que ya no exista se ignora, y uno nuevo se queda donde
+    estaba en vez de desaparecer. Un guardado corrupto se ignora entero.
+  - Ocultar ya existía (`VISIBILITY_ITEMS`) pero solo la barra entera; ahora los
+    cuatro paneles están ahí uno a uno.
+  - Probado con `pruebas/paneles.js`: 13/13, arrastrando con el ratón de verdad.
 
 - **Favoritos en la radio** (idea 2 del usuario). Cada emisora lleva una
   estrella; las tuyas salen en «★ Tus favoritas», arriba del todo. Se guardan

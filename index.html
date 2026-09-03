@@ -2798,7 +2798,7 @@
 			class="h-full p-5 glass border-l border-white/10 z-30 flex flex-col gap-4 overflow-y-auto custom-scrollbar"
 			style="border-radius:0;"
 		>
-			<div
+			<div data-panel="clima" data-panel-n="🌤️ Clima"
 				class="bg-white/5 rounded-[2rem] p-6 border border-white/10 shrink-0 glass-hover"
 			>
 				<h3
@@ -2852,7 +2852,7 @@
 			</div>
 
 			<!-- MUSIC / RADIO PANEL — collapsible -->
-			<div
+			<div data-panel="radio" data-panel-n="🎵 Sonidos y Radio"
 				class="bg-white/5 rounded-[2rem] p-5 border border-white/10 shrink-0 glass-hover"
 			>
 				<div
@@ -2917,7 +2917,7 @@
 				</div>
 			</div>
 
-			<div
+			<div data-panel="festividades" data-panel-n="🎉 Festividades"
 				class="bg-white/5 rounded-[2rem] p-5 border border-white/10 shrink-0 overflow-y-auto custom-scrollbar glass-hover"
 				style="max-height:340px;"
 			>
@@ -2929,7 +2929,7 @@
 				<div class="space-y-2.5" id="events-box"></div>
 			</div>
 
-			<div
+			<div data-panel="pronostico" data-panel-n="🌧️ Pronóstico"
 				class="rounded-2xl p-4 shrink-0"
 				style="background:linear-gradient(135deg,rgba(100,150,255,.15),rgba(0,200,255,.12));border:1px solid rgba(100,180,255,.3);"
 			>
@@ -15138,6 +15138,7 @@
 			    '🛠️ El modo elegido ya SE GUARDA: antes ponías claro, recargabas y volvía a oscuro',
 			    '🗣️ EL ASISTENTE YA HACE COSAS, no solo contesta: «ponme 10 minutos», «apúntame que compre pan», «añade Tokio al reloj», «abre IXBand», «pon jazz» o «ponme un fondo de Tokio». Antes solo sabía poner alarmas',
 			    '⭐ FAVORITOS EN LA RADIO: toca la estrella de una emisora y se te guarda arriba del todo, en «Tus favoritas». Con tantas emisoras, antes había que volver a buscarla cada vez',
+			    '↕️ PANTALLA DE INICIO A TU GUSTO: arrastra los paneles de la derecha por el asa de su esquina para ponerlos en el orden que quieras, y oculta los que no uses desde Configuración → Mostrar/Ocultar. Se guarda',
 			  ]},
 			  { v:'1.6', fecha: '13 de julio de 2026', titulo:'Todos los idiomas del mundo', cambios: [
 			    '➕ TODOS los idiomas del mundo en el selector (53 opciones): inglés de UK/EE.UU./Australia/Canadá/India, portugués de Brasil/Portugal, chino simplificado/tradicional, y decenas más (neerlandés, turco, polaco, vietnamita, tailandés, griego, hebreo, sueco, suajili…), cada uno con su bandera y nombre',
@@ -15342,6 +15343,10 @@
 			  {id:'luna-info',      label:'Luna (fase lunar)',      icon:'brightness_3',  sel:'#luna-row'},
 			  {id:'estacion-orbital',label:'Estación orbital',     icon:'satellite',     sel:'#luna-detalles'},
 			  {id:'profile-btn-vis',label:'Botón de usuario',      icon:'person',        sel:'#profile-btn'},
+			  {id:'panel-clima',    label:'Panel: Clima',          icon:'wb_sunny',      sel:'[data-panel="clima"]'},
+			  {id:'panel-radio',    label:'Panel: Sonidos y Radio',icon:'radio',         sel:'[data-panel="radio"]'},
+			  {id:'panel-fest',     label:'Panel: Festividades',   icon:'celebration',   sel:'[data-panel="festividades"]'},
+			  {id:'panel-pron',     label:'Panel: Pronóstico',     icon:'cloud',         sel:'[data-panel="pronostico"]'},
 			  {id:'segundos-reloj', label:'Segundos en el reloj',  icon:'timer',         sel:null},
 			];
 
@@ -20922,6 +20927,107 @@
 			   que entra por primera vez no puede llegar a IXBand, Mapas, Notas
 			   ni a la mitad de la app: existen, pero no hay forma de verlas.
 			   Esto es la rejilla con todas, sin tener que saber que estan.    */
+			/* ── ORDENAR LOS PANELES DE INICIO ────────────────────────────────
+			   El orden era fijo. Ahora se arrastra por el asa de la esquina y se
+			   guarda. Se usan eventos de puntero y no la API de arrastrar del
+			   navegador, porque esa no funciona con el dedo: asi el raton y la
+			   pantalla tactil van por el mismo camino.                         */
+			const IX_ORDEN_CLAVE='ix_orden_paneles';
+			function _ixPanelesCont(){ return document.querySelectorAll('aside')[1] || null; }
+			function _ixPaneles(){
+			  const c=_ixPanelesCont();
+			  return c ? [].slice.call(c.querySelectorAll(':scope > [data-panel]')) : [];
+			}
+			function ixOrdenGuardado(){
+			  try{ const v=JSON.parse(localStorage.getItem(IX_ORDEN_CLAVE)); return Array.isArray(v)?v:null; }
+			  catch(e){ return null; }
+			}
+			function ixGuardarOrden(){
+			  const orden=_ixPaneles().map(function(e){ return e.getAttribute('data-panel'); });
+			  try{ localStorage.setItem(IX_ORDEN_CLAVE, JSON.stringify(orden)); }catch(e){}
+			  return orden;
+			}
+			function ixAplicarOrden(){
+			  const orden=ixOrdenGuardado(); if(!orden) return false;
+			  const c=_ixPanelesCont(); if(!c) return false;
+			  const mapa={};
+			  _ixPaneles().forEach(function(e){ mapa[e.getAttribute('data-panel')]=e; });
+			  // Se recolocan los conocidos en su orden; uno que ya no exista se
+			  // ignora, y uno nuevo se queda donde estaba en vez de desaparecer.
+			  orden.forEach(function(id){ if(mapa[id]) c.appendChild(mapa[id]); });
+			  return true;
+			}
+			function ixResetOrdenPaneles(){
+			  try{ localStorage.removeItem(IX_ORDEN_CLAVE); }catch(e){}
+			  try{ ixToast('Orden de los paneles restablecido. Recarga para verlo.'); }catch(e){}
+			}
+			// Asa de arrastre en cada panel
+			function ixPonerAsas(){
+			  _ixPaneles().forEach(function(el){
+			    if(el.querySelector(':scope > .ix-asa')) return;
+			    if(getComputedStyle(el).position==='static') el.style.position='relative';
+			    const a=document.createElement('div');
+			    a.className='ix-asa';
+			    a.setAttribute('role','button');
+			    a.setAttribute('aria-label','Mover este panel');
+			    a.title='Arrastra para cambiar el orden';
+			    a.textContent='⣿';
+			    a.style.cssText='position:absolute;top:6px;right:8px;z-index:5;cursor:grab;'
+			      +'font-size:13px;line-height:1;padding:5px 6px;border-radius:8px;'
+			      +'color:var(--txt-40);background:transparent;touch-action:none;'
+			      +'opacity:0;transition:opacity .2s;';
+			    el.addEventListener('pointerenter',function(){ a.style.opacity='1'; });
+			    el.addEventListener('pointerleave',function(){ if(!_ixArrastrando) a.style.opacity='0'; });
+			    // En tactil no hay "pasar por encima": el asa se ve siempre.
+			    try{ if(window.matchMedia('(pointer: coarse)').matches) a.style.opacity='.5'; }catch(e){}
+			    a.addEventListener('pointerdown',function(ev){ _ixEmpezarArrastre(ev, el, a); });
+			    el.appendChild(a);
+			  });
+			}
+			let _ixArrastrando=null;
+			function _ixEmpezarArrastre(ev, panel, asa){
+			  ev.preventDefault(); ev.stopPropagation();
+			  _ixArrastrando=panel;
+			  const c=_ixPanelesCont(); if(!c) return;
+			  asa.style.cursor='grabbing';
+			  panel.style.opacity='.55';
+			  panel.style.outline='2px dashed var(--txt-40)';
+			  try{ asa.setPointerCapture(ev.pointerId); }catch(e){}
+			  const mover=function(e){
+			    if(!_ixArrastrando) return;
+			    const y=e.clientY;
+			    // Se busca el hermano cuyo centro ya hemos pasado y se salta a su sitio.
+			    _ixPaneles().forEach(function(otro){
+			      if(otro===panel) return;
+			      const r=otro.getBoundingClientRect();
+			      const centro=r.top+r.height/2;
+			      const rp=panel.getBoundingClientRect();
+			      if(y>centro && rp.top<r.top) c.insertBefore(otro, panel);
+			      else if(y<centro && rp.top>r.top) c.insertBefore(panel, otro);
+			    });
+			  };
+			  const soltar=function(){
+			    if(!_ixArrastrando) return;
+			    panel.style.opacity=''; panel.style.outline='';
+			    asa.style.cursor='grab';
+			    _ixArrastrando=null;
+			    ixGuardarOrden();
+			    document.removeEventListener('pointermove',mover);
+			    document.removeEventListener('pointerup',soltar);
+			    document.removeEventListener('pointercancel',soltar);
+			    try{ ixToast('Orden guardado'); }catch(e){}
+			  };
+			  document.addEventListener('pointermove',mover);
+			  document.addEventListener('pointerup',soltar);
+			  document.addEventListener('pointercancel',soltar);
+			}
+			function ixIniciarPaneles(){
+			  if(!_ixPanelesCont()) return;
+			  ixAplicarOrden();
+			  ixPonerAsas();
+			}
+			if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ixIniciarPaneles);
+			else ixIniciarPaneles();
 			function ixAbrirLanzador(){
 			  let ov=document.getElementById('ix-lanzador');
 			  if(!ov){
