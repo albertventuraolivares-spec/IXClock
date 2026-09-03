@@ -12658,9 +12658,14 @@
 			let _icaFired={};
 			function checkIcaAlarms(now){
 			  if(now.getSeconds()!==0) return;
-			  if(typeof _icaAlarms==='undefined' || !_icaAlarms.length) return;
+			  // Ojo: `typeof` NO protege de una `let` todavia sin inicializar —
+			  // tambien lanza. Si la carga se corta antes de declararla, esto
+			  // reventaba cada minuto en punto.
+			  let lista;
+			  try{ lista=_icaAlarms; }catch(e){ return; }
+			  if(!lista || !lista.length) return;
 			  const key=now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
-			  _icaAlarms.forEach(function(a,i){
+			  lista.forEach(function(a,i){
 			    if(!a || !a.on || !a.time) return;
 			    const p=String(a.time).split(':');
 			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
@@ -15098,6 +15103,14 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.1', fecha: '3 de septiembre de 2026', titulo:'Modo Enfoque', cambios: [
+			    '➕ Pomodoro a pantalla completa: 25 de trabajo y 5 de descanso, con uno largo cada 4. También 50/10 y 15/3',
+			    '➕ Con sonido de ambiente mientras trabajas (café, lluvia, bosque, ruido blanco o piano) y silencio en el descanso',
+			    '➕ Cuenta las sesiones que llevas hoy, y el tiempo que queda se ve en la pestaña del navegador',
+			    '➕ Se abre desde Todas las apps o buscando «enfoque». Esc sale',
+			    '🛠️ La cuenta atrás va por reloj y no por tics, así que si te vas a otra pestaña —que es justo para lo que sirve— sigue siendo exacta',
+			    '🛠️ El móvil no se apaga solo mientras dura la sesión',
+			  ]},
 			  { v:'2.0', fecha: '3 de septiembre de 2026', titulo:'Copia de seguridad automática', cambios: [
 			    '➕ La app se guarda sola una copia de todo cada 3 días, y guarda las 3 últimas. Están en Mi Nube → Respaldo, con la fecha y un botón para volver a cualquiera de ellas',
 			    '➕ El botón rojo de «Borrar todos los datos» guarda una copia justo antes de borrar: si te equivocas, ya no lo pierdes todo',
@@ -20978,6 +20991,230 @@
 			// Cada app tiene su enlace (?app=id). Si entras por ese enlace, la app se
 			// abre sola. Y cada una puede guardarse en el dispositivo para funcionar
 			// sin conexión (assets = lo que necesita bajarse de fuera).
+
+			/* ===================== MODO ENFOQUE (pomodoro) =====================
+			   25 de trabajo, 5 de descanso, y uno largo cada 4. El reloj a
+			   pantalla completa y, si quieres, un sonido de ambiente de los que
+			   ya trae la radio.
+
+			   La cuenta NO se lleva restando un segundo por tic: los navegadores
+			   frenan los temporizadores de las pestañas que no estás mirando, y
+			   justo eso es lo que pasa en un pomodoro —te vas a trabajar a otra
+			   pestaña—, así que 25 minutos acabarian siendo 40. Se guarda la HORA
+			   de fin y cada tic se mira el reloj.                             */
+			const IX_ENF_PRESETS=[
+			  {id:'25', n:'25 / 5',  trabajo:25, corto:5,  largo:15, cada:4},
+			  {id:'50', n:'50 / 10', trabajo:50, corto:10, largo:20, cada:2},
+			  {id:'15', n:'15 / 3',  trabajo:15, corto:3,  largo:10, cada:4},
+			];
+			const IX_ENF_SONIDOS=[
+			  {id:'',            n:'Sin sonido', e:'🔇'},
+			  {id:'white_noise', n:'Ruido blanco', e:'⬜'},
+			  {id:'cafe',        n:'Café',         e:'☕'},
+			  {id:'rain',        n:'Lluvia',       e:'🌧️'},
+			  {id:'forest',      n:'Bosque',       e:'🌲'},
+			  {id:'piano_soft',  n:'Piano suave',  e:'🎹'},
+			];
+			const IX_ENF_CLAVE='ix_enfoque_v1';
+			let _enfCfg={preset:'25', sonido:'', hechos:0, dia:''};
+			try{ Object.assign(_enfCfg, JSON.parse(localStorage.getItem(IX_ENF_CLAVE)||'{}')||{}); }catch(e){}
+			let _enfFase='trabajo', _enfFin=0, _enfQueda=0, _enfTic=null, _enfPausado=false, _enfWake=null;
+
+			function _enfHoy(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+			function _enfGuardar(){
+			  try{ localStorage.setItem(IX_ENF_CLAVE, JSON.stringify(_enfCfg)); }catch(e){}
+			}
+			function _enfPreset(){ return IX_ENF_PRESETS.find(p=>p.id===_enfCfg.preset) || IX_ENF_PRESETS[0]; }
+			function _enfMin(fase){
+			  const p=_enfPreset();
+			  return fase==='trabajo' ? p.trabajo : fase==='largo' ? p.largo : p.corto;
+			}
+			function _enfMMSS(seg){
+			  seg=Math.max(0, Math.ceil(seg - 0.0001));
+			  const m=Math.floor(seg/60), s=seg%60;
+			  return m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
+			}
+			// El unico sitio donde se decide cuanto queda: la hora de fin menos la de
+			// ahora. Asi da igual que el navegador frene los temporizadores.
+			function _enfRestante(){
+			  if(_enfPausado) return _enfQueda;
+			  return Math.max(0, (_enfFin - Date.now())/1000);
+			}
+			function ixEnfoqueAbierto(){
+			  const ov=document.getElementById('ix-enfoque');
+			  return !!ov && ov.style.display!=='none';
+			}
+			function _enfSonidoOn(){
+			  if(!_enfCfg.sonido) return;
+			  try{ setStation(_enfCfg.sonido); }catch(e){}
+			}
+			function _enfSonidoOff(){
+			  try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
+			}
+			// Un toque corto al cambiar de fase: el tono de alarma suena en bucle,
+			// asi que se para solo a los dos segundos.
+			function _enfAviso(){
+			  try{
+			    const parar=playAlarmTone('campana');
+			    setTimeout(()=>{ try{ parar&&parar(); }catch(e){} }, 2000);
+			  }catch(e){}
+			}
+			function _enfEmpezarFase(fase){
+			  _enfFase=fase;
+			  _enfPausado=false;
+			  _enfQueda=_enfMin(fase)*60;
+			  _enfFin=Date.now()+_enfQueda*1000;
+			  // El ambiente acompaña al trabajo; en el descanso, silencio.
+			  if(fase==='trabajo') _enfSonidoOn(); else _enfSonidoOff();
+			  ixEnfoquePintar();
+			}
+			function _enfSiguienteFase(){
+			  if(_enfFase==='trabajo'){
+			    if(_enfCfg.dia!==_enfHoy()){ _enfCfg.dia=_enfHoy(); _enfCfg.hechos=0; }
+			    _enfCfg.hechos=(_enfCfg.hechos||0)+1;
+			    _enfGuardar();
+			    const p=_enfPreset();
+			    _enfEmpezarFase(_enfCfg.hechos % p.cada === 0 ? 'largo' : 'corto');
+			  } else {
+			    _enfEmpezarFase('trabajo');
+			  }
+			}
+			function _enfBucle(){
+			  if(!ixEnfoqueAbierto()) return;
+			  const q=_enfRestante();
+			  if(!_enfPausado && q<=0){ _enfAviso(); _enfSiguienteFase(); return; }
+			  ixEnfoquePintar();
+			}
+			async function _enfWakeOn(){
+			  try{ if(navigator.wakeLock) _enfWake=await navigator.wakeLock.request('screen'); }catch(e){ _enfWake=null; }
+			}
+			function _enfWakeOff(){
+			  try{ if(_enfWake){ _enfWake.release(); _enfWake=null; } }catch(e){}
+			}
+			function ixEnfoquePausar(){
+			  if(_enfPausado){
+			    _enfPausado=false;
+			    _enfFin=Date.now()+_enfQueda*1000;
+			    if(_enfFase==='trabajo') _enfSonidoOn();
+			  } else {
+			    _enfQueda=_enfRestante();
+			    _enfPausado=true;
+			    _enfSonidoOff();
+			  }
+			  ixEnfoquePintar();
+			}
+			function ixEnfoqueSaltar(){ _enfAviso(); _enfSiguienteFase(); }
+			function _enfRehacer(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(ov) ov.innerHTML='';
+			  ixEnfoquePintar();
+			}
+			function ixEnfoquePreset(id){
+			  _enfCfg.preset=id; _enfGuardar();
+			  _enfEmpezarFase(_enfFase);
+			  _enfRehacer();
+			}
+			function ixEnfoqueSonido(id){
+			  _enfCfg.sonido=id; _enfGuardar();
+			  if(!_enfPausado && _enfFase==='trabajo'){ if(id) _enfSonidoOn(); else _enfSonidoOff(); }
+			  else _enfSonidoOff();
+			  _enfRehacer();
+			}
+			let _enfTitulo='';
+			function ixEnfoqueSalir(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(ov) ov.style.display='none';
+			  clearInterval(_enfTic); _enfTic=null;
+			  _enfSonidoOff();
+			  _enfWakeOff();
+			  if(_enfTitulo) document.title=_enfTitulo;   // la pestana vuelve a llamarse como antes
+			}
+			function ixEnfoquePintar(){
+			  const ov=document.getElementById('ix-enfoque');
+			  if(!ov) return;
+			  const p=_enfPreset();
+			  const q=_enfRestante();
+			  const total=_enfMin(_enfFase)*60;
+			  const hechos=(_enfCfg.dia===_enfHoy() ? (_enfCfg.hechos||0) : 0);
+			  const enCiclo=p.cada ? (hechos % p.cada) : 0;
+			  const titulo=_enfFase==='trabajo' ? _uiT('Enfoque')
+			             : _enfFase==='largo'   ? _uiT('Descanso largo') : _uiT('Descanso');
+			  const color=_enfFase==='trabajo' ? '#ff453a' : '#30d158';
+			  document.title=_enfMMSS(q)+' · '+titulo;
+			  const rel=document.getElementById('enf-tiempo');
+			  if(rel){
+			    // Ya existe: se cambia solo lo que cambia, para no rehacer el DOM
+			    // cada segundo (y no perder el foco de los botones).
+			    rel.textContent=_enfMMSS(q);
+			    const t=document.getElementById('enf-fase'); if(t){ t.textContent=titulo; t.style.color=color; }
+			    const b=document.getElementById('enf-barra'); if(b) b.style.width=(total? (100-100*q/total):0).toFixed(1)+'%';
+			    if(b) b.style.background=color;
+			    const pa=document.getElementById('enf-pausa'); if(pa) pa.textContent=_enfPausado?('▶ '+_uiT('Reanudar')):('⏸ '+_uiT('Pausar'));
+			    const pu=document.getElementById('enf-puntos');
+			    if(pu) pu.innerHTML=_enfPuntos(p, enCiclo);
+			    const hs=document.getElementById('enf-hechos');
+			    if(hs) hs.textContent=hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy');
+			    return;
+			  }
+			  ov.innerHTML=
+			     '<button onclick="ixEnfoqueSalir()" title="'+_uiT('Salir')+'" style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:16px;cursor:pointer;">✕</button>'
+			    +'<div style="display:flex;flex-direction:column;align-items:center;gap:18px;width:min(560px,92vw);">'
+			    +  '<div id="enf-fase" style="font-size:12px;font-weight:800;letter-spacing:.34em;text-transform:uppercase;color:'+color+';">'+escapeHtml(titulo)+'</div>'
+			    +  '<div id="enf-tiempo" style="font-size:clamp(64px,18vw,150px);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em;">'+_enfMMSS(q)+'</div>'
+			    +  '<div style="width:100%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div id="enf-barra" style="height:100%;width:0;background:'+color+';transition:width .9s linear;"></div></div>'
+			    +  '<div id="enf-puntos" style="display:flex;gap:8px;">'+_enfPuntos(p, enCiclo)+'</div>'
+			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy')+'</div>'
+			    +  '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">'
+			    +    '<button id="enf-pausa" onclick="ixEnfoquePausar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:none;background:var(--txt);color:#000;font-size:13px;font-weight:800;cursor:pointer;">⏸ '+_uiT('Pausar')+'</button>'
+			    +    '<button onclick="ixEnfoqueSaltar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⏭ '+_uiT('Saltar')+'</button>'
+			    +    '<button onclick="toggleFullscreen()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⛛ '+_uiT('Pantalla completa')+'</button>'
+			    +  '</div>'
+			    +  '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px;">'
+			    +    IX_ENF_PRESETS.map(x=>'<button onclick="ixEnfoquePreset(\''+x.id+'\')" style="padding:7px 13px;border-radius:var(--r-full,999px);border:1px solid '+(x.id===_enfCfg.preset?'rgba(255,255,255,.5)':'rgba(255,255,255,.14)')+';background:'+(x.id===_enfCfg.preset?'rgba(255,255,255,.16)':'transparent')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+escapeHtml(x.n)+'</button>').join('')
+			    +  '</div>'
+			    +  '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">'
+			    +    IX_ENF_SONIDOS.map(x=>'<button onclick="ixEnfoqueSonido(\''+x.id+'\')" title="'+escapeHtml(x.n)+'" style="padding:7px 11px;border-radius:var(--r-full,999px);border:1px solid '+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.5)':'rgba(255,255,255,.14)')+';background:'+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.16)':'transparent')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+x.e+' '+escapeHtml(x.n)+'</button>').join('')
+			    +  '</div>'
+			    +'</div>';
+			}
+			function _enfPuntos(p, enCiclo){
+			  let h='';
+			  for(let i=0;i<p.cada;i++){
+			    const lleno = i<enCiclo;
+			    h+='<span style="width:9px;height:9px;border-radius:50%;background:'+(lleno?'var(--txt)':'rgba(255,255,255,.22)')+';"></span>';
+			  }
+			  return h;
+			}
+			function ixAbrirEnfoque(){
+			  let ov=document.getElementById('ix-enfoque');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-enfoque';
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482300;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(0,0,0,.86);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);color:var(--txt);';
+			    document.body.appendChild(ov);
+			  }
+			  ov.innerHTML='';           // se vuelve a construir entero al abrir
+			  ov.style.display='flex';
+			  if(!_enfTitulo) _enfTitulo=document.title;
+			  if(_enfCfg.dia!==_enfHoy()){ _enfCfg.dia=_enfHoy(); _enfCfg.hechos=0; _enfGuardar(); }
+			  _enfEmpezarFase('trabajo');
+			  clearInterval(_enfTic);
+			  _enfTic=setInterval(_enfBucle, 500);
+			  _enfWakeOn();
+			}
+			// Esc sale del modo enfoque, no de la ventana que hubiera debajo. En
+			// captura, para llegar antes que el atajo general.
+			document.addEventListener('keydown', function(e){
+			  if(e.key!=='Escape' || !ixEnfoqueAbierto()) return;
+			  e.stopPropagation();
+			  ixEnfoqueSalir();
+			}, true);
+			// Al volver a la pestaña, lo que se ve tiene que ser la hora buena ya,
+			// sin esperar medio segundo al siguiente tic.
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden && ixEnfoqueAbierto()) _enfBucle();
+			});
+
 			const IX_APPS = [
 			  { id:'ixband',   n:'IXBand',        icon:'🎸', d:'Estudio de música con instrumentos del mundo', open:'openGarageBand',
 			    assets:[] },
@@ -20994,7 +21231,8 @@
 			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
 			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] },
-			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] }
+			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
+			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] }
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [

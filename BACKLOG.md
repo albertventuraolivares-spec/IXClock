@@ -38,8 +38,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-7. **Modo enfoque / pomodoro** 25/5, con el reloj a pantalla completa y sonido
-   ambiente. Reutiliza el temporizador, los ambientes y la pantalla completa.
 9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
    a las 9». El calendario y la cuenta atrás de festividades ya tienen motor de
    fechas.
@@ -55,6 +53,23 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Modo Enfoque / pomodoro** (idea 7 del usuario). 25/5 con descanso largo cada
+  4, también 50/10 y 15/3. A pantalla completa, con sonido de ambiente de los
+  que ya trae la radio, contador de sesiones del día y el tiempo en la pestaña.
+  - **La cuenta atrás va por reloj (`Date.now`), no restando un segundo por
+    tic.** Los navegadores frenan los temporizadores de las pestañas que no
+    miras, y un pomodoro se usa justo así: 25 minutos acabarían siendo 40. La
+    prueba adelanta el reloj a mano y comprueba que la cuenta lo sigue.
+  - Redondeo hacia arriba: recién empezado tiene que poner 25:00, no 24:59.
+  - Esc sale del enfoque y **no** cierra lo que hubiera debajo (listener en
+    fase de captura, antes que el atajo general).
+  - Al salir se para el sonido, el temporizador, el bloqueo de pantalla y se
+    devuelve el título de la pestaña.
+  - De paso: `checkIcaAlarms` se protegía con `typeof _icaAlarms==='undefined'`,
+    y `typeof` **no** protege de una `let` aún sin inicializar — también lanza.
+    Con la carga cortada a medias reventaba cada minuto en punto.
+  - `pruebas/enfoque.js` (28/28).
 
 - **Copia de seguridad automática** (idea 6 del usuario). Una copia sola cada 3
   días, las 3 últimas, en Mi Nube → Respaldo, con botón para volver a cualquiera.
