@@ -4947,7 +4947,9 @@
 			    view_sidebar:'🗂️', volume_down:'🔉', volume_up:'🔊', wb_sunny:'☀️',
 			    air:'💨', fireplace:'🔥', local_cafe:'☕', nights_stay:'🌙',
 			    park:'🌳', piano:'🎹', self_improvement:'🧘', thunderstorm:'⛈️',
-			    water_drop:'💧', waves:'🌊', blur_on:'🌫️'
+			    water_drop:'💧', waves:'🌊', blur_on:'🌫️',
+			    radio:'📻', celebration:'🎉', thermostat:'🌡️', alarm:'⏰',
+			    backup:'💾', history:'🕘', download:'⬇️'
 			  };
 			  function ligaturesBroken(){
 			    const test=document.createElement('span');
@@ -15096,6 +15098,14 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.0', fecha: '3 de septiembre de 2026', titulo:'Copia de seguridad automática', cambios: [
+			    '➕ La app se guarda sola una copia de todo cada 3 días, y guarda las 3 últimas. Están en Mi Nube → Respaldo, con la fecha y un botón para volver a cualquiera de ellas',
+			    '➕ El botón rojo de «Borrar todos los datos» guarda una copia justo antes de borrar: si te equivocas, ya no lo pierdes todo',
+			    '➕ Importar un archivo y volver a una copia también guardan antes lo que tenías, así que los dos se pueden deshacer',
+			    '➕ Aviso si hace más de un mes que no bajas el archivo: la copia de dentro del móvil no sirve si cambias de móvil',
+			    '🛠️ La copia automática vive fuera de los datos normales, así que aguanta un borrado que se lleve todo lo demás',
+			    '🛠️ Importar un archivo que no era un respaldo ya no pisa tus datos: avisa y no toca nada',
+			  ]},
 			  { v:'1.9', fecha: '3 de septiembre de 2026', titulo:'Franja de resumen', cambios: [
 			    '➕ Encima del reloj, en una sola línea: el tiempo que hace, la siguiente alarma con lo que falta para que suene, la próxima festividad con los días que quedan y la fase lunar',
 			    '➕ Toca el clima o la festividad y te lleva a su panel, resaltado; toca la alarma y se abre el panel de alarmas',
@@ -19485,6 +19495,7 @@
 			    if(b){b.style.background=t===tab?'rgba(10,132,255,.15)':'none';b.style.color=t===tab?'#0a84ff':'var(--txt-40)';b.style.borderBottom=t===tab?'2px solid #0a84ff':'none';}
 			  });
 			  const cont=document.getElementById('cloud-content');
+			  if(!cont) return;   // se puede llamar con Mi Nube cerrada (p. ej. al borrar todo)
 			  if(tab==='data') renderCloudData(cont);
 			  else if(tab==='gallery') renderCloudGallery(cont);
 			  else renderCloudBackup(cont);
@@ -19550,22 +19561,79 @@
 			  cloudTab('gallery');
 			}
 			function renderCloudBackup(cont){
+			  const dias=ixCopiaDiasDescarga();
+			  const viejo = dias===null || dias*86400000>=IX_COPIA_AVISA;
+			  const cuandoBajaste = dias===null ? _uiT('nunca')
+			                      : dias===0 ? _uiT('hoy')
+			                      : dias===1 ? _uiT('ayer')
+			                      : _uiT('hace')+' '+dias+' '+_uiT('días');
 			  cont.innerHTML=`
 			    <div style="display:flex;flex-direction:column;gap:12px;">
-			      <button onclick="exportAllData()" style="width:100%;padding:14px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#30d158;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">⬇️ Exportar todos mis datos (JSON)</button>
-			      <label style="display:block;width:100%;padding:14px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;text-align:center;box-sizing:border-box;">
-			        ⬆️ Importar datos (JSON)
+			      <div id="ix-copias-auto" style="background:rgba(255,255,255,.04);border:1px solid var(--glass-border,rgba(255,255,255,.1));border-radius:var(--r-lg);padding:14px;">
+			        <div style="font-size:12px;font-weight:800;margin-bottom:4px;">🕘 ${_uiT('Copias automáticas')}</div>
+			        <div style="font-size:11px;color:var(--txt-45);line-height:1.5;">${_uiT('Se guarda una sola cada 3 días, aquí en el dispositivo. Aguanta el botón rojo de abajo y un fallo de la app, pero NO aguanta borrar los datos del navegador ni perder el móvil: para eso, baja el archivo.')}</div>
+			        <div id="ix-copias-lista" style="margin-top:10px;font-size:11px;color:var(--txt-45);">${_uiT('Cargando…')}</div>
+			      </div>
+			      ${viejo ? `<div style="background:rgba(255,159,10,.12);border:1px solid rgba(255,159,10,.4);border-radius:var(--r-lg);padding:12px;font-size:11.5px;color:#ff9f0a;line-height:1.5;">
+			        ⚠️ ${_uiT('Última descarga del archivo:')} <b>${cuandoBajaste}</b>. ${_uiT('Es la única copia que sobrevive si borras los datos del navegador o cambias de móvil.')}
+			      </div>` : `<div style="font-size:11px;color:var(--txt-45);text-align:center;">${_uiT('Última descarga del archivo:')} ${cuandoBajaste}</div>`}
+			      <button onclick="exportAllData()" style="width:100%;padding:14px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.4);color:#30d158;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;">⬇️ ${_uiT('Exportar todos mis datos (JSON)')}</button>
+			      <label style="display:block;width:100%;padding:14px;background:rgba(10,132,255,.15);border:1px solid rgba(10,132,255,.4);color:#0a84ff;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;text-align:center;box-sizing:border-box;">
+			        ⬆️ ${_uiT('Importar datos (JSON)')}
 			        <input type="file" accept=".json" onchange="importAllData(event)" style="display:none;">
 			      </label>
-			      <button onclick="if(confirm(_uiT('¿Borrar TODOS los datos guardados?'))){localStorage.clear();alert(_uiT('Datos borrados'));cloudTab('data');}" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:14px;cursor:pointer;font-size:13px;font-weight:700;">🗑️ Borrar todos los datos</button>
+			      <button onclick="ixBorrarTodo()" style="width:100%;padding:14px;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.4);color:#ff453a;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;">🗑️ ${_uiT('Borrar todos los datos')}</button>
 			    </div>
 			  `;
+			  ixCopiaPintarLista();
+			}
+			async function ixCopiaPintarLista(){
+			  const cont=document.getElementById('ix-copias-lista');
+			  if(!cont) return;
+			  const lista=await ixCopiaLista();
+			  if(!lista.length){
+			    cont.innerHTML='<span style="opacity:.6;">'+_uiT('Todavía no hay ninguna. Se hará sola en cuanto lleves un rato usando la app.')+'</span>'
+			      +'<div style="margin-top:8px;"><button onclick="ixCopiaAhoraMismo()" style="padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--glass-border,rgba(255,255,255,.15));background:rgba(255,255,255,.06);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+_uiT('Hacer una ahora')+'</button></div>';
+			    return;
+			  }
+			  cont.innerHTML = lista.map(c=>{
+			    const f=new Date(c.id);
+			    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);">'
+			      +'<div style="min-width:0;"><div style="color:var(--txt);font-weight:700;font-size:11.5px;">'+escapeHtml(f.toLocaleString())+'</div>'
+			      +'<div style="font-size:10px;opacity:.55;">'+c.claves+' '+_uiT('datos')+' · '+_ixCopiaTam(c.bytes)+'</div></div>'
+			      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+			      +'<button onclick="ixCopiaRestaurar('+c.id+')" style="padding:6px 10px;border-radius:var(--r-sm);border:1px solid rgba(10,132,255,.4);background:rgba(10,132,255,.15);color:#0a84ff;font-size:10.5px;font-weight:700;cursor:pointer;">'+_uiT('Volver a esta')+'</button>'
+			      +'<button onclick="ixCopiaBorrar('+c.id+')" title="'+_uiT('Borrar esta copia')+'" style="padding:6px 9px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--txt-45);font-size:10.5px;cursor:pointer;">✕</button>'
+			      +'</div></div>';
+			  }).join('')
+			  + '<div style="margin-top:8px;"><button onclick="ixCopiaAhoraMismo()" style="padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--glass-border,rgba(255,255,255,.15));background:rgba(255,255,255,.06);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+_uiT('Hacer una ahora')+'</button></div>';
+			}
+			async function ixCopiaAhoraMismo(){
+			  const r=await ixCopiaHacer('manual');
+			  if(!r.ok) alert(_uiT('No se pudo guardar la copia')+': '+r.error);
+			  else if(r.saltada) alert(_uiT('No ha cambiado nada desde la última copia.'));
+			  ixCopiaPintarLista();
+			}
+			// El boton rojo hace una copia ANTES de borrar. Es el unico sitio de la
+			// app donde un clic se lleva todo por delante.
+			async function ixBorrarTodo(){
+			  if(!confirm(_uiT('¿Borrar TODOS los datos guardados?'))) return;
+			  const r=await ixCopiaHacer('antes-de-borrar');
+			  localStorage.clear();
+			  alert(r.ok ? _uiT('Datos borrados. Se guardó una copia por si acaso: está en Respaldo → Copias automáticas.')
+			             : _uiT('Datos borrados'));
+			  cloudTab('backup');
 			}
 			function exportAllData(){
 			  const data={};
 			  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);data[k]=localStorage.getItem(k);}
 			  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-			  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mi_dashboard_datos.json';a.click();
+			  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+			  a.download='ixclock_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+			  setTimeout(()=>URL.revokeObjectURL(a.href), 30000);
+			  // Se apunta la fecha: es lo que mira el aviso de «hace mucho que no
+			  // bajas una copia».
+			  try{ localStorage.setItem('ix_copia_descarga', String(Date.now())); }catch(e){}
 			}
 			function importAllData(event){
 			  const file=event.target.files[0];if(!file)return;
@@ -19573,13 +19641,151 @@
 			  reader.onload=e=>{
 			    try{
 			      const data=JSON.parse(e.target.result);
-			      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k,v));
+			      if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('no es un respaldo');
+			      // Copia de lo de AHORA antes de mezclar: si el archivo era el
+			      // que no era, todavia se puede volver.
+			      try{ ixCopiaHacer('antes-de-importar'); }catch(e2){}
+			      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v)));
 			      alert(_uiT('✅ Datos restaurados correctamente. Recargando…'));
 			      setTimeout(()=>location.reload(),500);
 			    }catch(err){alert(_uiT('❌ Error: archivo inválido'));}
 			  };
 			  reader.readAsText(file);
 			}
+
+			/* ===================== COPIA DE SEGURIDAD AUTOMÁTICA =====================
+			   Todo lo del usuario (alarmas, notas, favoritas, canciones de IXBand,
+			   fondos propios…) vive en localStorage, y localStorage se borra
+			   entero con un clic: el botón «Borrar todos los datos» de esta misma
+			   pantalla, o «borrar datos del navegador».
+
+			   La copia automática se guarda en IndexedDB, que es otro almacén: NO
+			   se lo lleva un localStorage.clear(), ni un fallo de la app que deje
+			   una clave hecha un desastre. Lo que sí se lo lleva es «borrar datos
+			   del sitio», porque eso borra los dos. Por eso, además, se avisa
+			   cuando hace mucho que no se baja el archivo: ese es el único
+			   respaldo que sobrevive a perder el móvil, y ese no se puede hacer
+			   solo (el navegador exige que la descarga la pidas tú).           */
+			const IX_COPIA_DB='ixclock_copias', IX_COPIA_ST='copias';
+			const IX_COPIA_CADA=3*86400000;      // una copia cada 3 dias
+			const IX_COPIA_MAX=3;                // se guardan las 3 ultimas
+			const IX_COPIA_AVISA=30*86400000;    // avisa si hace 30 dias que no bajas el archivo
+			const IX_COPIA_TOPE=8*1024*1024;     // por encima de esto no se guarda
+
+			function _ixCopiaDB(){
+			  return new Promise((res,rej)=>{
+			    let req;
+			    try{ req=indexedDB.open(IX_COPIA_DB,1); }catch(e){ return rej(e); }
+			    req.onupgradeneeded=()=>{
+			      const db=req.result;
+			      if(!db.objectStoreNames.contains(IX_COPIA_ST)) db.createObjectStore(IX_COPIA_ST,{keyPath:'id'});
+			    };
+			    req.onsuccess=()=>res(req.result);
+			    req.onerror=()=>rej(req.error);
+			    req.onblocked=()=>rej(new Error('bloqueada'));
+			  });
+			}
+			function _ixCopiaTx(modo, fn){
+			  return _ixCopiaDB().then(db=>new Promise((res,rej)=>{
+			    const tx=db.transaction(IX_COPIA_ST, modo);
+			    const r=fn(tx.objectStore(IX_COPIA_ST));
+			    tx.oncomplete=()=>{ db.close(); res(r&&r.result!==undefined?r.result:r); };
+			    tx.onerror=()=>{ db.close(); rej(tx.error); };
+			    tx.onabort=()=>{ db.close(); rej(tx.error||new Error('abortada')); };
+			  }));
+			}
+			// Todo lo que hay ahora mismo, tal cual, sin elegir por nosotros: una
+			// copia a la que le falten los fondos no es una copia.
+			function _ixCopiaAhora(){
+			  const datos={};
+			  for(let i=0;i<localStorage.length;i++){
+			    const k=localStorage.key(i);
+			    if(k) datos[k]=localStorage.getItem(k);
+			  }
+			  return datos;
+			}
+			// Huella barata para no guardar tres copias idénticas seguidas.
+			function _ixCopiaHuella(txt){
+			  let h=5381;
+			  for(let i=0;i<txt.length;i++) h=((h*33)^txt.charCodeAt(i))>>>0;
+			  return txt.length+'-'+h.toString(36);
+			}
+			async function ixCopiaLista(){
+			  try{
+			    const todo=await _ixCopiaTx('readonly', st=>st.getAll());
+			    const arr=(todo&&todo.result)||todo||[];
+			    return arr.slice().sort((a,b)=>b.id-a.id);
+			  }catch(e){ return []; }
+			}
+			async function ixCopiaHacer(motivo){
+			  let datos, txt;
+			  try{
+			    datos=_ixCopiaAhora();
+			    txt=JSON.stringify(datos);
+			  }catch(e){ return {ok:false, error:'no se pudo leer'}; }
+			  if(txt.length>IX_COPIA_TOPE) return {ok:false, error:'demasiado grande'};
+			  const huella=_ixCopiaHuella(txt);
+			  const previas=await ixCopiaLista();
+			  if(previas[0] && previas[0].huella===huella)
+			    return {ok:true, saltada:true, id:previas[0].id};
+			  const reg={id:Date.now(), motivo:motivo||'auto', huella:huella,
+			             claves:Object.keys(datos).length, bytes:txt.length, datos:txt};
+			  try{
+			    await _ixCopiaTx('readwrite', st=>{
+			      st.put(reg);
+			      previas.slice(IX_COPIA_MAX-1).forEach(v=>st.delete(v.id));
+			    });
+			  }catch(e){ return {ok:false, error:(e&&e.name)||'sin sitio'}; }
+			  return {ok:true, id:reg.id, bytes:reg.bytes, claves:reg.claves};
+			}
+			async function ixCopiaRestaurar(id){
+			  const lista=await ixCopiaLista();
+			  const c=lista.find(x=>String(x.id)===String(id));
+			  if(!c){ alert(_uiT('Esa copia ya no está.')); return false; }
+			  let datos;
+			  try{ datos=JSON.parse(c.datos); }catch(e){ alert(_uiT('Esa copia está dañada.')); return false; }
+			  const cuando=new Date(c.id).toLocaleString();
+			  if(!confirm(_uiT('Volver a la copia del')+' '+cuando+'?\n'+
+			              _uiT('Lo de ahora se reemplaza por lo de esa fecha.'))) return false;
+			  // Antes de pisar nada, una copia de lo de AHORA: si te equivocas de
+			  // copia, todavia puedes volver.
+			  await ixCopiaHacer('antes-de-restaurar');
+			  try{
+			    localStorage.clear();
+			    Object.entries(datos).forEach(([k,v])=>localStorage.setItem(k,v));
+			  }catch(e){ alert(_uiT('No se pudo restaurar: no hay sitio.')); return false; }
+			  alert(_uiT('✅ Datos restaurados correctamente. Recargando…'));
+			  setTimeout(()=>location.reload(), 500);
+			  return true;
+			}
+			async function ixCopiaBorrar(id){
+			  try{ await _ixCopiaTx('readwrite', st=>st.delete(Number(id))); }catch(e){}
+			  if(typeof cloudTab==='function') cloudTab('backup');
+			}
+			// Dias desde la ultima descarga del archivo. null = nunca se ha bajado.
+			function ixCopiaDiasDescarga(){
+			  const t=parseInt(localStorage.getItem('ix_copia_descarga')||'0',10);
+			  if(!t) return null;
+			  return Math.floor((Date.now()-t)/86400000);
+			}
+			function _ixCopiaTam(b){
+			  return b>=1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB';
+			}
+			// Arranque: si toca, se hace una copia. Con retraso, para no competir
+			// con lo que se esta cargando en pantalla.
+			function ixCopiaArrancar(){
+			  if(typeof indexedDB==='undefined' || !indexedDB) return;
+			  setTimeout(async()=>{
+			    try{
+			      const lista=await ixCopiaLista();
+			      const ultima=lista[0] ? lista[0].id : 0;
+			      if(Date.now()-ultima >= IX_COPIA_CADA) await ixCopiaHacer('auto');
+			    }catch(e){}
+			  }, 8000);
+			}
+			if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ixCopiaArrancar);
+			else ixCopiaArrancar();
+
 			function refreshCloudPanel(){cloudTab('data');}
 
 			/* ═══════════════════════════════════════════

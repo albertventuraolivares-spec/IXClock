@@ -38,9 +38,6 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-6. **Copia de seguridad automática.** Hoy solo hay la manual de Mi Nube
-   (`cloudTab('backup')`). Que se haga sola cada X días y avise si hace mucho:
-   todo vive en localStorage y un borrado de datos se lo lleva entero.
 7. **Modo enfoque / pomodoro** 25/5, con el reloj a pantalla completa y sonido
    ambiente. Reutiliza el temporizador, los ambientes y la pantalla completa.
 9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
@@ -58,6 +55,25 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Copia de seguridad automática** (idea 6 del usuario). Una copia sola cada 3
+  días, las 3 últimas, en Mi Nube → Respaldo, con botón para volver a cualquiera.
+  - Va en **IndexedDB, no en localStorage**: si estuviera en localStorage se la
+    llevaría por delante justo lo de lo que protege (el botón rojo de esa misma
+    pantalla, o un `localStorage.clear()`). La prueba borra de verdad y luego
+    restaura, en vez de comprobar que se guardó un JSON.
+  - Las tres cosas que se llevan datos por delante —botón rojo, importar un
+    archivo, volver a una copia— guardan antes una copia. Todas reversibles.
+  - No apila copias idénticas (huella del contenido). Ojo con esto: la primera
+    versión escribía `ix_copia_ultima` en localStorage, o sea que **cambiaba lo
+    que estaba copiando** y nunca dos copias salían iguales.
+  - **Lo que NO cubre, y se dice en pantalla**: borrar los datos del navegador
+    o cambiar de móvil se lleva también IndexedDB. Para eso está el archivo, y
+    el navegador no deja bajarlo solo (exige un gesto tuyo), así que lo que se
+    hace es avisar si hace más de 30 días que no lo bajas.
+  - De paso: `cloudTab()` reventaba si se llamaba con Mi Nube cerrada, e
+    importar un archivo que no era un respaldo pisaba los datos sin avisar.
+  - `pruebas/copia.js` (25/25). Suite completa 28/28, auditoría sin avisos.
 
 - **Franja de resumen arriba** (idea 5 del usuario). Encima del reloj, en una
   sola línea: clima, siguiente alarma con lo que falta, próxima festividad con
