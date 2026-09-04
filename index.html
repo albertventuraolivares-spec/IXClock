@@ -3810,7 +3810,12 @@
 			<!-- === VIEW: Alarmas === -->
 			<div class="ica-view" id="ica-view-alarms">
 				<div class="ica-header">
-					<button style="background:none;border:none;color:#ff9f0a;font-size:15px;cursor:pointer;" onclick="icaEditAlarms()">Editar</button>
+					<!-- Aqui habia un boton «Editar» que abria un prompt() del navegador
+					     pidiendo el NUMERO de la alarma a borrar. Justo lo que la app
+					     ya se habia quitado en el resto de sitios por feo en el movil,
+					     y ademas de sobra: cada alarma tiene su 🗑, y se edita tocando
+					     su etiqueta. Queda el hueco para que el «+» no se desplace. -->
+					<div style="width:32px;height:32px;" aria-hidden="true"></div>
 					<h1 style="position:absolute;left:16px;top:90px;">Alarmas</h1>
 					<button aria-label="Añadir una alarma" class="ica-header-btn" onclick="icaAddAlarm()">+</button>
 				</div>
@@ -7256,7 +7261,10 @@
 			// El botón de configuración solo puede aparecer en la pantalla de inicio:
 			// si cualquier app o panel está abierto encima, no se muestra.
 			const _HOME_OPEN_PANELS = ['ios-clock-app','device-tracker-app','calc-panel','notes-panel','alarm-panel','ai-chat-panel','translator-panel','tv-panel','games-panel','siri-fs'];
-			const _HOME_DISPLAY_PANELS = ['bench-modal','apple-maps-modal','browser-modal','garageband-modal','compass-modal','cloud-modal','emu-modal','login-overlay'];
+			// Faltaban cuatro: Radio Mundial, Apps de Musica, VPN y el Buscador de
+			// canales se quedaban abiertos con «Cerrar todas las ventanas» y con
+			// Esc, porque esta es la lista que recorren las dos.
+			const _HOME_DISPLAY_PANELS = ['bench-modal','apple-maps-modal','browser-modal','garageband-modal','compass-modal','cloud-modal','emu-modal','login-overlay','world-radio-modal','music-apps-modal','vpn-apps-modal','smart-finder-modal'];
 			function _isHomeScreen(){
 			  for(const id of _HOME_OPEN_PANELS){
 			    const el = document.getElementById(id);
@@ -7410,10 +7418,28 @@
 			  const r=["","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI","XXII"];
 			  return r[s] || s;
 			}
+			/* Las estaciones se calculaban solo por el mes, o sea dando por hecho
+			   el hemisferio norte: en septiembre ponia OTONO, y en Argentina,
+			   Chile, Uruguay, Paraguay o Bolivia es primavera. Y no es una
+			   decision de diseno: el propio calendario ya dice «hemisferio
+			   norte» en un evento, asi que era una incoherencia.
+			   Se mira la zona horaria del aparato, que es el unico dato de sitio
+			   que hay sin pedir permiso de ubicacion. */
+			const IX_SUR = /^(America\/(Argentina|Buenos_Aires|Cordoba|Mendoza|Santiago|Punta_Arenas|Montevideo|Asuncion|La_Paz|Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Campo_Grande|Cuiaba|Lima|Guayaquil|Bogota|Caracas)|Atlantic\/(Stanley|South_Georgia)|Africa\/(Johannesburg|Windhoek|Gaborone|Harare|Lusaka|Maputo|Luanda|Kinshasa|Nairobi|Dar_es_Salaam|Antananarivo)|Indian\/(Antananarivo|Mauritius|Reunion)|Australia\/|Pacific\/(Auckland|Fiji|Port_Moresby|Noumea|Tahiti|Apia|Tongatapu)|Antarctica\/)/;
+			// Cerca del ecuador no hay estaciones marcadas, pero al menos no se
+			// dice lo contrario de lo que se ve por la ventana.
+			function ixHemisferioSur(){
+			  try{
+			    const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+			    return IX_SUR.test(tz);
+			  }catch(e){ return false; }
+			}
 			function getSeason(month){
-			  if(month>=2 && month<=4) return {name:'Primavera',icon:'🌸'};
-			  if(month>=5 && month<=7) return {name:'Verano',icon:'☀️'};
-			  if(month>=8 && month<=10) return {name:'Otoño',icon:'🍂'};
+			  // En el sur, seis meses de diferencia: se mira el mes de enfrente.
+			  const m = ixHemisferioSur() ? (month+6)%12 : month;
+			  if(m>=2 && m<=4) return {name:'Primavera',icon:'🌸'};
+			  if(m>=5 && m<=7) return {name:'Verano',icon:'☀️'};
+			  if(m>=8 && m<=10) return {name:'Otoño',icon:'🍂'};
 			  return {name:'Invierno',icon:'❄️'};
 			}
 			/* ===== NÚMEROS ARÁBIGOS / ROMANOS ===== */
@@ -14770,6 +14796,27 @@
 			  const f=document.getElementById('unit-from'),t=document.getElementById('unit-to');
 			  const tmp=f.value;f.value=t.value;t.value=tmp;convertUnits('from');
 			}
+			/* «a = 5», «c = a^2+b^2»… lo de la derecha iba tal cual a new Function
+			   y se ejecutaba con cada tecla. O sea que el evaluador de
+			   matematicas ejecutaba cualquier JavaScript: escribiendo
+			   «a=alert(document.cookie)» salia el alert de verdad, sin guardar ni
+			   pulsar nada. Y como las notas viven en localStorage y «Importar
+			   datos (JSON)» restaura localStorage entero, una nota asi podia
+			   venir escondida en una copia de seguridad compartida.
+
+			   No vale con escapar HTML: aqui el problema es que se ejecuta. Se
+			   mira ANTES de sustituir nada, con lista blanca: si aparece
+			   cualquier palabra de dos letras o mas que no sea una funcion de
+			   las que la app ofrece, la linea se trata como texto normal. */
+			const MATH_CHARS = /^[0-9a-zA-Z+\-*/%^().,\s\u03c0\u221a]*$/;
+			const MATH_FUNCIONES = /\b(sin|cos|tan|sqrt|log|abs|min|max|round|floor|ceil|pow|exp|PI|E)\b/g;
+			function _mathSeguro(expr){
+			  if(typeof expr!=='string' || !MATH_CHARS.test(expr)) return false;
+			  // Fuera las funciones permitidas, no puede quedar ninguna palabra:
+			  // las variables son de UNA letra. Asi caen alert, fetch, document,
+			  // eval, Math, constructor, window…
+			  return !/[a-zA-Z]{2,}/.test(expr.replace(MATH_FUNCIONES, ' '));
+			}
 			function evalMathNote(){
 			  const input=document.getElementById('math-input').value;
 			  const res=document.getElementById('math-result');
@@ -14780,7 +14827,9 @@
 			  lines.forEach(line=>{
 			    const m=line.match(/^([a-zA-Z])\s*=\s*(.+)$/);
 			    if(m){
-			      try{
+      try{
+			        // Se mira lo que ESCRIBIO el usuario, antes de sustituir nada.
+			        if(!_mathSeguro(m[2])){ results.push(line); return; }
 			        const expr=m[2].replace(/\^/g,'**').replace(/π/g,'Math.PI').replace(/sin\(/g,'Math.sin(').replace(/cos\(/g,'Math.cos(').replace(/tan\(/g,'Math.tan(').replace(/sqrt\(/g,'Math.sqrt(').replace(/log\(/g,'Math.log10(');
 			        const fn=new Function(...Object.keys(vars),'x','return('+expr+')');
 			        if(/\bx\b/.test(expr)){plotExpr=expr;results.push(line+' [Gráfica]');}
@@ -15140,6 +15189,14 @@
 			  {id:'vpn', name:'VPN', icon:'🛡️', fn:'openVpnModal'},
 			  {id:'benchmark', name:'IXBench', icon:'🔥', fn:'openBenchmark'},
 			  {id:'music', name:'Apps de Música', icon:'🎵', fn:'openMusicAppsModal'},
+			  // Faltaban estas seis: se abrian y el conmutador seguia diciendo
+			  // «Todavia no abriste ninguna app en esta sesion», que era falso.
+			  {id:'radio', name:'Radio Mundial', icon:'📻', fn:'openWorldRadioModal'},
+			  {id:'nube', name:'Mi Nube', icon:'☁️', fn:'openCloudPanel'},
+			  {id:'brujula', name:'Brújula', icon:'🧭', fn:'openCompass'},
+			  {id:'canales', name:'Buscador de canales', icon:'📡', fn:'openSmartFinderModal'},
+			  {id:'buscar', name:'Buscar en IXClocK', icon:'🔎', fn:'ixAbrirBusqueda'},
+			  {id:'enfoque', name:'Modo Enfoque', icon:'🎯', fn:'ixAbrirEnfoque'},
 			];
 			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
 			function _trackAppOpen(id){
@@ -15149,16 +15206,28 @@
 			  _recentApps.unshift({id:meta.id, name:meta.name, icon:meta.icon, ts:Date.now()});
 			  if(_recentApps.length>8) _recentApps.length=8;
 			}
-			(function _wireAppSwitcherTracking(){
+			// Ojo con CUANDO se engancha: esto corre a mitad del archivo, y las
+			// apps declaradas en un <script> posterior todavia no existen aqui, o
+			// sea que se saltaban en silencio. Por eso se vuelve a intentar
+			// cuando la pagina ya esta entera, y se lleva cuenta de lo ya
+			// enganchado para no envolver dos veces (contaria doble).
+			const _appSwitcherEnganchadas = {};
+			function _wireAppSwitcherTracking(){
 			  APP_SWITCHER_REGISTRY.forEach(app=>{
+			    if(_appSwitcherEnganchadas[app.id]) return;
 			    const orig=window[app.fn];
 			    if(typeof orig!=='function') return;
+			    _appSwitcherEnganchadas[app.id]=true;
 			    window[app.fn]=function(...args){
 			      _trackAppOpen(app.id);
 			      return orig.apply(this,args);
 			    };
 			  });
-			})();
+			}
+			_wireAppSwitcherTracking();
+			if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', _wireAppSwitcherTracking);
+			else setTimeout(_wireAppSwitcherTracking, 0);
+			window.addEventListener('load', _wireAppSwitcherTracking);
 			function openAppSwitcher(){
 			  let modal=document.getElementById('app-switcher-modal');
 			  if(!modal){
@@ -15297,6 +15366,16 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.4', fecha: '4 de septiembre de 2026', titulo:'Arreglos', cambios: [
+			    '🛠️ SEGURIDAD: las Notas Matemáticas ejecutaban de verdad lo que escribieras, no solo cuentas. Ahora solo se evalúan números y las funciones de la calculadora; lo demás se queda como texto',
+			    '🛠️ La etiqueta del temporizador con código dentro ya no se ejecuta al abrir la pestaña de Timers',
+			    '🛠️ «Buscador de canales» decía que buscaba radio y TV, pero solo busca TV. Ahora lo dice bien',
+			    '🛠️ Mapas: un nombre de sitio o de calle con código dentro ya no se ejecuta. Los escribe quien edita OpenStreetMap, así que no son de fiar',
+			    '🛠️ El conmutador de 3 dedos se saltaba 6 apps: abrías Radio, Mi Nube, Brújula, los buscadores o el Modo Enfoque y seguía diciendo que no habías abierto nada',
+			    '🛠️ Las estaciones daban por hecho el hemisferio norte: en septiembre ponía OTOÑO también en Argentina o Chile, donde es primavera',
+			    '🛠️ «Cerrar todas las ventanas» dejaba abiertas Radio Mundial, Apps de Música, VPN y el Buscador de canales, y aun así decía que las había cerrado',
+			    '🛠️ El botón «Editar» de Alarmas abría una ventanita del navegador pidiendo el número de la alarma. Fuera: cada alarma ya tiene su papelera',
+			  ]},
 			  { v:'2.3', fecha: '4 de septiembre de 2026', titulo:'Avisos del sistema', cambios: [
 			    '➕ Las alarmas y los temporizadores ahora te avisan aunque estés en otra pestaña o en otra app. Se activa en Configuración → Avisos',
 			    '➕ «Mantener la pantalla encendida», para dejar IXClocK puesto como reloj de mesa',
@@ -15741,7 +15820,9 @@
 			  }
 			  // Estación y siglo (se pueden ocultar). "ESTAMOS" quitado; siglo sin repetir.
 			  const mo = a.getMonth() + 1, yr = a.getFullYear();
-			  const estacion = (mo===12 || mo<=2) ? 'INVIERNO' : mo<=5 ? 'PRIMAVERA' : mo<=8 ? 'VERANO' : 'OTOÑO';
+			  // Modo Facil usaba su propia cuenta, y tambien de hemisferio norte.
+			  // Ahora sale de getSeason, que es la unica que sabe de esto.
+			  const estacion = getSeason(mo-1).name.toUpperCase();
 			  const siglo = Math.floor((yr - 1) / 100) + 1;
 			  const est1 = document.getElementById('easy-estacion');
 			  const est2 = document.getElementById('easy-siglo');
@@ -16046,7 +16127,10 @@
 			      const lat=parseFloat(d[0].lat),lon=parseFloat(d[0].lon);
 			      _aplMap.flyTo([lat,lon],14,{duration:1.5});
 			      if(_aplMarker)_aplMap.removeLayer(_aplMarker);
-			      _aplMarker=L.marker([lat,lon]).addTo(_aplMap).bindPopup('<b>'+d[0].display_name.split(',').slice(0,2).join(', ')+'</b>').openPopup();
+			      // display_name lo escribe quien edita OpenStreetMap, y bindPopup
+			      // mete la cadena como HTML: sin escapar, se ejecuta.
+			      _aplMarker=L.marker([lat,lon]).addTo(_aplMap)
+			        .bindPopup('<b>'+escapeHtml(d[0].display_name.split(',').slice(0,2).join(', '))+'</b>').openPopup();
 			    });
 			}
 			function amapMyLocation(){
@@ -16111,8 +16195,9 @@
 			    if(_aplRouteLayer) _aplMap.removeLayer(_aplRouteLayer);
 			    _aplRouteMarkers.forEach(m=>_aplMap.removeLayer(m)); _aplRouteMarkers=[];
 			    _aplRouteLayer=L.polyline(coords,{color:'#0a84ff',weight:6,opacity:.85}).addTo(_aplMap);
-			    _aplRouteMarkers.push(L.marker([from.lat,from.lon]).addTo(_aplMap).bindPopup('🅰️ '+from.name));
-			    _aplRouteMarkers.push(L.marker([to.lat,to.lon]).addTo(_aplMap).bindPopup('🅱️ '+to.name));
+			    // Igual aqui: el nombre viene del buscador de OpenStreetMap.
+			    _aplRouteMarkers.push(L.marker([from.lat,from.lon]).addTo(_aplMap).bindPopup('🅰️ '+escapeHtml(from.name)));
+			    _aplRouteMarkers.push(L.marker([to.lat,to.lon]).addTo(_aplMap).bindPopup('🅱️ '+escapeHtml(to.name)));
 			    _aplMap.fitBounds(_aplRouteLayer.getBounds(),{padding:[60,60]});
 			    const km=(route.distance/1000).toFixed(1);
 			    const min=Math.round(route.duration/60);
@@ -16134,7 +16219,12 @@
 			    _amapNavIdx=0, _amapSpoken=-1, _amapYouMark=null, _amapVoiceOn=true;
 			// Traduce la maniobra que devuelve el motor de rutas a algo que se entienda.
 			function _amapManeuver(st){
-			  const m=st.maneuver||{}, t=m.type||'turn', mod=m.modifier||'', road=st.name||'';
+			  // El nombre de la calle lo devuelve el motor de rutas con datos de
+			  // OpenStreetMap, y esto acaba en innerHTML (la lista de indicaciones
+			  // y el cartel de navegacion). Se escapa aqui, en el unico sitio por
+			  // el que pasan todas las maniobras.
+			  const m=st.maneuver||{}, t=m.type||'turn', mod=m.modifier||'';
+			  const road=escapeHtml(st.name||'');
 			  const via=road?(' por <b>'+road+'</b>'):'';
 			  const GIRO={
 			    'left':['↰','Gira a la izquierda'], 'right':['↱','Gira a la derecha'],
@@ -16153,7 +16243,7 @@
 			    case 'end of road': return [g[0], g[1]+' al final de la calle'+via];
 			    case 'continue': return [g[0], (mod==='uturn'?'Da la vuelta':'Continúa')+via];
 			    case 'roundabout':
-			    case 'rotary':   return ['🔄','En la rotonda, toma la <b>'+(m.exit||1)+'ª salida</b>'+via];
+			    case 'rotary':   return ['🔄','En la rotonda, toma la <b>'+escapeHtml(m.exit||1)+'ª salida</b>'+via];
 			    case 'roundabout turn': return ['🔄','En la rotonda, '+g[1].toLowerCase()+via];
 			    case 'exit roundabout':
 			    case 'exit rotary': return ['🔄','Sal de la rotonda'+via];
@@ -20571,17 +20661,6 @@
 			}
 			function icaAddAlarm(){ _icaHojaAlarma(null); }
 			function icaChangeAlarmTone(i){ _icaHojaAlarma(i); }
-			function icaEditAlarms(){
-			  if(!_icaAlarms.length) return;
-			  const idx = prompt('Número de alarma a eliminar (1-'+_icaAlarms.length+'):');
-			  if(!idx) return;
-			  const n = parseInt(idx)-1;
-			  if(n >= 0 && n < _icaAlarms.length){
-			    _icaAlarms.splice(n,1);
-			    localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
-			    icaRenderAlarms();
-			  }
-			}
 			icaRenderAlarms();
 			// Comprobador: hace sonar las alarmas de la app Reloj con su tono elegido
 			let _icaLastFired = null;
@@ -20933,7 +21012,9 @@
 			function icaRenderRecents(){
 			  const el = document.getElementById('ica-timer-recents');
 			  const recents = JSON.parse(localStorage.getItem('ica_timer_recents')||'[]');
-			  el.innerHTML = recents.map(r=>'<div style="padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:14px;">'+r+'</div>').join('');
+			  // La etiqueta del temporizador es texto libre del usuario y se guarda
+			  // en localStorage: sin escapar, se ejecutaba al abrir la pestaña.
+			  el.innerHTML = recents.map(r=>'<div style="padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:14px;">'+escapeHtml(r)+'</div>').join('');
 			}
 			icaRenderRecents();
 			icaPintarDormirBotones();
@@ -21689,7 +21770,7 @@
 			  { id:'bench',    n:'IXBench',       icon:'📊', d:'Mide la potencia de tu dispositivo', open:'openBenchmark', assets:[] },
 			  { id:'nube',     n:'Mi Nube',       icon:'☁️', d:'Tus archivos guardados', open:'openCloudPanel', assets:[] },
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
-			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca emisoras de radio y TV del mundo', open:'openSmartFinderModal', assets:[] },
+			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca canales de TV del mundo por país, idioma o deporte', open:'openSmartFinderModal', assets:[] },
 			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
 			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] }
 			];

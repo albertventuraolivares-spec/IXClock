@@ -80,6 +80,84 @@ si ya existe**, como se hizo con la lista del 3.
     solo un icono, y cero `prefers-reduced-motion` con todos esos fondos
     animados.
 
+### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
+Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
+duplicados. **Comprobar en el codigo antes de tocar nada.**
+
+**Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
+22. **Despertar con la radio**: elegir una emisora guardada como sonido de
+    alarma. Ya existe «dormir con la radio» y ya existen los favoritos de
+    emisora: es enlazarlos. Pedida dos veces.
+23. **Alarma con la hora de otra ciudad** («despiértame a las 9h de Tokio»).
+    Alarmas y reloj mundial no se cruzan. Pedida dos veces.
+24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
+    que salgan al abrir esa ciudad, y convertibles en alarma de un toque.
+    Pedida dos veces.
+25. **Modo Viaje**: al elegir ciudad en el reloj mundial, que el conversor de
+    divisas cambie solo a su moneda y se cargue su clima.
+26. **Puente Mapas → Radio**: tocar un país en el mapa y «escuchar radio de
+    aquí», filtrando Radio Mundial por ese país.
+27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
+    mundial».
+28. **Dormir con la radio recuerda la emisora**: hoy el temporizador existe pero
+    no memoriza la fuente, así que hay que volver a buscarla.
+29. **Buscador global que calcula y convierte**: escribir «150 usd a eur» o
+    «23*4» y que salga el resultado, con opción de abrir la calculadora. El
+    buscador ya centraliza todo y ya ejecuta acciones; el conversor ya existe.
+30. **Conversor de unidades** (longitud, peso, temperatura) en la Calculadora,
+    reaprovechando la interfaz de divisas.
+31. **Mejor hora para una reunión**: que el comparador mire todas tus ciudades
+    guardadas y diga la franja en que todas están en verde, en vez de que lo
+    calcules a ojo.
+
+**IXBand**:
+32. **Exportar MIDI de verdad**, no solo audio grabado. Hoy exporta webm/mp4/wav
+    «cocinado»; como IXBand ya modela cada nota con su tiempo exacto, seria
+    serializar eso en vez de grabar el altavoz — y así se abriría en un DAW.
+33. **Exportar pistas por separado**, no solo la mezcla.
+34. **Sección como plantilla entre canciones**: hoy se duplica dentro de la
+    misma canción; falta copiar un estribillo de una canción a otra.
+35. **Pista de voz por micrófono** mezclada con los instrumentos.
+36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
+    por separado y nunca se cruzan.
+
+**Mas pedidas (llegaron repetidas, aqui una sola vez)**:
+41. **Alertas de cambio de divisa**: «avísame si EUR/USD baja de X», sonando
+    como una alarma más.
+42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
+    tendencia: hoy el conversor da el valor puntual, sin contexto.
+43. **Mini-reproductor flotante de radio** que se vea al cambiar de app: el
+    audio ya sigue sonando, pero no hay control fuera de la ventana de Radio.
+44. **Centro de notificaciones** con historial de alarmas y descargas.
+45. **Favoritos de radio con etiqueta** («para dormir», «para currar»).
+46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
+    cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
+    internet».
+47. **Notas con casillas** (checklist).
+48. **Adjuntar una ubicación de Mapas a una nota**, y al tocarla abrir la ruta.
+49. **Modo mesita de noche**: pantalla atenuada, hora grande y próxima alarma,
+    para dejar el móvil cargando. (Parecido al 18, pero ese era al girar.)
+50. **Exportar las tomas de IXBand** (`_gbTakes`) a WAV/MP3: hoy solo se oyen
+    dentro del estudio.
+
+**Otras**:
+39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
+    sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
+40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
+    navegación, la radio y la hora grande. Reaprovecha Mapas y Radio.
+    («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
+    convertir una nota en alarma.)
+37. **Historial del Modo Enfoque**: guardar cada sesión (fecha, duración,
+    racha), como ya existe el historial de alarmas. Hoy no deja rastro.
+38. **Tarjeta del día compartible**: imagen con hora, clima y próxima alarma
+    para mandar por WhatsApp. Usa los mismos datos que la franja de resumen.
+
+**Ya cubiertas, no repetir**:
+- «Notificaciones reales en segundo plano» y «Modo Antes de salir» se pidieron
+  otra vez. La primera está hecha (con su límite dicho en pantalla: con la app
+  cerrada del todo no hay aviso posible sin servidor de push). La segunda es la
+  franja de resumen, que ya junta clima + siguiente alarma + festividad + luna.
+
 ### Otras
 11. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
    es que el buscador se deje emisoras — se comprobó que ya encuentra las 185
@@ -89,6 +167,59 @@ si ya existe**, como se hizo con la lista del 3.
 ---
 
 ## Hecho
+
+- **Ejecución de JavaScript en Notas Matemáticas, y dos cosas más**
+  (`pruebas/mates.js` 15/15). Lo reportó el usuario con la prueba hecha.
+  - **No era un fallo de escapado: era que se ejecutaba.** `evalMathNote`
+    pasaba lo de la derecha del igual a `new Function()` tal cual, y encima con
+    cada tecla (`oninput`). Escribiendo `a=alert(document.cookie)` salía el
+    alert de verdad, sin guardar ni pulsar nada. Y como las notas viven en
+    `localStorage` y «Importar datos (JSON)» restaura `localStorage` entero,
+    una nota así podía **venir escondida en una copia de seguridad compartida**
+    y dispararse al abrirla.
+  - Arreglado con lista blanca **antes** de sustituir nada: si queda cualquier
+    palabra de dos letras o más que no sea una de las funciones que la app
+    ofrece, la línea se trata como texto normal. Así caen `alert`, `fetch`,
+    `document`, `eval`, `Function`, `constructor`… y los caracteres fuera de la
+    lista (comillas, corchetes, backticks, `=`, `;`) tumban de paso
+    `` a=`${...}` `` y `a=1;window.x=1`.
+  - Lo difícil no era cortar la ejecución, era **no romper las matemáticas**:
+    la prueba comprueba 13 ataques Y 9 cuentas (variables entre líneas,
+    potencias, raíces, seno, logaritmo, módulo, negativos), la gráfica de
+    `y = x^2` y que el texto suelto se conserva.
+  - **XSS en los recientes del temporizador**: la etiqueta es texto libre del
+    usuario, se guarda en `localStorage` y se pintaba sin escapar.
+  - La tarjeta **«Buscador de canales»** decía «Busca emisoras de radio y TV»,
+    pero la función solo consulta listas de iptv-org (TV). Corregido el texto:
+    prometía algo que el código nunca hizo.
+
+- **Cuatro bugs que reportó el usuario, verificados uno por uno**
+  (`pruebas/mapas.js` 14/14, `pruebas/tresbugs.js` 25/25).
+  1. **XSS en Mapas.** El nombre de un sitio (`display_name` de Nominatim) y el
+     de una calle los escribe quien edita OpenStreetMap, e iban a `innerHTML`
+     y a `bindPopup` de Leaflet —que mete la cadena como HTML— sin escapar.
+     Mismo patrón que el del terremoto. Como la CDN de Leaflet está bloqueada
+     aquí, la prueba sirve un Leaflet falso que **sí** ejecuta HTML en
+     `bindPopup`, y lo primero que comprueba es justo eso: si el falso no
+     ejecutara, la prueba pasaría sin probar nada. Verificado revirtiendo el
+     arreglo: fallan 5 comprobaciones.
+  2. **El conmutador de 3 dedos ignoraba 6 de las 14 apps.** No bastaba con
+     añadirlas al array: el enganche corría **una sola vez, a mitad del
+     archivo**, y las apps declaradas en un `<script>` posterior todavía no
+     existían, así que se saltaban en silencio. Ahora se reintenta con la
+     página entera, sin envolver dos veces.
+  3. **Las estaciones daban por hecho el hemisferio norte.** En septiembre
+     ponía OTOÑO, y en Argentina o Chile es primavera. Se mira la zona horaria
+     del aparato, que es el único dato de sitio que hay sin pedir permiso de
+     ubicación. Modo Fácil tenía además su propia cuenta duplicada; ahora sale
+     de `getSeason`, que es la única que sabe de esto. Probado en dos husos.
+  4. **«Cerrar todas las ventanas» y Esc** dejaban abiertas Radio Mundial, Apps
+     de Música, VPN y el Buscador de canales: faltaban en `_HOME_DISPLAY_PANELS`.
+  5. De paso: el botón **«Editar»** de Alarmas abría un `prompt()` del
+     navegador pidiendo el *número* de la alarma a borrar — justo lo que la app
+     ya se había quitado en todos los demás sitios, y de sobra porque cada
+     alarma tiene su 🗑. Fuera el botón y su función muerta. **Cero `prompt()`
+     de verdad en toda la app.**
 
 - **Avisos del sistema y pantalla encendida** (ideas 16 y 17 del usuario).
   Confirmado antes de tocar nada: cero `Notification` en todo el archivo.
