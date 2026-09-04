@@ -15444,6 +15444,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.6', fecha: '4 de septiembre de 2026', titulo:'El buscador calcula', cambios: [
+			    '➕ Escribe «23*4» en el buscador y sale el resultado, sin abrir la calculadora',
+			    '➕ Y «150 usd a eur» te lo cambia al momento. Tócalo y se abre la calculadora con esos datos ya puestos',
+			    '➕ Entiende «150usd eur», «100 EUR to USD» y «20 dolares en pesos», y los números escritos de las dos formas (1.500,50 y 1,500.50)',
+			  ]},
 			  { v:'2.5', fecha: '4 de septiembre de 2026', titulo:'Despertar con la radio', cambios: [
 			    '➕ Ya puedes despertarte con una emisora en vez de un tono: sale en la hoja de la alarma, entre tus emisoras favoritas (márcalas con ★ en Sonidos y Radio)',
 			    '➕ La lista de alarmas te dice con qué emisora te despierta cada una',
@@ -22132,10 +22137,116 @@
 			  t=(t||'').toLowerCase();
 			  try{ return t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(e){ return t; }
 			}
+			/* ===== El buscador tambien calcula y cambia divisas =====
+			   Escribes «23*4» o «150 usd a eur» y sale el resultado arriba del
+			   todo, sin abrir la calculadora. Las dos piezas ya existian: el
+			   evaluador con lista blanca (_mathSeguro) y las tasas (_ixRates).
+
+			   Un numero suelto NO cuenta: escribir «7» buscando una nota no
+			   debe soltarte «7 = 7» delante de lo que buscabas.            */
+			const IX_ALIAS_MONEDA = {
+			  dolar:'USD', dolares:'USD', dollar:'USD', dollars:'USD', usd:'USD',
+			  euro:'EUR', euros:'EUR', eur:'EUR',
+			  peso:'DOP', pesos:'DOP', dop:'DOP',
+			  libra:'GBP', libras:'GBP', gbp:'GBP',
+			  yen:'JPY', yenes:'JPY', jpy:'JPY',
+			  real:'BRL', reales:'BRL', brl:'BRL',
+			  bitcoin:'BTC', bitcoins:'BTC', btc:'BTC'
+			};
+			function _ixMoneda(txt){
+			  const t=_ixNorm(String(txt||''));
+			  if(IX_ALIAS_MONEDA[t]) return IX_ALIAS_MONEDA[t];
+			  const c=t.toUpperCase();
+			  return IX_CURRENCIES.some(function(x){ return x[0]===c; }) ? c : null;
+			}
+			// «1.500,50» y «1,500.50» son el mismo numero escrito de dos maneras.
+			// El separador que manda es el ULTIMO que aparece.
+			function _ixNumero(txt){
+			  let t=String(txt||'').replace(/\s/g,'');
+			  if(!/^[\d.,]+$/.test(t)) return NaN;
+			  const ultPunto=t.lastIndexOf('.'), ultComa=t.lastIndexOf(',');
+			  if(ultPunto>=0 && ultComa>=0){
+			    const dec = ultPunto>ultComa ? '.' : ',';
+			    const mil = dec==='.' ? ',' : '.';
+			    t = t.split(mil).join('').replace(dec,'.');
+			  } else if(ultComa>=0){
+			    // una sola coma: decimal si deja 1 o 2 cifras detras, si no son miles
+			    t = (t.length-ultComa-1<=2 && t.split(',').length===2) ? t.replace(',','.') : t.split(',').join('');
+			  } else if(ultPunto>=0){
+			    const trozos=t.split('.');
+			    if(trozos.length>2) t=trozos.join('');
+			    else if(trozos[1].length===3 && trozos[0].length<=3 && /^\d+$/.test(trozos[0])) {
+			      // «1.500» en formato europeo son mil quinientos, no uno coma cinco
+			      t=trozos.join('');
+			    }
+			  }
+			  const n=parseFloat(t);
+			  return isFinite(n) ? n : NaN;
+			}
+			function ixCalculoRapido(qOriginal){
+			  const q=String(qOriginal||'').trim();
+			  if(!q) return null;
+
+			  // ── divisas: «150 usd a eur», «150usd eur», «20 dolares en pesos» ──
+			  const m=q.match(/^([\d.,]+)\s*([a-zA-Z]{2,9})\s*(?:a|to|en|in|->|=|>)?\s*([a-zA-Z]{2,9})$/);
+			  if(m){
+			    const n=_ixNumero(m[1]), de=_ixMoneda(m[2]), a=_ixMoneda(m[3]);
+			    if(isFinite(n) && de && a && de!==a){
+			      if(!_ixRates) _ixRates=IX_RATES_FALLBACK;
+			      const rf=_ixRates[de], rt=_ixRates[a];
+			      if(rf && rt){
+			        const res=n*(rt/rf);
+			        return { grupo:'Resultado', icono:'💱',
+			          titulo:_ixFmt(res,a)+' '+a,
+			          sub:_ixFmt(n,de)+' '+de+' · 1 '+de+' = '+_ixFmt(rt/rf,a)+' '+a
+			              +(_ixRatesLive?'':'  ·  ⚠️ tasas aproximadas, sin conexión'),
+			          texto:q, _valor:_ixFmt(res,a)+' '+a,
+			          ir:function(){ ixAbrirDivisas(n, de, a); } };
+			      }
+			    }
+			  }
+
+			  // ── cuentas: hace falta un operador, un numero suelto no vale ──
+			  if(!/[+\-*/%^]/.test(q) || !/\d/.test(q)) return null;
+			  if(typeof _mathSeguro!=='function' || !_mathSeguro(q)) return null;
+			  try{
+			    const expr=q.replace(/\^/g,'**').replace(/π/g,'Math.PI')
+			      .replace(/sin\(/g,'Math.sin(').replace(/cos\(/g,'Math.cos(')
+			      .replace(/tan\(/g,'Math.tan(').replace(/sqrt\(/g,'Math.sqrt(')
+			      .replace(/log\(/g,'Math.log10(');
+			    const v=new Function('return('+expr+')')();
+			    if(typeof v!=='number' || !isFinite(v)) return null;
+			    const redondo=Math.round(v*1e8)/1e8;
+			    return { grupo:'Resultado', icono:'🟰',
+			      titulo:String(redondo), sub:q+' =', texto:q, _valor:String(redondo),
+			      ir:function(){ ixAbrirCalculadora(); } };
+			  }catch(e){ return null; }
+			}
+			// Abrir la calculadora ya en divisas, con lo que escribiste puesto.
+			function ixAbrirDivisas(n, de, a){
+			  try{ if(typeof calcPanelOpen!=='undefined' && !calcPanelOpen) toggleCalcPanel(); }catch(e){}
+			  setTimeout(function(){
+			    try{ switchCalcMode('currency'); }catch(e){}
+			    const amt=document.getElementById('currency-amount');
+			    const f=document.getElementById('currency-from'), t=document.getElementById('currency-to');
+			    if(amt) amt.value=n;
+			    if(f) f.value=de;
+			    if(t) t.value=a;
+			    try{ convertCurrency(); }catch(e){}
+			  }, 120);
+			}
+			function ixAbrirCalculadora(){
+			  try{ if(typeof calcPanelOpen!=='undefined' && !calcPanelOpen) toggleCalcPanel(); }catch(e){}
+			}
 			function ixBuscarTodo(q){
 			  q=_ixNorm((q||'').trim());
 			  if(q.length<1) return [];
 			  const todo=[];
+			  // El resultado se calcula aparte y se pone DELANTE al final: si
+			  // entrara en la puntuacion normal quedaria el ultimo, porque el
+			  // titulo (el numero) no se parece a lo que escribiste.
+			  let _ixRapido=null;
+			  try{ _ixRapido=ixCalculoRapido(String(q||'')); }catch(e){}
 			  // 1. Apps
 			  IX_APPS.forEach(function(a){
 			    todo.push({ grupo:'Apps', icono:a.icon, titulo:a.n, sub:a.d, texto:a.n+' '+a.d,
@@ -22199,6 +22310,7 @@
 			  });
 			  let out=[];
 			  orden.forEach(function(g){ out=out.concat(cajas[g]); });
+			  if(_ixRapido) out.unshift(_ixRapido);
 			  return out.slice(0,40);
 			}
 			/* ── TODAS LAS APPS ───────────────────────────────────────────────
