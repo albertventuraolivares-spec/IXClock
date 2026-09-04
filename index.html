@@ -759,6 +759,14 @@
 			.note-row .note-title{font-size:14.5px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);}
 			.note-row .note-meta{font-size:11.5px;opacity:.5;display:flex;gap:6px;white-space:nowrap;overflow:hidden;}
 			.note-row .note-snippet{text-overflow:ellipsis;overflow:hidden;}
+			.note-row .note-pin{flex-shrink:0;}
+			.notas-grupo{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+			  opacity:.45;padding:10px 4px 4px;}
+			.notas-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+			  padding:5px 10px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.16);
+			  background:rgba(255,255,255,.06);color:var(--txt);cursor:pointer;margin:0 4px 4px 0;
+			  max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+			.notas-chip.on{background:#ffd60a;border-color:#ffd60a;color:#1c1c1e;}
 			.notes-search-bar{background:rgba(118,118,128,.24);border-radius:10px;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--txt-60);}
 			.btn-settings{
 			  /* z-index alto a propósito: los modales de apps (navegador, GarageBand,
@@ -2060,6 +2068,14 @@
 							<button id="sbm-auto" class="btn-option flex-1" onclick="setSettingsBtnMode('auto')">👻 Se oculta solo</button>
 						</div>
 						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Fijo: el engranaje se queda en la esquina superior izquierda (recomendado). Se oculta solo: aparece al tocar esa esquina y se esconde a los 3 segundos.</p>
+					</div>
+					<!-- Avisos del sistema y pantalla encendida -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">🔔 Avisos</div>
+						<button id="cfg-notif-btn" class="btn-option w-full" onclick="ixNotifPedir()">🔔 Permitir avisos del sistema</button>
+						<p class="text-[10px] opacity-60 mt-2 mb-3 leading-relaxed" id="cfg-notif-txt">Para que las alarmas y los temporizadores te avisen aunque estés en otra pestaña o en otra app.</p>
+						<button id="cfg-wake-btn" class="btn-option w-full" onclick="ixPantallaSiempre()">☀️ Mantener la pantalla encendida</button>
+						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Para dejar IXClocK puesto como reloj de mesa sin que el aparato se duerma. Se apaga solo al cerrar la app.</p>
 					</div>
 					<!-- Pantalla y barra de apps (movido desde el dock) -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -4596,6 +4612,9 @@
 						/>
 					</div>
 				</div>
+				<!-- Filtro por carpeta. Sale solo si hay carpetas: con dos notas
+				     sueltas, una fila de chips vacia solo estorba. -->
+				<div id="notes-carpetas" class="px-3 pb-2" style="display:none;"></div>
 				<div
 					class="flex-1 overflow-y-auto custom-scrollbar px-3"
 					id="notes-list"
@@ -4620,6 +4639,8 @@
 				<div class="flex items-center justify-between px-3 pt-1 pb-1">
 					<span class="text-[11px] opacity-60" id="notes-edit-date">Hoy</span>
 					<div class="flex gap-1">
+						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
+						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
 					</div>
@@ -12085,17 +12106,8 @@
 			  TIMER:  { campos:['min','label'], hacer:function(a){
 			      const min=parseFloat(a.min); if(!isFinite(min)||min<=0||min>1440) return null;
 			      const seg=Math.round(min*60);
-			      _icaTimerRemaining = seg;
 			      if(a.label) _icaTimerLabel = a.label;
-			      clearInterval(_icaTimerInterval);
-			      _icaTimerInterval = setInterval(function(){
-			        _icaTimerRemaining--;
-			        if(_icaTimerRemaining<=0){
-			          clearInterval(_icaTimerInterval); _icaTimerInterval=null;
-			          const ah=new Date();
-			          ringAlarm({hour:ah.getHours(), minute:ah.getMinutes(), label:_icaTimerLabel, tone:_icaTimerTone});
-			        }
-			      },1000);
+			      _icaTimerArrancar(seg);
 			      return '⏳ Temporizador de '+min+' minuto'+(min===1?'':'s')+(a.label?' — '+a.label:'');
 			    }},
 			  NOTA:   { campos:['texto'], hacer:function(a){
@@ -12603,8 +12615,32 @@
 			    list.appendChild(row);
 			  });
 			}
+			// Con la pestaña de fondo el navegador frena el temporizador de 1 s y
+			// casi nunca cae justo en el segundo 0: mirando los segundos, la
+			// alarma NO sonaba. Se mira el MINUTO, y se recuperan hasta dos
+			// minutos perdidos — no mas, que si el portatil ha dormido ocho
+			// horas no queremos que suenen ocho alarmas de golpe.
+			function _ixMinutosPendientes(now, ultimo){
+			  const m=Math.floor(now.getTime()/60000);
+			  if(ultimo===null || ultimo===undefined) return {lista:[now], ultimo:m};
+			  if(m===ultimo) return {lista:[], ultimo:ultimo};
+			  // Hacia atras solo se va cambiando la hora del aparato a mano: se
+			  // empieza de cero desde ahi en vez de quedarse mudo hasta alcanzar
+			  // la hora vieja.
+			  if(m<ultimo) return {lista:[now], ultimo:m};
+			  const desde=Math.max(ultimo+1, m-2);
+			  const lista=[];
+			  for(let k=desde;k<=m;k++) lista.push(new Date(k*60000));
+			  return {lista:lista, ultimo:m};
+			}
+			let _ixMinAlarms=null;
 			function checkAlarms(now){
-			  if(now.getSeconds()!==0) return;
+			  const r=_ixMinutosPendientes(now, _ixMinAlarms);
+			  _ixMinAlarms=r.ultimo;
+			  if(r.lista.length!==1 || r.lista[0]!==now){ r.lista.forEach(_checkAlarmsMinuto); return; }
+			  _checkAlarmsMinuto(now);
+			}
+			function _checkAlarmsMinuto(now){
 			  const key = now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
 			  alarms.forEach(a=>{
 			    if(a.enabled && a.hour===now.getHours() && a.minute===now.getMinutes() && a.lastFired!==key){
@@ -12656,8 +12692,14 @@
 			// Las alarmas creadas en la app de Reloj se guardaban pero NADIE las
 			// comprobaba, asi que nunca sonaban. Ahora usan el mismo timbre.
 			let _icaFired={};
+			let _ixMinIca=null;
 			function checkIcaAlarms(now){
-			  if(now.getSeconds()!==0) return;
+			  const r=_ixMinutosPendientes(now, _ixMinIca);
+			  _ixMinIca=r.ultimo;
+			  if(r.lista.length!==1 || r.lista[0]!==now){ r.lista.forEach(_checkIcaMinuto); return; }
+			  _checkIcaMinuto(now);
+			}
+			function _checkIcaMinuto(now){
 			  // Ojo: `typeof` NO protege de una `let` todavia sin inicializar —
 			  // tambien lanza. Si la carga se corta antes de declararla, esto
 			  // reventaba cada minuto en punto.
@@ -12670,13 +12712,28 @@
 			    const p=String(a.time).split(':');
 			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
 			    if(isNaN(h)) return;
+			    // Con fecha, solo suena ese dia. Y una sola vez: despues se apaga
+			    // sola, que si no se quedaria armada para siempre.
+			    if(a.fecha){
+			      const f=_icaFechaDe(a.fecha);
+			      if(!f || f.getFullYear()!==now.getFullYear() || f.getMonth()!==now.getMonth()
+			            || f.getDate()!==now.getDate()) return;
+			    }
 			    if(h===now.getHours() && m===now.getMinutes() && _icaFired['a'+i]!==key){
 			      _icaFired['a'+i]=key;
 			      ringAlarm({id:'ica-'+i, hour:h, minute:m, label:a.label||'Alarma', tone:a.tone||'radial'});
+			      if(a.fecha){
+			        a.on=false;
+			        try{ localStorage.setItem('ica_alarms', JSON.stringify(lista)); }catch(e){}
+			        try{ icaRenderAlarms(); }catch(e){}
+			      }
 			    }
 			  });
 			}
 			function ringAlarm(alarm){
+			  // Aunque estes en otra pestaña o en otra app.
+			  try{ ixNotificar('\u23f0 '+(alarm.label||'Alarma'),
+			                   fmtAMPM(alarm.hour, alarm.minute), 'alarma-'+alarm.id); }catch(e){}
 			  ringingAlarmId = alarm.id;
 			  document.getElementById('ring-icon').innerText = '⏰';
 			  document.getElementById('ring-time').innerText = fmtAMPM(alarm.hour, alarm.minute);
@@ -12874,33 +12931,169 @@
 			  if(search) search.value = '';
 			  renderNotesList();
 			}
+			/* ===== NOTAS: carpetas y fijar arriba =====
+			   Con muchas notas el buscador es lo unico que salva, y para buscar
+			   hay que saber de antemano lo que buscas. Fijar arriba y agrupar por
+			   carpeta sirven justo para lo contrario: encontrar sin buscar.
+			   Las carpetas NO se guardan aparte: son los nombres que aparecen en
+			   las notas. Asi no puede quedar una carpeta fantasma que no apunta a
+			   nada, ni una nota metida en una carpeta que ya no existe.       */
+			let _notasCarpeta = null;          // null = todas
+			const NOTAS_SIN = '\u0000sin';     // marca interna de «sin carpeta»
+			function notasCarpetas(){
+			  const vistas = {};
+			  notes.forEach(function(n){ if(n && n.carpeta) vistas[n.carpeta]=1; });
+			  return Object.keys(vistas).sort(function(a,b){ return a.localeCompare(b,'es'); });
+			}
+			function notasIrCarpeta(c){
+			  _notasCarpeta = c;
+			  const b=document.getElementById('notes-search');
+			  renderNotesList(b?b.value:'');
+			}
+			function notasPintarCarpetas(){
+			  const cont=document.getElementById('notes-carpetas');
+			  if(!cont) return;
+			  const cs=notasCarpetas();
+			  if(!cs.length){ cont.style.display='none'; cont.innerHTML=''; _notasCarpeta=null; return; }
+			  // Si la carpeta que estabas mirando se queda sin notas, se vuelve a
+			  // Todas en vez de enseñar una lista vacia sin motivo.
+			  if(_notasCarpeta && _notasCarpeta!==NOTAS_SIN && cs.indexOf(_notasCarpeta)<0) _notasCarpeta=null;
+			  const sueltas=notes.filter(function(n){ return n && !n.carpeta; }).length;
+			  let h='<button class="notas-chip'+(_notasCarpeta===null?' on':'')+'" onclick="notasIrCarpeta(null)">'
+			       +'🗂️ '+_uiT('Todas')+' ('+notes.length+')</button>';
+			  cs.forEach(function(c){
+			    const n=notes.filter(function(x){ return x.carpeta===c; }).length;
+			    h+='<button class="notas-chip'+(_notasCarpeta===c?' on':'')+'" onclick="notasIrCarpeta('
+			      +escapeHtml(JSON.stringify(c))+')" title="'+escapeHtml(c)+'">📁 '+escapeHtml(c)+' ('+n+')</button>';
+			  });
+			  if(sueltas) h+='<button class="notas-chip'+(_notasCarpeta===NOTAS_SIN?' on':'')
+			    +'" onclick="notasIrCarpeta(NOTAS_SIN)">📄 '+_uiT('Sin carpeta')+' ('+sueltas+')</button>';
+			  cont.innerHTML=h;
+			  cont.style.display='block';
+			}
 			function renderNotesList(filterText){
 			  const list = document.getElementById('notes-list');
 			  const countEl = document.getElementById('notes-count');
 			  if(!list) return;
 			  list.innerHTML = '';
-			  let sorted = notes.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+			  notasPintarCarpetas();
+			  let sorted = notes.slice();
+			  if(_notasCarpeta===NOTAS_SIN) sorted = sorted.filter(n=>!n.carpeta);
+			  else if(_notasCarpeta) sorted = sorted.filter(n=>n.carpeta===_notasCarpeta);
 			  if(filterText){
 			    const q = filterText.toLowerCase();
-			    sorted = sorted.filter(n=>n.content.toLowerCase().includes(q));
+			    sorted = sorted.filter(n=>(n.content||'').toLowerCase().includes(q));
 			  }
+			  // Fijadas arriba; dentro de cada grupo, la mas reciente primero.
+			  sorted.sort((a,b)=>{
+			    const fa=a.fijada?1:0, fb=b.fijada?1:0;
+			    if(fa!==fb) return fb-fa;
+			    return (b.updatedAt||0)-(a.updatedAt||0);
+			  });
 			  if(countEl) countEl.innerText = notes.length===1 ? '1 nota' : notes.length+' notas';
 			  if(sorted.length===0){
 			    list.innerHTML = notes.length===0
 			      ? ixVacio('📝','No tienes notas todavía','Toca ＋ para escribir la primera.')
-			      : ixVacio('🔎','Sin resultados','No hay ninguna nota que coincida con lo que buscaste.');
+			      : (filterText
+			          ? ixVacio('🔎','Sin resultados','No hay ninguna nota que coincida con lo que buscaste.')
+			          : ixVacio('📁','Carpeta vacía','Aquí no hay ninguna nota todavía.'));
 			    return;
 			  }
+			  // Solo se pone cabecera de grupo si de verdad hay dos grupos.
+			  const hayDos = sorted.some(x=>!!x.fijada) && sorted.some(x=>!x.fijada);
+			  let grupo='';
 			  sorted.forEach(n=>{
+			    const g = n.fijada ? 'fijadas' : 'resto';
+			    if(hayDos && g!==grupo){
+			      grupo=g;
+			      const cab=document.createElement('div');
+			      cab.className='notas-grupo';
+			      cab.innerText = g==='fijadas' ? _uiT('Fijadas') : _uiT('Notas');
+			      list.appendChild(cab);
+			    }
 			    const firstLine = (n.content.split('\n')[0] || '').trim().slice(0,60);
 			    const rest = n.content.split('\n').slice(1).join(' ').trim().slice(0,80);
 			    const title = firstLine || 'Nota nueva';
 			    const row = document.createElement('div');
 			    row.className = 'note-row';
 			    row.onclick = ()=>notesOpen(n.id);
-			    row.innerHTML = `<div class="note-title">${escapeHtml(title)}</div><div class="note-meta"><span>${notesFormatDate(n.updatedAt||Date.now())}</span>${rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : ''}</div>`;
+			    row.innerHTML = '<div class="note-title">'+(n.fijada?'<span class="note-pin">📌 </span>':'')+escapeHtml(title)+'</div>'
+			      +'<div class="note-meta"><span>'+notesFormatDate(n.updatedAt||Date.now())+'</span>'
+			      +(n.carpeta && _notasCarpeta===null ? '<span>📁 '+escapeHtml(n.carpeta)+'</span>' : '')
+			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
 			    list.appendChild(row);
 			  });
+			}
+			function notasFijarActual(){
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  if(!n) return;
+			  n.fijada = !n.fijada;
+			  saveNotes();                       // fijar no cuenta como editar:
+			  notasPintarBotones();              // no se toca updatedAt
+			  try{ ixToast(n.fijada?'📌 Fijada arriba':'Ya no está fijada'); }catch(e){}
+			}
+			function notasPintarBotones(){
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  const bf=document.getElementById('notes-fijar');
+			  const bc=document.getElementById('notes-carpeta-btn');
+			  if(bf){
+			    const on = !!(n && n.fijada);
+			    bf.style.background = on ? '#ffd60a' : 'rgba(255,255,255,.1)';
+			    bf.style.color = on ? '#1c1c1e' : 'var(--txt)';
+			    bf.title = on ? 'Quitar de arriba' : 'Fijar arriba';
+			  }
+			  if(bc) bc.innerText = (n && n.carpeta) ? ('📁 '+n.carpeta) : '📁 Carpeta';
+			}
+			// Mover a una carpeta. Sin prompt() del navegador: en el movil sale feo
+			// y no deja ver las carpetas que ya tienes.
+			function notasHojaCarpeta(){
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  if(!n) return;
+			  notasCerrarHojaCarpeta();
+			  const hoja=document.createElement('div');
+			  hoja.id='notas-hoja-carpeta';
+			  hoja.style.cssText='position:fixed;inset:0;z-index:2147482400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;';
+			  hoja.addEventListener('click',function(e){ if(e.target===hoja) notasCerrarHojaCarpeta(); });
+			  let h='<div style="width:min(380px,94vw);max-height:80vh;overflow:auto;background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-2xl,24px);box-shadow:var(--sh-3,0 24px 60px rgba(0,0,0,.7));padding:20px;color:var(--txt);">'
+			    +'<div style="font-size:16px;font-weight:800;margin-bottom:14px;text-align:center;">'+_uiT('Mover a una carpeta')+'</div>';
+			  const cs=notasCarpetas();
+			  if(cs.length){
+			    h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:12px;">';
+			    cs.forEach(function(c){
+			      h+='<button class="notas-chip'+(n.carpeta===c?' on':'')+'" onclick="notasMover('
+			        +escapeHtml(JSON.stringify(c))+')">📁 '+escapeHtml(c)+'</button>';
+			    });
+			    h+='</div>';
+			  }
+			  h+='<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">'+_uiT('CARPETA NUEVA')+'</div>'
+			    +'<input id="notas-carpeta-nueva" type="text" maxlength="30" placeholder="'+_uiT('Nombre')+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:var(--r-md,12px);color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:14px;">'
+			    +'<div style="display:flex;gap:9px;">'
+			    +  '<button onclick="notasMover(\'\')" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-md,12px);color:var(--txt);font-size:13px;font-weight:700;padding:12px;cursor:pointer;">'+_uiT('Sin carpeta')+'</button>'
+			    +  '<button onclick="notasCrearCarpeta()" style="flex:1;background:#ffd60a;border:none;border-radius:var(--r-md,12px);color:#1c1c1e;font-size:13px;font-weight:800;padding:12px;cursor:pointer;">'+_uiT('Crear y mover')+'</button>'
+			    +'</div></div>';
+			  hoja.innerHTML=h;
+			  document.body.appendChild(hoja);
+			  const inp=document.getElementById('notas-carpeta-nueva');
+			  if(inp) inp.addEventListener('keydown',function(e){ if(e.key==='Enter') notasCrearCarpeta(); });
+			}
+			function notasCerrarHojaCarpeta(){
+			  const h=document.getElementById('notas-hoja-carpeta');
+			  if(h) h.remove();
+			}
+			function notasMover(carpeta){
+			  const n = notes.find(x=>x.id===currentNoteId);
+			  if(!n) return;
+			  if(carpeta) n.carpeta=carpeta; else delete n.carpeta;
+			  saveNotes();
+			  notasCerrarHojaCarpeta();
+			  notasPintarBotones();
+			  try{ ixToast(carpeta?('📁 '+carpeta):'Fuera de la carpeta'); }catch(e){}
+			}
+			function notasCrearCarpeta(){
+			  const inp=document.getElementById('notas-carpeta-nueva');
+			  const v=((inp&&inp.value)||'').trim().slice(0,30);
+			  if(!v){ if(inp) inp.focus(); return; }
+			  notasMover(v);
 			}
 			function notesFilterList(){
 			  const q = document.getElementById('notes-search').value;
@@ -12924,6 +13117,7 @@
 			  document.getElementById('notes-textarea').value = n ? n.content : '';
 			  document.getElementById('notes-edit-date').innerText = n ? notesFormatDate(n.updatedAt||Date.now()) : '';
 			  notesUpdateWordCount();
+			  notasPintarBotones();
 			  notesSetMode('text');
 			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
@@ -15103,6 +15297,21 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.3', fecha: '4 de septiembre de 2026', titulo:'Avisos del sistema', cambios: [
+			    '➕ Las alarmas y los temporizadores ahora te avisan aunque estés en otra pestaña o en otra app. Se activa en Configuración → Avisos',
+			    '➕ «Mantener la pantalla encendida», para dejar IXClocK puesto como reloj de mesa',
+			    '🛠️ ARREGLO GORDO: con la app de fondo, las alarmas no sonaban. El navegador frena el reloj interno y el minuto de la alarma se saltaba entero. Ahora no',
+			    '🛠️ El temporizador se alargaba si te ibas a otra pestaña. Ahora cuenta por reloj de verdad',
+			    '🛠️ Se dice claro lo que NO se puede: con la app cerrada del todo, ningún aviso es posible',
+			  ]},
+			  { v:'2.2', fecha: '4 de septiembre de 2026', titulo:'Recordatorios y notas ordenadas', cambios: [
+			    '➕ Alarmas con fecha: «el 15 a las 9». Suena ese día, una vez, y se apaga sola',
+			    '➕ La lista te dice si es Hoy, Mañana o el día que sea, y marca las que ya pasaron',
+			    '➕ Notas en carpetas, y fijar arriba las que usas siempre',
+			    '➕ Buscar dentro de una carpeta busca solo ahí',
+			    '🛠️ La franja de arriba leía la lista de alarmas antigua: las alarmas que pones en el Reloj no salían. Ahora sí',
+			    '🛠️ Fijar una nota ya no la hace parecer recién escrita',
+			  ]},
 			  { v:'2.1', fecha: '3 de septiembre de 2026', titulo:'Modo Enfoque', cambios: [
 			    '➕ Pomodoro a pantalla completa: 25 de trabajo y 5 de descanso, con uno largo cada 4. También 50/10 y 15/3',
 			    '➕ Con sonido de ambiente mientras trabajas (café, lluvia, bosque, ruido blanco o piano) y silencio en el descanso',
@@ -20160,14 +20369,70 @@
 			  try{ const v=JSON.parse(localStorage.getItem('ica_alarms')||'[]'); return Array.isArray(v)?v:[]; }
 			  catch(e){ return []; }
 			})();
+			// Una alarma puede llevar `fecha` ('AAAA-MM-DD'): entonces suena UNA vez,
+			// ese dia, y se apaga sola. Sin fecha, suena todos los dias como antes.
+			function _icaFechaDe(txt){
+			  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(txt||''));
+			  if(!m) return null;
+			  const d=new Date(+m[1], +m[2]-1, +m[3]);
+			  // Una fecha imposible (31 de febrero) se desborda al mes siguiente.
+			  if(d.getFullYear()!==+m[1] || d.getMonth()!==+m[2]-1 || d.getDate()!==+m[3]) return null;
+			  return d;
+			}
+			// Minutos que faltan para que suene, o null si no va a sonar (apagada,
+			// hora invalida, o con una fecha que ya paso).
+			function icaFaltanPara(a, ahora){
+			  if(!a || !a.on) return null;
+			  const p=String(a.time||'').split(':');
+			  const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
+			  if(isNaN(h) || h<0 || h>23 || m<0 || m>59) return null;
+			  const n=ahora||new Date();
+			  if(a.fecha){
+			    const f=_icaFechaDe(a.fecha);
+			    if(!f) return null;
+			    const cuando=new Date(f.getFullYear(), f.getMonth(), f.getDate(), h, m, 0, 0);
+			    const min=Math.floor((cuando-n)/60000);
+			    return min<0 ? null : min;      // ya paso: no vuelve a sonar
+			  }
+			  let min=(h*60+m)-(n.getHours()*60+n.getMinutes());
+			  if(min<0) min+=1440;
+			  return min;
+			}
+			// Como se lee la fecha en la lista: cerca, en palabras; lejos, la fecha.
+			function icaTextoFecha(fecha){
+			  const f=_icaFechaDe(fecha);
+			  if(!f) return '';
+			  const n=new Date();
+			  const hoy=new Date(n.getFullYear(), n.getMonth(), n.getDate());
+			  const d=Math.round((f-hoy)/86400000);
+			  if(d<0)  return _uiT('Caducada');
+			  if(d===0) return _uiT('Hoy');
+			  if(d===1) return _uiT('Mañana');
+			  const loc=(typeof _uiLang!=='undefined' && _uiLang && _uiLang!=='es') ? _uiLang : 'es';
+			  const opts=(f.getFullYear()===n.getFullYear()) ? {day:'numeric',month:'short'}
+			                                                 : {day:'numeric',month:'short',year:'numeric'};
+			  return f.toLocaleDateString(loc, opts);
+			}
 			function icaDeleteAlarm(i){
 			  _icaAlarms.splice(i,1);
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
 			  icaRenderAlarms();
 			}
+			// Una alarma con fecha que ya paso —porque la app estaba cerrada ese
+			// dia, o porque el usuario la dejo ahi— se apaga sola. Dejarla con el
+			// interruptor verde dice que va a sonar, y no va a sonar.
+			function _icaApagarCaducadas(){
+			  let cambio=false;
+			  _icaAlarms.forEach(function(a){
+			    if(a && a.on && a.fecha && icaFaltanPara(a)===null){ a.on=false; cambio=true; }
+			  });
+			  if(cambio){ try{ localStorage.setItem('ica_alarms', JSON.stringify(_icaAlarms)); }catch(e){} }
+			  return cambio;
+			}
 			function icaRenderAlarms(){
 			  const list = document.getElementById('ica-alarms-list');
 			  if(!list) return;
+			  _icaApagarCaducadas();
 			  if(!_icaAlarms.length){
 			    list.innerHTML='<div style="opacity:.45;font-size:13px;text-align:center;padding:26px 12px;line-height:1.6;">No tienes ninguna alarma.<br>Toca ＋ para crear una.</div>';
 			    return;
@@ -20178,7 +20443,11 @@
 			    const ampm = +h >= 12 ? 'p.\u202fm.' : 'a.\u202fm.';
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
-			      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+escapeHtml(a.label)+' · '+escapeHtml(icaToneName(a.tone))+' ›</div></div>'
+      +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+escapeHtml(a.label)+' · '+escapeHtml(icaToneName(a.tone))+' ›</div>'
+			      +(a.fecha ? '<div style="font-size:10.5px;font-weight:700;margin-top:2px;color:'
+			                   +(icaFaltanPara(a)===null?'var(--txt-40)':'#0a84ff')+';">🗓️ '
+			                   +escapeHtml(icaTextoFecha(a.fecha))+'</div>' : '')
+			      +'</div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div class="ica-toggle'+(a.on?' on':'')+'" onclick="icaToggleAlarm('+i+')"></div>'
 			      +  '<button onclick="icaDeleteAlarm('+i+')" title="Borrar alarma" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;">🗑</button>'
@@ -20219,6 +20488,9 @@
 			  const mm = String(parseInt(p[1],10)||0).padStart(2,'0');
 			  const tono = (a && a.tone) || 'radial';
 			  const etiqueta = a ? a.label : 'Alarma';
+			  const fecha = (a && a.fecha) || '';
+			  const _dosCif=n=>String(n).padStart(2,'0');
+			  const _hoyISO=(()=>{ const d=new Date(); return d.getFullYear()+'-'+_dosCif(d.getMonth()+1)+'-'+_dosCif(d.getDate()); })();
 			  let opcH='', opcM='';
 			  for(let i=0;i<24;i++){ const v=String(i).padStart(2,'0'); opcH+='<option value="'+v+'"'+(v===hh?' selected':'')+'>'+v+'</option>'; }
 			  for(let i=0;i<60;i+=1){ const v=String(i).padStart(2,'0'); opcM+='<option value="'+v+'"'+(v===mm?' selected':'')+'>'+v+'</option>'; }
@@ -20236,6 +20508,12 @@
 			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
 			    +'<input id="ica-alarm-label" type="text" maxlength="40" value="'+escapeHtml(etiqueta)+'" placeholder="Alarma" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;">'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+tono+'">'
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">CUÁNDO</div>'
+			    +'<div style="display:flex;gap:7px;margin-bottom:10px;">'
+			    +  '<button id="ica-rep-diario" onclick="icaAlarmaRepetir(0)" style="flex:1;border-radius:12px;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;color:var(--txt);background:'+(fecha?'rgba(255,255,255,.07)':'rgba(10,132,255,.3)')+';border:1px solid '+(fecha?'rgba(255,255,255,.16)':'rgba(10,132,255,.7)')+';">🔁 Todos los días</button>'
+			    +  '<button id="ica-rep-fecha" onclick="icaAlarmaRepetir(1)" style="flex:1;border-radius:12px;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;color:var(--txt);background:'+(fecha?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(fecha?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)')+';">🗓️ Un día concreto</button>'
+			    +'</div>'
+			    +'<input id="ica-alarm-fecha" type="date" min="'+_hoyISO+'" value="'+escapeHtml(fecha)+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;color-scheme:dark;display:'+(fecha?'block':'none')+';">'
 			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
 			  ALARM_TONES.forEach(function(t){
@@ -20250,19 +20528,46 @@
 			  hoja.innerHTML=s;
 			  document.body.appendChild(hoja);
 			}
+			// 0 = todos los dias, 1 = un dia concreto. Al elegir dia, si no habia
+			// ninguno se pone el de hoy: un campo de fecha vacio no vale de nada.
+			function icaAlarmaRepetir(modo){
+			  const inp=document.getElementById('ica-alarm-fecha');
+			  const bd=document.getElementById('ica-rep-diario'), bf=document.getElementById('ica-rep-fecha');
+			  if(!inp||!bd||!bf) return;
+			  const on='rgba(10,132,255,.3)', onB='rgba(10,132,255,.7)';
+			  const off='rgba(255,255,255,.07)', offB='rgba(255,255,255,.16)';
+			  if(modo===1){
+			    if(!inp.value) inp.value=inp.min;
+			    inp.style.display='block';
+			    bf.style.background=on; bf.style.borderColor=onB;
+			    bd.style.background=off; bd.style.borderColor=offB;
+			  } else {
+			    inp.value=''; inp.style.display='none';
+			    bd.style.background=on; bd.style.borderColor=onB;
+			    bf.style.background=off; bf.style.borderColor=offB;
+			  }
+			}
 			function icaGuardarAlarma(){
 			  const h=document.getElementById('ica-alarm-h'), m=document.getElementById('ica-alarm-m');
 			  const l=document.getElementById('ica-alarm-label'), t=document.getElementById('ica-alarm-tone');
+			  const f=document.getElementById('ica-alarm-fecha');
 			  if(!h||!m) return;
+			  const fecha=(f && f.style.display!=='none' && f.value) ? f.value : '';
+			  if(fecha && !_icaFechaDe(fecha)){ try{ ixToast('Esa fecha no existe'); }catch(e){} return; }
 			  const alarma={ time: parseInt(h.value,10)+':'+m.value,
 			                 label: (l&&l.value.trim())||'Alarma',
 			                 on:true, tone:(t&&t.value)||'radial' };
+			  if(fecha) alarma.fecha=fecha;
 			  if(_icaEditIdx!==null && _icaAlarms[_icaEditIdx]) _icaAlarms[_icaEditIdx]=alarma;
 			  else _icaAlarms.push(alarma);
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
 			  _icaCerrarHoja();
 			  icaRenderAlarms();
-			  try{ ixToast(_icaEditIdx!==null?'Alarma actualizada':'⏰ Alarma creada'); }catch(e){}
+			  try{
+			    const aviso = fecha ? ('🗓️ Recordatorio para '+icaTextoFecha(fecha).toLowerCase())
+			                        : (_icaEditIdx!==null?'Alarma actualizada':'⏰ Alarma creada');
+			    ixToast(aviso);
+			  }catch(e){}
 			}
 			function icaAddAlarm(){ _icaHojaAlarma(null); }
 			function icaChangeAlarmTone(i){ _icaHojaAlarma(i); }
@@ -20405,7 +20710,25 @@
 			})();
 
 			// --- Timer ---
-			let _icaTimerInterval=null, _icaTimerRemaining=0;
+			let _icaTimerInterval=null, _icaTimerRemaining=0, _icaTimerFin=0;
+			// Mismo problema que tenia el pomodoro: restando un segundo por tic,
+			// un temporizador puesto y dejado en segundo plano se alarga, porque
+			// el navegador frena los temporizadores de las pestañas que no miras.
+			// Se guarda la hora de fin y cada tic se mira el reloj.
+			function _icaTimerArrancar(seg){
+			  _icaTimerRemaining = seg;
+			  _icaTimerFin = Date.now() + seg*1000;
+			  clearInterval(_icaTimerInterval);
+			  _icaTimerInterval = setInterval(function(){
+			    _icaTimerRemaining = Math.max(0, Math.ceil((_icaTimerFin - Date.now())/1000));
+			    if(_icaTimerRemaining<=0){
+			      clearInterval(_icaTimerInterval); _icaTimerInterval=null;
+			      const ah=new Date();
+			      ringAlarm({hour:ah.getHours(), minute:ah.getMinutes(),
+			                 label:_icaTimerLabel, tone:_icaTimerTone});
+			    }
+			  }, 1000);
+			}
 			let _icaTimerLabel = localStorage.getItem('ica_timer_label') || 'Timer';
 			let _icaTimerTone = localStorage.getItem('ica_timer_tone') || 'radial';
 			// Etiqueta y tono del temporizador: hoja propia, no ventanitas del navegador.
@@ -20542,15 +20865,7 @@
 			  if(!recents.includes(label)){recents.unshift(label);if(recents.length>5)recents.pop();}
 			  localStorage.setItem('ica_timer_recents',JSON.stringify(recents));
 			  icaRenderRecents();
-			  clearInterval(_icaTimerInterval);
-			  _icaTimerInterval = setInterval(()=>{
-			    _icaTimerRemaining--;
-			    if(_icaTimerRemaining<=0){
-			      clearInterval(_icaTimerInterval);_icaTimerInterval=null;
-			      const now = new Date();
-			      ringAlarm({hour:now.getHours(), minute:now.getMinutes(), label:_icaTimerLabel, tone:_icaTimerTone});
-			    }
-			  },1000);
+			  _icaTimerArrancar(_icaTimerRemaining);
 			}
 			/* ── DORMIR CON LA RADIO ──────────────────────────────────────────
 			   Un temporizador normal despierta; este hace lo contrario. Baja el
@@ -20613,7 +20928,7 @@
 			  if(est) est.style.display='none';
 			}
 			function icaTimerCancel(){
-			  clearInterval(_icaTimerInterval);_icaTimerInterval=null;_icaTimerRemaining=0;
+			  clearInterval(_icaTimerInterval);_icaTimerInterval=null;_icaTimerRemaining=0;_icaTimerFin=0;
 			}
 			function icaRenderRecents(){
 			  const el = document.getElementById('ica-timer-recents');
@@ -20825,22 +21140,35 @@
 			}
 			// La alarma habilitada que suena antes. Si la hora de hoy ya pasó,
 			// cuenta para mañana: es lo que va a pasar de verdad.
+			// Hay DOS listas de alarmas: `alarms`, la del panel viejo, y `_icaAlarms`,
+			// la de la app de Reloj, que es la que se ve hoy. Mirar solo una era
+			// mentir: las alarmas que el usuario pone no salian aqui.
 			function _frAlarma(){
-			  if(typeof alarms==='undefined' || !Array.isArray(alarms)) return null;
 			  const now=new Date(), ahora=now.getHours()*60+now.getMinutes();
 			  let mejor=null, faltan=Infinity;
-			  alarms.forEach(a=>{
+			  if(typeof alarms!=='undefined' && Array.isArray(alarms)) alarms.forEach(a=>{
 			    if(!a || !a.enabled) return;
 			    if(typeof a.hour!=='number' || typeof a.minute!=='number') return;
 			    let en=(a.hour*60+a.minute)-ahora;
 			    if(en<0) en+=1440;
-			    if(en<faltan){ faltan=en; mejor=a; }
+			    if(en<faltan){ faltan=en; mejor={hour:a.hour, minute:a.minute}; }
+			  });
+			  let ica=null;
+			  try{ ica=_icaAlarms; }catch(e){}      // puede estar aun sin inicializar
+			  if(Array.isArray(ica)) ica.forEach(a=>{
+			    const en=icaFaltanPara(a, now);      // respeta la fecha y las caducadas
+			    if(en===null || en>=faltan) return;
+			    const p=String(a.time).split(':');
+			    faltan=en; mejor={hour:parseInt(p[0],10), minute:parseInt(p[1],10)||0};
 			  });
 			  if(!mejor) return null;
 			  let cuanto;
 			  if(faltan===0) cuanto=_uiT('ahora');
 			  else if(faltan<60) cuanto=_uiT('en')+' '+faltan+' min';
-			  else cuanto=_uiT('en')+' '+Math.round(faltan/60)+' h';
+			  // Con recordatorios por fecha, «en 120 h» no se entiende: a partir
+			  // de un dia se cuenta en dias.
+			  else if(faltan<1440) cuanto=_uiT('en')+' '+Math.round(faltan/60)+' h';
+			  else { const d=Math.round(faltan/1440); cuanto=_uiT('en')+' '+d+' '+_uiT(d===1?'día':'días'); }
 			  return { emoji:'⏰', texto: fmtAMPM(mejor.hour, mejor.minute)+' · '+cuanto };
 			}
 			// La festividad más cercana, de la misma tabla que pinta el panel.
@@ -20991,6 +21319,137 @@
 			// Cada app tiene su enlace (?app=id). Si entras por ese enlace, la app se
 			// abre sola. Y cada una puede guardarse en el dispositivo para funcionar
 			// sin conexión (assets = lo que necesita bajarse de fuera).
+
+			/* ===================== AVISOS DEL SISTEMA =====================
+			   Hasta ahora una alarma solo sonaba con la app abierta y delante.
+			   Una alarma que solo funciona si la estas mirando no es una alarma.
+
+			   Lo que esto hace y lo que NO, dicho claro porque la pantalla lo
+			   dice tambien: con permiso, el aviso sale aunque estes en otra
+			   pestaña o en otra app. Lo que NO se puede sin un servidor de push
+			   es avisarte con la app CERRADA del todo — ahi el navegador ya no
+			   ejecuta nada nuestro. En iOS ademas solo funciona si la app esta
+			   instalada en la pantalla de inicio.                            */
+			function ixNotifSoportado(){ return typeof Notification!=='undefined'; }
+			function ixNotifPermiso(){
+			  try{ return ixNotifSoportado() ? Notification.permission : 'no'; }catch(e){ return 'no'; }
+			}
+			// Pedirlo TIENE que salir de un toque del usuario: los navegadores
+			// ignoran la peticion si no viene de un gesto.
+			function ixNotifPedir(){
+			  if(!ixNotifSoportado()){
+			    try{ ixToast('Este navegador no tiene avisos del sistema'); }catch(e){}
+			    return Promise.resolve('no');
+			  }
+			  if(Notification.permission==='granted'){
+			    ixNotificar('IXClocK', 'Los avisos ya estaban activados \u2713', 'prueba');
+			    ixNotifPintar();
+			    return Promise.resolve('granted');
+			  }
+			  if(Notification.permission==='denied'){
+			    try{ ixToast('Los avisos están bloqueados. Actívalos en los ajustes del navegador'); }catch(e){}
+			    return Promise.resolve('denied');
+			  }
+			  let pr;
+			  try{ pr = Notification.requestPermission(); }catch(e){ return Promise.resolve('no'); }
+			  // Safari viejo lo daba por callback y no por promesa.
+			  if(!pr || typeof pr.then!=='function') pr = Promise.resolve(Notification.permission);
+			  return pr.then(function(res){
+			    ixNotifPintar();
+			    if(res==='granted') ixNotificar('IXClocK', 'Listo: te avisaremos aunque no estés mirando', 'prueba');
+			    return res;
+			  }).catch(function(){ return 'no'; });
+			}
+			// Se manda por el service worker cuando lo hay: es lo unico que
+			// funciona en una PWA instalada de iOS/Android. Si no, la de toda la
+			// vida.
+			function ixNotificar(titulo, cuerpo, tag){
+			  if(ixNotifPermiso()!=='granted') return false;
+			  const opciones={ body:cuerpo||'', tag:tag||'ixclock', icon:'icon-192.png',
+			                   badge:'icon-192.png', renotify:true };
+			  try{
+			    if(navigator.serviceWorker && navigator.serviceWorker.ready){
+			      navigator.serviceWorker.ready.then(function(reg){
+			        if(reg && reg.showNotification) reg.showNotification(titulo, opciones);
+			        else new Notification(titulo, opciones);
+			      }).catch(function(){ try{ new Notification(titulo, opciones); }catch(e){} });
+			      return true;
+			    }
+			    new Notification(titulo, opciones);
+			    return true;
+			  }catch(e){ return false; }
+			}
+			function ixNotifPintar(){
+			  const btn=document.getElementById('cfg-notif-btn');
+			  const txt=document.getElementById('cfg-notif-txt');
+			  if(!btn) return;
+			  const p=ixNotifPermiso();
+			  if(p==='no'){
+			    btn.textContent='🔕 Este navegador no tiene avisos';
+			    btn.classList.remove('active');
+			    if(txt) txt.textContent='Las alarmas seguirán sonando, pero solo con IXClocK abierto.';
+			    return;
+			  }
+			  if(p==='granted'){
+			    btn.textContent='🔔 Avisos activados · probar';
+			    btn.classList.add('active');
+			    if(txt) txt.textContent='Te avisamos aunque estés en otra pestaña o en otra app. Con IXClocK cerrado del todo no se puede: el navegador ya no nos deja hacer nada.';
+			    return;
+			  }
+			  if(p==='denied'){
+			    btn.textContent='🔕 Avisos bloqueados';
+			    btn.classList.remove('active');
+			    if(txt) txt.textContent='Los bloqueaste. Para activarlos hay que hacerlo en los ajustes del navegador para este sitio.';
+			    return;
+			  }
+			  btn.textContent='🔔 Permitir avisos del sistema';
+			  btn.classList.remove('active');
+			  if(txt) txt.textContent='Para que las alarmas y los temporizadores te avisen aunque estés en otra pestaña o en otra app.';
+			}
+
+			/* ── Que no se apague la pantalla ──
+			   El bloqueo se pierde solo cada vez que escondes la pestaña, asi que
+			   hay que volver a pedirlo al volver. */
+			let _ixWake=null, _ixWakeQuiere=false;
+			async function _ixWakePedir(){
+			  if(!_ixWakeQuiere || document.hidden) return;
+			  try{
+			    if(navigator.wakeLock && !_ixWake){
+			      _ixWake=await navigator.wakeLock.request('screen');
+			      _ixWake.addEventListener('release', function(){ _ixWake=null; });
+			    }
+			  }catch(e){ _ixWake=null; }
+			}
+			function ixPantallaSiempre(){
+			  if(!navigator.wakeLock){
+			    try{ ixToast('Este navegador no puede mantener la pantalla encendida'); }catch(e){}
+			    return false;
+			  }
+			  _ixWakeQuiere=!_ixWakeQuiere;
+			  if(_ixWakeQuiere){ _ixWakePedir(); }
+			  else { try{ if(_ixWake) _ixWake.release(); }catch(e){} _ixWake=null; }
+			  try{ localStorage.setItem('ix_pantalla_siempre', _ixWakeQuiere?'1':'0'); }catch(e){}
+			  ixWakePintar();
+			  try{ ixToast(_ixWakeQuiere?'☀️ La pantalla no se apagará':'La pantalla vuelve a apagarse sola'); }catch(e){}
+			  return _ixWakeQuiere;
+			}
+			function ixWakePintar(){
+			  const b=document.getElementById('cfg-wake-btn');
+			  if(!b) return;
+			  if(!navigator.wakeLock){ b.textContent='☀️ No disponible en este navegador'; b.classList.remove('active'); return; }
+			  b.textContent=_ixWakeQuiere?'☀️ Pantalla encendida · tocar para apagar':'☀️ Mantener la pantalla encendida';
+			  b.classList.toggle('active', _ixWakeQuiere);
+			}
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden) _ixWakePedir();
+			  ixNotifPintar();
+			});
+			(function ixAvisosIniciar(){
+			  try{ _ixWakeQuiere = localStorage.getItem('ix_pantalla_siempre')==='1'; }catch(e){}
+			  function pinta(){ ixNotifPintar(); ixWakePintar(); if(_ixWakeQuiere) _ixWakePedir(); }
+			  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', pinta);
+			  else pinta();
+			})();
 
 			/* ===================== MODO ENFOQUE (pomodoro) =====================
 			   25 de trabajo, 5 de descanso, y uno largo cada 4. El reloj a

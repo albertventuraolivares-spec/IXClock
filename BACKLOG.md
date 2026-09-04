@@ -21,6 +21,13 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
   Fusionar a `main` es lo que dispara la publicación; el botón «Publish deploy»
   de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
   reutiliza**: se abre una nueva.
+- **Y justo después de fusionar, rehacer la rama sobre `main`**:
+  `git fetch origin main && git checkout -B claude/ixclock-html-page-jhfqhc origin/main`.
+  Al fusionar con *squash* GitHub reescribe la historia, así que la rama queda
+  divergida y la PR siguiente da «merge conflicts» aunque no haya conflicto
+  real. Si ya ha pasado: se rehace la rama sobre `main` y se hace `cherry-pick`
+  de los commits nuevos, comprobando con `git diff --stat` que el árbol queda
+  idéntico al que se probó.
 
 ---
 
@@ -38,11 +45,40 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 Comprobada una por una antes de apuntarla. **La 8 ya estaba hecha** en esta
 misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 
-9. **Recordatorios por fecha.** Las alarmas son solo HH:MM diarias; falta «el 15
-   a las 9». El calendario y la cuenta atrás de festividades ya tienen motor de
-   fechas.
-10. **Organizar las notas**: carpetas y fijar arriba. Hoy solo hay buscador de
-    texto, y con muchas notas acaba siendo lo único que salva.
+
+### Lista del usuario (4 de septiembre) — SIN verificar todavia en el codigo
+Las manda de dos tandas. **Antes de tocar nada hay que comprobar una por una
+si ya existe**, como se hizo con la lista del 3.
+
+12. **Sensibilidad del ratón** en Configuración, para los que usan ordenador.
+    Ojo: el navegador **no** puede cambiar la sensibilidad del ratón del
+    sistema. Lo que sí se puede es la velocidad de lo que la app mueve ella
+    (arrastrar paneles, deslizadores, la rueda). Hay que decirlo claro en la
+    pantalla en vez de fingir que se toca el ratón de verdad.
+13. **Configuración a pantalla completa** al pulsar el botón, para que se vea
+    mejor.
+14. **Hz de pantalla y calidad** en Configuración. Ojo igual: los Hz del panel
+    no se tocan desde el navegador. Lo que sí: bajar la tasa de las animaciones
+    y la calidad de los efectos (blur, sombras, fondos animados), que es lo que
+    de verdad nota el usuario en un aparato lento. Va de la mano de
+    `prefers-reduced-motion`, que ahora mismo no se usa nada.
+15. **IA más lista: que cree imágenes.** Hay que mirar qué proveedor hay puesto
+    (`ai_provider`) y si su API da imágenes.
+18. **Modo mesita al girar en horizontal** (tipo StandBy del iPhone): reloj
+    gigante con lo mínimo — hora, clima y siguiente alarma. La franja de
+    resumen ya calcula esos tres datos.
+19. **Sincronizar entre iPhone y iPad.** «Mi Nube» no es nube: son claves de
+    localStorage de ese aparato. Pero el muro de opiniones **sí** guarda en el
+    servidor, con una función de Netlify y `@netlify/blobs` que ya está en las
+    dependencias: la tubería existe y está probada, solo se usa para las
+    opiniones. Extenderla a notas, alarmas, ciudades y ajustes con un código
+    personal. Es la más grande de todas.
+20. **Botón de instalar nativo.** No hay `beforeinstallprompt`: hoy «Instalar»
+    enseña instrucciones, cuando en Android y ordenador podría abrir el diálogo
+    del sistema de un toque.
+21. **Accesibilidad**: hay 3 `aria-label` en 1,1 MB lleno de botones que son
+    solo un icono, y cero `prefers-reduced-motion` con todos esos fondos
+    animados.
 
 ### Otras
 11. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
@@ -53,6 +89,54 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 ---
 
 ## Hecho
+
+- **Avisos del sistema y pantalla encendida** (ideas 16 y 17 del usuario).
+  Confirmado antes de tocar nada: cero `Notification` en todo el archivo.
+  - **El aviso por sí solo no arreglaba nada.** `checkAlarms` y `checkIcaAlarms`
+    exigían que el tic cayera justo en el segundo 0, y con la pestaña de fondo
+    el navegador frena ese temporizador de 1 s: el minuto de la alarma se
+    saltaba y **la alarma no sonaba**. Ahora se mira el minuto, y se recuperan
+    hasta 2 minutos perdidos — no más, que si el portátil ha dormido ocho horas
+    no queremos ocho alarmas de golpe. Si el reloj va hacia atrás (lo cambiaste
+    a mano) se empieza de cero desde ahí en vez de quedarse mudo.
+  - El temporizador de la app de Reloj tenía el mismo fallo que tuvo el
+    pomodoro: restaba un segundo por tic, así que de fondo se alargaba. Ahora va
+    por reloj (`_icaTimerArrancar`), y eso vale para el de la app y para el que
+    pone el asistente.
+  - El aviso se manda por el service worker cuando lo hay: es lo único que
+    funciona en una PWA instalada de iOS/Android.
+  - **Lo que NO puede hacer, y la pantalla lo dice**: con IXClocK cerrado del
+    todo no hay aviso posible sin un servidor de push. Y si los bloqueaste, se
+    explica que hay que desbloquearlos en el navegador.
+  - Pantalla encendida (Wake Lock) para dejarlo de reloj de mesa. El bloqueo se
+    pierde solo al esconder la pestaña, así que se vuelve a pedir al volver.
+  - `pruebas/avisos.js` (27/27).
+
+- **Organizar las notas** (idea 10 del usuario). Carpetas y fijar arriba.
+  - Las carpetas **no** se guardan en una lista aparte: son los nombres que
+    llevan las notas. Así no puede quedar una carpeta fantasma que no apunta a
+    nada, ni una nota metida en una carpeta que ya no existe. Al vaciar una
+    carpeta desaparece sola y la vista vuelve a «Todas».
+  - La fila de chips solo sale si hay carpetas: con dos notas sueltas, una fila
+    vacía solo estorba.
+  - Fijar **no** cuenta como editar: no se toca `updatedAt`, o fijar una nota
+    vieja la haría parecer recién escrita.
+  - Buscar dentro de una carpeta busca solo ahí, y lo dice cuando no hay nada.
+  - `pruebas/notas.js` (26/26).
+
+- **Recordatorios por fecha** (idea 9 del usuario). Una alarma puede llevar
+  fecha: suena UNA vez ese día y se apaga sola.
+  - Lo delicado son los bordes, y ahí está la prueba: que no suene los otros
+    días, que suene el suyo, que se apague después (si no se queda armada para
+    el año que viene), que una fecha pasada no cuente como «próxima» y que el
+    31 de febrero no exista.
+  - Una fechada que ya pasó se apaga sola al pintar la lista: dejarla con el
+    interruptor verde dice que va a sonar, y no va a sonar.
+  - **Bug encontrado de paso**: la franja de resumen leía `alarms`, la lista del
+    panel viejo, y no `_icaAlarms`, la de la app de Reloj — o sea que las
+    alarmas que pone el usuario **no salían en la franja**. Ahora mira las dos y
+    se queda con la más cercana.
+  - `pruebas/recordatorios.js` (33/33).
 
 - **Modo Enfoque / pomodoro** (idea 7 del usuario). 25/5 con descanso largo cada
   4, también 50/10 y 15/3. A pantalla completa, con sonido de ambiente de los
