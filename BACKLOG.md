@@ -134,12 +134,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     dentro del estudio.
 
 **Otras**:
-51. **Texto pálido y pequeño** (lo saca `node pruebas/calidad.js`): quedan 12
-    sitios con menos de 14 px y opacidad por debajo de 0,55 — las etiquetas del
-    panel del clima (SENSACIÓN, HUMEDAD, VIENTO, LLUVIA), los datos del
-    catálogo de dispositivos y el estado vacío de las alarmas. Con los tokens
-    `--txt-45`/`--txt-40` ya puestos es un cambio contenido, y ahora que la app
-    tiene `prefers-reduced-motion` es el siguiente escalón de accesibilidad.
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
 40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
@@ -164,6 +158,15 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Texto pálido**: de **12 sitios a 1**. Las etiquetas del panel del clima
+  (SENSACIÓN, HUMEDAD, VIENTO, LLUVIA), los datos del catálogo de dispositivos,
+  el estado vacío de las alarmas y el diagnóstico de miniaturas estaban a 10-12
+  px con opacidad por debajo de 0,55, que a ese tamaño deja de leerse.
+  - El que queda es un **falso positivo**: `📋 Copiar` con opacidad 0, que es el
+    botón del traductor **cuando está escondido**, o sea justo lo que tiene que
+    hacer. Se deja: `pruebas/calidad.js` mira la opacidad, no si el elemento se
+    ve o no.
 
 - **Accesibilidad** (idea 21). Ojo con el dato del informe: no había 3
   `aria-label`, había **61**. Lo que sí faltaba, y se arregló:
