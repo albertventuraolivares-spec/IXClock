@@ -107,8 +107,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     mundial».
 28. **Dormir con la radio recuerda la emisora**: hoy el temporizador existe pero
     no memoriza la fuente, así que hay que volver a buscarla.
-30. **Conversor de unidades** (longitud, peso, temperatura) en la Calculadora,
-    reaprovechando la interfaz de divisas.
 31. **Mejor hora para una reunión**: que el comparador mire todas tus ciudades
     guardadas y diga la franja en que todas están en verde, en vez de que lo
     calcules a ojo.
@@ -170,6 +168,24 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Una sola fuente para las divisas** (y la idea 30 **ya estaba hecha**).
+  - El conversor de unidades ya existía con longitud, peso, temperatura,
+    velocidad, área y volumen, así que la idea 30 no había que hacerla. Pero al
+    comprobarlo salió algo peor: **había DOS conversores de divisas con tablas
+    distintas**. El de Calculadora → Divisas baja las tasas del día; el de
+    Calculadora → Conversión → Divisas tenía siete monedas escritas a mano y
+    congeladas. Se contradecían hasta un **2,5 %**, y en cuanto llegaban las
+    tasas reales la diferencia **crecía sin límite**, porque una se actualizaba
+    y la otra no.
+  - Ahora la tabla de unidades se rellena de `_ixRates`, que es de donde bebe el
+    conversor de verdad. De 7 monedas a **50**, y dice si son del día o
+    aproximadas, como ya hacía el otro.
+  - La prueba comprueba que las **tres** puertas a lo mismo —unidades, divisas y
+    el buscador— dan el mismo número, y que las unidades normales (metros,
+    kilos, grados) siguen exactamente igual. Verificado devolviendo la tabla
+    vieja: con tasas nuevas, unidades decía 60 DOP y divisas 75.
+  - `pruebas/unidades.js` (12/12).
 
 - **El buscador calcula y cambia divisas** (idea 29). Escribes `23*4` o
   `150 usd a eur` y el resultado sale **el primero**, sin abrir la calculadora.

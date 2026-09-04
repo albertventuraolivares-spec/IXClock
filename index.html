@@ -14840,10 +14840,30 @@
 			  speed:{units:['km/h','m/s','mph','knot'],base:{'km/h':1/3.6,'m/s':1,'mph':0.44704,'knot':0.514444}},
 			  area:{units:['m²','km²','ft²','acre','ha'],base:{'m²':1,'km²':1e6,'ft²':0.0929,'acre':4047,'ha':1e4}},
 			  volume:{units:['L','mL','m³','gal'],base:{'L':1,'mL':.001,'m³':1000,'gal':3.78541}},
-			  currency:{units:['USD','EUR','GBP','JPY','DOP','MXN','BRL'],base:{USD:1,EUR:1.09,GBP:1.28,JPY:.0067,DOP:.017,MXN:.058,BRL:.19}},
+			  // Las divisas NO llevan tabla propia: se rellenan de _ixRates, que es
+			  // de donde bebe el conversor de divisas de verdad. Antes habia dos
+			  // tablas distintas y se contradecian hasta un 2,5 % — y encima esta
+			  // estaba congelada, asi que en cuanto llegaban las tasas del dia la
+			  // diferencia crecia sin limite.
+			  currency:{units:['USD','EUR','GBP','JPY','DOP','MXN','BRL'],base:{USD:1}},
 			};
+			// base[c] = cuanto vale 1 c en USD. _ixRates[c] = cuantos c hay en 1 USD.
+			function _unitDivisasAlDia(){
+			  if(typeof _ixRates==='undefined' || !_ixRates){
+			    try{ _ixRates=IX_RATES_FALLBACK; }catch(e){ return; }
+			  }
+			  const base={}, units=[];
+			  try{
+			    IX_CURRENCIES.forEach(function(c){
+			      const r=_ixRates[c[0]];
+			      if(r && isFinite(r) && r>0){ base[c[0]]=1/r; units.push(c[0]); }
+			    });
+			  }catch(e){}
+			  if(units.length>1){ UNIT_DATA.currency.base=base; UNIT_DATA.currency.units=units; }
+			}
 			function loadUnitCategory(){
 			  const cat=document.getElementById('unit-category').value;
+			  if(cat==='currency') _unitDivisasAlDia();
 			  const data=UNIT_DATA[cat];
 			  const f=document.getElementById('unit-from'),t=document.getElementById('unit-to');
 			  if(!f||!t)return;
@@ -14853,6 +14873,7 @@
 			}
 			function convertUnits(dir){
 			  const cat=document.getElementById('unit-category').value;
+			  if(cat==='currency') _unitDivisasAlDia();
 			  const data=UNIT_DATA[cat];
 			  const fu=document.getElementById('unit-from').value,tu=document.getElementById('unit-to').value;
 			  const fv=parseFloat(document.getElementById('unit-val-from').value)||0;
@@ -14868,7 +14889,15 @@
 			    if(dir==='from'){res=fv*(base[fu]||1)/(base[tu]||1);document.getElementById('unit-val-to').value=Math.round(res*1e6)/1e6;}
 			    else{res=tv*(base[tu]||1)/(base[fu]||1);document.getElementById('unit-val-from').value=Math.round(res*1e6)/1e6;}
 			  }
-			  const fEl=document.getElementById('unit-formula');if(fEl&&data.base)fEl.textContent='1 '+fu+' = '+Math.round((data.base[fu]||1)/(data.base[tu]||1)*1e6)/1e6+' '+tu;
+			  const fEl=document.getElementById('unit-formula');
+			  if(fEl&&data.base){
+			    let txt='1 '+fu+' = '+Math.round((data.base[fu]||1)/(data.base[tu]||1)*1e6)/1e6+' '+tu;
+			    // Con divisas se dice de donde salen: son las mismas del otro
+			    // conversor, y pueden ser aproximadas si no hubo conexion.
+			    if(cat==='currency') txt += (typeof _ixRatesLive!=='undefined' && _ixRatesLive)
+			      ? '  ·  tasas del día' : '  ·  ⚠️ aproximadas, sin conexión';
+			    fEl.textContent=txt;
+			  }
 			}
 			function swapUnits(){
 			  const f=document.getElementById('unit-from'),t=document.getElementById('unit-to');
@@ -15445,6 +15474,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'2.6', fecha: '4 de septiembre de 2026', titulo:'El buscador calcula', cambios: [
+			    '🛠️ Había dos conversores de divisas con tasas distintas, y no coincidían. Ahora los dos usan las mismas, y el de Conversión pasa de 7 monedas a 50',
 			    '➕ Escribe «23*4» en el buscador y sale el resultado, sin abrir la calculadora',
 			    '➕ Y «150 usd a eur» te lo cambia al momento. Tócalo y se abre la calculadora con esos datos ya puestos',
 			    '➕ Entiende «150usd eur», «100 EUR to USD» y «20 dolares en pesos», y los números escritos de las dos formas (1.500,50 y 1,500.50)',
