@@ -15476,6 +15476,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'2.7', fecha: '4 de septiembre de 2026', titulo:'Historial del Modo Enfoque', cambios: [
+			    '➕ «Instalar IXClocK» ahora abre el diálogo de verdad del navegador en Android y ordenador, en vez de solo explicarte los pasos. En iPhone sigue con las instrucciones, porque ahí no existe ese diálogo',
 			    '➕ «Dormir con la radio» ahora recuerda con qué emisora te dormiste: un botón la vuelve a poner y arranca el temporizador de un tirón',
 			    '➕ El Modo Enfoque ahora lleva la cuenta: sesiones de hoy, tiempo y racha de días seguidos 🔥',
 			    '🛠️ Solo cuenta una sesión terminada entera. Si saltas a la mitad no se apunta: un historial que miente no sirve de nada',
@@ -22117,7 +22118,18 @@
 			  const el=document.getElementById('ix-downloads'); if(!el) return;
 			  const totalDl=IX_APPS.filter(function(a){ return ixIsDownloaded(a.id); }).length;
 			  const totalBytes=IX_APPS.reduce(function(s,a){ return s+ixDlSize(a.id); },0);
-			  let s='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
+			  // El boton de instalar solo sale si de verdad se puede hacer algo:
+			  // instalada ya, o el navegador ofrece el dialogo, o toca explicarlo
+			  // a mano (iOS, que no tiene dialogo ninguno).
+			  let inst='';
+			  if(ixYaInstalada()){
+			    inst='<div style="margin-bottom:12px;font-size:12px;color:#30d158;font-weight:700;">✅ IXClocK está instalada en este dispositivo</div>';
+			  } else if(ixSePuedeInstalar()){
+			    inst='<button id="ix-instalar" onclick="ixInstalarAhora()" style="width:100%;margin-bottom:12px;background:linear-gradient(135deg,#30d158,#0a84ff);border:none;color:var(--txt);font-weight:800;padding:12px;border-radius:12px;cursor:pointer;font-size:13px;">📲 Instalar IXClocK</button>';
+			  } else {
+			    inst='<button id="ix-instalar" onclick="ixInstalarAhora()" style="width:100%;margin-bottom:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:var(--txt);font-weight:700;padding:12px;border-radius:12px;cursor:pointer;font-size:13px;">📲 Cómo instalar IXClocK</button>';
+			  }
+			  let s=inst+'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">'
 			    +'<button id="ix-dl-all" onclick="ixDownloadAll()" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6);border:none;color:var(--txt);font-weight:800;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:13px;">⬇️ Descargar todas</button>'
 			    +'<button onclick="ixRemoveAll()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--txt-2);font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer;font-size:12px;">🗑️ Borrar todas</button>'
 			    +'<span style="font-size:11px;opacity:.55;">'+totalDl+' de '+IX_APPS.length+' guardadas · '+ixFmtMB(totalBytes)+'</span></div>'
@@ -22156,11 +22168,72 @@
 			  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(function(){ ixToast('Enlace: '+url); });
 			  else ixToast('Enlace: '+url);
 			}
+			/* ── Instalar de verdad ──
+			   Antes «Instalar» solo enseñaba un cartel con instrucciones. En
+			   Android y en el ordenador el navegador ofrece el dialogo de verdad,
+			   pero hay que quedarse con el evento cuando lo lanza —una sola vez,
+			   y antes de que a ti te de por pulsar el boton— y volver a pedirlo
+			   despues. En iOS no existe ese dialogo: ahi el cartel es lo unico
+			   que hay, y por eso se queda.                                   */
+			let _ixInstalarEvento=null, _ixInstalada=false;
+			window.addEventListener('beforeinstallprompt', function(e){
+			  e.preventDefault();          // si no, el navegador saca su propia barra
+			  _ixInstalarEvento=e;
+			  try{ ixRenderDownloads(); }catch(err){}
+			});
+			window.addEventListener('appinstalled', function(){
+			  _ixInstalada=true; _ixInstalarEvento=null;
+			  try{ ixToast('✅ IXClocK instalada'); }catch(e){}
+			  try{ ixRenderDownloads(); }catch(e){}
+			});
+			function ixSePuedeInstalar(){ return _ixInstalarEvento!==null; }
+			function ixYaInstalada(){
+			  if(_ixInstalada) return true;
+			  try{
+			    if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+			    if(navigator.standalone===true) return true;   // iOS
+			  }catch(e){}
+			  return false;
+			}
+			function ixEsIOS(){
+			  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+			      || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+			}
+			// Devuelve que paso: 'instalada', 'aceptada', 'rechazada' o 'instrucciones'.
+			async function ixInstalarAhora(){
+			  if(ixYaInstalada()){
+			    try{ ixToast('Ya la tienes instalada'); }catch(e){}
+			    return 'instalada';
+			  }
+			  const ev=_ixInstalarEvento;
+			  if(ev && typeof ev.prompt==='function'){
+			    try{
+			      ev.prompt();
+			      let res='rechazada';
+			      try{ const r=await ev.userChoice; res=(r&&r.outcome==='accepted')?'aceptada':'rechazada'; }catch(e){}
+			      // El evento solo sirve UNA vez: el navegador manda otro si sigue
+			      // teniendo sentido ofrecerlo.
+			      _ixInstalarEvento=null;
+			      try{ ixRenderDownloads(); }catch(e){}
+			      return res;
+			    }catch(e){ /* si falla, cae al cartel de siempre */ }
+			  }
+			  ixInstrucciones();
+			  return 'instrucciones';
+			}
+			function ixInstrucciones(){
+			  const msg = ixEsIOS()
+			    ? 'Para poner IXClocK en tu pantalla de inicio:\n\n1) Toca Compartir (el cuadrito con la flecha).\n2) Toca «Añadir a pantalla de inicio».\n\nTe quedará con su propio icono y se abrirá a pantalla completa.'
+			    : 'Para poner IXClocK en tu pantalla de inicio:\n\n1) Abre el menú del navegador (⋮).\n2) Elige «Instalar» o «Añadir a pantalla de inicio».';
+			  alert(msg);
+			}
+			// Instalar UNA APP suelta (con su propio icono y su enlace). Aqui el
+			// dialogo del navegador no vale: instalaria IXClocK entera, no la app,
+			// asi que este camino sigue siendo el cartel.
 			function ixInstallApp(id){
 			  const a=IX_APPS.find(function(x){ return x.id===id; }); if(!a) return;
 			  const url=ixAppLink(id);
-			  const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-			  const msg = iOS
+			  const msg = ixEsIOS()
 			    ? 'Para poner '+a.n+' en tu pantalla de inicio:\n\n1) Se abrirá '+a.n+' en una pestaña.\n2) Toca Compartir (el cuadrito con la flecha).\n3) Toca «Añadir a pantalla de inicio».\n\nTe quedará con su propio icono y se abrirá directo en '+a.n+'.'
 			    : 'Para poner '+a.n+' en tu pantalla de inicio:\n\n1) Se abrirá '+a.n+' en una pestaña.\n2) Abre el menú del navegador (⋮).\n3) Elige «Instalar» o «Añadir a pantalla de inicio».';
 			  alert(msg);

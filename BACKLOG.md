@@ -82,9 +82,6 @@ si ya existe**, como se hizo con la lista del 3.
     dependencias: la tubería existe y está probada, solo se usa para las
     opiniones. Extenderla a notas, alarmas, ciudades y ajustes con un código
     personal. Es la más grande de todas.
-20. **Botón de instalar nativo.** No hay `beforeinstallprompt`: hoy «Instalar»
-    enseña instrucciones, cuando en Android y ordenador podría abrir el diálogo
-    del sistema de un toque.
 21. **Accesibilidad**: hay 3 `aria-label` en 1,1 MB lleno de botones que son
     solo un icono, y cero `prefers-reduced-motion` con todos esos fondos
     animados.
@@ -164,6 +161,20 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Botón de instalar nativo** (idea 20). En Android y en el ordenador abre el
+  diálogo del sistema de un toque; antes solo salía un cartel con instrucciones.
+  - El evento `beforeinstallprompt` el navegador lo lanza **una vez**, y hay que
+    quedárselo (con `preventDefault`) antes de que el usuario pulse nada.
+    Después de usarlo ya no vale, así que se suelta y se espera al siguiente.
+  - **En iOS ese evento no existe**, así que ahí el cartel tiene que seguir
+    saliendo: quitarlo dejaría a los iPhone sin forma de instalar. La prueba
+    corre el caso entero con un iPhone simulado.
+  - Si ya está instalada, el panel lo dice y no ofrece un botón que no haría
+    nada.
+  - Instalar **una app suelta** sigue con su cartel a propósito: el diálogo del
+    navegador instalaría IXClocK entera, no esa app con su enlace.
+  - `pruebas/instalar.js` (15/15).
 
 - **Dormir con la radio recuerda la emisora** (idea 28). El temporizador ya
   existía, pero no memorizaba la fuente: al día siguiente había que volver a
