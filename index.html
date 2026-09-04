@@ -203,6 +203,45 @@
 			    animation:none !important;
 			  }
 			}
+			/* ── Calidad grafica ──
+			   Ojo con lo que promete este ajuste. Los Hz del panel NO se tocan
+			   desde el navegador: eso lo manda el sistema y una pagina web no
+			   tiene forma de pedirlo. Lo que SI cuesta trabajo de verdad en un
+			   aparato lento es lo que esta app dibuja en cada fotograma: el
+			   desenfoque del cristal (backdrop-filter se recalcula por pixel, y
+			   es con diferencia lo mas caro), las sombras grandes y los fondos
+			   animados. Eso es lo que baja aqui, y eso es lo que se dice en la
+			   pantalla — en vez de fingir que se cambian los hercios.        */
+			body.ix-cal-media{ --glass-blur:18px; }
+			body.ix-cal-media .glass{
+			  backdrop-filter:blur(var(--glass-blur,18px)) saturate(160%);
+			  -webkit-backdrop-filter:blur(var(--glass-blur,18px)) saturate(160%);
+			  box-shadow:0 4px 14px rgba(0,0,0,.35);
+			}
+			body.ix-cal-media .glass::before{ display:none; }
+			body.ix-cal-ahorro{ --glass-blur:0px; }
+			body.ix-cal-ahorro .glass{
+			  /* Sin desenfoque hace falta un fondo solido: si no, el cristal se
+			     vuelve transparente y el texto se pierde encima del fondo. */
+			  backdrop-filter:none; -webkit-backdrop-filter:none;
+			  background:rgba(28,28,32,.86);
+			  box-shadow:0 2px 8px rgba(0,0,0,.3);
+			}
+			.light-mode body.ix-cal-ahorro .glass{ background:rgba(250,250,252,.9); }
+			body.ix-cal-ahorro .glass::before,
+			body.ix-cal-ahorro .glass::after{ display:none; }
+			body.ix-cal-ahorro .wallpaper-layer,
+			body.ix-cal-ahorro .wallpaper-layer::before,
+			body.ix-cal-ahorro .wallpaper-layer::after{ animation:none !important; }
+
+			/* Configuracion ancha. El cajon de 340px se queda muy corto en un
+			   ordenador y el usuario pidio verlo «a pantalla completa». Se
+			   ensancha el cajon que ya hay en vez de abrir otra ventana: asi no
+			   acaban existiendo dos configuraciones distintas. Lleva !important
+			   y mas especificidad porque la regla del movil (#left-sidebar, en
+			   la media query de arriba) tambien lo lleva. */
+			#left-sidebar.ancha{ width:min(96vw,1100px) !important; }
+
 			/* Fichas de la franja de resumen. Mismo tamano visual que la fase
 			   lunar, que ya vivia en esa linea, para que se lean como una sola
 			   cosa y no como tres anadidos sueltos. */
@@ -2104,6 +2143,23 @@
 							<button id="dockmode-compact" class="btn-option flex-1 active" onclick="setDockMode(true)">▪ Compacta</button>
 						</div>
 						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
+					</div>
+					<!-- Rendimiento y control. Los dos textos largos no sobran: son
+					     justo lo que evita que el ajuste prometa lo que no hace. -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">🎛️ Rendimiento y control</div>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">Calidad de los efectos</div>
+						<div class="flex gap-2">
+							<button id="cfg-cal-alta" class="btn-option flex-1" onclick="ixPonerCalidad('alta')">✨ Alta</button>
+							<button id="cfg-cal-media" class="btn-option flex-1" onclick="ixPonerCalidad('media')">⚖️ Media</button>
+							<button id="cfg-cal-ahorro" class="btn-option flex-1" onclick="ixPonerCalidad('ahorro')">🔋 Ahorro</button>
+						</div>
+						<p class="text-[10px] opacity-70 mt-2 mb-3 leading-relaxed">Los hercios de tu pantalla no se pueden cambiar desde una página web: eso lo manda tu sistema. Lo que sí baja esto es el trabajo de dibujado —el desenfoque del cristal, las sombras y los fondos animados—, que es lo que se nota en un aparato lento o con poca batería.</p>
+						<button id="cfg-ancha-btn" class="btn-option w-full" onclick="ixCfgToggleAncha()">⛶ Configuración a pantalla completa</button>
+						<p class="text-[10px] opacity-70 mt-2 mb-3 leading-relaxed">Ensancha este panel para verlo cómodo en pantallas grandes. Se recuerda.</p>
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">Velocidad al arrastrar · <span id="cfg-vel-lbl">1×</span></div>
+						<input id="cfg-vel" type="range" min="0.5" max="2" step="0.05" value="1" class="w-full" aria-label="Velocidad al arrastrar" oninput="ixPonerVelArrastre(this.value)">
+						<p class="text-[10px] opacity-70 mt-2 leading-relaxed">La sensibilidad del ratón la manda tu sistema operativo y una página web no puede tocarla. Lo que esto cambia es cuánto se mueven las ventanas y los paneles cuando los arrastras dentro de IXClocK.</p>
 					</div>
 					<div class="p-3.5 glass rounded-2xl">
 						<div
@@ -7274,6 +7330,96 @@
 			  }
 			}
 
+			/* ═════════════ PANTALLA Y CONTROL (Configuracion) ═════════════
+			   Tres ajustes que pidio el usuario. Dos de ellos hay que contarlos
+			   con honradez, porque el navegador NO puede hacer lo que suena que
+			   hacen:
+			     · La sensibilidad del raton es del sistema operativo. Una pagina
+			       web no la toca, ni hay API para ello. Lo que si controla es
+			       cuanto mueve ELLA lo que arrastras dentro de la app.
+			     · Los Hz del panel, igual: no se piden desde aqui. Lo que si se
+			       baja es el trabajo de dibujado, que es lo que de verdad se
+			       nota en un aparato lento o con poca bateria.
+			   En la pantalla se dice tal cual. Un ajuste que promete lo que no
+			   hace es peor que no tenerlo.                                   */
+			const IX_CAL='ix_calidad', IX_VEL='ix_vel_arrastre', IX_CFG_ANCHA='ix_cfg_ancha';
+			const IX_CALIDADES=['alta','media','ahorro'];
+
+			function ixCalidad(){
+			  try{
+			    const v=localStorage.getItem(IX_CAL);
+			    return IX_CALIDADES.indexOf(v)>=0 ? v : 'alta';
+			  }catch(e){ return 'alta'; }
+			}
+			function ixAplicarCalidad(){
+			  const c=ixCalidad();
+			  document.body.classList.toggle('ix-cal-media',  c==='media');
+			  document.body.classList.toggle('ix-cal-ahorro', c==='ahorro');
+			  IX_CALIDADES.forEach(function(x){
+			    const b=document.getElementById('cfg-cal-'+x);
+			    if(b) b.classList.toggle('active', x===c);
+			  });
+			}
+			function ixPonerCalidad(c){
+			  if(IX_CALIDADES.indexOf(c)<0) return false;
+			  try{ localStorage.setItem(IX_CAL,c); }catch(e){}
+			  ixAplicarCalidad();
+			  try{ ixToast(c==='alta'?'✨ Calidad alta':(c==='media'?'⚖️ Calidad media':'🔋 Modo ahorro')); }catch(e){}
+			  return true;
+			}
+
+			/* Velocidad de arrastre: de 0,5× a 2×. Repito: NO es la sensibilidad
+			   del raton del sistema. Multiplica lo que la app mueve cuando
+			   arrastras una ventana o un panel. Se acota siempre al leerla, que
+			   en localStorage puede haber cualquier cosa. */
+			function ixVelArrastre(){
+			  try{
+			    const v=parseFloat(localStorage.getItem(IX_VEL));
+			    if(!isFinite(v)) return 1;
+			    return Math.min(2, Math.max(0.5, v));
+			  }catch(e){ return 1; }
+			}
+			function ixPonerVelArrastre(v){
+			  let n=parseFloat(v);
+			  if(!isFinite(n)) n=1;
+			  n=Math.min(2, Math.max(0.5, n));
+			  try{ localStorage.setItem(IX_VEL, String(n)); }catch(e){}
+			  const lbl=document.getElementById('cfg-vel-lbl');
+			  if(lbl) lbl.textContent = (Math.round(n*100)/100) + '×';
+			  return n;
+			}
+
+			function ixCfgAncha(){
+			  try{ return localStorage.getItem(IX_CFG_ANCHA)==='1'; }catch(e){ return false; }
+			}
+			function ixCfgAplicarAncha(){
+			  const on=ixCfgAncha();
+			  const sb=document.getElementById('left-sidebar');
+			  if(sb) sb.classList.toggle('ancha', on);
+			  const b=document.getElementById('cfg-ancha-btn');
+			  if(b){
+			    b.classList.toggle('active', on);
+			    b.textContent = on ? '⬅️ Volver al panel estrecho'
+			                       : '⛶ Configuración a pantalla completa';
+			  }
+			}
+			function ixCfgToggleAncha(){
+			  try{ localStorage.setItem(IX_CFG_ANCHA, ixCfgAncha()?'0':'1'); }catch(e){}
+			  ixCfgAplicarAncha();
+			  return ixCfgAncha();
+			}
+
+			function ixArrancarPantallaControl(){
+			  try{ ixAplicarCalidad(); }catch(e){}
+			  try{ ixCfgAplicarAncha(); }catch(e){}
+			  const s=document.getElementById('cfg-vel');
+			  if(s) s.value=String(ixVelArrastre());
+			  try{ ixPonerVelArrastre(ixVelArrastre()); }catch(e){}
+			}
+			if(document.readyState==='loading')
+			  document.addEventListener('DOMContentLoaded', ixArrancarPantallaControl);
+			else ixArrancarPantallaControl();
+
 			/* ===================== TABS / SIDEBAR ===================== */
 			// Arranca en false porque el panel arranca visualmente cerrado (sin la
 			// clase .open); si arrancaba en true, el primer clic del botón de
@@ -8601,8 +8747,9 @@
 			  });
 			  hdr.addEventListener('pointermove',e=>{
 			    if(!hdr.hasPointerCapture(e.pointerId)) return;
-			    el.style.left=Math.max(0,ox+e.clientX-ax)+'px';
-			    el.style.top=Math.max(0,oy+e.clientY-ay)+'px';
+			    const v=(typeof ixVelArrastre==='function')?ixVelArrastre():1;
+			    el.style.left=Math.max(0,ox+(e.clientX-ax)*v)+'px';
+			    el.style.top=Math.max(0,oy+(e.clientY-ay)*v)+'px';
 			  });
 			  hdr.addEventListener('pointerup',e=>{
 			    if(hdr.hasPointerCapture(e.pointerId)) hdr.releasePointerCapture(e.pointerId);
@@ -15496,6 +15643,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.8', fecha: '4 de septiembre de 2026', titulo:'Rendimiento y control', cambios: [
+			    '➕ CALIDAD DE LOS EFECTOS en Configuración → Más: Alta, Media o Ahorro. Baja el desenfoque del cristal, las sombras y los fondos animados, que es lo que hace ir lenta la app en un aparato justo',
+			    '➕ Configuración a pantalla completa: el panel se ensancha para verlo cómodo en pantalla grande, y se recuerda',
+			    '➕ Velocidad al arrastrar, de 0,5× a 2×, para las ventanas y los paneles que se mueven con el dedo o el ratón',
+			    'ℹ️ Con honradez: los hercios de la pantalla y la sensibilidad del ratón los manda tu sistema, y una página web no puede tocarlos. Lo pone en la propia pantalla',
+			  ]},
 			  { v:'2.7', fecha: '4 de septiembre de 2026', titulo:'Historial del Modo Enfoque', cambios: [
 			    '♿ Si en tu sistema pediste menos movimiento, la app te hace caso: los fondos animados se paran y las animaciones se acortan',
 			    '♿ Los botones que son solo un icono ahora dicen qué hacen para quien usa lector de pantalla',
@@ -17134,8 +17287,9 @@
 			  });
 			  titlebar.addEventListener('pointermove', e=>{
 			    if(!titlebar.hasPointerCapture(e.pointerId)) return;
-			    el.style.left=Math.max(0, ox+e.clientX-ax)+'px';
-			    el.style.top=Math.max(0, oy+e.clientY-ay)+'px';
+			    const v=(typeof ixVelArrastre==='function')?ixVelArrastre():1;
+			    el.style.left=Math.max(0, ox+(e.clientX-ax)*v)+'px';
+			    el.style.top=Math.max(0, oy+(e.clientY-ay)*v)+'px';
 			  });
 			  titlebar.addEventListener('pointerup', e=>{
 			    if(titlebar.hasPointerCapture(e.pointerId)) titlebar.releasePointerCapture(e.pointerId);
@@ -17156,8 +17310,9 @@
 			  });
 			  handle.addEventListener('pointermove', e=>{
 			    if(!handle.hasPointerCapture(e.pointerId)) return;
-			    el.style.width=Math.max(260, ow+e.clientX-ax)+'px';
-			    el.style.height=Math.max(180, oh+e.clientY-ay)+'px';
+			    const v=(typeof ixVelArrastre==='function')?ixVelArrastre():1;
+			    el.style.width=Math.max(260, ow+(e.clientX-ax)*v)+'px';
+			    el.style.height=Math.max(180, oh+(e.clientY-ay)*v)+'px';
 			  });
 			  handle.addEventListener('pointerup', e=>{
 			    if(handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
