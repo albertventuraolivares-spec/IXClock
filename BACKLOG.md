@@ -21,6 +21,15 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
   Fusionar a `main` es lo que dispara la publicación; el botón «Publish deploy»
   de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
   reutiliza**: se abre una nueva.
+- **Hay una Routine que arranca una tanda cada 5 horas**
+  (`trig_014k8QarcPWGZNs2DKtgyGQ3`, cron `10 1,6,11,16,20` UTC = 4:10 p.m.,
+  9:10 p.m., 2:10 a.m., 7:10 a.m. y 12:10 p.m. hora del usuario, que va en
+  UTC-4). Es lo que hace que no se salte ninguna ventana: el usuario pidió
+  expresamente que no se olvide ni un periodo. Si deja de disparar, mirarla con
+  `list_triggers` — un `last_run` en FALLO es la señal.
+- Al empezar una tanda **se elige el siguiente pendiente sin preguntar**, y se
+  comprueba en el código antes de tocar nada: muchas ideas de la lista **ya
+  están hechas**, y varios informes de auditoría llegan repetidos.
 - **Y justo después de fusionar, rehacer la rama sobre `main`**:
   `git fetch origin main && git checkout -B claude/ixclock-html-page-jhfqhc origin/main`.
   Al fusionar con *squash* GitHub reescribe la historia, así que la rama queda
@@ -167,6 +176,27 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Dos fallos más de las auditorías** (`pruebas/dosbugs.js` 14/14).
+  - **«Cerrar todas las ventanas» no cerraba el Modo Enfoque**, y no era solo
+    que se quedara el overlay: seguían corriendo el temporizador, el bloqueo de
+    pantalla y el sonido de ambiente. **Este me lo comí yo** al añadir el Modo
+    Enfoque: el overlay se crea al vuelo, así que no estaba en las listas de ids
+    que recorre esa función. Es el mismo patrón que el de las 6 apps del
+    conmutador. `ixEnfoqueSalir` ya hacía la limpieza entera; solo faltaba
+    llamarla.
+  - **Traductor**: con el mismo idioma en «de» y «a», el resultado salía pero el
+    botón de copiar se quedaba invisible encima de un texto que sí estaba. Ahora
+    se ve, y además se dice por qué no traduce («Mismo idioma»).
+  - **XSS en Mi Nube → Mis Datos**: `renderCloudData` metía valores de
+    `localStorage` en `innerHTML` sin escapar, y uno de ellos es «Estado», que
+    escribe el usuario a mano. Sin el arreglo se crean dos `<img>` de verdad y
+    el `onerror` se dispara al abrir Mi Nube. De paso se escapa también la
+    clave, que hoy sale de una lista fija pero era una trampa esperando a que
+    alguien añada una nueva.
+  - Y un tercero que **destapé al arreglar el segundo**: al vaciar el texto, el
+    botón se quedaba visible sobre un resultado vacío. Sin texto no hay nada que
+    copiar, así que se esconde.
 
 - **Ejecución de JavaScript en Notas Matemáticas, y dos cosas más**
   (`pruebas/mates.js` 15/15). Lo reportó el usuario con la prueba hecha.

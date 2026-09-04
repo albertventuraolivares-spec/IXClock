@@ -12428,8 +12428,22 @@
 			  const copyBtn= document.getElementById('trans-copy-btn');
 
 			  const text = (inp?.value || '').trim();
-			  if(!text){ if(out) out.value=''; return; }
-			  if(from.value === to.value){ out.value = text; return; }
+			  // Sin texto no hay nada que copiar: el boton se esconde, o se quedaria
+			  // encima de un resultado vacio.
+			  if(!text){
+			    if(out) out.value='';
+			    if(copyBtn) copyBtn.style.opacity='0';
+			    if(status){ status.textContent=''; status.style.opacity='0'; }
+			    return;
+			  }
+			  if(from.value === to.value){
+			    out.value = text;
+			    // Hay texto que copiar: el boton tiene que verse igual que cuando
+			    // la traduccion es de verdad.
+			    if(copyBtn) copyBtn.style.opacity = '1';
+			    if(status){ status.textContent = 'Mismo idioma'; status.style.opacity='.55'; status.style.color=''; }
+			    return;
+			  }
 
 			  // UI: loading
 			  if(icon) icon.textContent = '⏳';
@@ -15282,7 +15296,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -15367,6 +15381,9 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'2.4', fecha: '4 de septiembre de 2026', titulo:'Arreglos', cambios: [
+			    '🛠️ Mi Nube → Mis Datos: si ponías código en tu «Estado», se ejecutaba al abrir esa pantalla',
+			    '🛠️ «Cerrar todas las ventanas» no cerraba el Modo Enfoque: se quedaba en pantalla, con su cuenta atrás corriendo, la pantalla sin apagarse y el sonido puesto',
+			    '🛠️ En el Traductor, con el mismo idioma en los dos lados, el botón de copiar no aparecía aunque el texto sí estaba',
 			    '🛠️ SEGURIDAD: las Notas Matemáticas ejecutaban de verdad lo que escribieras, no solo cuentas. Ahora solo se evalúan números y las funciones de la calculadora; lo demás se queda como texto',
 			    '🛠️ La etiqueta del temporizador con código dentro ya no se ejecuta al abrir la pestaña de Timers',
 			    '🛠️ «Buscador de canales» decía que buscaba radio y TV, pero solo busca TV. Ahora lo dice bien',
@@ -19814,11 +19831,14 @@
 			}
 			function renderCloudData(cont){
 			  const keys=['user_profile','saved_wallpaper','ui_mode','clock_font','motion_mode','ai_provider','cal_events','user_status','radio_countries','stars_on'];
+			  // Ojo: `user_status` y `cal_events` los escribe el usuario a mano, y
+			  // esto va a innerHTML. Sin escapar, poner <img onerror=...> como
+			  // estado ejecutaba codigo al abrir Mi Nube.
 			  const rows=keys.map(k=>{
 			    const v=localStorage.getItem(k);
 			    if(!v)return '';
 			    let display=v;try{const parsed=JSON.parse(v);if(typeof parsed==='object')display=JSON.stringify(parsed).slice(0,40)+'…';}catch(e){}
-			    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;font-size:12px;"><div><div style="font-weight:700;color:var(--txt);margin-bottom:2px;">${k}</div><div style="opacity:.55;font-size:10px;font-family:monospace;">${display.slice(0,60)}</div></div><button onclick="if(confirm('Eliminar ${k}?'))localStorage.removeItem('${k}')" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff453a;padding:4px 8px;border-radius:8px;cursor:pointer;font-size:10px;white-space:nowrap;">Borrar</button></div>`;
+			    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;font-size:12px;"><div><div style="font-weight:700;color:var(--txt);margin-bottom:2px;">${escapeHtml(k)}</div><div style="opacity:.55;font-size:10px;font-family:monospace;">${escapeHtml(display.slice(0,60))}</div></div><button onclick="if(confirm('Eliminar ${escapeHtml(k)}?'))localStorage.removeItem('${escapeHtml(k)}')" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff453a;padding:4px 8px;border-radius:8px;cursor:pointer;font-size:10px;white-space:nowrap;">Borrar</button></div>`;
 			  }).filter(Boolean).join('');
 			  const totalKB=(JSON.stringify(localStorage).length/1024).toFixed(1);
 			  cont.innerHTML=`<div style="font-size:11px;opacity:.55;margin-bottom:12px;">${totalKB} KB guardados · ${Object.keys(localStorage).length} elementos</div>${rows||ixVacio('☁️','Sin datos guardados','Cuando uses la app, aquí verás lo que se guarda en tu dispositivo.')}`;
