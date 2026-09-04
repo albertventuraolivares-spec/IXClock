@@ -90,6 +90,46 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
    return o;
  });
 
+ // ═══ Recordar CON QUE te dormiste ═══
+ // El temporizador ya existia pero no memorizaba la fuente: al dia siguiente
+ // habia que volver a buscar la emisora antes de poder poner el temporizador.
+ const memoria = await p.evaluate(async()=>{
+   const w=m=>new Promise(r=>setTimeout(r,m));
+   localStorage.removeItem('ica_dormir_ultima');
+   icaPintarDormirBotones(); await w(200);
+   const caja=document.getElementById('ica-dormir-ultima');
+   const sinNada = getComputedStyle(caja).display==='none';
+
+   // se pone una emisora y se duerme con ella
+   currentStation = STATIONS[3].id;
+   icaDormirEn(30); await w(300);
+   const guardada = localStorage.getItem('ica_dormir_ultima');
+
+   // se apaga: la emisora se limpia, pero el recuerdo tiene que quedar
+   icaDormirApagar(); await w(400);
+   const trasApagar = localStorage.getItem('ica_dormir_ultima');
+   const saleElBoton = getComputedStyle(caja).display!=='none';
+   const texto = caja.innerText;
+
+   // y de un toque vuelve a ponerla Y arranca el temporizador
+   let puesta=null; const os=window.setStation;
+   window.setStation=id=>{ puesta=id; };
+   icaDormirOtraVez(30); await w(300);
+   const enMarcha = _icaDormirFin!==null;
+   window.setStation=os;
+   icaDormirCancelar(); await w(200);
+
+   // una emisora que ya no existe no ofrece un boton a ninguna parte
+   localStorage.setItem('ica_dormir_ultima','no-existe-esta');
+   icaPintarDormirBotones(); await w(200);
+   const conBorrada = getComputedStyle(caja).display==='none';
+   localStorage.removeItem('ica_dormir_ultima');
+   icaPintarDormirBotones(); await w(150);
+   return { sinNada, guardada, trasApagar, saleElBoton, texto,
+            puesta, enMarcha, conBorrada, esperada:STATIONS[3].id,
+            nombre:STATIONS[3].title };
+ });
+
  const pruebas=[
   ['hay 5 duraciones',             r.hayBotones===true,        r.hayBotones],
   ['empieza oculto',               r.empiezaOculto===true,     r.empiezaOculto],
@@ -108,6 +148,13 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
   ['y vale el nuevo',              r.usaElNuevo===true,        r.usaElNuevo],
   ['cerrar todo lo cancela',       r.cerrarTodoLoCancela===true, r.cerrarTodoLoCancela],
   ['sin radio no revienta',        r.sinRadioNoRompe===true,   r.sinRadioNoRompe],
+  ['sin nada, no sale el botón',  memoria.sinNada===true,  memoria.sinNada],
+  ['RECUERDA la emisora',         memoria.guardada===memoria.esperada, memoria.guardada],
+  ['y al apagarse no se pierde',  memoria.trasApagar===memoria.esperada, memoria.trasApagar],
+  ['sale el botón con su nombre', memoria.saleElBoton===true && memoria.texto.indexOf(memoria.nombre)>=0, memoria.texto],
+  ['de un toque la vuelve a poner', memoria.puesta===memoria.esperada, memoria.puesta],
+  ['y arranca el temporizador',   memoria.enMarcha===true, memoria.enMarcha],
+  ['una emisora borrada no ofrece botón', memoria.conBorrada===true, memoria.conBorrada],
   ['sin errores de página',        errs.length===0,            errs.slice(0,3).join(' | ')],
  ];
  let ok=0;
