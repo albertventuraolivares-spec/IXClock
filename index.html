@@ -15473,6 +15473,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.7', fecha: '4 de septiembre de 2026', titulo:'Historial del Modo Enfoque', cambios: [
+			    '➕ El Modo Enfoque ahora lleva la cuenta: sesiones de hoy, tiempo y racha de días seguidos 🔥',
+			    '🛠️ Solo cuenta una sesión terminada entera. Si saltas a la mitad no se apunta: un historial que miente no sirve de nada',
+			    '🛠️ La racha no se rompe a las 00:01 por no haber empezado todavía hoy',
+			  ]},
 			  { v:'2.6', fecha: '4 de septiembre de 2026', titulo:'El buscador calcula', cambios: [
 			    '🛠️ Había dos conversores de divisas con tasas distintas, y no coincidían. Ahora los dos usan las mismas, y el de Conversión pasa de 7 monedas a 50',
 			    '➕ Escribe «23*4» en el buscador y sale el resultado, sin abrir la calculadora',
@@ -21774,11 +21779,15 @@
 			  if(fase==='trabajo') _enfSonidoOn(); else _enfSonidoOff();
 			  ixEnfoquePintar();
 			}
-			function _enfSiguienteFase(){
+			// `terminada` = se acabo el tiempo de verdad. Saltando a mano NO se
+			// apunta nada: si saltas al minuto 3, apuntar 25 minutos seria mentir,
+			// y un historial que miente no sirve para saber si usas esto.
+			function _enfSiguienteFase(terminada){
 			  if(_enfFase==='trabajo'){
 			    if(_enfCfg.dia!==_enfHoy()){ _enfCfg.dia=_enfHoy(); _enfCfg.hechos=0; }
 			    _enfCfg.hechos=(_enfCfg.hechos||0)+1;
 			    _enfGuardar();
+			    if(terminada) _enfApuntar(_enfMin('trabajo'));
 			    const p=_enfPreset();
 			    _enfEmpezarFase(_enfCfg.hechos % p.cada === 0 ? 'largo' : 'corto');
 			  } else {
@@ -21788,7 +21797,7 @@
 			function _enfBucle(){
 			  if(!ixEnfoqueAbierto()) return;
 			  const q=_enfRestante();
-			  if(!_enfPausado && q<=0){ _enfAviso(); _enfSiguienteFase(); return; }
+			  if(!_enfPausado && q<=0){ _enfAviso(); _enfSiguienteFase(true); return; }
 			  ixEnfoquePintar();
 			}
 			async function _enfWakeOn(){
@@ -21809,7 +21818,50 @@
 			  }
 			  ixEnfoquePintar();
 			}
-			function ixEnfoqueSaltar(){ _enfAviso(); _enfSiguienteFase(); }
+			/* ── Historial del Modo Enfoque ──
+			   Igual que el historial de alarmas: hasta ahora el modo enfoque no
+			   dejaba ningun rastro, asi que no habia forma de saber si lo usas.
+			   Se guardan las 60 ultimas sesiones (dia y minutos) y con eso se
+			   sacan el total de hoy y la racha de dias seguidos.            */
+			const IX_ENF_HIST='ix_enfoque_hist_v1', IX_ENF_HIST_MAX=60;
+			function _enfHistLeer(){
+			  try{ const v=JSON.parse(localStorage.getItem(IX_ENF_HIST)||'[]'); return Array.isArray(v)?v:[]; }
+			  catch(e){ return []; }
+			}
+			function _enfApuntar(minutos){
+			  if(!isFinite(minutos) || minutos<=0) return;
+			  const h=_enfHistLeer();
+			  h.unshift({ d:_enfHoy(), m:Math.round(minutos), t:Date.now() });
+			  if(h.length>IX_ENF_HIST_MAX) h.length=IX_ENF_HIST_MAX;
+			  try{ localStorage.setItem(IX_ENF_HIST, JSON.stringify(h)); }catch(e){}
+		}
+			// Dias SEGUIDOS con al menos una sesion, contando hacia atras desde hoy.
+			// Si ayer hiciste y hoy todavia no, la racha sigue viva: cortarla a las
+			// 00:01 seria castigarte por no haber empezado aun.
+			function enfoqueRacha(){
+			  const dias={};
+			  _enfHistLeer().forEach(function(x){ if(x&&x.d) dias[x.d]=1; });
+			  const hoy=new Date();
+			  const clave=function(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+			  let n=0, d=new Date(hoy);
+			  if(!dias[clave(d)]) d.setDate(d.getDate()-1);   // aun no has empezado hoy
+			  while(dias[clave(d)]){ n++; d.setDate(d.getDate()-1); }
+			  return n;
+			}
+			function enfoqueResumen(){
+			  const h=_enfHistLeer(), hoy=_enfHoy();
+			  const deHoy=h.filter(function(x){ return x&&x.d===hoy; });
+			  const minHoy=deHoy.reduce(function(a,x){ return a+(x.m||0); },0);
+			  const minTotal=h.reduce(function(a,x){ return a+(x.m||0); },0);
+			  return { sesionesHoy:deHoy.length, minutosHoy:minHoy,
+			           sesionesTotal:h.length, minutosTotal:minTotal, racha:enfoqueRacha() };
+		}
+			function _enfMinTexto(m){
+			  if(m<60) return m+' min';
+			  const h=Math.floor(m/60), r=m%60;
+			  return h+' h'+(r?(' '+r+' min'):'');
+			}
+			function ixEnfoqueSaltar(){ _enfAviso(); _enfSiguienteFase(false); }
 			function _enfRehacer(){
 			  const ov=document.getElementById('ix-enfoque');
 			  if(ov) ov.innerHTML='';
@@ -21859,7 +21911,7 @@
 			    const pu=document.getElementById('enf-puntos');
 			    if(pu) pu.innerHTML=_enfPuntos(p, enCiclo);
 			    const hs=document.getElementById('enf-hechos');
-			    if(hs) hs.textContent=hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy');
+			    if(hs) hs.innerHTML=_enfLineaHechos();
 			    return;
 			  }
 			  ov.innerHTML=
@@ -21869,7 +21921,7 @@
 			    +  '<div id="enf-tiempo" style="font-size:clamp(64px,18vw,150px);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em;">'+_enfMMSS(q)+'</div>'
 			    +  '<div style="width:100%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div id="enf-barra" style="height:100%;width:0;background:'+color+';transition:width .9s linear;"></div></div>'
 			    +  '<div id="enf-puntos" style="display:flex;gap:8px;">'+_enfPuntos(p, enCiclo)+'</div>'
-			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+hechos+' '+_uiT(hechos===1?'sesión hoy':'sesiones hoy')+'</div>'
+			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+_enfLineaHechos()+'</div>'
 			    +  '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">'
 			    +    '<button id="enf-pausa" onclick="ixEnfoquePausar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:none;background:var(--txt);color:#000;font-size:13px;font-weight:800;cursor:pointer;">⏸ '+_uiT('Pausar')+'</button>'
 			    +    '<button onclick="ixEnfoqueSaltar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⏭ '+_uiT('Saltar')+'</button>'
@@ -21882,6 +21934,15 @@
 			    +    IX_ENF_SONIDOS.map(x=>'<button onclick="ixEnfoqueSonido(\''+x.id+'\')" title="'+escapeHtml(x.n)+'" style="padding:7px 11px;border-radius:var(--r-full,999px);border:1px solid '+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.5)':'rgba(255,255,255,.14)')+';background:'+(x.id===(_enfCfg.sonido||'')?'rgba(255,255,255,.16)':'transparent')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+x.e+' '+escapeHtml(x.n)+'</button>').join('')
 			    +  '</div>'
 			    +'</div>';
+			}
+			// Lo de hoy y la racha, en una linea. La racha solo sale a partir de dos
+			// dias: «racha de 1 dia» no es una racha, es haber empezado.
+			function _enfLineaHechos(){
+			  const r=enfoqueResumen();
+			  let t=r.sesionesHoy+' '+_uiT(r.sesionesHoy===1?'sesión hoy':'sesiones hoy');
+			  if(r.minutosHoy>0) t+=' · '+_enfMinTexto(r.minutosHoy);
+			  if(r.racha>=2) t+='   🔥 '+r.racha+' '+_uiT('días seguidos');
+			  return escapeHtml(t);
 			}
 			function _enfPuntos(p, enCiclo){
 			  let h='';

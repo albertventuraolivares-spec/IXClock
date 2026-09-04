@@ -190,6 +190,9 @@ const leer = p => p.evaluate(()=>({
  // --- las sesiones de ayer no cuentan hoy ---
  o.dia = await p.evaluate(async()=>{
    const w=m=>new Promise(r=>setTimeout(r,m));
+   // El contador ya no sale de la configuracion sino del historial real, que
+   // es mas honesto: hay que vaciar los dos para probar «ayer no cuenta».
+   localStorage.removeItem('ix_enfoque_hist_v1');
    localStorage.setItem('ix_enfoque_v1', JSON.stringify({preset:'25',sonido:'',hechos:7,dia:'2020-1-1'}));
    const g=JSON.parse(localStorage.getItem('ix_enfoque_v1'));
    Object.assign(_enfCfg, g);
