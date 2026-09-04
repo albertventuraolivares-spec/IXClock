@@ -59,18 +59,6 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 Las manda de dos tandas. **Antes de tocar nada hay que comprobar una por una
 si ya existe**, como se hizo con la lista del 3.
 
-12. **Sensibilidad del ratón** en Configuración, para los que usan ordenador.
-    Ojo: el navegador **no** puede cambiar la sensibilidad del ratón del
-    sistema. Lo que sí se puede es la velocidad de lo que la app mueve ella
-    (arrastrar paneles, deslizadores, la rueda). Hay que decirlo claro en la
-    pantalla en vez de fingir que se toca el ratón de verdad.
-13. **Configuración a pantalla completa** al pulsar el botón, para que se vea
-    mejor.
-14. **Hz de pantalla y calidad** en Configuración. Ojo igual: los Hz del panel
-    no se tocan desde el navegador. Lo que sí: bajar la tasa de las animaciones
-    y la calidad de los efectos (blur, sombras, fondos animados), que es lo que
-    de verdad nota el usuario en un aparato lento. Va de la mano de
-    `prefers-reduced-motion`, que ahora mismo no se usa nada.
 15. **IA más lista: que cree imágenes.** Hay que mirar qué proveedor hay puesto
     (`ai_provider`) y si su API da imágenes.
 18. **Modo mesita al girar en horizontal** (tipo StandBy del iPhone): reloj
@@ -134,6 +122,13 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     dentro del estudio.
 
 **Otras**:
+51. **Las teclas de operación de la calculadora no se leen bien** (lo saca
+    `node pruebas/calidad.js`: «botones sin nombre: 9»). Son `+`, `−`, `×`,
+    `÷`, `=`, `.`, `%`, `+/-` y `✕`. Tienen texto, así que `pruebas/acceso.js`
+    las da por buenas, pero un lector de pantalla lee el símbolo suelto y
+    algunos no los dice o los dice mal. Un `aria-label` («más», «menos», «por»,
+    «entre», «igual», «coma», «por ciento», «cambiar signo», «borrar») lo
+    arregla sin tocar lo que se ve.
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
 40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
@@ -158,6 +153,34 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Rendimiento y control** (ideas 12, 13 y 14). Las tres viven en la misma
+  ficha nueva de Configuración → Más, y dos de ellas había que contarlas con
+  honradez porque **el navegador no puede hacer lo que suena que hacen**:
+  - **Calidad de los efectos** (idea 14): Alta / Media / Ahorro. Baja el
+    `backdrop-filter` del cristal (54 px → 18 px → 0), las sombras y los
+    fondos animados. **Los Hz del panel no se piden desde una página web**, y
+    así se dice en la propia pantalla. En Ahorro el cristal pasa a fondo
+    sólido: sin desenfoque quedaría transparente y el texto se perdería.
+  - **Configuración a pantalla completa** (idea 13): el cajón de 340 px se
+    ensancha a `min(96vw,1100px)`. Se recuerda entre recargas. Se ensancha el
+    cajón que ya había en vez de abrir otra ventana, para no acabar con dos
+    configuraciones distintas.
+  - **Velocidad al arrastrar** (idea 12), de 0,5× a 2×. **La sensibilidad del
+    ratón la manda el sistema operativo y una web no la toca**; lo que sí se
+    multiplica es lo que la app mueve al arrastrar. Aplicado a los tres sitios
+    donde hay arrastre por delta: cabecera de panel flotante, barra de título
+    de ventana y asa de redimensionar. En el reordenar paneles **no**: ese va
+    por posición contra puntos medios, y multiplicarlo sería un error.
+  - `pruebas/control.js` (24 comprobaciones). Mide píxeles y estilos
+    calculados, no si existe el botón. Dos avisos aprendidos ahí: el primer
+    `.glass` del documento es el engranaje, que tiene su propio fondo y no
+    representa a los paneles; y `.glass` transiciona el `backdrop-filter` en
+    300 ms, así que hay que esperar 600 antes de medir o se lee un valor a
+    medio camino. El arrastre se prueba con el ratón de verdad de Playwright:
+    `setPointerCapture` rechaza los `PointerEvent` inventados a mano.
+  - Verificado revirtiendo: sin el multiplicador fallan 2 comprobaciones; sin
+    el CSS, 6.
 
 - **Texto pálido**: de **12 sitios a 1**. Las etiquetas del panel del clima
   (SENSACIÓN, HUMEDAD, VIENTO, LLUVIA), los datos del catálogo de dispositivos,
