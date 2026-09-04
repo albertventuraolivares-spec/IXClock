@@ -148,8 +148,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     navegación, la radio y la hora grande. Reaprovecha Mapas y Radio.
     («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
     convertir una nota en alarma.)
-37. **Historial del Modo Enfoque**: guardar cada sesión (fecha, duración,
-    racha), como ya existe el historial de alarmas. Hoy no deja rastro.
 38. **Tarjeta del día compartible**: imagen con hora, clima y próxima alarma
     para mandar por WhatsApp. Usa los mismos datos que la franja de resumen.
 
@@ -168,6 +166,21 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Historial del Modo Enfoque** (idea 37). Sesiones de hoy, tiempo y racha de
+  días seguidos, en la misma línea de debajo de los puntitos.
+  - **Solo cuenta una sesión de trabajo terminada entera.** Saltar a mano no
+    apunta nada: si saltas al minuto 3, apuntar 25 minutos sería mentir, y un
+    historial que miente no sirve para saber si de verdad lo usas. Un descanso
+    tampoco cuenta como trabajo.
+  - **La racha no se rompe a las 00:01.** Si ayer hiciste y hoy aún no has
+    empezado, sigue viva: cortarla sería castigarte por no haber empezado
+    todavía. La prueba cubre los 7 bordes (solo hoy, hoy y dos antes, ayer pero
+    hoy no, cortada, con hueco, varias el mismo día, y vacío).
+  - Una racha de 1 día no se enseña: eso no es una racha, es haber empezado.
+  - Se guardan las 60 últimas, y un guardado corrupto no rompe nada.
+  - `pruebas/enfhist.js` (18/18). `enfoque.js` actualizado: el contador ya no
+    sale de la configuración sino del historial real.
 
 - **Una sola fuente para las divisas** (y la idea 30 **ya estaba hecha**).
   - El conversor de unidades ya existía con longitud, peso, temperatura,
