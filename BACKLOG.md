@@ -82,9 +82,6 @@ si ya existe**, como se hizo con la lista del 3.
     dependencias: la tubería existe y está probada, solo se usa para las
     opiniones. Extenderla a notas, alarmas, ciudades y ajustes con un código
     personal. Es la más grande de todas.
-21. **Accesibilidad**: hay 3 `aria-label` en 1,1 MB lleno de botones que son
-    solo un icono, y cero `prefers-reduced-motion` con todos esos fondos
-    animados.
 
 ### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
 Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
@@ -137,6 +134,12 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     dentro del estudio.
 
 **Otras**:
+51. **Texto pálido y pequeño** (lo saca `node pruebas/calidad.js`): quedan 12
+    sitios con menos de 14 px y opacidad por debajo de 0,55 — las etiquetas del
+    panel del clima (SENSACIÓN, HUMEDAD, VIENTO, LLUVIA), los datos del
+    catálogo de dispositivos y el estado vacío de las alarmas. Con los tokens
+    `--txt-45`/`--txt-40` ya puestos es un cambio contenido, y ahora que la app
+    tiene `prefers-reduced-motion` es el siguiente escalón de accesibilidad.
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
 40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
@@ -161,6 +164,25 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Accesibilidad** (idea 21). Ojo con el dato del informe: no había 3
+  `aria-label`, había **61**. Lo que sí faltaba, y se arregló:
+  - **Botones que solo son un icono y no decían nada**: los seis colores del
+    Modo Fácil, los tres del mini-reproductor, los cinco de cerrar (✕), los dos
+    de enviar (➤), el de nota nueva, el de perfil y las 128 casillas del
+    secuenciador de IXBand (que ahora dicen «Bombo, paso 1»).
+  - **`prefers-reduced-motion`**, que no estaba en ninguna parte. Si en tu
+    sistema pediste menos movimiento, ahora la app te hace caso. No se quita a
+    lo bruto con `animation:none` —eso deja cosas a medio dibujar—: se acorta a
+    un suspiro, y los fondos animados, que son lo que más marea, se paran del
+    todo. La prueba comprueba además que **la app sigue usándose**: los paneles
+    se abren igual, no se quedan invisibles.
+  - `pruebas/acceso.js` (11/11), con dos navegadores: uno normal y otro con la
+    preferencia puesta.
+  - **La primera versión de la prueba mentía**: `\p{Emoji}` incluye los dígitos
+    ASCII, así que las teclas «7», «8», «9» de la calculadora salían como
+    botones mudos. Un lector de pantalla las lee perfectamente. Ahora solo
+    cuentan los que son **solo** un pictograma.
 
 - **Botón de instalar nativo** (idea 20). En Android y en el ordenador abre el
   diálogo del sistema de un toque; antes solo salía un cartel con instrucciones.
