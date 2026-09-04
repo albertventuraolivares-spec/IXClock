@@ -94,9 +94,6 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-22. **Despertar con la radio**: elegir una emisora guardada como sonido de
-    alarma. Ya existe «dormir con la radio» y ya existen los favoritos de
-    emisora: es enlazarlos. Pedida dos veces.
 23. **Alarma con la hora de otra ciudad** («despiértame a las 9h de Tokio»).
     Alarmas y reloj mundial no se cruzan. Pedida dos veces.
 24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
@@ -176,6 +173,23 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Despertar con la radio** (idea 22, la más pedida de todas las auditorías).
+  En la hoja de alarma salen **tus emisoras favoritas** —no las 185: nadie
+  elige despertador entre 185 en una hoja de móvil— y se guarda como
+  `radio:<id>`. La lista dice con qué te despierta, no «Radial».
+  - **Lo delicado no es que suene la radio: es que suene ALGO.** Un despertador
+    mudo porque el stream no cargó, o porque a las 7 de la mañana no hay
+    internet, no es un despertador. Así que **el tono arranca igual, siempre**,
+    y solo se calla cuando la emisora ha empezado de verdad (`isPlaying`, que
+    solo se pone cuando el `play()` del navegador salió bien). A los 20 s sin
+    arrancar se abandona la radio y se queda el tono, para que no entre a
+    destiempo encima.
+  - La prueba cubre los tres finales: la radio entra, la radio tarda, y no hay
+    red (con `setStation` reventando, que es lo peor que puede pasar).
+  - Es tono **o** emisora: elegir uno desmarca el otro.
+  - `pruebas/despertador.js` (24/24). Verificado quitando la garantía del tono:
+    fallan 5 comprobaciones.
 
 - **Dos fallos más de las auditorías** (`pruebas/dosbugs.js` 14/14).
   - **«Cerrar todas las ventanas» no cerraba el Modo Enfoque**, y no era solo

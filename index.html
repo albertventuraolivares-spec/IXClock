@@ -12725,6 +12725,11 @@
 			  return ()=>{ stopped = true; };
 			}
 			function icaToneName(toneId){
+			  // Con una emisora se dice cual, no «Radial», que confundiria.
+			  if(esTonoDeRadio(toneId)){
+			    const n=nombreDeEmisora(emisoraDelTono(toneId));
+			    return n ? ('📻 '+n) : '📻 Radio';
+			  }
 			  const t = ALARM_TONES.find(x=>x.id===toneId);
 			  return t ? t.name : 'Radial';
 			}
@@ -12781,8 +12786,67 @@
 			  document.getElementById('alarm-ringing-overlay').classList.add('show');
 			  playRingingSound(alarm.tone);
 			}
+			/* Despertar con una emisora en vez de un tono.
+			   El tono se guarda como "radio:<id de la emisora>".
+
+			   Lo delicado: un despertador que no suena porque no hay internet no
+			   es un despertador. Asi que el TONO ARRANCA IGUAL, siempre, y solo
+			   se calla cuando la emisora ha empezado a sonar de verdad. Si el
+			   stream tarda, falla o no hay red, te despierta el tono y no te
+			   enteras de la diferencia.                                      */
+			const RADIO_TONO = 'radio:';
+			function esTonoDeRadio(toneId){ return String(toneId||'').indexOf(RADIO_TONO)===0; }
+			function emisoraDelTono(toneId){
+			  return esTonoDeRadio(toneId) ? String(toneId).slice(RADIO_TONO.length) : null;
+			}
+			// Como se llama la emisora, para enseñarlo en la lista de alarmas.
+			function nombreDeEmisora(id){
+			  try{
+			    const st=(typeof STATIONS!=='undefined'?STATIONS:[]).find(x=>x.id===id);
+			    return st ? st.title : null;
+			  }catch(e){ return null; }
+			}
+			let _radioDespertarVigila=null;
 			function playRingingSound(toneId){
-			  ringingAudioStop = playAlarmTone(toneId);
+			  const emisora = emisoraDelTono(toneId);
+			  if(!emisora){ ringingAudioStop = playAlarmTone(toneId); return; }
+
+			  // 1) El tono, ya. Esto es lo que garantiza que suene algo.
+			  let pararTono = playAlarmTone('radial');
+			  let pararRadio = function(){
+			    try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
+			  };
+			  // 2) Y a la vez se intenta la emisora.
+			  try{ setStation(emisora); }catch(e){}
+
+			  // 3) En cuanto la emisora suene de verdad, se calla el tono. Se mira
+			  //    isPlaying, que es lo que pone playAudio SOLO cuando el play()
+			  //    del navegador ha salido bien.
+			  clearInterval(_radioDespertarVigila);
+			  let intentos=0;
+			  _radioDespertarVigila=setInterval(function(){
+			    intentos++;
+			    let sonando=false;
+			    try{ sonando = (typeof isPlaying!=='undefined' && isPlaying); }catch(e){}
+			    if(sonando){
+			      clearInterval(_radioDespertarVigila); _radioDespertarVigila=null;
+			      if(pararTono){ try{ pararTono(); }catch(e){} pararTono=null; }
+			      return;
+			    }
+			    // 20 segundos sin arrancar: se deja el tono y se corta el intento
+			    // de radio, que si no se pondria a sonar encima a destiempo.
+			    if(intentos>=40){
+			      clearInterval(_radioDespertarVigila); _radioDespertarVigila=null;
+			      try{ pararRadio(); }catch(e){}
+			      pararRadio=function(){};
+			    }
+			  }, 500);
+
+			  ringingAudioStop = function(){
+			    clearInterval(_radioDespertarVigila); _radioDespertarVigila=null;
+			    if(pararTono){ try{ pararTono(); }catch(e){} pararTono=null; }
+			    try{ pararRadio(); }catch(e){}
+			  };
 			}
 			function stopRinging(){
 			  if(ringingAudioStop) ringingAudioStop();
@@ -15380,6 +15444,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.5', fecha: '4 de septiembre de 2026', titulo:'Despertar con la radio', cambios: [
+			    '➕ Ya puedes despertarte con una emisora en vez de un tono: sale en la hoja de la alarma, entre tus emisoras favoritas (márcalas con ★ en Sonidos y Radio)',
+			    '➕ La lista de alarmas te dice con qué emisora te despierta cada una',
+			    '🛠️ Si a esa hora no hay internet o la emisora no carga, suena el tono igual. Un despertador mudo no es un despertador',
+			  ]},
 			  { v:'2.4', fecha: '4 de septiembre de 2026', titulo:'Arreglos', cambios: [
 			    '🛠️ Mi Nube → Mis Datos: si ponías código en tu «Estado», se ejecutaba al abrir esa pantalla',
 			    '🛠️ «Cerrar todas las ventanas» no cerraba el Modo Enfoque: se quedaba en pantalla, con su cuenta atrás corriendo, la pantalla sin apagarse y el sonido puesto',
@@ -20587,6 +20656,10 @@
 			    b.style.borderColor=on?'rgba(10,132,255,.7)':'var(--txt-40)';
 			  });
 			  const inp=document.getElementById('ica-alarm-tone'); if(inp) inp.value=id;
+			  // Y se apaga la emisora, que es lo otro: o tono o radio.
+			  document.querySelectorAll('.ica-emisora').forEach(function(b){
+			    b.style.background='rgba(255,255,255,.07)'; b.style.borderColor='rgba(255,255,255,.16)';
+			  });
 			  try{ const stop=playAlarmTone(id); _icaTonoPrueba=stop; setTimeout(function(){ if(_icaTonoPrueba===stop){ try{stop();}catch(e){} _icaTonoPrueba=null; } },1800); }catch(e){}
 			}
 			function _icaHojaAlarma(idx){
@@ -20624,7 +20697,8 @@
 			    +  '<button id="ica-rep-fecha" onclick="icaAlarmaRepetir(1)" style="flex:1;border-radius:12px;font-size:12px;font-weight:700;padding:11px 8px;cursor:pointer;color:var(--txt);background:'+(fecha?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(fecha?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)')+';">🗓️ Un día concreto</button>'
 			    +'</div>'
 			    +'<input id="ica-alarm-fecha" type="date" min="'+_hoyISO+'" value="'+escapeHtml(fecha)+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;color-scheme:dark;display:'+(fecha?'block':'none')+';">'
-			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
+			    +_icaEmisorasHoja(tono)
+			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">O UN TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
 			  ALARM_TONES.forEach(function(t){
 			    const on=t.id===tono;
@@ -20656,6 +20730,43 @@
 			    bd.style.background=on; bd.style.borderColor=onB;
 			    bf.style.background=off; bf.style.borderColor=offB;
 			  }
+			}
+			/* Las emisoras que puedes usar de despertador son TUS FAVORITAS, no las
+			   185 de la lista: elegir despertador entre 185 emisoras en una hoja
+			   de movil no lo hace nadie. Si no tienes ninguna, se dice como se
+			   marcan en vez de enseñar un hueco vacio. */
+			function _icaEmisorasHoja(tonoActual){
+			  let favs=[];
+			  try{ favs=(_radioFavs||[]).map(id=>({id:id, nombre:nombreDeEmisora(id)})).filter(x=>x.nombre); }catch(e){}
+			  let h='<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin:4px 0 6px;">📻 DESPERTAR CON UNA EMISORA</div>';
+			  if(!favs.length){
+			    return h+'<div style="font-size:11px;opacity:.5;line-height:1.5;margin-bottom:14px;">'
+			      +'Marca emisoras con ★ en Sonidos y Radio y aparecerán aquí para usarlas de despertador.</div>';
+			  }
+			  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">';
+			  favs.forEach(function(f){
+			    const on = tonoActual === (RADIO_TONO+f.id);
+			    h+='<button class="ica-emisora" data-e="'+escapeHtml(f.id)+'" onclick="icaElegirEmisora('+JSON.stringify(f.id).replace(/"/g,'&quot;')+')" '
+              +'style="border-radius:999px;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+              +'background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)')+';">📻 '+escapeHtml(f.nombre)+'</button>';
+			  });
+			  h+='</div>';
+			  return h;
+			}
+			// Elegir emisora apaga el tono elegido, y al reves: es uno u otro.
+			function icaElegirEmisora(id){
+			  const inp=document.getElementById('ica-alarm-tone');
+			  if(inp) inp.value=RADIO_TONO+id;
+			  document.querySelectorAll('.ica-emisora').forEach(function(b){
+			    const on=b.dataset.e===id;
+			    b.style.background=on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)';
+			    b.style.borderColor=on?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)';
+			  });
+			  document.querySelectorAll('.ica-tono').forEach(function(b){
+			    b.style.background='var(--txt-40)'; b.style.borderColor='var(--txt-40)';
+			  });
+			  if(_icaTonoPrueba){ try{_icaTonoPrueba();}catch(e){} _icaTonoPrueba=null; }
+			  try{ ixToast('📻 Te despertará '+(nombreDeEmisora(id)||'esa emisora')); }catch(e){}
 			}
 			function icaGuardarAlarma(){
 			  const h=document.getElementById('ica-alarm-h'), m=document.getElementById('ica-alarm-m');
