@@ -187,6 +187,22 @@
 			  --sh-2:0 8px 24px rgba(0,0,0,.45);
 			  --sh-3:0 24px 60px rgba(0,0,0,.7);
 			}
+			/* Si en tu sistema pediste menos movimiento, la app te hace caso.
+			   No se quita el movimiento a lo bruto con animation:none, que eso
+			   deja cosas a medio dibujar: se acorta a un suspiro, que es lo que
+			   recomienda la propia guia de accesibilidad. Los fondos animados,
+			   que son lo que mas marea, se paran del todo. */
+			@media (prefers-reduced-motion: reduce){
+			  *, *::before, *::after{
+			    animation-duration:.01ms !important;
+			    animation-iteration-count:1 !important;
+			    transition-duration:.01ms !important;
+			    scroll-behavior:auto !important;
+			  }
+			  .wallpaper-layer, .wallpaper-layer::after, .wallpaper-layer::before{
+			    animation:none !important;
+			  }
+			}
 			/* Fichas de la franja de resumen. Mismo tamano visual que la fase
 			   lunar, que ya vivia en esa linea, para que se lean como una sola
 			   cosa y no como tres anadidos sueltos. */
@@ -1869,12 +1885,12 @@
 				<div id="easy-config" class="shrink-0" style="display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;">
 					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🎨 Color del Modo Fácil</div>
 					<div id="easy-colors" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-						<button class="easy-color-sw" data-c="#bb2222" onclick="easySetColor('#bb2222')" style="width:34px;height:34px;border-radius:50%;background:#bb2222;border:3px solid #fff;cursor:pointer;"></button>
-						<button class="easy-color-sw" data-c="#30d158" onclick="easySetColor('#30d158')" style="width:34px;height:34px;border-radius:50%;background:#30d158;border:3px solid transparent;cursor:pointer;"></button>
-						<button class="easy-color-sw" data-c="#0a84ff" onclick="easySetColor('#0a84ff')" style="width:34px;height:34px;border-radius:50%;background:#0a84ff;border:3px solid transparent;cursor:pointer;"></button>
-						<button class="easy-color-sw" data-c="#ffd60a" onclick="easySetColor('#ffd60a')" style="width:34px;height:34px;border-radius:50%;background:#ffd60a;border:3px solid transparent;cursor:pointer;"></button>
-						<button class="easy-color-sw" data-c="#ff9f0a" onclick="easySetColor('#ff9f0a')" style="width:34px;height:34px;border-radius:50%;background:#ff9f0a;border:3px solid transparent;cursor:pointer;"></button>
-						<button class="easy-color-sw" data-c="#e8e8ec" onclick="easySetColor('#e8e8ec')" style="width:34px;height:34px;border-radius:50%;background:#e8e8ec;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Rojo" data-c="#bb2222" onclick="easySetColor('#bb2222')" style="width:34px;height:34px;border-radius:50%;background:#bb2222;border:3px solid #fff;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Verde" data-c="#30d158" onclick="easySetColor('#30d158')" style="width:34px;height:34px;border-radius:50%;background:#30d158;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Azul" data-c="#0a84ff" onclick="easySetColor('#0a84ff')" style="width:34px;height:34px;border-radius:50%;background:#0a84ff;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Amarillo" data-c="#ffd60a" onclick="easySetColor('#ffd60a')" style="width:34px;height:34px;border-radius:50%;background:#ffd60a;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Naranja" data-c="#ff9f0a" onclick="easySetColor('#ff9f0a')" style="width:34px;height:34px;border-radius:50%;background:#ff9f0a;border:3px solid transparent;cursor:pointer;"></button>
+						<button class="easy-color-sw" aria-label="Color Blanco" data-c="#e8e8ec" onclick="easySetColor('#e8e8ec')" style="width:34px;height:34px;border-radius:50%;background:#e8e8ec;border:3px solid transparent;cursor:pointer;"></button>
 					</div>
 					<div style="font-size:11px;font-weight:800;opacity:.75;margin-bottom:6px;">🖼️ Fondo del Modo Fácil</div>
 					<div id="easy-bgs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
@@ -2936,18 +2952,21 @@
 						class="flex items-center justify-center gap-5 py-2 border-b border-white/10"
 					>
 						<button
+							aria-label="Emisora anterior"
 							class="text-white/70 hover:text-white"
 							onclick="prevStation()"
 						>
 							<span class="text-xl">⏮️</span>
 						</button>
 						<button
+							aria-label="Reproducir o pausar"
 							class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-[0_0_18px_rgba(59,130,246,.5)]"
 							id="global-play"
 						>
 							<span class="text-2xl">▶️</span>
 						</button>
 						<button
+							aria-label="Emisora siguiente"
 							class="text-white/70 hover:text-white"
 							onclick="nextStation()"
 						>
@@ -3052,7 +3071,7 @@
 						⏹
 					</button>
 					<button
-						class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
+						aria-label="Cerrar" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
 						onclick="toggleAIChat()"
 					>
 						<span class="material-symbols-outlined text-base"
@@ -3072,7 +3091,7 @@
 					onkeydown="if(event.key==='Enter') sendAIMessage();"
 				/>
 				<button
-					class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+					aria-label="Enviar" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
 					style="background:var(--accent-color);"
 					onclick="sendAIMessage()"
 				>
@@ -3097,7 +3116,7 @@
 					</div>
 				</div>
 				<button
-					class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
+					aria-label="Cerrar" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
 					onclick="toggleTranslator()"
 				>
 					<span class="material-symbols-outlined text-base"
@@ -3369,7 +3388,7 @@
 					</div>
 				</div>
 				<button
-					class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
+					aria-label="Cerrar" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
 					onclick="toggleTVPanel()"
 				>
 					<span class="material-symbols-outlined text-base"
@@ -3490,7 +3509,7 @@
 					<div class="text-sm font-bold">🎮 Juegos</div>
 					<div class="text-[9px] opacity-60 uppercase tracking-widest">Mini-juegos gratis · Sin internet</div>
 				</div>
-				<button class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center" onclick="toggleGamesPanel()">
+				<button aria-label="Cerrar" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center" onclick="toggleGamesPanel()">
 					<span class="material-symbols-outlined text-base">close</span>
 				</button>
 			</div>
@@ -3662,7 +3681,7 @@
 			>
 				<div class="text-sm font-bold">Reloj</div>
 				<button
-					class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
+					aria-label="Cerrar" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
 					onclick="toggleAlarmPanel()"
 				>
 					<span class="material-symbols-outlined text-base"
@@ -3727,7 +3746,7 @@
 						class="flex-1 bg-black/40 border border-white/20 rounded-xl py-2 px-3 text-xs placeholder-white/40"
 					/>
 					<button
-						class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+						aria-label="Enviar" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
 						style="background:#ff453a;"
 						onclick="addAlarmFromForm()"
 					>
@@ -4323,6 +4342,7 @@
 				onkeydown="if(event.key==='Enter')sendSiriText()"
 			/>
 			<button
+				aria-label="Mi perfil"
 				onclick="openProfileModal?openProfileModal():void(0)"
 				style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
 			>
@@ -4631,6 +4651,7 @@
 				>
 					<span id="notes-count">0 notas</span>
 					<button
+						aria-label="Escribir una nota nueva"
 						onclick="notesNew()"
 						class="w-8 h-8 rounded-full flex items-center justify-center"
 						style="background:#ffd60a;color:#1c1c1e;"
@@ -15476,6 +15497,8 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'2.7', fecha: '4 de septiembre de 2026', titulo:'Historial del Modo Enfoque', cambios: [
+			    '♿ Si en tu sistema pediste menos movimiento, la app te hace caso: los fondos animados se paran y las animaciones se acortan',
+			    '♿ Los botones que son solo un icono ahora dicen qué hacen para quien usa lector de pantalla',
 			    '➕ «Instalar IXClocK» ahora abre el diálogo de verdad del navegador en Android y ordenador, en vez de solo explicarte los pasos. En iPhone sigue con las instrucciones, porque ahí no existe ese diálogo',
 			    '➕ «Dormir con la radio» ahora recuerda con qué emisora te dormiste: un botón la vuelve a poner y arranca el temporizador de un tirón',
 			    '➕ El Modo Enfoque ahora lleva la cuenta: sesiones de hoy, tiempo y racha de días seguidos 🔥',
@@ -17853,7 +17876,7 @@
 			      +'<div style="width:96px;flex-shrink:0;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:'+row.color+';"></span>'+row.name+'</div>'
 			      +'<div style="display:flex;gap:4px;">';
 			    for(let c=0;c<16;c++){
-			      s+='<button class="gb-seq-cell" id="gb-seq-'+r+'-'+c+'" data-r="'+r+'" data-c="'+c+'" onclick="gbSeqToggleCell('+r+','+c+')" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a3a3c;cursor:pointer;'+(c%4===0?'margin-left:5px;':'')+'background:'+(_gbSeq[r][c]?row.color:'#2a2a2c')+';"></button>';
+			      s+='<button class="gb-seq-cell" aria-label="'+escapeHtml(GB_SEQ_ROWS[r]?GB_SEQ_ROWS[r].name:'Sonido')+', paso '+(c+1)+'" id="gb-seq-'+r+'-'+c+'" data-r="'+r+'" data-c="'+c+'" onclick="gbSeqToggleCell('+r+','+c+')" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a3a3c;cursor:pointer;'+(c%4===0?'margin-left:5px;':'')+'background:'+(_gbSeq[r][c]?row.color:'#2a2a2c')+';"></button>';
 			    }
 			    s+='</div></div>';
 			  });
