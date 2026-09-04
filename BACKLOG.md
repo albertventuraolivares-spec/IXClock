@@ -105,8 +105,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     aquí», filtrando Radio Mundial por ese país.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
-28. **Dormir con la radio recuerda la emisora**: hoy el temporizador existe pero
-    no memoriza la fuente, así que hay que volver a buscarla.
 31. **Mejor hora para una reunión**: que el comparador mire todas tus ciudades
     guardadas y diga la franja en que todas están en verde, en vez de que lo
     calcules a ojo.
@@ -166,6 +164,17 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Dormir con la radio recuerda la emisora** (idea 28). El temporizador ya
+  existía, pero no memorizaba la fuente: al día siguiente había que volver a
+  buscar la emisora en la lista antes de poder poner el temporizador otra vez.
+  Ahora sale un botón «▶ Otra vez con \<emisora\> · 30 min» que la pone **y**
+  arranca el temporizador de un tirón.
+  - Se apunta al **empezar** el temporizador, no al apagarse: cuando se apaga,
+    `stopAudio` ya ha limpiado la emisora y no habría nada que recordar.
+  - Si esa emisora ya no existe (cambiaste de países, o filtraste la lista) no
+    se ofrece un botón que no llevaría a ningún sitio.
+  - `pruebas/dormir.js` (25/25).
 
 - **Historial del Modo Enfoque** (idea 37). Sesiones de hoy, tiempo y racha de
   días seguidos, en la misma línea de debajo de los puntitos.

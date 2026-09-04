@@ -3891,6 +3891,8 @@
 					<h3>😴 Dormir con la radio</h3>
 					<div style="font-size:11px;opacity:.55;margin:-4px 0 10px;">La música se va bajando sola y se apaga. No suena ninguna alarma.</div>
 					<div id="ica-dormir-botones" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+					<!-- «Otra vez con la de anoche»: solo sale si hubo una. -->
+					<div id="ica-dormir-ultima" style="display:none;"></div>
 					<div id="ica-dormir-estado" style="display:none;margin-top:10px;align-items:center;justify-content:space-between;gap:10px;background:rgba(191,90,242,.14);border:1px solid rgba(191,90,242,.4);border-radius:12px;padding:11px 14px;">
 						<span style="font-size:13px;">Se apagará en <b id="ica-dormir-queda" style="font-variant-numeric:tabular-nums;">—</b></span>
 						<button onclick="icaDormirCancelar()" style="background:rgba(255,255,255,.14);border:none;color:var(--txt);font-size:12px;font-weight:700;padding:7px 14px;border-radius:9px;cursor:pointer;">Cancelar</button>
@@ -15474,6 +15476,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'2.7', fecha: '4 de septiembre de 2026', titulo:'Historial del Modo Enfoque', cambios: [
+			    '➕ «Dormir con la radio» ahora recuerda con qué emisora te dormiste: un botón la vuelve a poner y arranca el temporizador de un tirón',
 			    '➕ El Modo Enfoque ahora lleva la cuenta: sesiones de hoy, tiempo y racha de días seguidos 🔥',
 			    '🛠️ Solo cuenta una sesión terminada entera. Si saltas a la mitad no se apunta: un historial que miente no sirve de nada',
 			    '🛠️ La racha no se rompe a las 00:01 por no haber empezado todavía hoy',
@@ -21123,15 +21126,58 @@
 			   musica, para no cortarla de golpe cuando ya estas dormido.       */
 			const ICA_DORMIR_MIN=[15,30,45,60,90];
 			let _icaDormirFin=null, _icaDormirTimer=null, _icaDormirVolPrevio=null;
+			/* Recordar con QUE te dormiste.
+			   El temporizador ya existia, pero no memorizaba la fuente: al dia
+			   siguiente habia que volver a buscar la emisora en la lista antes de
+			   poder poner el temporizador otra vez. Se guarda la ultima que se
+			   apago durmiendo y se ofrece de un toque.                        */
+			const ICA_DORMIR_ULT='ica_dormir_ultima';
+			function icaDormirUltima(){
+			  try{
+			    const id=localStorage.getItem(ICA_DORMIR_ULT);
+			    if(!id) return null;
+			    // Si esa emisora ya no existe (cambio de paises, lista filtrada),
+			    // no se ofrece un boton que no llevaria a ningun sitio.
+			    const n=(typeof nombreDeEmisora==='function') ? nombreDeEmisora(id) : null;
+			    return n ? {id:id, nombre:n} : null;
+			  }catch(e){ return null; }
+			}
+			function _icaDormirRecordar(){
+			  try{
+			    if(typeof currentStation!=='undefined' && currentStation)
+			      localStorage.setItem(ICA_DORMIR_ULT, currentStation);
+			  }catch(e){}
+			}
+			// Vuelve a poner esa emisora y arranca el temporizador de un tiron.
+			function icaDormirOtraVez(min){
+			  const u=icaDormirUltima();
+			  if(!u) return false;
+			  try{ setStation(u.id); }catch(e){}
+			  icaDormirEn(min||ICA_DORMIR_MIN[1]);
+			  return true;
+			}
 			function icaPintarDormirBotones(){
 			  const c=document.getElementById('ica-dormir-botones');
 			  if(!c) return;
 			  c.innerHTML=ICA_DORMIR_MIN.map(function(m){
 			    return '<button onclick="icaDormirEn('+m+')" style="flex:1;min-width:64px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:var(--txt);font-size:13px;font-weight:700;padding:11px 6px;border-radius:12px;cursor:pointer;">'+m+' min</button>';
 			  }).join('');
+			  const u=icaDormirUltima();
+			  const caja=document.getElementById('ica-dormir-ultima');
+			  if(!caja) return;
+			  if(!u){ caja.style.display='none'; caja.innerHTML=''; return; }
+			  caja.style.display='block';
+			  caja.innerHTML='<button onclick="icaDormirOtraVez('+ICA_DORMIR_MIN[1]+')" '
+			    +'style="width:100%;margin-top:8px;background:rgba(10,132,255,.16);border:1px solid rgba(10,132,255,.4);'
+			    +'color:var(--txt);font-size:12px;font-weight:700;padding:11px 10px;border-radius:12px;cursor:pointer;'
+			    +'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+			    +'▶ Otra vez con '+escapeHtml(u.nombre)+' · '+ICA_DORMIR_MIN[1]+' min</button>';
 			}
 			function icaDormirEn(min){
 			  icaDormirCancelar();
+			  // Se apunta AHORA, no al apagarse: al apagarse stopAudio ya ha
+			  // limpiado la emisora y no habria nada que recordar.
+			  _icaDormirRecordar();
 			  _icaDormirFin=Date.now()+min*60000;
 			  _icaDormirTimer=setInterval(_icaDormirTic,1000);
 			  _icaDormirTic();
@@ -21160,6 +21206,7 @@
 			  if(quedan<=0) icaDormirApagar();
 			}
 			function icaDormirApagar(){
+			  _icaDormirRecordar();
 			  const a=_icaDormirAudio();
 			  try{ if(typeof stopAudio==='function') stopAudio(); }catch(e){}
 			  // Se devuelve el volumen: si no, la proxima vez que le des al play
@@ -21176,6 +21223,7 @@
 			  _icaDormirFin=null;
 			  const est=document.getElementById('ica-dormir-estado');
 			  if(est) est.style.display='none';
+			  try{ icaPintarDormirBotones(); }catch(e){}
 			}
 			function icaTimerCancel(){
 			  clearInterval(_icaTimerInterval);_icaTimerInterval=null;_icaTimerRemaining=0;_icaTimerFin=0;
