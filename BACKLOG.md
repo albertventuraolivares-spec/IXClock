@@ -107,9 +107,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     mundial».
 28. **Dormir con la radio recuerda la emisora**: hoy el temporizador existe pero
     no memoriza la fuente, así que hay que volver a buscarla.
-29. **Buscador global que calcula y convierte**: escribir «150 usd a eur» o
-    «23*4» y que salga el resultado, con opción de abrir la calculadora. El
-    buscador ya centraliza todo y ya ejecuta acciones; el conversor ya existe.
 30. **Conversor de unidades** (longitud, peso, temperatura) en la Calculadora,
     reaprovechando la interfaz de divisas.
 31. **Mejor hora para una reunión**: que el comparador mire todas tus ciudades
@@ -173,6 +170,22 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **El buscador calcula y cambia divisas** (idea 29). Escribes `23*4` o
+  `150 usd a eur` y el resultado sale **el primero**, sin abrir la calculadora.
+  Al tocarlo se abre la calculadora ya en divisas con esos datos puestos.
+  - Lo fácil es que salga el resultado. Lo difícil, y lo que prueba el test, es
+    que **NO salga cuando no toca**: escribir «7» buscando una nota no puede
+    soltarte «7 = 7» delante de lo que buscabas, así que hace falta un operador.
+    Ni «150 xyz a abc», ni «150 usd a usd», ni «usd a eur».
+  - Reusa el evaluador con lista blanca de Notas Matemáticas, así que **tampoco
+    ejecuta código**: 7 intentos comprobados, incluidos `Function(...)()` y las
+    plantillas con acento grave.
+  - `1.500,50` y `1,500.50` son el mismo número: manda el último separador.
+  - El resultado se calcula aparte y se pone delante al final. Si entrara en la
+    puntuación normal quedaría el último, porque el título (el número) no se
+    parece a lo que escribiste.
+  - `pruebas/buscacalc.js` (19/19).
 
 - **Despertar con la radio** (idea 22, la más pedida de todas las auditorías).
   En la hoja de alarma salen **tus emisoras favoritas** —no las 185: nadie
