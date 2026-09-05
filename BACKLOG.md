@@ -22,11 +22,26 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
   de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
   reutiliza**: se abre una nueva.
 - **Hay una Routine que arranca una tanda cada 5 horas**
-  (`trig_014k8QarcPWGZNs2DKtgyGQ3`, cron `10 1,6,11,16,20` UTC = 4:10 p.m.,
+  (`trig_0175wmjMF5HUqvMc5yiuLZQD`, cron `10 1,6,11,16,20` UTC = 4:10 p.m.,
   9:10 p.m., 2:10 a.m., 7:10 a.m. y 12:10 p.m. hora del usuario, que va en
   UTC-4). Es lo que hace que no se salte ninguna ventana: el usuario pidió
-  expresamente que no se olvide ni un periodo. Si deja de disparar, mirarla con
-  `list_triggers` — un `last_run` en FALLO es la señal.
+  expresamente que no se olvide ni un periodo.
+  - **Ojo, esto costó descubrirlo.** La anterior (`trig_014k8Qar…`) estaba
+    **atada a una sesión** (`persist_session:true`). Una Routine atada NO
+    arranca nada: deja el mensaje en la cola de esa conversación y espera a
+    que la sesión despierte, o sea a que el usuario abra la app. Disparó dos
+    veces y las dos se quedaron en cola; el usuario lo notó y tenía razón. La
+    señal en `list_triggers` es que **no tiene campo `last_run`**, mientras
+    que las que sí corren solas lo tienen en `SUCCEEDED`. La nueva es de
+    **sesión nueva en cada disparo** (`create_new_session_on_fire`), que es
+    el único modo que corre de verdad sin nadie delante.
+  - **Limitación conocida**: al crearla desde una sesión no se le pudieron
+    pasar los conectores, así que sus sesiones **puede que no tengan
+    `mcp__github__*` ni `mcp__Netlify__*`**: podrán programar, probar y hacer
+    push, pero no abrir/fusionar la PR ni comprobar el despliegue. El prompt
+    lleva un plan B que obliga a decirlo en voz alta en vez de callarse. Si
+    pasa a menudo, la solución es que el usuario recree la Routine desde la
+    pantalla de Routines de claude.ai, que ahí sí se le adjuntan conectores.
 - Al empezar una tanda **se elige el siguiente pendiente sin preguntar**, y se
   comprueba en el código antes de tocar nada: muchas ideas de la lista **ya
   están hechas**, y varios informes de auditoría llegan repetidos.
@@ -122,13 +137,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     dentro del estudio.
 
 **Otras**:
-51. **Las teclas de operación de la calculadora no se leen bien** (lo saca
-    `node pruebas/calidad.js`: «botones sin nombre: 9»). Son `+`, `−`, `×`,
-    `÷`, `=`, `.`, `%`, `+/-` y `✕`. Tienen texto, así que `pruebas/acceso.js`
-    las da por buenas, pero un lector de pantalla lee el símbolo suelto y
-    algunos no los dice o los dice mal. Un `aria-label` («más», «menos», «por»,
-    «entre», «igual», «coma», «por ciento», «cambiar signo», «borrar») lo
-    arregla sin tocar lo que se ve.
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
 40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
@@ -153,6 +161,33 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **Calculadora: nombres de teclas, teclado duplicado y el «=»** (idea 51).
+  - **Bug real encontrado tirando del hilo de la propia prueba**: decía «30
+    teclas» donde solo hay 15. `renderCalcGrid()` se llama en CADA apertura del
+    panel; vaciaba `#calc-basic` pero **no** `#calc-sci-top` ni
+    `#calc-sci-bot`, así que el teclado científico crecía 15 y 16 botones por
+    apertura (30, 45, 60…). Medido: abrir 4 veces daba 75 y 80 botones.
+  - **Accesibilidad**: `CALC_NOMBRES` + `calcNombreTecla()` para las tres
+    rejillas. Los números NO se renombran («7» ya se lee bien); solo los
+    símbolos, que es donde falla el lector: «×» lo dice como «signo de
+    multiplicación» o se lo salta, «−» (menos matemático, no guion) muchos no
+    lo dicen, y «.» o «+/-» no significan nada sueltos.
+  - **`calcEq` ya no ejecuta código**: pasaba la expresión entera por
+    `Function()`. **No era explotable** —solo llegan dígitos y `+ - * /` del
+    teclado fijo, y eso hay que decirlo sin inflarlo—, pero bastaba con que
+    algo metiera texto en `calcVal` para convertirlo en ejecución de código.
+    Ahora lo filtra `_mathSeguro`, el mismo que guarda las Notas Matemáticas.
+    De regalo, dividir entre 0 ya da «Error» en vez de «Infinity».
+  - `pruebas/teclas.js` (23 comprobaciones). Verificado revirtiendo: sin el
+    filtro fallan 6 (y `window.__ixColado` se pone a `true`, o sea que el
+    código SÍ se ejecutaba); sin los nombres y el vaciado, 10.
+  - **Y de paso, `calidad.js` baja de 9 botones sin nombre a CERO.** Los tres
+    últimos no estaban en la calculadora: cerrar pestaña y quitar favorito en
+    el navegador (los crea el JS, así que no se veían al buscar en el HTML), y
+    el de cerrar Notas, cuyo `✕` sale de un icono sustituido y por eso parecía
+    tener texto. Se localizaron reproduciendo la comprobación de `calidad.js`
+    e imprimiendo la cadena de padres, no a ojo.
 
 - **Rendimiento y control** (ideas 12, 13 y 14). Las tres viven en la misma
   ficha nueva de Configuración → Más, y dos de ellas había que contarlas con
