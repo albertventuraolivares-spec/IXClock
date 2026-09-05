@@ -176,6 +176,37 @@ llegaron repetidas y algunas ya estaban hechas):
 
 ## Hecho
 
+- **Entrar con Google** (pedido el 5 de sept, junto con la sincronización).
+  - **El ID de cliente se pega en Configuración, no va en el código.** Es la
+    decisión importante: ese ID lo crea el dueño en Google Cloud Console, y
+    hasta que exista no hay nada que poner. Como ajuste, el día que lo cree lo
+    pega y funciona al momento — sin esperar a que nadie toque el código ni
+    despliegue. El usuario pidió expresamente hacerlo ya «porque después se
+    olvida», y así queda hecho sin depender de él.
+  - **El ID es público por diseño**: va dentro de cualquier web que use Google
+    y se ve en el código fuente. Lo que Google comprueba es el ORIGEN, que se
+    configura en su consola. El «secreto de cliente» NO se usa en este flujo, y
+    la pantalla lo dice para que nadie lo pegue por error.
+  - **Se valida el formato**: pegar el secreto (`GOCSPX-…`) o media URL se
+    rechaza y se avisa, en vez de dejar al usuario esperando un botón que no
+    iba a salir nunca.
+  - **La librería de Google solo se carga si hay ID.** Sin él sería pedirle un
+    script a Google en cada arranque para nada. Comprobado en la prueba
+    contando las peticiones: 0 sin ID, 1 con ID.
+  - **LÍMITE, dicho sin adornos**: el token se lee pero **la firma NO se
+    verifica**, y por eso solo se usa para ENSEÑAR el nombre y la foto. El día
+    que estos datos manden algo de verdad (por ejemplo, decidir de quién son
+    unas notas en el servidor), la firma habrá que comprobarla **en el
+    servidor** contra las claves públicas de Google — nunca en el navegador,
+    donde cualquiera puede inventarse un token. Está escrito en el código.
+  - `pruebas/google.js` (23), con un doble de la librería de Google porque en
+    este entorno está bloqueada. Verificado revirtiendo: sin validar el ID
+    fallan 3, y **sin escapar el nombre que viene de Google, un nombre con
+    `<img onerror>` SÍ ejecuta código** (`colado:true`).
+  - Aprendido escribiendo la prueba: en Playwright gana la **última** ruta
+    registrada, así que el «cortar toda la red externa» tiene que ir ANTES que
+    la ruta específica o se la come.
+
 - **SINCRONIZACIÓN ENTRE APARATOS** (idea 19, la más grande de la lista). Lo
   pidió el usuario junto con «cuenta de Google y que lleguen correos»; esto es
   la base sobre la que se enchufan las otras dos.

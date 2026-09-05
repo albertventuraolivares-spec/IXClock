@@ -2151,6 +2151,13 @@
 						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">☁️ Sincronizar entre aparatos</div>
 						<div id="ix-nube"></div>
 					</div>
+					<!-- Entrar con Google. El ID se pega aquí a propósito: así el día
+					     que se cree en Google Cloud Console funciona al momento, sin
+					     tener que volver a tocar el código ni desplegar. -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">🔐 Entrar con Google</div>
+						<div id="ix-google"></div>
+					</div>
 					<!-- Rendimiento y control. Los dos textos largos no sobran: son
 					     justo lo que evita que el ajuste prometa lo que no hace. -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -7339,6 +7346,159 @@
 			  }
 			}
 
+			/* ═════════════ ENTRAR CON GOOGLE ═════════════
+			   Por que el ID se pega en Configuracion y no va escrito en el codigo:
+			   ese ID lo crea el dueño de la app en Google Cloud Console, y hasta
+			   que exista no hay nada que poner. Dejarlo como un ajuste significa
+			   que el dia que lo cree lo pega y funciona al momento, sin esperar a
+			   que nadie vuelva a tocar el codigo ni a desplegar.
+
+			   El ID de cliente es PUBLICO por diseño: va dentro de cualquier web
+			   que use Google, se ve en el codigo fuente y no sirve para nada por
+			   si solo. Lo que Google comprueba es el ORIGEN desde el que se pide,
+			   y eso se configura en la consola. El «secreto de cliente» es otra
+			   cosa y NO hace falta aqui: este flujo no lo usa.
+
+			   Lo que se saca de Google es el nombre, el correo y la foto, y se
+			   usan solo para enseñar quien eres. Nada de eso sale del aparato,
+			   porque no hay a donde mandarlo.                                */
+			const IX_G_ID='ix_google_client_id';
+			const IX_G_PERFIL='ix_google_perfil';
+
+			function ixGoogleId(){
+			  try{ return (localStorage.getItem(IX_G_ID)||'').trim(); }catch(e){ return ''; }
+			}
+			// Un ID de Google siempre acaba igual. Comprobarlo evita el caso tonto
+			// de pegar el «secreto» o media URL y quedarse esperando sin saber por
+			// que no sale el boton.
+			function ixGoogleIdValido(v){
+			  return /^[0-9]{6,}-[a-z0-9]{10,}\.apps\.googleusercontent\.com$/i.test(String(v||'').trim());
+			}
+			function ixGooglePonerId(v){
+			  const id=String(v||'').trim();
+			  if(id && !ixGoogleIdValido(id)) return false;
+			  try{ if(id) localStorage.setItem(IX_G_ID,id); else localStorage.removeItem(IX_G_ID); }catch(e){}
+			  ixGooglePintar();
+			  if(id) ixGoogleCargar();
+			  return true;
+			}
+			function ixGooglePerfil(){
+			  try{ return JSON.parse(localStorage.getItem(IX_G_PERFIL)||'null'); }catch(e){ return null; }
+			}
+			function ixGoogleSalir(){
+			  try{ localStorage.removeItem(IX_G_PERFIL); }catch(e){}
+			  try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
+			  ixGooglePintar();
+			  try{ ixToast('Sesión de Google cerrada'); }catch(e){}
+			}
+
+			/* El token que manda Google es un JWT: tres trozos separados por punto,
+			   y el de en medio son los datos en base64url. Aqui NO se verifica la
+			   firma, y hay que decirlo claro: solo se usa para ENSEÑAR tu nombre y
+			   tu foto en esta pantalla. El dia que estos datos manden algo de
+			   verdad (por ejemplo, decidir de quien son unas notas en el
+			   servidor), la firma habra que comprobarla en el servidor contra las
+			   claves publicas de Google — nunca aqui, que aqui cualquiera puede
+			   inventarse un token.                                              */
+			function ixGoogleLeerToken(jwt){
+			  try{
+			    const t=String(jwt||'').split('.');
+			    if(t.length!==3) return null;
+			    let b=t[1].replace(/-/g,'+').replace(/_/g,'/');
+			    while(b.length%4) b+='=';
+			    const json=decodeURIComponent(atob(b).split('').map(function(c){
+			      return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
+			    }).join(''));
+			    const d=JSON.parse(json);
+			    if(!d || !d.email) return null;
+			    return { nombre:d.name||d.email, correo:d.email, foto:d.picture||'' };
+			  }catch(e){ return null; }
+			}
+			function ixGoogleEntro(respuesta){
+			  const perfil=ixGoogleLeerToken(respuesta && respuesta.credential);
+			  if(!perfil){ try{ ixToast('No se pudo leer la cuenta'); }catch(e){} return null; }
+			  try{ localStorage.setItem(IX_G_PERFIL, JSON.stringify(perfil)); }catch(e){}
+			  ixGooglePintar();
+			  try{ ixToast('👋 Hola, '+perfil.nombre.split(' ')[0]); }catch(e){}
+			  return perfil;
+			}
+			// La libreria de Google se carga SOLO si hay un ID puesto: si no, seria
+			// pedirle un script a Google en cada arranque para nada.
+			let _ixGCargando=false;
+			function ixGoogleCargar(){
+			  const id=ixGoogleId();
+			  if(!id || _ixGCargando) return;
+			  if(window.google && window.google.accounts) { ixGoogleDibujarBoton(); return; }
+			  _ixGCargando=true;
+			  const sc=document.createElement('script');
+			  sc.src='https://accounts.google.com/gsi/client';
+			  sc.async=true; sc.defer=true;
+			  sc.onload=function(){ _ixGCargando=false; ixGoogleDibujarBoton(); };
+			  sc.onerror=function(){
+			    _ixGCargando=false;
+			    const c=document.getElementById('ix-google-btn');
+			    if(c) c.innerHTML='<p class="text-[10px] opacity-70">No se pudo cargar Google (¿sin internet?).</p>';
+			  };
+			  document.head.appendChild(sc);
+			}
+			function ixGoogleDibujarBoton(){
+			  const id=ixGoogleId();
+			  const c=document.getElementById('ix-google-btn');
+			  if(!id || !c) return;
+			  if(!(window.google && google.accounts && google.accounts.id)) return;
+			  try{
+			    google.accounts.id.initialize({ client_id:id, callback:ixGoogleEntro });
+			    c.innerHTML='';
+			    google.accounts.id.renderButton(c, {theme:'filled_blue', size:'large', width:280, text:'signin_with'});
+			  }catch(e){
+			    c.innerHTML='<p class="text-[10px] opacity-70">Ese ID no le vale a Google. Revísalo en la consola.</p>';
+			  }
+			}
+			function ixGooglePintar(){
+			  const c=document.getElementById('ix-google');
+			  if(!c) return;
+			  const id=ixGoogleId(), perfil=ixGooglePerfil();
+			  if(perfil){
+			    c.innerHTML=''
+			      +'<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);'
+			      +'border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm,10px);padding:10px;">'
+			      +(perfil.foto?'<img src="'+escapeHtml(perfil.foto)+'" alt="" style="width:34px;height:34px;border-radius:50%;">':'')
+			      +'<div style="min-width:0;">'
+			      +'<div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(perfil.nombre)+'</div>'
+			      +'<div style="font-size:10px;opacity:.7;overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(perfil.correo)+'</div>'
+			      +'</div></div>'
+			      +'<button onclick="ixGoogleSalir()" class="btn-option w-full" style="margin-top:8px;">Cerrar sesión de Google</button>'
+			      +'<p class="text-[10px] opacity-70 mt-2 leading-relaxed">Tu nombre y tu foto se quedan en este aparato: no se mandan a ningún sitio. Para que tus datos te sigan al iPad, usa el código de arriba.</p>';
+			    return;
+			  }
+			  if(!id){
+			    c.innerHTML=''
+			      +'<p class="text-[10px] opacity-70 mb-2 leading-relaxed">Para poder entrar con Google hace falta un <b>ID de cliente</b>, que se crea gratis en Google Cloud Console autorizando esta web. Pégalo aquí y el botón aparece solo.</p>'
+			      +'<input id="ix-google-input" placeholder="000000-xxxxx.apps.googleusercontent.com" aria-label="ID de cliente de Google" '
+			      +'style="width:100%;padding:10px;border-radius:var(--r-sm,10px);background:rgba(255,255,255,.06);'
+			      +'border:1px solid rgba(255,255,255,.14);color:var(--txt);font-size:11px;font-family:monospace;">'
+			      +'<button onclick="ixGoogleGuardarId()" class="btn-option w-full" style="margin-top:8px;">Guardar el ID</button>'
+			      +'<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Ese ID es público, va dentro de la web y se puede ver: no es una contraseña. El «secreto de cliente» NO hace falta aquí.</p>';
+			    return;
+			  }
+			  c.innerHTML='<div id="ix-google-btn" style="display:flex;justify-content:center;min-height:44px;"></div>'
+			    +'<button onclick="ixGooglePonerId(\'\')" class="btn-option w-full" style="margin-top:8px;">Quitar el ID</button>';
+			  ixGoogleCargar();
+			}
+			function ixGoogleGuardarId(){
+			  const el=document.getElementById('ix-google-input');
+			  const v=el?el.value:'';
+			  if(!ixGooglePonerId(v)){
+			    try{ ixToast('Eso no parece un ID de Google'); }catch(e){}
+			    return false;
+			  }
+			  try{ ixToast('✅ ID guardado'); }catch(e){}
+			  return true;
+			}
+			if(document.readyState==='loading')
+			  document.addEventListener('DOMContentLoaded', ixGooglePintar);
+			else ixGooglePintar();
+
 			/* ═════════════ SINCRONIZAR ENTRE APARATOS ═════════════
 			   «Mi Nube» nunca fue una nube: eran claves de localStorage de ESE
 			   aparato, asi que lo que apuntabas en el movil no aparecia en la
@@ -7705,6 +7865,7 @@
 			  if(name==='more'){
 			    try{ ixRenderDownloads(); }catch(e){}
 			    try{ ixNubePintar(); }catch(e){}
+			    try{ ixGooglePintar(); }catch(e){}
 			  }
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
@@ -15933,6 +16094,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.3', fecha: '5 de septiembre de 2026', titulo:'Entrar con Google', cambios: [
+			    '🔐 Botón «Entrar con Google» en Configuración → Más. Para activarlo hay que pegar ahí el ID de cliente que se crea gratis en Google Cloud Console: así se enciende al momento, sin esperar a una actualización de la app',
+			    '🛡️ Si pegas el «secreto de cliente» o media URL por error, te lo dice, en vez de dejarte esperando un botón que no iba a salir',
+			    '🔒 Tu nombre, tu correo y tu foto se quedan en tu aparato: no se mandan a ningún sitio',
+			  ]},
 			  { v:'3.2', fecha: '5 de septiembre de 2026', titulo:'Por fin: tus cosas en todos tus aparatos', cambios: [
 			    '☁️ SINCRONIZACIÓN DE VERDAD. Configuración → Más → «Sincronizar entre aparatos»: creas un código, lo pones en tu otro aparato, y ahí tienes tus notas, alarmas, ciudades, calendario y ajustes. Sin registro y sin correo',
 			    '🔑 El código lo genera tu navegador y el servidor NO lo guarda: guarda solo su huella. Ojo: quien tenga el código tiene tus datos, y si lo pierdes no se puede recuperar',
