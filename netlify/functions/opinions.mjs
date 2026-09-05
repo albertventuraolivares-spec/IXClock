@@ -11,7 +11,7 @@ const HEADERS = {
 };
 
 export default async (req) => {
-	if (req.method === 'OPTIONS') return new Response('', { status: 204, headers: HEADERS });
+	if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: HEADERS });
 	const store = getStore('opiniones');
 
 	if (req.method === 'GET') {

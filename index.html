@@ -2144,6 +2144,13 @@
 						</div>
 						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Todas: muestra todas las apps en la barra de arriba. Compacta: oculta algunas para que quepan mejor en pantallas pequeñas.</p>
 					</div>
+					<!-- Sincronizar entre aparatos. El aviso de que el código es la
+					     llave no es relleno: es lo único que separa «se me perdió el
+					     código» de «alguien tiene mis notas». -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">☁️ Sincronizar entre aparatos</div>
+						<div id="ix-nube"></div>
+					</div>
 					<!-- Rendimiento y control. Los dos textos largos no sobran: son
 					     justo lo que evita que el ajuste prometa lo que no hace. -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -7332,6 +7339,198 @@
 			  }
 			}
 
+			/* ═════════════ SINCRONIZAR ENTRE APARATOS ═════════════
+			   «Mi Nube» nunca fue una nube: eran claves de localStorage de ESE
+			   aparato, asi que lo que apuntabas en el movil no aparecia en la
+			   tablet. Esto si lo es, y reaprovecha la tuberia que ya existia y
+			   estaba probada para las opiniones (una funcion de Netlify con
+			   @netlify/blobs), que solo se usaba para eso.
+
+			   Sin registro y sin correo: un codigo personal largo que genera el
+			   navegador. Lo pones en el otro aparato y ya. El servidor no guarda
+			   el codigo, guarda su SHA-256, asi que ni el almacen sabe cual es.
+
+			   Y se dice claro en la pantalla, porque importa: EL CODIGO ES LA
+			   LLAVE. Quien lo tenga, tiene tus datos.                        */
+			const IX_NUBE_COD='ix_nube_codigo';
+			const IX_NUBE_ULT='ix_nube_ultima';
+			const IX_NUBE_URL='/.netlify/functions/nube';
+			// Que se sincroniza. Lista explicita a proposito: volcar localStorage
+			// entero se llevaria tambien lo que es de ESTE aparato y no debe
+			// viajar (la sesion, si se vio la bienvenida, el estado del onboarding).
+			const IX_NUBE_CLAVES=[
+			  'notes',                 // Notas
+			  'ica_alarms',            // Alarmas y temporizadores
+			  'ica_world_clocks',      // Ciudades del reloj mundial
+			  'cal_events',            // Calendario
+			  'radio_favs',            // Emisoras favoritas
+			  'ix_modo',               // Claro / oscuro / automatico
+			  'text_color',            // Color de las letras
+			  'ix_calidad',            // Calidad de los efectos
+			  'ix_vel_arrastre',       // Velocidad al arrastrar
+			  'easy_mode',             // Modo Facil
+			  'easy_home_text',
+			  'dock_compact',          // Barra de apps
+			  'radio_countries',       // Filtro de paises de la radio
+			];
+			// Sin 0/O ni 1/I/L: son las que se confunden al copiar el codigo a mano
+			// de una pantalla a otra, que es justo lo que va a hacer el usuario.
+			const IX_NUBE_ALFA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+			function ixNubeGenerar(){
+			  const n=20;
+			  let out='';
+			  try{
+			    const v=new Uint32Array(n);
+			    crypto.getRandomValues(v);
+			    for(let i=0;i<n;i++) out+=IX_NUBE_ALFA[v[i]%IX_NUBE_ALFA.length];
+			  }catch(e){
+			    // Sin crypto no se genera nada: un codigo con Math.random seria una
+			    // llave adivinable, y es mejor no dar la funcion que darla floja.
+			    return null;
+			  }
+			  // En grupos de 4, que asi se copia sin perderse.
+			  return out.replace(/(.{4})(?=.)/g,'$1-');
+			}
+			function ixNubeCodigo(){
+			  try{ return localStorage.getItem(IX_NUBE_COD)||''; }catch(e){ return ''; }
+			}
+			function ixNubeActiva(){ return !!ixNubeCodigo(); }
+			function ixNubeValido(c){
+			  return /^[A-HJ-NP-Z2-9-]{20,40}$/.test(String(c||'').toUpperCase().replace(/\s+/g,''));
+			}
+			function ixNubePonerCodigo(c){
+			  const cod=String(c||'').toUpperCase().replace(/\s+/g,'');
+			  if(!ixNubeValido(cod)) return false;
+			  try{ localStorage.setItem(IX_NUBE_COD, cod); }catch(e){}
+			  ixNubePintar();
+			  return true;
+			}
+			function ixNubeApagar(){
+			  // Solo deja de sincronizar ESTE aparato. Los datos del servidor se
+			  // quedan: si fuera al reves, apagarlo en el movil borraria la tablet.
+			  try{ localStorage.removeItem(IX_NUBE_COD); localStorage.removeItem(IX_NUBE_ULT); }catch(e){}
+			  ixNubePintar();
+			}
+			// Lo que hay ahora mismo en este aparato, listo para subir.
+			function ixNubeRecoger(){
+			  const d={};
+			  IX_NUBE_CLAVES.forEach(function(k){
+			    try{ const v=localStorage.getItem(k); if(v!==null) d[k]=v; }catch(e){}
+			  });
+			  return d;
+			}
+			// Escribe lo bajado y recarga, que es lo unico honrado: media app tiene
+			// los datos ya leidos en variables de memoria (_icaAlarms, notes,
+			// calEvts…) y escribir localStorage por debajo no las cambia. Recargar
+			// evita quedarse con la pantalla enseñando lo viejo.
+			function ixNubeAplicar(datos){
+			  if(!datos || typeof datos!=='object') return 0;
+			  let n=0;
+			  IX_NUBE_CLAVES.forEach(function(k){
+			    if(typeof datos[k]!=='string') return;
+			    try{ localStorage.setItem(k, datos[k]); n++; }catch(e){}
+			  });
+			  return n;
+			}
+			async function ixNubeSubir(){
+			  const cod=ixNubeCodigo();
+			  if(!cod) return {ok:false, error:'sin-codigo'};
+			  try{
+			    const r=await fetch(IX_NUBE_URL,{ method:'POST',
+			      headers:{'content-type':'application/json'},
+			      body:JSON.stringify({codigo:cod, datos:ixNubeRecoger()}) });
+			    const j=await r.json();
+			    if(!r.ok || !j.ok) return {ok:false, error:j.error||('http'+r.status)};
+			    try{ localStorage.setItem(IX_NUBE_ULT, j.guardado); }catch(e){}
+			    ixNubePintar();
+			    return {ok:true, guardado:j.guardado};
+			  }catch(e){ return {ok:false, error:'red'}; }
+			}
+			async function ixNubeBajar(){
+			  const cod=ixNubeCodigo();
+			  if(!cod) return {ok:false, error:'sin-codigo'};
+			  try{
+			    const r=await fetch(IX_NUBE_URL+'?codigo='+encodeURIComponent(cod));
+			    const j=await r.json();
+			    if(!r.ok || !j.ok) return {ok:false, error:j.error||('http'+r.status)};
+			    if(j.vacia) return {ok:true, vacia:true, cuantas:0};
+			    const n=ixNubeAplicar(j.datos);
+			    try{ localStorage.setItem(IX_NUBE_ULT, j.guardado); }catch(e){}
+			    return {ok:true, vacia:false, cuantas:n, guardado:j.guardado};
+			  }catch(e){ return {ok:false, error:'red'}; }
+			}
+			// Botones de la pantalla: los de arriba no avisan, estos si.
+			async function ixNubeSubirYAvisar(){
+			  const r=await ixNubeSubir();
+			  try{ ixToast(r.ok?'☁️ Guardado en la nube':'⚠️ No se pudo guardar'); }catch(e){}
+			  return r;
+			}
+			async function ixNubeBajarYAvisar(){
+			  const r=await ixNubeBajar();
+			  if(!r.ok){ try{ ixToast('⚠️ No se pudo traer'); }catch(e){} return r; }
+			  if(r.vacia){ try{ ixToast('No había nada guardado todavía'); }catch(e){} return r; }
+			  try{ ixToast('⬇️ Traído. Recargando…'); }catch(e){}
+			  setTimeout(function(){ try{ location.reload(); }catch(e){} }, 900);
+			  return r;
+			}
+			function ixNubeCrearYActivar(){
+			  const c=ixNubeGenerar();
+			  if(!c){ try{ ixToast('Este navegador no puede crear un código seguro'); }catch(e){} return null; }
+			  ixNubePonerCodigo(c);
+			  ixNubeSubir();
+			  return c;
+			}
+			function ixNubeUnirse(){
+			  const el=document.getElementById('ix-nube-input');
+			  const v=el?el.value:'';
+			  if(!ixNubeValido(v)){ try{ ixToast('Ese código no tiene buena pinta'); }catch(e){} return false; }
+			  ixNubePonerCodigo(v);
+			  ixNubeBajarYAvisar();
+			  return true;
+			}
+			function ixNubeCopiar(){
+			  const c=ixNubeCodigo(); if(!c) return;
+			  try{ navigator.clipboard.writeText(c); ixToast('Código copiado'); }catch(e){}
+			}
+			function ixNubePintar(){
+			  const c=document.getElementById('ix-nube');
+			  if(!c) return;
+			  const cod=ixNubeCodigo();
+			  if(!cod){
+			    c.innerHTML=''
+			      +'<button onclick="ixNubeCrearYActivar()" class="btn-option w-full">🔑 Crear mi código</button>'
+			      +'<p class="text-[10px] opacity-70 mt-2 mb-3 leading-relaxed">Guarda tus notas, alarmas, ciudades, calendario y ajustes en el servidor, y los trae a cualquier aparato donde pongas el mismo código. Sin registro y sin correo.</p>'
+			      +'<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">¿Ya tienes uno en otro aparato?</div>'
+			      +'<input id="ix-nube-input" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" aria-label="Código de sincronización" '
+			      +'style="width:100%;padding:10px;border-radius:var(--r-sm,10px);background:rgba(255,255,255,.06);'
+			      +'border:1px solid rgba(255,255,255,.14);color:var(--txt);font-size:12px;font-family:monospace;'
+			      +'letter-spacing:.5px;text-transform:uppercase;">'
+			      +'<button onclick="ixNubeUnirse()" class="btn-option w-full" style="margin-top:8px;">⬇️ Traer mis datos</button>';
+			    return;
+			  }
+			  let ult='';
+			  try{
+			    const t=localStorage.getItem(IX_NUBE_ULT);
+			    if(t){ const d=new Date(t); if(!isNaN(d)) ult='Última vez: '+d.toLocaleString(); }
+			  }catch(e){}
+			  c.innerHTML=''
+			    +'<div style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:1px;'
+			    +'background:rgba(10,132,255,.14);border:1px solid rgba(10,132,255,.35);border-radius:var(--r-sm,10px);'
+			    +'padding:10px;text-align:center;word-break:break-all;">'+escapeHtml(cod)+'</div>'
+			    +'<button onclick="ixNubeCopiar()" class="btn-option w-full" style="margin-top:8px;">📋 Copiar el código</button>'
+			    +'<p class="text-[10px] opacity-70 mt-2 mb-3 leading-relaxed">Pon este mismo código en tu otro aparato y tendrás ahí tus notas, alarmas, ciudades y ajustes. <b>Guárdalo bien: quien tenga el código tiene tus datos</b>, y si lo pierdes no hay forma de recuperarlo.</p>'
+			    +'<div style="display:flex;gap:8px;">'
+			    +'<button onclick="ixNubeSubirYAvisar()" class="btn-option" style="flex:1;">☁️ Guardar ahora</button>'
+			    +'<button onclick="ixNubeBajarYAvisar()" class="btn-option" style="flex:1;">⬇️ Traer</button>'
+			    +'</div>'
+			    +(ult?'<p class="text-[10px] opacity-60 mt-2">'+escapeHtml(ult)+'</p>':'')
+			    +'<button onclick="ixNubeApagar()" class="btn-option w-full" style="margin-top:8px;">Dejar de sincronizar este aparato</button>'
+			    +'<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Solo deja de sincronizar AQUÍ. Lo guardado no se borra, así que tus otros aparatos siguen igual.</p>';
+			}
+			if(document.readyState==='loading')
+			  document.addEventListener('DOMContentLoaded', ixNubePintar);
+			else ixNubePintar();
+
 			/* ═════════════ PANTALLA Y CONTROL (Configuracion) ═════════════
 			   Tres ajustes que pidio el usuario. Dos de ellos hay que contarlos
 			   con honradez, porque el navegador NO puede hacer lo que suena que
@@ -7503,7 +7702,10 @@
 			  if(e.clientX < 110 && e.clientY < 110) _showSettingsBtn();
 			},{passive:true});
 			function showTab(name){
-			  if(name==='more'){ try{ ixRenderDownloads(); }catch(e){} }
+			  if(name==='more'){
+			    try{ ixRenderDownloads(); }catch(e){}
+			    try{ ixNubePintar(); }catch(e){}
+			  }
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
 			    document.getElementById('tab-'+t).classList.toggle('flex', t===name);
@@ -15731,6 +15933,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.2', fecha: '5 de septiembre de 2026', titulo:'Por fin: tus cosas en todos tus aparatos', cambios: [
+			    '☁️ SINCRONIZACIÓN DE VERDAD. Configuración → Más → «Sincronizar entre aparatos»: creas un código, lo pones en tu otro aparato, y ahí tienes tus notas, alarmas, ciudades, calendario y ajustes. Sin registro y sin correo',
+			    '🔑 El código lo genera tu navegador y el servidor NO lo guarda: guarda solo su huella. Ojo: quien tenga el código tiene tus datos, y si lo pierdes no se puede recuperar',
+			    '🛡️ Lo que es de cada aparato (tu sesión, si ya viste la bienvenida) NO viaja: solo van tus cosas',
+			    '🛠️ Y arreglado de paso un fallo en el muro de opiniones: la respuesta al chequeo previo del navegador reventaba, porque un 204 no admite contenido',
+			  ]},
 			  { v:'3.1', fecha: '5 de septiembre de 2026', titulo:'El Calendario deja de estar aparte', cambios: [
 			    '➕ Tus eventos del Calendario ahora SALEN EN EL BUSCADOR. Era lo único que se quedaba fuera: buscaba notas, alarmas, ciudades y emisoras, pero no lo que tú apuntas. Tócalo y se abre el Calendario en ese día',
 			    '➕ Y el próximo evento sale en la franja de arriba, junto al clima, la alarma y la festividad: «📅 Dentista a las 5 · Hoy»',
