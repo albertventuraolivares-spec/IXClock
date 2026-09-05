@@ -136,6 +136,31 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 50. **Exportar las tomas de IXBand** (`_gbTakes`) a WAV/MP3: hoy solo se oyen
     dentro del estudio.
 
+**De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
+llegaron repetidas y algunas ya estaban hechas):
+52. **Eventos del Calendario en el buscador**: `calEvts` es lo único que el
+    buscador universal no indexa. Pedida dos veces.
+53. **Próximo evento del Calendario como quinta ficha de la franja** de
+    resumen, junto a clima/alarma/festividad/luna.
+54. **Cuenta atrás propia** (viaje, examen, cumpleaños) además de las
+    festividades automáticas, reusando el motor que ya existe.
+55. **Divide la cuenta en la Calculadora**: reparto entre N personas + propina,
+    con la conversión de divisas en vivo. Pedida dos veces.
+56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
+57. **Alertas del tiempo por ciudad guardada** (tormenta, calor extremo,
+    helada), sonando como una alarma.
+58. **Brújula que apunta a tus ciudades**: rumbo y distancia usando las
+    coordenadas que el reloj mundial ya guarda.
+59. **IXBench sugiere la calidad de los efectos**: el banco de pruebas mide la
+    potencia y no hace nada con el resultado; podría ofrecer «aplicar
+    Ahorro/Media/Alta» al terminar.
+60. **Modo Enfoque silencia Radio Mundial** al empezar y la devuelve al acabar.
+61. **Pista de IXBand como tono de alarma.**
+62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
+    subirlo poco a poco.
+63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
+    («Hoy en IXClocK»: enfoque + alarmas + radio).
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
@@ -161,6 +186,56 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 ---
 
 ## Hecho
+
+- **XSS reflejado en el proxy del Navegador** (informe de auditoría,
+  verificado). `netlify/functions/proxy.js` metía `targetUrl` y `msg` sin
+  escapar en la página de error 502.
+  - **Por qué era serio de verdad**: esa página se sirve desde el **mismo
+    origen** que IXClocK, así que lo que se colara ahí corría con acceso al
+    `localStorage` de la app — notas, alarmas y ajustes.
+  - **Pasar el `new URL()` de validación no protegía nada**: una URL
+    perfectamente válida puede llevar comillas y etiquetas en la ruta
+    (`https://noexiste.invalid/"><script>…`). Y llegar a esa rama es trivial:
+    basta un dominio que no resuelva.
+  - `pruebas/proxy.js` (10 comprobaciones): llama a la función **de verdad**,
+    sirve el HTML que devuelve en un navegador real y comprueba que no se
+    ejecuta nada. Verificado revirtiendo: sin el escapado, `window.__xss`
+    queda a `true` con los tres payloads.
+
+- **Tres bugs de informes de auditoría + unidades en el buscador.** Los tres
+  bugs llegaron de fuera y **los tres se verificaron en el código antes de
+  tocar nada**, que es la regla:
+  - **Buscador y emisoras**: se indexaban leyendo `#stations-container`, o sea
+    lo que hubiera **pintado**. Con el filtro de países puesto —función que la
+    propia app ofrece— las emisoras de fuera del filtro desaparecían del
+    buscador sin decir nada. Medido: filtrando a España quedaban 10 pintadas de
+    185, y buscar «z-101» daba **0 resultados**. Ahora recorre
+    `ALL_RADIO_STATIONS` entero.
+  - **Emulador**: «Cerrar todas las ventanas» escondía la ventana pero no
+    llamaba a `emuTeardown()`, así que el motor seguía corriendo con audio y
+    CPU. Mismo fallo que tuvo el Modo Enfoque. Añadido a la lista de paradas.
+  - **Mapas**: `_amapHighlight` usaba `var(--txt-40)` —un color de TEXTO
+    atenuado— como fondo de los pasos no activos. En modo claro es negro al
+    50 %, o sea que la lista de indicaciones se ponía casi negra.
+  - **Unidades en el buscador** (idea de dos informes): «5 km a millas»,
+    «30 c en f», «70 kg a lb»… Las equivalencias salen de `UNIT_DATA`, la misma
+    tabla del conversor, **sin copiarlas**, que fue justo el error que hubo con
+    las divisas (dos tablas contradiciéndose hasta un 2,5 %).
+  - `pruebas/cuatro.js` (26 comprobaciones). Verificado revirtiendo los tres:
+    fallan 6.
+  - **Límite conocido de esa prueba**, dicho sin adornos: la parte de Mapas
+    **no** conduce `_amapHighlight` de punta a punta. `_amapSteps` es un `let`
+    del bloque y solo se llena desde una ruta real, que necesita Leaflet (CDN)
+    y OSRM, los dos bloqueados aquí. Se comprueba la regla leyendo el código de
+    la función en ejecución. Es más débil que medir el color pintado, pero caza
+    la reaparición del fallo.
+
+- **Un informe que NO se reprodujo**: decía que `pruebas/control.js` fallaba y
+  que el desenfoque no cambiaba en Media/Ahorro por transiciones de
+  `backdrop-filter` no interpolables. Se ejecutó **tres veces seguidas: 24/24
+  las tres**, con Media en 18 px y Ahorro en `none`. Lo más probable es que
+  midieran antes de que acabase la transición de 300 ms; la propia prueba
+  espera 600 ms por ese motivo, y está comentado ahí. No se tocó nada.
 
 - **Calculadora: nombres de teclas, teclado duplicado y el «=»** (idea 51).
   - **Bug real encontrado tirando del hilo de la propia prueba**: decía «30
