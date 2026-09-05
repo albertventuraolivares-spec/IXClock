@@ -138,10 +138,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
-52. **Eventos del Calendario en el buscador**: `calEvts` es lo único que el
-    buscador universal no indexa. Pedida dos veces.
-53. **Próximo evento del Calendario como quinta ficha de la franja** de
-    resumen, junto a clima/alarma/festividad/luna.
 54. **Cuenta atrás propia** (viaje, examen, cumpleaños) además de las
     festividades automáticas, reusando el motor que ya existe.
 55. **Divide la cuenta en la Calculadora**: reparto entre N personas + propina,
@@ -186,6 +182,25 @@ llegaron repetidas y algunas ya estaban hechas):
 ---
 
 ## Hecho
+
+- **El Calendario deja de estar aparte** (ideas 52 y 53, las dos pedidas dos
+  veces).
+  - **En el buscador**: era lo único que quedaba fuera de una función que
+    promete «buscar en todo». Ahora salen con su fecha y su «Hoy / Mañana / en
+    N días», y al elegirlos se abre el Calendario en ese día.
+  - **Quinta ficha de la franja de resumen**, junto a clima, alarma,
+    festividad y luna: el próximo evento de hoy en adelante.
+  - **Una sola lectura para los dos**, `ixEventosCal()`, en vez de repetir el
+    recorrido en cada sitio — que es exactamente como acabaron existiendo dos
+    tablas de divisas que no coincidían.
+  - **Detalle de scope que lo habría roto sin avisar**: `calEvts` es un `let`
+    de su bloque de `<script>` y el buscador vive en OTRO bloque. Por eso
+    `ixEventosCal()` se define junto a `calEvts` y se llama desde fuera: las
+    declaraciones de función sí cruzan bloques, las de `let` no.
+  - `pruebas/calendario.js` (21 comprobaciones), con fechas relativas a hoy
+    para que no caduque. Incluye que un evento con `<img onerror>` dentro no se
+    ejecuta en ninguno de los tres sitios nuevos por donde ahora pasa.
+    Verificado revirtiendo: fallan 12.
 
 - **XSS reflejado en el proxy del Navegador** (informe de auditoría,
   verificado). `netlify/functions/proxy.js` metía `targetUrl` y `msg` sin
