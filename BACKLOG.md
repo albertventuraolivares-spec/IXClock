@@ -79,13 +79,6 @@ si ya existe**, como se hizo con la lista del 3.
 18. **Modo mesita al girar en horizontal** (tipo StandBy del iPhone): reloj
     gigante con lo mínimo — hora, clima y siguiente alarma. La franja de
     resumen ya calcula esos tres datos.
-19. **Sincronizar entre iPhone y iPad.** «Mi Nube» no es nube: son claves de
-    localStorage de ese aparato. Pero el muro de opiniones **sí** guarda en el
-    servidor, con una función de Netlify y `@netlify/blobs` que ya está en las
-    dependencias: la tubería existe y está probada, solo se usa para las
-    opiniones. Extenderla a notas, alarmas, ciudades y ajustes con un código
-    personal. Es la más grande de todas.
-
 ### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
 Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
@@ -182,6 +175,51 @@ llegaron repetidas y algunas ya estaban hechas):
 ---
 
 ## Hecho
+
+- **SINCRONIZACIÓN ENTRE APARATOS** (idea 19, la más grande de la lista). Lo
+  pidió el usuario junto con «cuenta de Google y que lleguen correos»; esto es
+  la base sobre la que se enchufan las otras dos.
+  - **Qué era antes**: «Mi Nube» no era una nube — eran claves de
+    `localStorage` de ESE aparato. Por eso lo del móvil no salía en la tablet.
+  - **Cómo está hecho**: `netlify/functions/nube.mjs`, reaprovechando la misma
+    tubería de `@netlify/blobs` que ya estaba montada y probada para las
+    opiniones y solo se usaba para eso.
+  - **Identidad sin registro**: un código de 20 caracteres que genera el
+    navegador con `crypto` (100 bits). Sin correo, sin contraseña, y sin nada
+    personal en el servidor que pueda filtrarse. Si no hay `crypto`, **no se
+    genera**: un código con `Math.random` sería una llave adivinable, y es
+    mejor no dar la función que darla floja.
+  - **El código no se guarda**: lo que hace de nombre de caja es su SHA-256.
+    Quien mirase el almacén vería hashes, no códigos.
+  - **Alfabeto sin 0/O ni 1/I/L**, porque el usuario va a copiarlo a mano de
+    una pantalla a otra.
+  - **Lista explícita de lo que viaja**, no un volcado de `localStorage`: la
+    sesión y el estado de la bienvenida son de cada aparato y no deben salir.
+    Verificado revirtiendo al volcado completo: fallan justo esas 2.
+  - **Al traer datos se recarga la página.** No es pereza: media app tiene los
+    datos ya leídos en variables de memoria (`_icaAlarms`, `notes`,
+    `calEvts`…), y escribir `localStorage` por debajo no las cambia.
+  - **«Dejar de sincronizar» solo apaga ESTE aparato.** Si borrase el servidor,
+    apagarlo en el móvil dejaría la tablet sin nada.
+  - **Bug encontrado escribiendo la prueba**: `new Response('', {status:204})`
+    lanza `TypeError` en Node 22 (un 204 no admite cuerpo), y ese runtime es el
+    que usan estas funciones. Estaba en `nube.mjs` **y copiado en
+    `opinions.mjs`**, o sea que la respuesta al preflight de CORS del muro de
+    opiniones estaba mal desde siempre. Arreglado en los dos.
+  - `pruebas/nube.js` (21) prueba el servidor **real**, poniéndole un doble de
+    `@netlify/blobs` en un `node_modules` temporal, ya que npm está bloqueado
+    aquí. `pruebas/sync.js` (24) levanta **dos navegadores separados** —dos
+    aparatos de verdad, no dos pestañas— y comprueba que lo creado en uno
+    aparece en el otro.
+
+- **Pendiente del usuario, esperando a que él lo cree** (pedido el 5 de sept):
+  - **Entrar con Google**: hace falta un ID de cliente de OAuth de Google Cloud
+    Console con `https://ixclockplus.netlify.app` autorizado. Solo lo puede
+    crear él. El ID es público y se puede pegar en el chat; el «secreto de
+    cliente» NO hace falta y no debe salir de ahí.
+  - **Correos**: una web estática no puede mandar correos. Hace falta un
+    servicio (Resend tiene plan gratis) y su API key **en las variables de
+    entorno de Netlify** (`RESEND_API_KEY`), nunca pegada en el chat.
 
 - **El Calendario deja de estar aparte** (ideas 52 y 53, las dos pedidas dos
   veces).
