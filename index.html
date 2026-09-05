@@ -4671,6 +4671,7 @@
 					Notas
 				</div>
 				<button
+					aria-label="Cerrar Notas"
 					class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
 					onclick="toggleNotesPanel()"
 				>
@@ -13107,7 +13108,10 @@
 			function calcUpdateDisplay(){
 			  document.getElementById('calc-display').innerText = calcFormat(calcCurrent);
 			  const acBtn = document.getElementById('calck-clear');
-			  if(acBtn) acBtn.innerText = (calcCurrent!=='0' && !calcWaiting) ? 'C' : 'AC';
+			  if(acBtn){
+			    acBtn.innerText = (calcCurrent!=='0' && !calcWaiting) ? 'C' : 'AC';
+			    acBtn.setAttribute('aria-label', calcNombreTecla(acBtn.innerText));
+			  }
 			  document.querySelectorAll('.calc-op').forEach(b=>b.classList.remove('calc-op-active'));
 			  if(calcOperator && calcWaiting){
 			    const activeBtn = document.getElementById('calck-'+calcOperator);
@@ -14816,6 +14820,21 @@
 			}
 
 			/* ===== CALCULATOR (iPhone-style, replaces old renderCalcGrid) ===== */
+			/* Como se llama cada tecla en voz alta.
+			   Las teclas de operacion SI tienen texto, asi que la prueba de
+			   botones mudos las daba por buenas. Pero un lector de pantalla lee
+			   el simbolo suelto y ahi la cosa cambia: «×» lo dice como «signo de
+			   multiplicacion» o directamente se lo salta, «−» (que es el menos
+			   matematico, no el guion) muchos no lo dicen, y «.» y «+/-» no
+			   significan nada dichos en voz alta. Con nombre no hay duda. */
+			const CALC_NOMBRES={
+			  'AC':'Borrar todo', 'C':'Borrar', '+/-':'Cambiar el signo',
+			  '%':'Por ciento', '÷':'Dividir', '×':'Multiplicar',
+			  '−':'Restar', '+':'Sumar', '=':'Igual', '.':'Coma decimal',
+			  '√':'Raíz cuadrada', 'x²':'Elevado al cuadrado', '^':'Elevado a',
+			  'π':'Pi', 'e':'Número e', '(':'Abrir paréntesis', ')':'Cerrar paréntesis',
+			};
+			function calcNombreTecla(l){ return CALC_NOMBRES[l] || l; }
 			let calcMode='basic',calcExprStr='',calcVal='0',calcJustResult=false;
 			const calcBasicDef=[
 			  {l:'AC',bg:'#636366',fn:()=>{calcExprStr='';calcVal='0';calcJustResult=false;updCalc();}},
@@ -14836,7 +14855,14 @@
 			function calcEq(){
 			  try{
 			    const expr=calcExprStr+calcVal;
+			    // Hoy aqui solo pueden llegar digitos y + - * / de las teclas, asi
+			    // que el Function() de antes no era explotable. Pero era un pie de
+			    // banco: el dia que algo meta texto en calcVal —el buscador, una
+			    // funcion nueva, lo que sea— pasa a ejecutar codigo sin avisar. Se
+			    // pasa por el mismo filtro que ya guarda las Notas Matematicas.
+			    if(!_mathSeguro(expr)){ calcVal='Error'; calcExprStr=''; updCalc(); return; }
 			    const r=Function('"use strict";return('+expr+')')();
+			    if(!isFinite(r)){ calcVal='Error'; calcExprStr=''; updCalc(); return; }
 			    calcVal=String(Math.round(r*1e10)/1e10);calcExprStr='';calcJustResult=true;updCalc();
 			  }catch(e){calcVal='Error';updCalc();}
 			}
@@ -14977,19 +15003,27 @@
 			  calcBasicDef.forEach(b=>{
 			    const btn=document.createElement('button');
 			    btn.textContent=b.l;
+			    btn.setAttribute('aria-label', calcNombreTecla(b.l));
 			    btn.style.cssText='background:'+b.bg+';color:var(--txt);border:none;border-radius:50%;height:64px;font-size:1.25rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;'+( b.wide?'grid-column:span 2;border-radius:32px;justify-content:flex-start;padding-left:22px;':'')+';-webkit-tap-highlight-color:transparent;';
 			    btn.addEventListener('click',b.fn);
 			    g.appendChild(btn);
 			  });
 			  // Init scientific grid
 			  const sciTop=document.getElementById('calc-sci-top');const sciBot=document.getElementById('calc-sci-bot');
+			  // Vaciar antes de rellenar. Esto se llama en CADA apertura del panel,
+			  // y la rejilla basica de arriba si se vaciaba pero estas dos no: el
+			  // teclado cientifico crecia 15 y 16 botones por apertura (30, 45,
+			  // 60…). A la decima vez habia mas de trescientos botones apilados.
+			  if(sciTop) sciTop.innerHTML='';
+			  if(sciBot) sciBot.innerHTML='';
 			  if(sciTop){
 			    const sciFns=['sin','cos','tan','log','ln','asin','acos','atan','√','x²','π','e','(',')','^'];
-			    sciFns.forEach(fn=>{const b=document.createElement('button');b.textContent=fn;b.style.cssText='background:rgba(255,255,255,.1);color:#0a84ff;border:none;border-radius:10px;padding:9px 4px;font-size:11px;font-weight:700;cursor:pointer;';b.onclick=()=>applySciFunc(fn);sciTop.appendChild(b);});
+			    sciFns.forEach(fn=>{const b=document.createElement('button');b.textContent=fn;b.setAttribute('aria-label', calcNombreTecla(fn));b.style.cssText='background:rgba(255,255,255,.1);color:#0a84ff;border:none;border-radius:10px;padding:9px 4px;font-size:11px;font-weight:700;cursor:pointer;';b.onclick=()=>applySciFunc(fn);sciTop.appendChild(b);});
 			  }
 			  if(sciBot){
 			    ['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','=','+'].forEach(l=>{
 			      const b=document.createElement('button');b.textContent=l;
+			      b.setAttribute('aria-label', calcNombreTecla(l));
 			      const isOp=['÷','×','−','+','='].includes(l);
 			      b.style.cssText='background:'+(isOp?'#ff9f0a':'rgba(28,28,30,.9)')+';color:var(--txt);border:none;border-radius:10px;padding:9px 4px;font-size:13px;font-weight:700;cursor:pointer;';
 			      b.onclick=()=>{if(l==='=')calcEq();else if(isOp)calcOp({'÷':'/','×':'*','−':'-','+':'+'}[l]);else calcDigit(l==='.'?'.':l);};
@@ -15643,6 +15677,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'2.9', fecha: '5 de septiembre de 2026', titulo:'Calculadora', cambios: [
+			    '🛠️ FALLO GORDO: el teclado científico se duplicaba cada vez que abrías la calculadora. A la décima vez había más de trescientos botones apilados',
+			    '♿ Las teclas ahora dicen qué hacen a quien usa lector de pantalla: «Multiplicar», «Restar», «Coma decimal», «Cambiar el signo»… Antes solo se leía el símbolo suelto, y algunos ni se leían',
+			    '🔒 El botón «=» pasa por el mismo filtro de seguridad que las Notas Matemáticas. No era aprovechable desde el teclado, pero así no puede llegar a serlo',
+			  ]},
 			  { v:'2.8', fecha: '4 de septiembre de 2026', titulo:'Rendimiento y control', cambios: [
 			    '➕ CALIDAD DE LOS EFECTOS en Configuración → Más: Alta, Media o Ahorro. Baja el desenfoque del cristal, las sombras y los fondos animados, que es lo que hace ir lenta la app en un aparato justo',
 			    '➕ Configuración a pantalla completa: el panel se ensancha para verlo cómodo en pantalla grande, y se recuerda',
@@ -16846,6 +16885,7 @@
 			    if(!t.pinned || _browserTabs.length>1){
 			      const closeBtn=document.createElement('button');
 			      closeBtn.textContent='✕';
+			      closeBtn.setAttribute('aria-label','Cerrar la pestaña '+(t.title||'Nueva pestaña'));
 			      closeBtn.style.cssText='background:none;border:none;color:var(--txt-50);font-size:11px;cursor:pointer;padding:0;width:14px;height:14px;';
 			      closeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); browserCloseTab(t.id, e); });
 			      item.appendChild(closeBtn);
@@ -17112,6 +17152,7 @@
 			    item.appendChild(label);
 			    const removeBtn=document.createElement('button');
 			    removeBtn.textContent='✕';
+			    removeBtn.setAttribute('aria-label','Quitar de favoritos '+(f.title||''));
 			    removeBtn.style.cssText='background:none;border:none;color:var(--txt-40);font-size:10px;cursor:pointer;padding:0;';
 			    removeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); browserRemoveFavorite(i); });
 			    item.appendChild(removeBtn);
