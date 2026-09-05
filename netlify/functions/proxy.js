@@ -115,6 +115,17 @@ function injectedScript(pageUrl) {
 })();</script>`;
 }
 
+// La pagina de error se sirve DESDE EL MISMO ORIGEN que IXClocK, asi que
+// cualquier cosa que se cuele en ella corre con acceso al localStorage de la
+// app: notas, alarmas y ajustes. Y `targetUrl` llega del usuario: pasa el
+// new URL() de mas abajo, pero una URL valida puede llevar comillas y etiquetas
+// en la ruta (https://noexiste.invalid/"><script>...). Se escapa siempre.
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const targetUrl = params.url;
@@ -144,8 +155,8 @@ exports.handler = async (event) => {
       body: `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:sans-serif;padding:24px;color:#222">
 <h2 style="color:#c00">No se pudo cargar la página</h2>
-<p>${msg}</p>
-<p>URL: <code style="word-break:break-all">${targetUrl}</code></p>
+<p>${escapeHtml(msg)}</p>
+<p>URL: <code style="word-break:break-all">${escapeHtml(targetUrl)}</code></p>
 <button onclick="location.reload()" style="padding:8px 16px;background:#0a84ff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Reintentar</button>
 </body></html>`
     };

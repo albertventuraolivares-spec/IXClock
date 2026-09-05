@@ -15593,7 +15593,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','emuTeardown']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -15677,6 +15677,13 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.0', fecha: '5 de septiembre de 2026', titulo:'Tres arreglos y unidades en el buscador', cambios: [
+			    '🛠️ El buscador no encontraba emisoras que hubieras dejado fuera del filtro de países de Radio Mundial. Las buscaba entre las que había pintadas en pantalla, no en la lista entera. Ahora busca en las 185',
+			    '🛠️ «Cerrar todas las ventanas» escondía el Emulador pero NO lo apagaba: el juego seguía corriendo de fondo, gastando batería y con el sonido puesto',
+			    '🛠️ En la navegación paso a paso de Mapas, al empezar a navegar los pasos que no tocaban se ponían con un fondo casi opaco (y casi negro en modo claro). Era un color de texto usado como fondo',
+			    '🔒 SEGURIDAD: la página de error del Navegador (cuando una web no carga) metía la dirección tal cual. Un enlace preparado podía ejecutar código con acceso a tus notas, alarmas y ajustes. Arreglado',
+			    '➕ El buscador ahora CONVIERTE UNIDADES igual que ya cambiaba divisas: «5 km a millas», «30 c en f», «70 kg a lb», litros, galones, velocidad y áreas. Tócalo y se abre la calculadora con la conversión puesta',
+			  ]},
 			  { v:'2.9', fecha: '5 de septiembre de 2026', titulo:'Calculadora', cambios: [
 			    '🛠️ FALLO GORDO: el teclado científico se duplicaba cada vez que abrías la calculadora. A la décima vez había más de trescientos botones apilados',
 			    '♿ Las teclas ahora dicen qué hacen a quien usa lector de pantalla: «Multiplicar», «Restar», «Coma decimal», «Cambiar el signo»… Antes solo se leía el símbolo suelto, y algunos ni se leían',
@@ -16652,7 +16659,13 @@
 			  _amapSteps.forEach(function(_,j){
 			    const el=document.getElementById('amap-step-'+j); if(!el) return;
 			    const on=(j===i);
-			    el.style.background=on?'rgba(10,132,255,.28)':'var(--txt-40)';
+			    // Ojo: aqui habia var(--txt-40), que es un color de TEXTO atenuado
+			    // (blanco al 40%), no de fondo. En cuanto arrancaba la navegacion o
+			    // tocabas un paso, los demas pasaban del fondo sutil con el que se
+			    // dibujan a uno casi opaco. Y en modo claro --txt-40 es negro al
+			    // 50%, o sea que la lista de indicaciones se ponia casi negra. Se
+			    // devuelve el mismo valor con el que se pintan al crearse.
+			    el.style.background=on?'rgba(10,132,255,.28)':'rgba(255,255,255,.06)';
 			    el.style.borderColor=on?'rgba(10,132,255,.7)':'transparent';
 			    if(on && el.scrollIntoView) try{ el.scrollIntoView({block:'nearest'}); }catch(e){}
 			  });
@@ -22614,6 +22627,102 @@
 			  const n=parseFloat(t);
 			  return isFinite(n) ? n : NaN;
 			}
+			/* ── Convertir unidades desde el buscador ──
+			   Como ya se escribe «150 usd a eur», tiene que poder escribirse
+			   «5 km a millas». Las equivalencias salen de UNIT_DATA, la misma
+			   tabla del conversor de la calculadora: nada de copiarlas aqui, que
+			   fue justo el error que hubo con las divisas (dos tablas que se
+			   contradecian hasta un 2,5 %).
+			   La temperatura va aparte porque no es una regla de tres: 0 °C no es
+			   0 °F, hay que sumar y restar el desplazamiento.                  */
+			const IX_ALIAS_UNIDAD={
+			  // metros y compania
+			  km:'km', kilometro:'km', kilometros:'km', 'kilómetro':'km', 'kilómetros':'km',
+			  m:'m', metro:'m', metros:'m', cm:'cm', centimetro:'cm', centimetros:'cm',
+			  'centímetro':'cm', 'centímetros':'cm', mm:'mm', milimetro:'mm', milimetros:'mm',
+			  mi:'mi', milla:'mi', millas:'mi', mile:'mi', miles:'mi',
+			  yd:'yd', yarda:'yd', yardas:'yd', ft:'ft', pie:'ft', pies:'ft', feet:'ft',
+			  in:'in', pulgada:'in', pulgadas:'in', inch:'in', inches:'in',
+			  // peso
+			  kg:'kg', kilo:'kg', kilos:'kg', kilogramo:'kg', kilogramos:'kg',
+			  g:'g', gramo:'g', gramos:'g', t:'t', tonelada:'t', toneladas:'t',
+			  lb:'lb', libra:'lb', libras:'lb', lbs:'lb', pound:'lb', pounds:'lb',
+			  oz:'oz', onza:'oz', onzas:'oz', ounce:'oz',
+			  // temperatura
+			  c:'°C', 'ºc':'°C', '°c':'°C', celsius:'°C', centigrados:'°C', 'centígrados':'°C',
+			  f:'°F', 'ºf':'°F', '°f':'°F', fahrenheit:'°F',
+			  k:'K', kelvin:'K',
+			  // velocidad
+			  kmh:'km/h', 'km/h':'km/h', 'kph':'km/h', 'ms':'m/s', 'm/s':'m/s',
+			  mph:'mph', nudo:'knot', nudos:'knot', knot:'knot', knots:'knot',
+			  // volumen
+			  l:'L', litro:'L', litros:'L', ml:'mL', mililitro:'mL', mililitros:'mL',
+			  gal:'gal', galon:'gal', galones:'gal', 'galón':'gal', gallon:'gal', gallons:'gal',
+			};
+			function _ixUnidad(txt){
+			  const t=String(txt||'').trim().toLowerCase();
+			  return IX_ALIAS_UNIDAD[t] || null;
+			}
+			// En que categoria de UNIT_DATA vive una unidad ya normalizada.
+			function _ixCatUnidad(u){
+			  for(const cat in UNIT_DATA){
+			    if(cat==='currency') continue;      // las divisas van por su camino
+			    if((UNIT_DATA[cat].units||[]).indexOf(u)>=0) return cat;
+			  }
+			  return null;
+			}
+			const IX_TEMP={
+			  '°C→°F':v=>v*9/5+32,   '°F→°C':v=>(v-32)*5/9,
+			  '°C→K' :v=>v+273.15,   'K→°C' :v=>v-273.15,
+			  '°F→K' :v=>(v-32)*5/9+273.15, 'K→°F':v=>(v-273.15)*9/5+32,
+			};
+			function ixConvertirUnidad(n, deTxt, aTxt){
+			  if(!isFinite(n)) return null;
+			  const de=_ixUnidad(deTxt), a=_ixUnidad(aTxt);
+			  if(!de || !a || de===a) return null;
+			  const cat=_ixCatUnidad(de);
+			  // Las dos tienen que ser de lo mismo: «5 km a kilos» no significa nada.
+			  if(!cat || _ixCatUnidad(a)!==cat) return null;
+			  let res;
+			  if(cat==='temp'){
+			    const fn=IX_TEMP[de+'→'+a];
+			    if(!fn) return null;
+			    res=fn(n);
+			  }else{
+			    const base=UNIT_DATA[cat].base;
+			    if(!base || !base[de] || !base[a]) return null;
+			    res=n*base[de]/base[a];
+			  }
+			  if(!isFinite(res)) return null;
+			  const redondo=v=>{
+			    const x=Math.abs(v);
+			    const d = x===0 ? 0 : (x<0.01 ? 6 : (x<1 ? 4 : 2));
+			    return String(Math.round(v*Math.pow(10,d))/Math.pow(10,d));
+			  };
+			  const ICONO={length:'📏',weight:'⚖️',temp:'🌡️',speed:'🚗',area:'🗺️',volume:'🧴'};
+			  return { grupo:'Resultado', icono:ICONO[cat]||'🔢',
+			    titulo:redondo(res)+' '+a,
+			    sub:redondo(n)+' '+de+' → '+a,
+			    texto:redondo(n)+' '+de+' a '+a,
+			    _valor:redondo(res)+' '+a,
+			    ir:function(){ try{ ixAbrirUnidades(cat, de, a, n); }catch(e){} } };
+			}
+			// Abre la calculadora en Unidades con la conversion ya puesta.
+			function ixAbrirUnidades(cat, de, a, n){
+			  try{ if(!calcPanelOpen) toggleCalcPanel(); }catch(e){}
+			  setTimeout(function(){
+			    try{
+			      const sel=document.getElementById('unit-category');
+			      if(sel){ sel.value=cat; loadUnitCategory(); }
+			      const f=document.getElementById('unit-from'), t=document.getElementById('unit-to');
+			      if(f) f.value=de;
+			      if(t) t.value=a;
+			      const v=document.getElementById('unit-val-from');
+			      if(v) v.value=String(n);
+			      convertUnits('from');
+			    }catch(e){}
+			  }, 260);
+			}
 			function ixCalculoRapido(qOriginal){
 			  const q=String(qOriginal||'').trim();
 			  if(!q) return null;
@@ -22635,6 +22744,17 @@
 			          ir:function(){ ixAbrirDivisas(n, de, a); } };
 			      }
 			    }
+			  }
+
+			  // ── unidades: «5 km a millas», «30 c en f», «70 kg lb» ──
+			  // Lo mismo que ya se hacia con las divisas, pero con las tablas del
+			  // conversor de la calculadora. NO se duplican: se lee UNIT_DATA, que
+			  // es la que usa el conversor de verdad, para que no acabe habiendo
+			  // dos verdades distintas como pasaba con las divisas.
+			  const mu=q.match(/^([-\d.,]+)\s*([a-zA-Z°²³\/]{1,6})\s*(?:a|to|en|in|->|=|>)\s*([a-zA-Z°²³\/]{1,6})$/);
+			  if(mu){
+			    const r=ixConvertirUnidad(_ixNumero(mu[1]), mu[2], mu[3]);
+			    if(r) return r;
 			  }
 
 			  // ── cuentas: hace falta un operador, un numero suelto no vale ──
@@ -22715,7 +22835,23 @@
 			  try{
 			    todo.push.apply(todo,_ixDeDom('.wallpaper-card','Fondos','🖼️','Poner este fondo','.wp-label'));
 			    todo.push.apply(todo,_ixDeDom('.clock-style-btn','Relojes','🕰️','Poner este reloj','div:last-child'));
-			    todo.push.apply(todo,_ixDeDom('#stations-container button[data-title]','Emisoras','📻','Poner esta emisora','div[style*="font-weight:700"]'));
+			  }catch(e){}
+			  /* Las emisoras NO se leen del DOM.
+			     Antes salian de '#stations-container', o sea de lo que hubiera
+			     pintado en ese momento, y eso rompia la promesa del buscador de
+			     dos formas: si nunca habias abierto Radio Mundial no habia nada
+			     pintado y no encontraba ninguna, y si habias filtrado paises
+			     —cosa que la propia app ofrece— las de fuera del filtro
+			     desaparecian del buscador sin decir nada. Se recorre la lista
+			     entera, que es la unica que no depende de por donde andes. */
+			  try{
+			    (typeof ALL_RADIO_STATIONS!=='undefined'?ALL_RADIO_STATIONS:[]).forEach(function(st){
+			      if(!st || !st.title) return;
+			      todo.push({ grupo:'Emisoras', icono:st.flag||'📻', titulo:st.title,
+			        sub:st.sub||'Poner esta emisora',
+			        texto:[st.title,st.sub,st.tags,st.country].filter(Boolean).join(' '),
+			        ir:function(){ try{ setStation(st.id); }catch(e){} } });
+			    });
 			  }catch(e){}
 
 			  // Ordenar: primero lo que empieza igual, luego lo que lo contiene.
