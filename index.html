@@ -2645,6 +2645,7 @@
 					<span class="ix-fr" id="fr-clima" style="display:none;"></span>
 					<span class="ix-fr" id="fr-alarma" style="display:none;"></span>
 					<span class="ix-fr" id="fr-fest" style="display:none;"></span>
+					<span class="ix-fr" id="fr-evento" style="display:none;"></span>
 					<span
 						class="flex items-center gap-3"
 						id="luna-row"
@@ -14751,6 +14752,59 @@
 
 			/* ===== CALENDAR ===== */
 			let calDate=new Date(),calSelDay=null,calEvts=JSON.parse(localStorage.getItem('cal_events')||'{}');
+			/* Los eventos del Calendario, en orden y con su fecha ya entendida.
+			   Lo usan DOS sitios (el buscador y la franja de resumen), asi que se
+			   lee aqui una sola vez en vez de repetir el recorrido en cada uno —
+			   que es como acabaron existiendo dos tablas de divisas distintas.
+			   `calEvts` esta guardado como { 'AAAA-MM-DD': ['texto', ...] }.     */
+			function ixEventosCal(){
+			  const fuera=[];
+			  try{
+			    Object.keys(calEvts||{}).forEach(function(clave){
+			      const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(clave);
+			      if(!m) return;                       // clave rara: se ignora
+			      const y=+m[1], mes=+m[2]-1, dia=+m[3];
+			      const f=new Date(y, mes, dia);
+			      if(isNaN(f)) return;
+			      (calEvts[clave]||[]).forEach(function(texto, i){
+			        if(typeof texto!=='string' || !texto.trim()) return;
+			        fuera.push({ clave:clave, y:y, m:mes, d:dia, fecha:f, texto:texto, i:i });
+			      });
+			    });
+			  }catch(e){}
+			  fuera.sort(function(a,b){ return a.fecha-b.fecha || a.i-b.i; });
+			  return fuera;
+			}
+			// El proximo evento de hoy en adelante. Los de ayer no interesan.
+			function ixProximoEvento(){
+			  const now=new Date();
+			  const hoy0=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			  const lista=ixEventosCal();
+			  for(let k=0;k<lista.length;k++){
+			    if(lista[k].fecha>=hoy0) return lista[k];
+			  }
+			  return null;
+			}
+			// «Hoy», «Mañana» o «en N días». Mismo lenguaje que las festividades,
+			// para que las dos fichas de la franja se lean igual.
+			function ixCuandoEvento(ev){
+			  const now=new Date();
+			  const hoy0=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			  const dias=Math.round((ev.fecha-hoy0)/86400000);
+			  if(dias<=0) return _uiT('Hoy');
+			  if(dias===1) return _uiT('Mañana');
+			  return dias+' '+_uiT('días');
+			}
+			// Abre el Calendario en el dia de ese evento.
+			function ixAbrirCalendarioEn(ev){
+			  try{
+			    calDate=new Date(ev.y, ev.m, 1);
+			    const panel=document.getElementById('cal-panel');
+			    if(panel && panel.style.opacity!=='1') toggleCalendar();
+			    else renderCalendar();
+			    setTimeout(function(){ try{ selCalDay(ev.y, ev.m, ev.d); }catch(e){} }, 120);
+			  }catch(e){}
+			}
 			function toggleCalendar(){
 			  const p=document.getElementById('cal-panel');
 			  const open=p.style.opacity==='1';
@@ -15677,6 +15731,10 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.1', fecha: '5 de septiembre de 2026', titulo:'El Calendario deja de estar aparte', cambios: [
+			    '➕ Tus eventos del Calendario ahora SALEN EN EL BUSCADOR. Era lo único que se quedaba fuera: buscaba notas, alarmas, ciudades y emisoras, pero no lo que tú apuntas. Tócalo y se abre el Calendario en ese día',
+			    '➕ Y el próximo evento sale en la franja de arriba, junto al clima, la alarma y la festividad: «📅 Dentista a las 5 · Hoy»',
+			  ]},
 			  { v:'3.0', fecha: '5 de septiembre de 2026', titulo:'Tres arreglos y unidades en el buscador', cambios: [
 			    '🛠️ El buscador no encontraba emisoras que hubieras dejado fuera del filtro de países de Radio Mundial. Las buscaba entre las que había pintadas en pantalla, no en la lista entera. Ahora busca en las 185',
 			    '🛠️ «Cerrar todas las ventanas» escondía el Emulador pero NO lo apagaba: el juego seguía corriendo de fondo, gastando batería y con el sonido puesto',
@@ -21739,6 +21797,22 @@
 			  el.style.boxShadow='0 0 0 2px var(--accent-color, #0a84ff)';
 			  setTimeout(()=>{ el.style.boxShadow=''; }, 1200);
 			}
+			/* Quinta ficha: el proximo evento del Calendario.
+			   La franja ya juntaba clima, alarma, festividad y luna — datos que
+			   viven en otras apps y que si no, hay que ir a buscar uno por uno.
+			   Los eventos que tu mismo escribes eran justo el que faltaba. */
+			function _frEvento(){
+			  if(typeof ixProximoEvento!=='function') return null;
+			  const ev=ixProximoEvento();
+			  if(!ev) return null;
+			  // Se recorta el TEXTO, no la ficha: recortando por CSS lo primero que
+			  // se pierde es «· Mañana», que es el dato util. Igual que en _frFest.
+			  const lim = (typeof window!=='undefined' && window.innerWidth<520) ? 16 : 24;
+			  let t=ev.texto;
+			  if(t.length>lim) t=t.slice(0,lim-1).replace(/[\s·,.]+$/,'')+'…';
+			  return { emoji:'📅', texto:t+' · '+ixCuandoEvento(ev),
+			           titulo:ev.texto+' · '+ev.d+'/'+(ev.m+1)+'/'+ev.y, _ev:ev };
+			}
 			function _frPinta(id, dato, ir){
 			  const el=document.getElementById(id);
 			  if(!el) return;
@@ -21763,6 +21837,13 @@
 			    _frPinta('fr-fest', fe, 'fest');
 			    const elF=document.getElementById('fr-fest');
 			    if(elF && fe && fe.hoy) elF.style.color='#ffd60a'; else if(elF) elF.style.color='';
+			    const ev=_frEvento();
+			    _frPinta('fr-evento', ev, null);
+			    const elE=document.getElementById('fr-evento');
+			    if(elE && ev){
+			      elE.setAttribute('data-ir','evento');
+			      elE.onclick=function(){ ixAbrirCalendarioEn(ev._ev); };
+			    }
 			  }catch(e){}
 			}
 			// Un minuto basta: el dato más rápido de los cuatro es «en N min».
@@ -22835,6 +22916,17 @@
 			  try{
 			    todo.push.apply(todo,_ixDeDom('.wallpaper-card','Fondos','🖼️','Poner este fondo','.wp-label'));
 			    todo.push.apply(todo,_ixDeDom('.clock-style-btn','Relojes','🕰️','Poner este reloj','div:last-child'));
+			  }catch(e){}
+			  /* Los eventos del Calendario. El buscador promete «buscar en todo» y
+			     era lo unico que se dejaba fuera: notas, alarmas y ciudades si, y
+			     los eventos que tu mismo escribes no.                            */
+			  try{
+			    (typeof ixEventosCal==='function'?ixEventosCal():[]).forEach(function(ev){
+			      todo.push({ grupo:'Calendario', icono:'📅', titulo:ev.texto,
+			        sub:ev.d+'/'+(ev.m+1)+'/'+ev.y+' · '+ixCuandoEvento(ev),
+			        texto:ev.texto+' '+ev.clave,
+			        ir:function(){ ixAbrirCalendarioEn(ev); } });
+			    });
 			  }catch(e){}
 			  /* Las emisoras NO se leen del DOM.
 			     Antes salian de '#stations-container', o sea de lo que hubiera
