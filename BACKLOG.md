@@ -176,6 +176,32 @@ llegaron repetidas y algunas ya estaban hechas):
 
 ## Hecho
 
+- **Avisos por correo** (pedido el 5 de sept: «que te lleguen correos»).
+  `netlify/functions/correo.mjs` con Resend, más el interruptor en
+  Configuración.
+  - **Por qué el destinatario NO viaja en la petición**: el endpoint es
+    público. Si aceptara un destino, sería un **relé de spam gratis** con la
+    cuenta del dueño — mil peticiones y salen mil correos a su nombre, con su
+    reputación y su cuota. El destino sale de `CORREO_DESTINO`, que solo se
+    toca en el panel de Netlify. Lo peor que puede hacer un desconocido que
+    encuentre la URL es mandarle correos al propio dueño.
+  - **Tope de 20 por hora** en Blobs, porque «solo se puede molestar al dueño»
+    sigue siendo molestar si son diez mil.
+  - **Viene apagado** y hay botón de prueba. Y cuando falla **dice qué falla**
+    (falta configuración y cuál, se llegó al tope, o lo que conteste Resend):
+    «no me llegan los correos» sin más no hay por dónde cogerlo.
+  - **El texto se escapa** antes de meterlo en el HTML del correo, y el texto
+    plano se deja intacto.
+  - **La clave nunca sale en ninguna respuesta**, ni en los mensajes de error;
+    solo viaja en la cabecera hacia Resend. Comprobado en la prueba buscándola
+    en todas las respuestas.
+  - `pruebas/correo.js` (22) prueba el servidor real con un doble de Blobs y
+    `fetch` interceptado; intenta **colar un destinatario de cinco formas** y
+    confirma que se ignoran todas. `pruebas/correoapp.js` (18) prueba la app.
+  - Verificado revirtiendo: si el destino sale de la petición, el correo se va
+    a `victima@ejemplo.com`; y sin mirar el interruptor, se mandan correos que
+    el usuario no pidió.
+
 - **Entrar con Google** (pedido el 5 de sept, junto con la sincronización).
   - **El ID de cliente se pega en Configuración, no va en el código.** Es la
     decisión importante: ese ID lo crea el dueño en Google Cloud Console, y
@@ -243,14 +269,18 @@ llegaron repetidas y algunas ya estaban hechas):
     aparatos de verdad, no dos pestañas— y comprueba que lo creado en uno
     aparece en el otro.
 
-- **Pendiente del usuario, esperando a que él lo cree** (pedido el 5 de sept):
-  - **Entrar con Google**: hace falta un ID de cliente de OAuth de Google Cloud
-    Console con `https://ixclockplus.netlify.app` autorizado. Solo lo puede
-    crear él. El ID es público y se puede pegar en el chat; el «secreto de
-    cliente» NO hace falta y no debe salir de ahí.
-  - **Correos**: una web estática no puede mandar correos. Hace falta un
-    servicio (Resend tiene plan gratis) y su API key **en las variables de
-    entorno de Netlify** (`RESEND_API_KEY`), nunca pegada en el chat.
+- **Lo que falta que haga el USUARIO** (todo el código ya está hecho y
+  desplegado; son cuentas suyas que nadie más puede crear):
+  - **Google**: crear el ID de cliente en Google Cloud Console autorizando
+    `https://ixclockplus.netlify.app`, y pegarlo en Configuración → Más →
+    «Entrar con Google». No hace falta desplegar nada: la app lo lee de ahí.
+  - **Correo**: ya tiene cuenta de Resend (5 de sept). Falta crear la API key y
+    poner en Netlify → Environment variables: `RESEND_API_KEY` y
+    `CORREO_DESTINO`. **La clave no debe pegarse nunca en el chat.**
+  - **Aviso real sobre Resend**: sin dominio verificado, el remitente solo
+    puede ser `onboarding@resend.dev` y **solo se puede escribir al correo del
+    dueño de la cuenta**. Para escribir a terceros hay que verificar un
+    dominio. Para avisos propios sirve tal cual.
 
 - **El Calendario deja de estar aparte** (ideas 52 y 53, las dos pedidas dos
   veces).
