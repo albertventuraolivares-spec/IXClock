@@ -2158,6 +2158,12 @@
 						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">🔐 Entrar con Google</div>
 						<div id="ix-google"></div>
 					</div>
+					<!-- Avisos por correo. El destinatario lo fija el servidor a
+					     propósito; poder elegirlo aquí sería un relé de spam. -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">📧 Avisos por correo</div>
+						<div id="ix-correo"></div>
+					</div>
 					<!-- Rendimiento y control. Los dos textos largos no sobran: son
 					     justo lo que evita que el ajuste prometa lo que no hace. -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -7866,6 +7872,7 @@
 			    try{ ixRenderDownloads(); }catch(e){}
 			    try{ ixNubePintar(); }catch(e){}
 			    try{ ixGooglePintar(); }catch(e){}
+			    try{ ixCorreoPintar(); }catch(e){}
 			  }
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
@@ -16094,6 +16101,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.4', fecha: '5 de septiembre de 2026', titulo:'Avisos por correo', cambios: [
+			    '📧 Ahora te puede llegar un CORREO cuando suena una alarma. A diferencia del aviso del sistema, este te llega aunque tengas la app cerrada del todo, porque lo manda el servidor',
+			    '🔕 Viene apagado: se enciende en Configuración → Más → «Avisos por correo», y hay un botón para mandarte uno de prueba',
+			    '🛡️ El correo va siempre a la dirección configurada en el servidor y no se puede elegir desde la app. Es a propósito: si se pudiera, cualquiera podría mandar correos desde esa cuenta',
+			    'ℹ️ Si algo falla te dice QUÉ falla —que falte la configuración, que se llegó al tope, o lo que conteste el servicio de correo— en vez de quedarse callado',
+			  ]},
 			  { v:'3.3', fecha: '5 de septiembre de 2026', titulo:'Entrar con Google', cambios: [
 			    '🔐 Botón «Entrar con Google» en Configuración → Más. Para activarlo hay que pegar ahí el ID de cliente que se crea gratis en Google Cloud Console: así se enciende al momento, sin esperar a una actualización de la app',
 			    '🛡️ Si pegas el «secreto de cliente» o media URL por error, te lo dice, en vez de dejarte esperando un botón que no iba a salir',
@@ -22351,7 +22364,80 @@
 			// Se manda por el service worker cuando lo hay: es lo unico que
 			// funciona en una PWA instalada de iOS/Android. Si no, la de toda la
 			// vida.
+			/* ═════════════ AVISOS POR CORREO ═════════════
+			   El aviso del sistema solo llega si la app esta abierta en algun sitio
+			   —eso se dijo claro cuando se hizo—, y con el movil apagado del todo
+			   no hay nada que hacer desde el navegador. El correo si llega igual,
+			   porque lo manda el servidor.
+
+			   El destinatario NO se elige aqui: lo fija el dueño en las variables
+			   de entorno de Netlify. Si se pudiera elegir desde la app, cualquiera
+			   que encontrase la direccion de la funcion tendria un relé de spam
+			   gratis con su cuenta.                                            */
+			const IX_CORREO_ON='ix_correo_avisos';
+			const IX_CORREO_URL='/.netlify/functions/correo';
+
+			function ixCorreoActivo(){
+			  try{ return localStorage.getItem(IX_CORREO_ON)==='1'; }catch(e){ return false; }
+			}
+			function ixCorreoAlternar(){
+			  try{ localStorage.setItem(IX_CORREO_ON, ixCorreoActivo()?'0':'1'); }catch(e){}
+			  ixCorreoPintar();
+			  return ixCorreoActivo();
+			}
+			async function ixCorreoEnviar(asunto, texto){
+			  try{
+			    const r=await fetch(IX_CORREO_URL,{ method:'POST',
+			      headers:{'content-type':'application/json'},
+			      body:JSON.stringify({asunto:asunto, texto:texto}) });
+			    const j=await r.json().catch(function(){ return {}; });
+			    if(r.ok && j.ok) return {ok:true, id:j.id};
+			    return {ok:false, error:j.error||('http'+r.status), motivo:j.motivo, falta:j.falta};
+			  }catch(e){ return {ok:false, error:'red'}; }
+			}
+			// Lo que se enseña cuando falla. Sin esto, «no me llegan los correos» no
+			// hay por donde cogerlo: lo mas util es decir exactamente que falta.
+			function ixCorreoQueFalla(r){
+			  if(r.error==='sin-configurar')
+			    return 'Falta configurarlo en Netlify: '+((r.falta||[]).join(' y ')||'las variables');
+			  if(r.error==='tope')   return 'Demasiados correos por ahora. Prueba dentro de un rato';
+			  if(r.error==='resend') return 'Resend lo rechazó: '+(r.motivo||'sin detalle');
+			  if(r.error==='red')    return 'Sin conexión';
+			  return 'No se pudo enviar ('+r.error+')';
+			}
+			async function ixCorreoProbar(){
+			  const el=document.getElementById('ix-correo-estado');
+			  if(el) el.textContent='Enviando…';
+			  const r=await ixCorreoEnviar('IXClocK funciona ✅',
+			    'Si estás leyendo esto, los avisos por correo de IXClocK están bien configurados.\n\n'
+			    +'Enviado el '+new Date().toLocaleString()+'.');
+			  if(el) el.textContent = r.ok ? '✅ Enviado. Mira tu bandeja de entrada.'
+			                               : '⚠️ '+ixCorreoQueFalla(r);
+			  return r;
+			}
+			function ixCorreoPintar(){
+			  const c=document.getElementById('ix-correo');
+			  if(!c) return;
+			  const on=ixCorreoActivo();
+			  c.innerHTML=''
+			    +'<button onclick="ixCorreoAlternar()" class="btn-option w-full'+(on?' active':'')+'">'
+			    +(on?'🔔 Avisos por correo: ACTIVADOS':'🔕 Avisos por correo: apagados')+'</button>'
+			    +'<p class="text-[10px] opacity-70 mt-2 mb-3 leading-relaxed">Te llega un correo cuando suena una alarma. A diferencia del aviso del sistema, este te llega aunque tengas la app cerrada del todo, porque lo manda el servidor.</p>'
+			    +'<button onclick="ixCorreoProbar()" class="btn-option w-full">📧 Enviar un correo de prueba</button>'
+			    +'<p class="text-[10px] opacity-70 mt-2 leading-relaxed" id="ix-correo-estado"></p>'
+			    +'<p class="text-[10px] opacity-60 mt-2 leading-relaxed">El correo va siempre a la dirección configurada en el servidor; no se puede elegir desde aquí, y es a propósito: si se pudiera, cualquiera podría mandar correos desde esta cuenta.</p>';
+			}
+			if(document.readyState==='loading')
+			  document.addEventListener('DOMContentLoaded', ixCorreoPintar);
+			else ixCorreoPintar();
+
 			function ixNotificar(titulo, cuerpo, tag){
+			  // Si los avisos por correo estan puestos, va tambien por ahi. No
+			  // sustituye al del sistema: se suma, porque son para momentos
+			  // distintos (uno con la app abierta, otro con el movil guardado).
+			  if(ixCorreoActivo()){
+			    try{ ixCorreoEnviar(titulo, cuerpo||titulo); }catch(e){}
+			  }
 			  if(ixNotifPermiso()!=='granted') return false;
 			  const opciones={ body:cuerpo||'', tag:tag||'ixclock', icon:'icon-192.png',
 			                   badge:'icon-192.png', renotify:true };
