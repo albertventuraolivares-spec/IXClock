@@ -253,6 +253,19 @@ Del tercero, comprobado en el código:
   en pausa), diagramas y «prompt maestro» (son texto del informe, no tareas).
   OWASP/RGPD ya están cubiertos por las ideas 66, 70 y 71.
 
+### Cuarto informe (28 de sept) — YA VERIFICADO
+Es casi entero del juego de Roblox (pases Bronce/Plata/Oro, perros IA, oro y
+banco, logo de Base44) y el propio informe dice que no pudo ver el código.
+Comprobado aquí:
+- `robots.txt` y `sitemap.xml`: ya están (PR #42); el informe es anterior.
+- Script externo (`hls.js`): ya lleva `defer`. `loading="lazy"`: las imágenes
+  grandes se crean por JS, poco que ganar.
+- Meta título y descripción, HTTPS: ya estaban bien.
+- HSTS: `.app` entero está en la lista precargada, no hace falta cabecera.
+76. **Datos estructurados JSON-LD** (`"@type":"WebApplication"`, nombre,
+    descripción, gratis): no hay ninguno. Pequeño; va bien junto al `<h1>`
+    de la idea 68. Comprobar con la prueba de resultados enriquecidos.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
