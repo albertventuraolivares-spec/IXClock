@@ -1,0 +1,7 @@
+# IXClocK — https://ixclockplus.netlify.app
+User-agent: *
+Allow: /
+# Las funciones del servidor no son paginas: no hay nada que indexar ahi.
+Disallow: /.netlify/
+
+Sitemap: https://ixclockplus.netlify.app/sitemap.xml
