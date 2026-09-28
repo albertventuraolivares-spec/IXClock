@@ -161,10 +161,6 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-64. **`robots.txt` y `sitemap.xml`** en la raíz: no existen. Una sola URL
-    (`https://ixclockplus.netlify.app/`) más los enlaces `?app=` de IX_APPS.
-65. **`<link rel="canonical">`**: no hay. Importa porque cada app tiene su
-    enlace `?app=…` y Google puede verlos como páginas duplicadas.
 66. **Cabeceras de seguridad en `netlify.toml`** (`[[headers]]`): hoy no hay
     ninguna. Empezar por las que no rompen nada: `X-Content-Type-Options:
     nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
@@ -185,6 +181,37 @@ nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31)
     que se puede probar `npx lighthouse` contra el servidor local con el
     Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
     fiarse del informe, y atacar lo que salga.
+
+70. **El sitio publica TODO el repo**: `netlify.toml` tiene `publish = "."`,
+    así que `pruebas/`, `BACKLOG.md` y `package.json` se sirven en
+    internet (p. ej. `/BACKLOG.md`). No hay secretos ahí, pero sí notas
+    internas. Salida contenida: reglas `[[redirects]]` con `status = 404`
+    para esas rutas en `netlify.toml`, con su prueba. `robots.txt` NO sirve
+    para esto: solo pide a los buscadores que no miren, no lo esconde.
+
+**Segundo informe pegado el mismo día — también verificado:**
+Mezcla IXClocK con su juego de Roblox. **Falso** para IXClocK: «sin favicon»
+(hay 4), «sin title/description» (están), placeholders «Nombre del juego» (0),
+HSTS (todo el dominio `.app` está en la lista de precarga HSTS de los
+navegadores: se aplica solo). Lo que SÍ es verdad y se añade:
+71. **Política de privacidad**: no hay ninguna, y desde septiembre hace falta
+    de verdad: la sincronización guarda notas y alarmas en el servidor
+    (Netlify Blobs), «Entrar con Google» muestra nombre, correo y foto, los
+    avisos por correo usan Resend, y el muro de opiniones publica nombres.
+    Página corta y HONRADA que describa exactamente esos flujos, enlazada
+    desde Configuración y desde el pie. **Antes de publicarla, pedir al
+    usuario un correo de contacto** para ella; no inventarlo.
+    - NO hace falta banner de cookies: la app no usa ninguna cookie (solo
+      `localStorage`). Decirlo así en la política.
+72. **Enlace «Saltar al contenido»** para teclado, y que `<nav>`/`<header>`
+    existan donde toque: hoy solo hay un `<main>`. Pequeño.
+73. **`Cache-Control`** para los estáticos (iconos, `tailwind.css`) en las
+    mismas `[[headers]]` de la idea 66. OJO: `index.html` NO debe llevar caché
+    larga, o las actualizaciones tardarían en llegar.
+
+**Del juego de Roblox, NO de este repo** (si los pide, van en ese proyecto):
+banco y oro, perros inteligentes, pases y precios en Robux, «¡Compra Oro
+Ahora!», misiones, y el logo.
 
 **NO aplica o necesita que decida el usuario (no hacer sin preguntar):**
 - Tienda, carrito, pasarela de pago, suscripciones: el cobro sigue **en pausa**
@@ -223,6 +250,16 @@ nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31)
 ---
 
 ## Hecho
+
+- **`robots.txt`, `sitemap.xml` y `canonical`** (ideas 64 y 65, 28 de sept).
+  Los tres apuntan **solo a la raíz**, y es la decisión que importa: los
+  enlaces `?app=…` son la misma página, así que llevan canonical a la raíz y
+  NO van en el sitemap. Listarlos ahí contradiría al canonical, y dos mensajes
+  contradictorios a un buscador son peor que ninguno. `robots.txt` aparta
+  `/.netlify/` (las funciones no son páginas). `pruebas/seo.js` (15) lo lee
+  por HTTP como un buscador, pasa el XML por el parser del navegador, y
+  comprueba que canonical y sitemap dicen lo mismo. Verificado revirtiendo
+  (sin robots, sin canonical y con un `?app=` en el sitemap): fallan 9.
 
 - **Notas con casillas** (idea 47, 28 de sept).
   - **Las casillas viven DENTRO del texto**, con la forma `- [ ] pan` /

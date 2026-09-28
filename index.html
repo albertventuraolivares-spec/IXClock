@@ -14,6 +14,10 @@
 		<meta name="description" content="Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de música IXBand, todo en un mismo panel." />
 		<meta name="color-scheme" content="dark light" />
 		<link rel="manifest" href="manifest.webmanifest" />
+		<!-- Una sola URL canonica. Los enlaces «?app=…» de cada app sirven esta
+		     misma pagina y solo abren una ventana: sin esto, un buscador los puede
+		     tomar por paginas duplicadas y repartir entre ellos la relevancia. -->
+		<link rel="canonical" href="https://ixclockplus.netlify.app/" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -16213,6 +16217,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.6', fecha: '28 de septiembre de 2026', titulo:'Que Google te encuentre', cambios: [
+			    '🔎 IXClocK ya tiene mapa del sitio y le dice a Google cuál es su dirección buena, para que los enlaces de cada app no cuenten como páginas repetidas',
+			  ]},
 			  { v:'3.5', fecha: '28 de septiembre de 2026', titulo:'Notas con casillas', cambios: [
 			    '☑ Las notas ya pueden ser listas: toca ☑ en la barra y la línea se convierte en casilla. Debajo salen para marcarlas con el dedo',
 			    '↩️ Pulsando Intro en una casilla se crea la siguiente, y en una vacía se termina la lista, como en Notas del iPhone',
