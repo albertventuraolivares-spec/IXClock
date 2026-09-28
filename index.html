@@ -4747,6 +4747,7 @@
 					<div class="flex gap-1">
 						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
 						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
+						<button id="notes-lista-btn" onclick="notasCasilla()" title="Casilla" aria-label="Convertir la línea en casilla" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">☑</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
 					</div>
@@ -4756,7 +4757,11 @@
 					class="flex-1 bg-transparent px-4 pb-4 text-[14px] leading-relaxed resize-none focus:outline-none"
 					placeholder="Nota"
 					oninput="notesAutoSave()"
+					onkeydown="notasTeclaCasilla(event)"
 				></textarea>
+				<!-- Las casillas de la nota, para tocarlas. El texto de arriba sigue
+				     siendo la verdad: esto solo lo lee y lo cambia. -->
+				<div id="notes-casillas" class="hidden" style="max-height:40%;overflow:auto;padding:4px 12px 10px;border-top:1px solid rgba(255,255,255,.08);"></div>
 				<!-- Lienzo de dibujo estilo Apple Notes: lápiz, bolígrafo, marcador,
 				     resaltador, borrador + colores; compatible con lápices de iPad y
 				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
@@ -13661,7 +13666,11 @@
 			      list.appendChild(cab);
 			    }
 			    const firstLine = (n.content.split('\n')[0] || '').trim().slice(0,60);
-			    const rest = n.content.split('\n').slice(1).join(' ').trim().slice(0,80);
+			    // Las marcas de casilla («- [ ] », «- [x] ») son para guardar, no para
+			    // leer: en el resumen se ven como ☐ y ✓.
+			    const rest = n.content.split('\n').slice(1)
+			      .map(function(l){ return l.replace(/^\s*[-*] \[ \] ?/,'☐ ').replace(/^\s*[-*] \[[xX]\] ?/,'✓ '); })
+			      .join(' ').trim().slice(0,80);
 			    const title = firstLine || 'Nota nueva';
 			    const row = document.createElement('div');
 			    row.className = 'note-row';
@@ -13669,6 +13678,8 @@
 			    row.innerHTML = '<div class="note-title">'+(n.fijada?'<span class="note-pin">📌 </span>':'')+escapeHtml(title)+'</div>'
 			      +'<div class="note-meta"><span>'+notesFormatDate(n.updatedAt||Date.now())+'</span>'
 			      +(n.carpeta && _notasCarpeta===null ? '<span>📁 '+escapeHtml(n.carpeta)+'</span>' : '')
+			      +(function(){ const pr=notasProgreso(n.content);
+			          return pr ? '<span>☑ '+pr.hechas+'/'+pr.total+'</span>' : ''; })()
 			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
 			    list.appendChild(row);
 			  });
@@ -13768,8 +13779,107 @@
 			  notesUpdateWordCount();
 			  notasPintarBotones();
 			  notesSetMode('text');
+			  try{ notasPintarCasillas(); }catch(e){}
 			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
+			}
+			/* ── Notas con casillas ──
+			   Las casillas viven DENTRO del texto de la nota, con la forma de
+			   siempre: «- [ ] pan» y «- [x] leche», la misma que usan GitHub u
+			   Obsidian. No se guarda nada aparte a proposito: la nota sigue siendo
+			   un texto, asi que la sincronizacion entre aparatos, el buscador, la
+			   copia de seguridad y el orden no se enteran de que existen, y no hay
+			   dos sitios que puedan contradecirse. Encima se pintan como casillas
+			   que se tocan; tocar una solo cambia el espacio por una x en su linea. */
+			const NOTAS_CASILLA=/^(\s*)[-*] \[( |x|X)\] ?(.*)$/;
+			function notasCasillas(texto){
+			  const fuera=[];
+			  String(texto||'').split('\n').forEach(function(l, i){
+			    const m=NOTAS_CASILLA.exec(l);
+			    if(m) fuera.push({ linea:i, hecho:m[2]!==' ', texto:m[3] });
+			  });
+			  return fuera;
+			}
+			function notasProgreso(texto){
+			  const c=notasCasillas(texto);
+			  if(!c.length) return null;
+			  return { hechas:c.filter(function(x){ return x.hecho; }).length, total:c.length };
+			}
+			function notasPintarCasillas(){
+			  const caja=document.getElementById('notes-casillas');
+			  const ta=document.getElementById('notes-textarea');
+			  if(!caja || !ta) return;
+			  const c=notasCasillas(ta.value);
+			  // En modo dibujo el texto no se ve, asi que sus casillas tampoco.
+			  if(!c.length || ta.classList.contains('hidden')){
+			    caja.classList.add('hidden'); caja.innerHTML=''; return;
+			  }
+			  caja.classList.remove('hidden');
+			  const p=notasProgreso(ta.value);
+			  caja.innerHTML='<div style="font-size:10px;font-weight:800;opacity:.6;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 4px;">'
+			    +'☑ '+p.hechas+' de '+p.total+'</div>'
+			    + c.map(function(x){
+			      return '<button onclick="notasMarcar('+x.linea+')" role="checkbox" aria-checked="'+(x.hecho?'true':'false')+'" '
+			        +'style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;'
+			        +'color:var(--txt);padding:7px 2px;font-size:14px;cursor:pointer;">'
+			        +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;'
+			        +(x.hecho?'background:#ffd60a;color:#1c1c1e;':'border:2px solid rgba(255,255,255,.35);')
+			        +'font-size:12px;font-weight:900;">'+(x.hecho?'✓':'')+'</span>'
+			        +'<span style="'+(x.hecho?'text-decoration:line-through;opacity:.5;':'')+'">'
+			        +escapeHtml(x.texto||'…')+'</span></button>';
+			    }).join('');
+			}
+			// Tocar una casilla: cambia solo esa linea y guarda.
+			function notasMarcar(linea){
+			  const ta=document.getElementById('notes-textarea');
+			  if(!ta) return false;
+			  const ls=ta.value.split('\n');
+			  const m=NOTAS_CASILLA.exec(ls[linea]||'');
+			  if(!m) return false;
+			  const hecho=m[2]!==' ';
+			  ls[linea]=ls[linea].replace(/\[( |x|X)\]/, hecho?'[ ]':'[x]');
+			  ta.value=ls.join('\n');
+			  notesAutoSave();
+			  return !hecho;
+			}
+			// Boton ☑: la linea donde esta el cursor pasa a casilla, o deja de serlo.
+			function notasCasilla(){
+			  const ta=document.getElementById('notes-textarea');
+			  if(!ta) return;
+			  const v=ta.value, pos=ta.selectionStart||0;
+			  const ini=v.lastIndexOf('\n', pos-1)+1;
+			  let fin=v.indexOf('\n', pos); if(fin<0) fin=v.length;
+			  const linea=v.slice(ini, fin);
+			  const m=NOTAS_CASILLA.exec(linea);
+			  const nueva = m ? (m[1]+m[3]) : ('- [ ] '+linea.replace(/^\s*[-*]\s+/,''));
+			  ta.value=v.slice(0,ini)+nueva+v.slice(fin);
+			  const cur=ini+nueva.length;
+			  try{ ta.setSelectionRange(cur,cur); }catch(e){}
+			  ta.focus();
+			  notesAutoSave();
+			}
+			// Intro en una casilla crea la siguiente; en una casilla VACIA cierra
+			// la lista, como en Notas del iPhone. Sin esto, hacer una lista de la
+			// compra en el movil era escribir «- [ ] » a mano en cada linea.
+			function notasTeclaCasilla(e){
+			  if(e.key!=='Enter' || e.shiftKey || e.isComposing) return;
+			  const ta=e.target, v=ta.value, pos=ta.selectionStart;
+			  if(pos!==ta.selectionEnd) return;
+			  const ini=v.lastIndexOf('\n', pos-1)+1;
+			  let fin=v.indexOf('\n', pos); if(fin<0) fin=v.length;
+			  const m=NOTAS_CASILLA.exec(v.slice(ini, fin));
+			  if(!m) return;
+			  e.preventDefault();
+			  if(!m[3].trim()){
+			    // casilla vacia: se quita y se sale de la lista
+			    ta.value=v.slice(0,ini)+m[1]+v.slice(fin);
+			    try{ ta.setSelectionRange(ini+m[1].length, ini+m[1].length); }catch(err){}
+			  } else {
+			    const ins='\n'+m[1]+'- [ ] ';
+			    ta.value=v.slice(0,pos)+ins+v.slice(pos);
+			    try{ ta.setSelectionRange(pos+ins.length, pos+ins.length); }catch(err){}
+			  }
+			  notesAutoSave();
 			}
 			function notesUpdateWordCount(){
 			  const txt = document.getElementById('notes-textarea').value.trim();
@@ -13786,6 +13896,7 @@
 			    notesUpdateWordCount();
 			    saveNotes();
 			  }
+			  try{ notasPintarCasillas(); }catch(e){}
 			}
 			function notesDeleteCurrent(){
 			  if(!currentNoteId) return;
@@ -13826,6 +13937,7 @@
 			    if(bd){ bd.style.background='var(--txt-40)'; bd.style.color='var(--txt)'; }
 			    if(bt){ bt.style.background='#ffd60a'; bt.style.color='#1c1c1e'; }
 			  }
+			  try{ notasPintarCasillas(); }catch(e){}
 			}
 			function notesBuildColors(){
 			  const box = document.getElementById('notes-colors');
@@ -16101,6 +16213,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.5', fecha: '28 de septiembre de 2026', titulo:'Notas con casillas', cambios: [
+			    '☑ Las notas ya pueden ser listas: toca ☑ en la barra y la línea se convierte en casilla. Debajo salen para marcarlas con el dedo',
+			    '↩️ Pulsando Intro en una casilla se crea la siguiente, y en una vacía se termina la lista, como en Notas del iPhone',
+			    '📋 En la lista de notas se ve cuántas llevas hechas: «☑ 2/5»',
+			  ]},
 			  { v:'3.4', fecha: '5 de septiembre de 2026', titulo:'Avisos por correo', cambios: [
 			    '📧 Ahora te puede llegar un CORREO cuando suena una alarma. A diferencia del aviso del sistema, este te llega aunque tengas la app cerrada del todo, porque lo manda el servidor',
 			    '🔕 Viene apagado: se enciende en Configuración → Más → «Avisos por correo», y hay un botón para mandarte uno de prueba',
