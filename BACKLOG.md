@@ -284,6 +284,13 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Quitada la copia en GitHub Pages** (28 de sept, lo decidió el usuario:
+  «ponlo como es mejor»). `.github/workflows/deploy.yml` publicaba el repo
+  ENTERO en GitHub Pages en cada push: una copia sin funciones del servidor
+  (sin sincronizar, correo, opiniones ni proxy) y con `pruebas/` y
+  `BACKLOG.md` a la vista. Borrado el workflow; la app es solo la de Netlify.
+  La copia vieja se queda congelada hasta que se despublique en GitHub →
+  Settings → Pages (eso no se puede hacer desde aquí).
 - **Política de privacidad y condiciones** (idea 71, 28 de sept):
   `privacidad.html`, página suelta sin nada de fuera, enlazada desde
   Configuración → Más. Correo de contacto: el que dio el usuario
