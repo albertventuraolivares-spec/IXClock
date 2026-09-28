@@ -122,7 +122,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
-47. **Notas con casillas** (checklist).
 48. **Adjuntar una ubicación de Mapas a una nota**, y al tocarla abrir la ruta.
 49. **Modo mesita de noche**: pantalla atenuada, hora grande y próxima alarma,
     para dejar el móvil cargando. (Parecido al 18, pero ese era al girar.)
@@ -175,6 +174,40 @@ llegaron repetidas y algunas ya estaban hechas):
 ---
 
 ## Hecho
+
+- **Notas con casillas** (idea 47, 28 de sept).
+  - **Las casillas viven DENTRO del texto**, con la forma `- [ ] pan` /
+    `- [x] leche` (la de GitHub u Obsidian). No se guarda nada aparte a
+    propósito: la nota sigue siendo texto, así que la sincronización, el
+    buscador, la copia de seguridad y el orden no se enteran, y no hay dos
+    sitios que puedan contradecirse.
+  - Botón ☑ en la barra (convierte la línea o la devuelve a texto), tira de
+    casillas tocables bajo el texto, e **Intro** que continúa la lista y en una
+    casilla vacía la cierra, como en Notas del iPhone. En la lista de notas sale
+    «☑ 2/5», y el resumen enseña ☐ y ✓ en vez de las marcas crudas.
+  - `pruebas/casillas.js` (19) teclea de verdad y comprueba **lo guardado**, no
+    lo pintado: marcar solo en pantalla se perdería al recargar o sincronizar.
+    Verificado revirtiendo (marcar sin guardar + Intro sin continuar): fallan 10.
+  - Aprendido: la primera versión de la prueba **reventaba** en un clic con el
+    código roto en vez de decir qué fallaba. Detectaba el fallo, pero no servía
+    para arreglarlo. Ahora los clics toleran que la casilla no exista y se
+    informa de cada comprobación.
+
+- **Despliegue, estado al 28 de sept**: la web sigue sirviendo la vista previa
+  de la PR #21 (4 de sept), `6a9a22d7…`. Dos bloqueos DISTINTOS, no confundir:
+  1. **La red de este entorno** corta `*.netlify.app` (CONNECT 403 en el proxy
+     de salida). Por eso `deploy-site` del MCP de Netlify (que sube con
+     `npx @netlify/mcp`) falla con 403 aquí **aunque Netlify estuviera bien**.
+     Lo arregla el usuario añadiendo `netlify-mcp.netlify.app` a los dominios
+     permitidos del entorno. El registro de npm SÍ responde ya.
+  2. **Créditos de Netlify** agotados desde el 6 de sept (despliegues de
+     producción pausados). No se sabe si ya se renovó: la forma de comprobarlo
+     sin tocar la red es fusionar una PR, porque Netlify construye desde GitHub.
+  - Existe un despliegue de producción bueno del 5 de sept (`6a9c204e…`, PR
+    #35) que se podría republicar desde el panel («Publish deploy»); el MCP no
+    tiene operación para republicar, solo para desplegar nuevo.
+  - Las tres Routines están **en pausa** desde el 11 de sept a petición del
+    usuario (le consumían el límite). No reactivarlas sin que lo pida.
 
 - **Avisos por correo** (pedido el 5 de sept: «que te lleguen correos»).
   `netlify/functions/correo.mjs` con Resend, más el interruptor en
