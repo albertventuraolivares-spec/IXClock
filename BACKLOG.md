@@ -193,19 +193,19 @@ llegaron repetidas y algunas ya estaban hechas):
     para arreglarlo. Ahora los clics toleran que la casilla no exista y se
     informa de cada comprobación.
 
-- **Despliegue, estado al 28 de sept**: la web sigue sirviendo la vista previa
-  de la PR #21 (4 de sept), `6a9a22d7…`. Dos bloqueos DISTINTOS, no confundir:
-  1. **La red de este entorno** corta `*.netlify.app` (CONNECT 403 en el proxy
-     de salida). Por eso `deploy-site` del MCP de Netlify (que sube con
-     `npx @netlify/mcp`) falla con 403 aquí **aunque Netlify estuviera bien**.
-     Lo arregla el usuario añadiendo `netlify-mcp.netlify.app` a los dominios
-     permitidos del entorno. El registro de npm SÍ responde ya.
-  2. **Créditos de Netlify** agotados desde el 6 de sept (despliegues de
-     producción pausados). No se sabe si ya se renovó: la forma de comprobarlo
-     sin tocar la red es fusionar una PR, porque Netlify construye desde GitHub.
-  - Existe un despliegue de producción bueno del 5 de sept (`6a9c204e…`, PR
-    #35) que se podría republicar desde el panel («Publish deploy»); el MCP no
-    tiene operación para republicar, solo para desplegar nuevo.
+- **Despliegue: RESUELTO el 28 de sept.** Los créditos de Netlify se
+  renovaron: al fusionar la PR #39, Netlify construyó desde GitHub y publicó
+  `55a42f9` en producción (despliegue `6abad23f…`, 5 funciones: `correo` y
+  `nube` incluidas). Con eso quedó en el aire todo lo fusionado desde el 4 de
+  sept (#22 a #39), que llevaba parado desde el 6.
+  - Lo que sigue siendo verdad: **la red de este entorno corta
+    `*.netlify.app`**, así que `deploy-site` del MCP (que sube con
+    `npx @netlify/mcp`) da 403 desde aquí. No hace falta: el camino normal es
+    fusionar en GitHub y Netlify construye solo. Si algún día se necesita
+    desplegar desde aquí, el usuario tiene que añadir
+    `netlify-mcp.netlify.app` a los dominios permitidos del entorno.
+  - Si vuelven a acabarse los créditos, la señal es que tras fusionar el
+    `currentDeploy` del proyecto NO cambia. Comprobarlo siempre.
   - Las tres Routines están **en pausa** desde el 11 de sept a petición del
     usuario (le consumían el límite). No reactivarlas sin que lo pida.
 
