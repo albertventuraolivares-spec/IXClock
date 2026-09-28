@@ -149,6 +149,55 @@ llegaron repetidas y algunas ya estaban hechas):
 63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
     («Hoy en IXClocK»: enfoque + alarmas + radio).
 
+### Informe de auditoría web que pegó el usuario (28 de sept) — YA VERIFICADO
+Es un informe genérico de otra IA: habla de tienda, «Comprar ahora», formulario
+de contacto y pases de Roblox, cosas que IXClocK no tiene. Se comprobó punto por
+punto contra el código. **No repetir estas comprobaciones: el resultado es este.**
+
+**Ya estaba bien (el informe se equivocaba, no tocar):** `<!DOCTYPE html>`,
+`<html lang="es">`, `<meta charset>`, `viewport`, `<title>`, `meta description`,
+etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
+(contenido mixto). Accesibilidad: `pruebas/calidad.js` ya da 0 botones sin
+nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
+
+**Pendiente de verdad, pequeño, en este orden:**
+64. **`robots.txt` y `sitemap.xml`** en la raíz: no existen. Una sola URL
+    (`https://ixclockplus.netlify.app/`) más los enlaces `?app=` de IX_APPS.
+65. **`<link rel="canonical">`**: no hay. Importa porque cada app tiene su
+    enlace `?app=…` y Google puede verlos como páginas duplicadas.
+66. **Cabeceras de seguridad en `netlify.toml`** (`[[headers]]`): hoy no hay
+    ninguna. Empezar por las que no rompen nada: `X-Content-Type-Options:
+    nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+    `Permissions-Policy` (dejando geolocalización, micrófono y pantalla
+    completa, que la app SÍ usa). **La CSP, primero SOLO en
+    `Content-Security-Policy-Report-Only`**: la app carga Tailwind, fuentes,
+    Leaflet, EmulatorJS, radios y un iframe de navegador desde muchos
+    dominios, y una CSP estricta de golpe la rompería entera. Probar con la
+    suite antes de subir.
+67. **`alt` en dos `<img>` generadas por JS**: el logo de canal de TV
+    (~línea 10879) y las miniaturas de fondos propios (~20766). Las «6» del
+    informe eran casi todas comentarios que mencionan `<img onerror>`.
+68. **Cuatro `<h1>`** (Reloj mundial, Alarmas, Timers, Dispositivos): son
+    pantallas distintas dentro de la app, no un error grave, pero la pantalla
+    de inicio no tiene ningún `<h1>`. Poner uno (puede ir oculto
+    visualmente) con el nombre de la app, y dejar los otros.
+69. **Lighthouse de verdad**: el registro de npm ya responde (28 de sept), así
+    que se puede probar `npx lighthouse` contra el servidor local con el
+    Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
+    fiarse del informe, y atacar lo que salga.
+
+**NO aplica o necesita que decida el usuario (no hacer sin preguntar):**
+- Tienda, carrito, pasarela de pago, suscripciones: el cobro sigue **en pausa**
+  por decisión expresa del usuario.
+- Google Analytics / Matomo: implica aviso de privacidad y consentimiento.
+  Preguntarle antes.
+- «Sacar el CSS/JS a archivos aparte»: la app es un único `index.html` a
+  propósito; hacerlo sería la reescritura grande que prohíben las reglas.
+- Cookies seguras: la app no usa cookies. Formulario de contacto: ya existe el
+  muro de opiniones. Chat en vivo: necesitaría un servidor de soporte.
+- **Pases de Roblox y logo «estilo Canva»**: son de su proyecto de ROBLOX, no
+  de este repo. Si los pide, van en ese proyecto.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
