@@ -2168,6 +2168,13 @@
 						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">📧 Avisos por correo</div>
 						<div id="ix-correo"></div>
 					</div>
+					<!-- Privacidad. Enlace normal a una página aparte: así se puede
+					     abrir y compartir sin cargar la app. -->
+					<div class="p-3.5 glass rounded-2xl">
+						<div class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-2">📄 Privacidad</div>
+						<a id="ix-privacidad" href="privacidad.html" target="_blank" rel="noopener" class="btn-option w-full" style="display:block;text-align:center;text-decoration:none;">Privacidad y condiciones de uso</a>
+						<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Qué datos salen de tu aparato, adónde van y cómo borrarlos. En corto: sin cookies propias, sin anuncios y sin analítica.</p>
+					</div>
 					<!-- Rendimiento y control. Los dos textos largos no sobran: son
 					     justo lo que evita que el ajuste prometa lo que no hace. -->
 					<div class="p-3.5 glass rounded-2xl">
@@ -16217,6 +16224,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.8', fecha: '28 de septiembre de 2026', titulo:'Privacidad, por escrito', cambios: [
+			    '📄 Nueva página de privacidad y condiciones (Configuración → Más): qué datos salen de tu aparato, adónde van y cómo borrarlos',
+			  ]},
 			  { v:'3.7', fecha: '28 de septiembre de 2026', titulo:'Navegador más seguro', cambios: [
 			    '🔒 Las webs que abres con el proxy del Navegador ya van aisladas: no pueden ver tus notas ni nada guardado en IXClocK',
 			    '🏷️ Las pestañas del proxy vuelven a enseñar el título de la web, no código raro',

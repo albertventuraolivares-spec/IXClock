@@ -185,16 +185,6 @@ Mezcla IXClocK con su juego de Roblox. **Falso** para IXClocK: «sin favicon»
 (hay 4), «sin title/description» (están), placeholders «Nombre del juego» (0),
 HSTS (todo el dominio `.app` está en la lista de precarga HSTS de los
 navegadores: se aplica solo). Lo que SÍ es verdad y se añade:
-71. **Política de privacidad**: no hay ninguna, y desde septiembre hace falta
-    de verdad: la sincronización guarda notas y alarmas en el servidor
-    (Netlify Blobs), «Entrar con Google» muestra nombre, correo y foto, los
-    avisos por correo usan Resend, y el muro de opiniones publica nombres.
-    Página corta y HONRADA que describa exactamente esos flujos, enlazada
-    desde Configuración y desde el pie. **Antes de publicarla, pedir al
-    usuario un correo de contacto** para ella; no inventarlo. Incluir unos
-    términos de uso cortos (lo pidió el quinto informe).
-    - NO hace falta banner de cookies: la app no usa ninguna cookie (solo
-      `localStorage`). Decirlo así en la política.
 72. **Enlace «Saltar al contenido»** para teclado, y que `<nav>`/`<header>`
     existan donde toque: hoy solo hay un `<main>`. Pequeño.
 73. **`Cache-Control`** para los estáticos (iconos, `tailwind.css`) en las
@@ -262,6 +252,11 @@ Comprobado aquí:
     carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
     Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
     pasarla a obligatoria. Mediano y con riesgo de romper apps.
+78. **Botón «Borrar mi copia de la nube»** en la ficha de sincronizar
+    (método DELETE en `nube.mjs`). Hoy la política de privacidad dice
+    «escríbenos para borrarla», y para encontrarla habría que mandar el
+    código por correo, que es justo lo que se le dice al usuario que no haga.
+    Pequeño.
 
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
@@ -289,6 +284,18 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Política de privacidad y condiciones** (idea 71, 28 de sept):
+  `privacidad.html`, página suelta sin nada de fuera, enlazada desde
+  Configuración → Más. Correo de contacto: el que dio el usuario
+  (albertventuraolivares@gmail.com) — se le recomendó uno aparte por el spam
+  y eligió este. Describe cada flujo tal cual está en el código
+  (sincronización, opiniones públicas, Google solo en el aparato, Resend,
+  Open-Meteo/OSM/Nominatim, Anthropic→Pollinations, Google Translate/Lingva,
+  proxy) y unas condiciones cortas (tal cual; no fiarse para medicinas).
+  `pruebas/privacidad.js` (25) comprueba que **cuadra con el código**: si el
+  código usa un servicio de la lista, la página tiene que nombrarlo; y que
+  «sin cookies propias» es verdad. Si se añade un servicio nuevo, AÑADIRLO a
+  la página y a la lista `SERVICIOS` de la prueba.
 - **Páginas del proxy aisladas + cabeceras de seguridad** (idea 66, 28 de
   sept). Al ir a por las cabeceras salió algo peor: las webs que abre el
   navegador interno por `/.netlify/functions/proxy` se servían desde el
