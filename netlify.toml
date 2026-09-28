@@ -1,3 +1,26 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+
+# Cabeceras de seguridad para toda la web (idea 66 del backlog).
+# - nosniff: el navegador no «adivina» el tipo de un archivo; un .txt no se
+#   ejecuta como script aunque lo parezca.
+# - SAMEORIGIN / frame-ancestors 'self': ninguna OTRA web puede meter IXClocK
+#   en un iframe para engañar a alguien con clics (clickjacking). La propia
+#   app sí puede, y el navegador interno sigue enmarcando webs de fuera: esto
+#   solo decide quién puede enmarcarnos a NOSOTROS.
+# - Permissions-Policy: se cierran solo cosas que la app no usa. Ubicación,
+#   micrófono, pantalla completa y lo demás siguen como estaban.
+# - Sin HSTS: todo el dominio .app ya está en la lista precargada de los
+#   navegadores, así que solo va por HTTPS de todas formas.
+# La CSP completa (qué scripts se pueden cargar) NO va aquí todavía: la app
+# carga cosas de muchos sitios y una lista mal hecha la rompería. Las páginas
+# del proxy llevan su propia CSP aislada, que es donde el riesgo era real.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors 'self'; object-src 'none'"
+    Permissions-Policy = "usb=(), serial=(), bluetooth=(), hid=(), payment=(), browsing-topics=()"

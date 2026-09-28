@@ -11,6 +11,19 @@ const PRIVATE = /^(localhost$|127\.|0\.0\.0\.0|::1$|10\.|192\.168\.|172\.(1[6-9]
 
 const PROXY_BASE = '/.netlify/functions/proxy?url=';
 
+// Las paginas que pasan por aqui son de CUALQUIER web, pero se sirven desde el
+// origen de IXClocK. Sin esto, el JavaScript de esa web corria como si fuera la
+// app: podia leer el localStorage (notas, el codigo de sincronizacion...) y
+// llamar a las funciones del servidor. Peor aun, bastaba mandar a alguien un
+// enlace a /.netlify/functions/proxy?url=<web-mala> para robarle las notas.
+//
+// `sandbox` sin `allow-same-origin` mete la pagina en un origen opaco: se ve y
+// funciona, pero ya no es «de la app». Vale tambien si se abre suelta, fuera
+// del iframe, porque la cabecera la lleva la respuesta, no el iframe.
+// Como la app ya no puede leer el iframe por dentro, el script inyectado le
+// cuenta el titulo y la URL con postMessage.
+const AISLADA = 'sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads';
+
 // Headers stripped from the upstream response
 const STRIP_RESP = new Set([
   'x-frame-options', 'content-security-policy', 'content-security-policy-report-only',
@@ -112,6 +125,8 @@ function injectedScript(pageUrl) {
   var op=history.pushState,or=history.replaceState;
   function w(fn){return function(s,t,u){try{if(u){var abs=new URL(String(u),location.href).href;if(/^https?:/.test(abs)&&!abs.includes('/.netlify/')){location.href=P+encodeURIComponent(abs);return;}}}catch(x){}return fn.call(history,s,t,u);};}
   history.pushState=w(op);history.replaceState=w(or);
+  function avisa(){try{var t=document.body?document.body.innerText:'';parent.postMessage({ixProxy:1,url:B,title:String(document.title||'').slice(0,200),bot:/challenge|verify you are human|attempts exceeded|access denied|robot check|unusual traffic|captcha|security check|pardon our interruption/i.test(t)},'*');}catch(x){}}
+  if(parent!==window)addEventListener('load',avisa);
 })();</script>`;
 }
 
@@ -151,7 +166,7 @@ exports.handler = async (event) => {
     const msg = e.message || 'Error desconocido';
     return {
       statusCode: 502,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': AISLADA },
       body: `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:sans-serif;padding:24px;color:#222">
 <h2 style="color:#c00">No se pudo cargar la página</h2>
@@ -201,15 +216,18 @@ exports.handler = async (event) => {
 
     // Inject <base> + navigation interception right after <head>
     const inject = `<base href="${targetUrl.replace(/"/g,'&quot;')}">` + injectedScript(targetUrl);
-    if (/<head[\s>]/i.test(html)) {
-      html = html.replace(/(<head[\s>][^>]*>)/i, '$1' + inject);
+    // OJO con el patron: el viejo, /<head[\s>][^>]*>/, en «<head><title>» se
+    // comia tambien el «<title>», y el script acababa DENTRO del titulo como
+    // texto: ni corria ni se interceptaban los enlaces.
+    if (/<head(\s[^>]*)?>/i.test(html)) {
+      html = html.replace(/(<head(?:\s[^>]*)?>)/i, '$1' + inject);
     } else {
       html = inject + html;
     }
 
     return {
       statusCode: upstream.status,
-      headers: { ...hdrs, 'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'X-Proxy-For': targetUrl },
+      headers: { ...hdrs, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': AISLADA, 'Access-Control-Allow-Origin': '*', 'X-Proxy-For': targetUrl },
       ...(multiValueHeaders && { multiValueHeaders }),
       body: html,
     };
