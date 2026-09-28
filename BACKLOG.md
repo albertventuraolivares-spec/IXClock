@@ -161,15 +161,6 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-66. **Cabeceras de seguridad en `netlify.toml`** (`[[headers]]`): hoy no hay
-    ninguna. Empezar por las que no rompen nada: `X-Content-Type-Options:
-    nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
-    `Permissions-Policy` (dejando geolocalización, micrófono y pantalla
-    completa, que la app SÍ usa). **La CSP, primero SOLO en
-    `Content-Security-Policy-Report-Only`**: la app carga Tailwind, fuentes,
-    Leaflet, EmulatorJS, radios y un iframe de navegador desde muchos
-    dominios, y una CSP estricta de golpe la rompería entera. Probar con la
-    suite antes de subir.
 67. **`alt` en dos `<img>` generadas por JS**: el logo de canal de TV
     (~línea 10879) y las miniaturas de fondos propios (~20766). Las «6» del
     informe eran casi todas comentarios que mencionan `<img onerror>`.
@@ -200,7 +191,8 @@ navegadores: se aplica solo). Lo que SÍ es verdad y se añade:
     avisos por correo usan Resend, y el muro de opiniones publica nombres.
     Página corta y HONRADA que describa exactamente esos flujos, enlazada
     desde Configuración y desde el pie. **Antes de publicarla, pedir al
-    usuario un correo de contacto** para ella; no inventarlo.
+    usuario un correo de contacto** para ella; no inventarlo. Incluir unos
+    términos de uso cortos (lo pidió el quinto informe).
     - NO hace falta banner de cookies: la app no usa ninguna cookie (solo
       `localStorage`). Decirlo así en la política.
 72. **Enlace «Saltar al contenido»** para teclado, y que `<nav>`/`<header>`
@@ -265,6 +257,11 @@ Comprobado aquí:
 76. **Datos estructurados JSON-LD** (`"@type":"WebApplication"`, nombre,
     descripción, gratis): no hay ninguno. Pequeño; va bien junto al `<h1>`
     de la idea 68. Comprobar con la prueba de resultados enriquecidos.
+77. **CSP de scripts** (lo que quedó de la idea 66): primero en
+    `Content-Security-Policy-Report-Only` con la lista real de dominios que
+    carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
+    Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
+    pasarla a obligatoria. Mediano y con riesgo de romper apps.
 
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
@@ -292,6 +289,29 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Páginas del proxy aisladas + cabeceras de seguridad** (idea 66, 28 de
+  sept). Al ir a por las cabeceras salió algo peor: las webs que abre el
+  navegador interno por `/.netlify/functions/proxy` se servían desde el
+  origen de IXClocK, así que su JavaScript podía leer el localStorage (notas,
+  código de sincronización). Y sin abrir la app: bastaba un enlace a
+  `proxy?url=<web-mala>`. Arreglo: la respuesta del proxy lleva
+  `Content-Security-Policy: sandbox allow-scripts…` SIN `allow-same-origin`
+  (origen opaco, vale también abierta suelta). Como la app ya no puede mirar
+  dentro del iframe, el script inyectado le manda título, URL y «muro
+  anti-bots» por `postMessage`; la app solo lo usa como texto y solo para
+  pestañas/ventanas en modo proxy. De paso: el patrón `/<head[\s>][^>]*>/`
+  metía el script DENTRO de `<title>` («<head><title>» se comía el title), así
+  que nunca corría y la pestaña enseñaba código de título. `netlify.toml`:
+  nosniff, `X-Frame-Options: SAMEORIGIN`, `frame-ancestors 'self'`,
+  `object-src 'none'`, Referrer-Policy y Permissions-Policy (solo cierra
+  usb/serial/bluetooth/hid/payment/topics). **Sin HSTS** (`.app` ya está
+  precargado) y **sin CSP de scripts todavía**: la app carga de muchos sitios
+  y hace falta una lista probada; queda como idea aparte.
+  `pruebas/aislado.js` (21): monta una web mala que intenta leer un secreto,
+  la pasa por la función real y comprueba que no puede ni suelta ni en el
+  navegador ni en las ventanas; que el título, la URL y el muro anti-bots
+  siguen llegando; las cabeceras del toml; y que otra web no puede
+  enmarcarnos. Sin el arreglo: 13/21, con el secreto robado.
 - **`robots.txt`, `sitemap.xml` y `canonical`** (ideas 64 y 65, 28 de sept).
   Los tres apuntan **solo a la raíz**, y es la decisión que importa: los
   enlaces `?app=…` son la misma página, así que llevan canonical a la raíz y

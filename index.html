@@ -16217,6 +16217,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.7', fecha: '28 de septiembre de 2026', titulo:'Navegador más seguro', cambios: [
+			    '🔒 Las webs que abres con el proxy del Navegador ya van aisladas: no pueden ver tus notas ni nada guardado en IXClocK',
+			    '🏷️ Las pestañas del proxy vuelven a enseñar el título de la web, no código raro',
+			    '🛡️ Ninguna otra web puede meter IXClocK dentro de la suya para engañarte con clics',
+			  ]},
 			  { v:'3.6', fecha: '28 de septiembre de 2026', titulo:'Que Google te encuentre', cambios: [
 			    '🔎 IXClocK ya tiene mapa del sitio y le dice a Google cuál es su dirección buena, para que los enlaces de cada app no cuenten como páginas repetidas',
 			  ]},
@@ -17507,6 +17512,36 @@
 			  renderBrowserTabBar();
 			  _browserSaveTabsState();
 			}
+			// Las páginas que pasan por el proxy van aisladas (ver proxy.js): la
+			// app ya no puede mirar dentro del iframe para sacar el título, la URL
+			// real o si es un muro anti-bots. Se lo cuenta la propia página con
+			// postMessage. Lo que llega viene de una web cualquiera, así que solo
+			// se usa como texto y solo para una pestaña que esté en modo proxy.
+			window.addEventListener('message', function(e){
+			  const d=e.data;
+			  if(!d || typeof d!=='object' || d.ixProxy!==1 || !e.source) return;
+			  const ifr=[].slice.call(document.querySelectorAll('.browser-iframe,.bwin-iframe')).find(f=>f.contentWindow===e.source);
+			  if(!ifr) return;
+			  let url=''; try{ const u=new URL(String(d.url||'')); if(u.protocol==='http:'||u.protocol==='https:') url=u.href; }catch(x){}
+			  const title=String(d.title||'').slice(0,200).trim();
+			  const tab=_browserTabs.find(t=>{ const el=document.getElementById('browser-pane-'+t.id); return el && el.contains(ifr); });
+			  const win=tab ? null : _bwins.find(w=>{ const el=_bwinEl(w.id); return el && el.contains(ifr); });
+			  const quien=tab||win;
+			  if(!quien || !quien._proxyMode) return;
+			  if(d.bot===true) ifr._ixBot=true;
+			  if(title) quien.title=title;
+			  if(url) quien.url=url;
+			  if(tab){
+			    if(title) renderBrowserTabBar();
+			    const ui=document.getElementById('browser-url');
+			    if(url && ui && getActiveTab()===tab) ui.value=url;
+			  } else {
+			    const el=_bwinEl(win.id);
+			    const ts=el.querySelector('.bwin-title'), ui=el.querySelector('.bwin-url');
+			    if(title && ts) ts.textContent=title.slice(0,40);
+			    if(url && ui) ui.value=url;
+			  }
+			});
 			function browserNavigate(input){
 			  const url=browserNormalizeUrl(input);
 			  if(!url) return;
@@ -17570,6 +17605,7 @@
 			    browserApplyDesktopMode(tab);
 			    clearTimeout(tab._stuckTimer);
 			    tab._stuckTimer=setTimeout(()=>{
+			      if(iframe._ixBot) botBlocked=true;
 			      if(getActiveTab()===tab && stuckBanner){
 			        // In proxy mode: only show banner when bot-blocked (not generically)
 			        if(tab._proxyMode && !botBlocked) return;
@@ -17592,6 +17628,7 @@
 			    const dismissBtn=stuckBanner.querySelector('.browser-stuck-dismiss');
 			    if(dismissBtn) dismissBtn.onclick=()=>{ stuckBanner.style.display='none'; };
 			  }
+			  iframe._ixBot=false;
 			  iframe.src=url;
 			  browserApplyZoom();
 			  browserApplyDesktopMode(tab);
@@ -18044,6 +18081,7 @@
 			    clearTimeout(win._stuckTimer);
 			    win._stuckTimer=setTimeout(()=>{
 			      if(!el.isConnected) return;
+			      if(iframe._ixBot) botBlocked=true;
 			      if(win._proxyMode && !botBlocked) return;
 			      if(stuck){
 			        const msgEl=stuck.querySelector('.bwin-stuck-msg');
@@ -18057,6 +18095,7 @@
 			    }, 2500);
 			  };
 			  iframe.onerror=()=>{ clearTimeout(win._loadTimer); _bwinShowBlocked(id, realUrl); };
+			  iframe._ixBot=false;
 			  iframe.src=url;
 			}
 			function _bwinRetryProxy(id){
