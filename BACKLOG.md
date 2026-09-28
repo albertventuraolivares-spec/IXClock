@@ -225,6 +225,34 @@ Ahora!», misiones, y el logo.
 - **Pases de Roblox y logo «estilo Canva»**: son de su proyecto de ROBLOX, no
   de este repo. Si los pide, van en ese proyecto.
 
+### Tercer informe de auditoría (28 de sept) — YA VERIFICADO
+El segundo informe lo pegó dos veces, idéntico: ya estaba anotado arriba.
+Del tercero, comprobado en el código:
+- **Ya existe, no rehacer**: PWA (`manifest.webmanifest` + `sw.js`,
+  registrado), inicio con Google (`ixGoogle*`), avisos por correo, muro de
+  opiniones, sincronización entre aparatos.
+- **X-Frame-Options / `frame-ancestors`: no hay.** Va dentro de la idea 66.
+  Usar `SAMEORIGIN` (no `DENY`): la app tiene 2 `<iframe>` propios (navegador
+  y ventanas, líneas ~17396 y ~17875) que cargan webs de fuera y el proxy de
+  `/.netlify/functions/`. La cabecera solo impide que OTROS nos metan en un
+  iframe, no que nosotros enmarquemos, pero con `SAMEORIGIN` el proxy propio
+  sigue funcionando seguro.
+- **CI**: `.github/workflows/deploy.yml` NO hace pruebas: publica el repo
+  ENTERO en GitHub Pages en cada push a `main`. Dos consecuencias:
+  - La idea 70 (tapar `pruebas/`, `BACKLOG.md`…) solo arregla Netlify; en
+    GitHub Pages siguen visibles. Preguntar al usuario si usa esa copia; si
+    no, lo limpio es quitar ese workflow.
+74. **Pasar las pruebas en GitHub Actions** (`sh pruebas/todas.sh` en cada PR)
+    para que un fallo se vea antes de fusionar. Necesita Chromium de
+    Playwright en el runner. Mediano.
+75. **Selector de idioma**: ya existe un traductor de interfaz (`_uiT`, 2
+    idiomas) pero no hay forma visible de elegirlo. Poner el selector en
+    Configuración. Pequeño si solo es exponer lo que hay.
+- **NO aplica**: blog, página de precios, registro con contraseña, carrito,
+  panel de administración, CMS, comparativas Stripe/Auth0/etc. (el cobro sigue
+  en pausa), diagramas y «prompt maestro» (son texto del informe, no tareas).
+  OWASP/RGPD ya están cubiertos por las ideas 66, 70 y 71.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
