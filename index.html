@@ -23052,6 +23052,7 @@
 			  if(ov) ov.style.display='none';
 			  clearInterval(_enfTic); _enfTic=null;
 			  _enfSonidoOff();
+			  _enfDevolverRadio();
 			  _enfWakeOff();
 			  if(_enfTitulo) document.title=_enfTitulo;   // la pestana vuelve a llamarse como antes
 			}
@@ -23120,7 +23121,41 @@
 			  }
 			  return h;
 			}
+			/* Lo que sonaba ANTES de entrar al modo enfoque (idea 60). Sin esto,
+			   con «sin sonido» la radio seguía sonando mientras intentabas
+			   concentrarte, y con un sonido de ambiente la radio se cortaba y al
+			   salir ya no volvía. Ahora se calla al entrar y vuelve al salir. */
+			let _enfRadioAntes=null;
+			function _enfCallarRadio(){
+			  if(!isPlaying) return;
+			  if(typeof _localAudioActive!=='undefined' && _localAudioActive){
+			    // Un archivo tuyo: se pausa sin perderlo (stopAudio lo borraría).
+			    try{ streamPlayer.pause(); }catch(e){}
+			    isPlaying=false;
+			    _enfRadioAntes={local:true};
+			  } else if(currentStation){
+			    _enfRadioAntes={id:currentStation};
+			    try{ stopAudio(); }catch(e){}
+			  }
+			}
+			function _enfDevolverRadio(){
+			  const r=_enfRadioAntes; _enfRadioAntes=null;
+			  if(!r) return;
+			  if(r.local){
+			    try{
+			      const pr=streamPlayer.play(); if(pr&&pr.catch) pr.catch(function(){});
+			      isPlaying=true;
+			      const gp=document.getElementById('global-play');
+			      if(gp){ gp.innerHTML='<span class="text-2xl">⏸️</span>'; gp.classList.add('animate-pulse'); }
+			    }catch(e){}
+			  }
+			  else if(r.id){ try{ setStation(r.id); }catch(e){} }
+			  try{ ixToast('📻 '+_uiT('Vuelve lo que estabas escuchando')); }catch(e){}
+			}
 			function ixAbrirEnfoque(){
+			  // Solo al ENTRAR: si ya estaba abierto, lo que suena es el ambiente
+			  // del propio modo enfoque y no hay que «recordarlo».
+			  if(!ixEnfoqueAbierto()) _enfCallarRadio();
 			  let ov=document.getElementById('ix-enfoque');
 			  if(!ov){
 			    ov=document.createElement('div');
