@@ -9262,6 +9262,7 @@
 			    document.getElementById('global-play').innerHTML='<span class="text-2xl inline-block animate-spin">⏳</span>';
 			    streamPlayer.play().then(()=>{
 			      isPlaying=true;
+			      try{ ixMediaSesion(); }catch(e){}
 			      if(btn) btn.classList.remove('station-loading');
 			      document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			      document.getElementById('global-play').classList.add('animate-pulse');
@@ -9295,6 +9296,7 @@
 			  else ambientSource=createRain();
 			  if(ambientSource){
 			    ambientSource.start(); isPlaying=true;
+			    try{ ixMediaSesion(); }catch(e){}
 			    document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			    document.getElementById('global-play').classList.add('animate-pulse');
 			  }
@@ -9306,6 +9308,7 @@
 			  isPlaying=false;
 			  document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>';
 			  document.getElementById('global-play').classList.remove('animate-pulse');
+			  try{ ixMediaSesion(); }catch(e){}
 			}
 			// Pausa/reanuda sin perder el src: necesario para archivos locales (stopAudio limpia el src).
 			function togglePlayPause(){
@@ -9356,6 +9359,46 @@
 			  const idx=STATIONS.findIndex(s=>s.id===currentStation);
 			  setStation(STATIONS[(idx-1+STATIONS.length)%STATIONS.length].id);
 			}
+			/* ── Controles del sistema (Media Session) ──
+			   Con esto, mientras suena la radio, el móvil enseña la emisora en la
+			   pantalla de bloqueo y en las notificaciones, con pausa y
+			   anterior/siguiente; en el ordenador, las teclas multimedia del
+			   teclado también sirven. Antes solo se podía parar desde la ficha
+			   de Radio (idea 43: control fuera de la ventana de Radio). */
+			function ixMediaSesion(){
+			  if(!('mediaSession' in navigator)) return;
+			  const ms=navigator.mediaSession;
+			  try{
+			    const lista=(typeof ALL_RADIO_STATIONS!=='undefined' && ALL_RADIO_STATIONS.length) ? ALL_RADIO_STATIONS : STATIONS;
+			    const st=lista.find(function(x){ return x.id===currentStation; }) || STATIONS.find(function(x){ return x.id===currentStation; });
+			    if(st && typeof MediaMetadata!=='undefined'){
+			      ms.metadata=new MediaMetadata({
+			        title:String(st.title||'IXClocK'), artist:String(st.sub||st.country||'Radio'), album:'IXClocK',
+			        artwork:[{src:'icon-192.png',sizes:'192x192',type:'image/png'},{src:'icon-512.png',sizes:'512x512',type:'image/png'}]
+			      });
+			    }
+			    // El evento «playing» del audio llega a veces ANTES de que el
+			    // código marque isPlaying: se mira también el propio reproductor.
+			    let suena=isPlaying;
+			    try{ if(!streamPlayer.paused && streamPlayer.src && !streamPlayer.error) suena=true; }catch(e){}
+			    ms.playbackState = suena ? 'playing' : 'paused';
+			  }catch(e){}
+			}
+			(function(){
+			  if(!('mediaSession' in navigator)) return;
+			  const h=function(accion, fn){ try{ navigator.mediaSession.setActionHandler(accion, fn); }catch(e){} };
+			  h('play',          function(){ if(!isPlaying) togglePlayPause(); });
+			  h('pause',         function(){ if(isPlaying) togglePlayPause(); });
+			  h('stop',          function(){ stopAudio(); });
+			  h('nexttrack',     function(){ nextStation(); });
+			  h('previoustrack', function(){ prevStation(); });
+			  try{
+			    streamPlayer.addEventListener('playing', ixMediaSesion);
+			    streamPlayer.addEventListener('pause', ixMediaSesion);
+			    // Una emisora caída: el sistema no puede seguir diciendo «sonando».
+			    streamPlayer.addEventListener('error', function(){ setTimeout(ixMediaSesion, 0); });
+			  }catch(e){}
+			})();
 			/* ── FAVORITOS DE EMISORAS ────────────────────────────────────────
 			   El navegador ya tenia favoritos (ix_browser_favorites) pero la radio
 			   no. Con miles de emisoras, sin esto cada vez se empieza de cero y hay
