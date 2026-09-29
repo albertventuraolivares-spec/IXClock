@@ -169,6 +169,15 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Compartir una canción de IXBand por enlace** (29 de sept). «🔗 Enlace»:
+  `_gbCompacta` → JSON → `CompressionStream('deflate-raw')` → base64url detrás
+  de `?app=ixband#cancion=` (el «#» no llega al servidor). Tope de 60.000
+  caracteres (más, WhatsApp/correo lo cortan): avisa y sugiere audio/MIDI. Al
+  abrirlo, `_gbLimpiarRecibida` valida campo a campo lo que viene de otra
+  persona, lo guarda en Mis canciones y lo abre; el hash se lee al cargar
+  (ixMarkOpen lo borraría) y se quita para no duplicar al recargar.
+  - Probado con `pruebas/enlacecancion.js` (dos navegadores, enlace roto y
+    malicioso): 15/15; antes 2/15.
 - **Recordatorios por ubicación** (idea 39, 29 de sept). Ficha del lugar en
   Mapas: «📍 Avísame al llegar» / «🚪 al salir» (radio 200 m, en
   `ix_lugares_aviso_v1`). `watchPosition` con `maximumAge:0` (una posición
@@ -1379,4 +1388,4 @@ Comprobado aquí:
 - Widgets de la pantalla de inicio reordenables arrastrando.
 - Modo claro además del oscuro.
 - Exportar lo grabado en IXBand como archivo de audio.
-- Compartir un fondo o una canción por enlace.
+- Compartir un fondo por enlace (la canción ya está: ver Hecho).

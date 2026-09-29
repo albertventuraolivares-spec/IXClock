@@ -16976,6 +16976,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.10', fecha: '29 de septiembre de 2026', titulo:'Canciones que viajan', cambios: [
+			    '🔗 IXBand → «🔗 Enlace»: comparte tu canción con un enlace. Quien lo abra la recibe en su IXBand, lista para escucharla y seguir tocando. La canción va dentro del enlace: no se sube a ningún sitio',
+			  ]},
 			  { v:'4.9', fecha: '29 de septiembre de 2026', titulo:'Avísame al llegar', cambios: [
 			    '📍 Mapas → «Avísame al llegar» o «al salir»: busca un sitio (la farmacia, el colegio) y IXClocK te avisa cuando llegues o te vayas. Funciona con la app abierta; los tienes en la app Avisos para quitarlos',
 			  ]},
@@ -21379,6 +21382,100 @@
 			  const cabecera=[0x4D,0x54,0x68,0x64, 0,0,0,6, 0,1, (trozos.length>>8)&255, trozos.length&255, (PPQ>>8)&255, PPQ&255];
 			  return new Uint8Array([].concat.apply(cabecera, trozos));
 			}
+			/* ── COMPARTIR UNA CANCIÓN POR ENLACE ──
+			   La canción entera (notas, secciones, tempo) va COMPRIMIDA dentro del
+			   enlace, detrás de «#»: esa parte nunca llega al servidor, así que no
+			   se sube a ningún sitio. Quien lo abre la recibe en «Mis canciones».
+			   Lo que viene en un enlace lo escribió otra persona: se limpia campo a
+			   campo (números que son números, nombres cortos, tipos con letras) y
+			   se descarta lo que no encaje, en vez de confiar en ello.        */
+			const GB_ENLACE_MAX=60000;   // caracteres: más, y WhatsApp/correo lo cortan
+			function _b64url(bytes){ let b=''; for(let i=0;i<bytes.length;i++) b+=String.fromCharCode(bytes[i]); return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+			function _b64urlBytes(t){ t=String(t).replace(/-/g,'+').replace(/_/g,'/'); while(t.length%4) t+='='; const b=atob(t), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; }
+			async function _ixComprimir(txt){
+			  const st=new Blob([txt]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+			  return _b64url(new Uint8Array(await new Response(st).arrayBuffer()));
+			}
+			async function _ixDescomprimir(t){
+			  const st=new Blob([_b64urlBytes(t)]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+			  return await new Response(st).text();
+			}
+			function _gbCompacta(){
+			  const r2=function(n){ return Math.round(n*100)/100; };
+			  return { v:1, bpm:parseInt(_gbBpm)||120, compas:_gbCompas,
+			    secciones:_gbSecciones.map(function(x){ return {id:x.id, nombre:x.nombre}; }),
+			    takes:_gbTakes.map(function(t){ return { name:t.name, sec:_gbSecDe(t), muted:!!t.muted, solo:!!t.solo, vol:t.vol==null?1:r2(t.vol), pan:r2(t.pan||0),
+			      events:t.events.map(function(e){ const o={at:Math.round(e.at||0), type:e.type, vel:r2(e.vel==null?0.8:e.vel)}; if(e.freq!=null) o.freq=r2(e.freq); if(e.drumType) o.drumType=e.drumType; if(e.sampleIdx!=null) o.sampleIdx=e.sampleIdx; return o; }) }; }) };
+			}
+			// Deja pasar solo lo que tiene la forma de una canción de IXBand.
+			function _gbLimpiarRecibida(d){
+			  if(!d || typeof d!=='object' || !Array.isArray(d.takes)) return null;
+			  const nombre=function(x,def){ return String(x==null?def:x).replace(/[\u0000-\u001f]/g,'').slice(0,40)||def; };
+			  const id=function(x){ return /^[a-z0-9_-]{1,20}$/i.test(String(x)) ? String(x) : null; };
+			  const num=function(x,min,max,def){ x=Number(x); return isFinite(x) ? Math.max(min,Math.min(max,x)) : def; };
+			  const tipo=function(x){ return /^[a-z0-9_]{1,24}$/i.test(String(x||'')) ? String(x) : null; };
+			  let secs=(Array.isArray(d.secciones)?d.secciones:[]).map(function(x){ return x && id(x.id) ? {id:id(x.id), nombre:nombre(x.nombre,'A')} : null; }).filter(Boolean).slice(0,40);
+			  if(!secs.length) secs=[{id:'s1', nombre:'A'}];
+			  const ids=secs.map(function(x){ return x.id; });
+			  const takes=d.takes.slice(0,64).map(function(t){
+			    if(!t || !Array.isArray(t.events)) return null;
+			    const ev=t.events.slice(0,5000).map(function(e){
+			      if(!e) return null;
+			      const o={ at:num(e.at,0,3600000,0), type:tipo(e.type), vel:num(e.vel,0,1,0.8) };
+			      if(!o.type) return null;
+			      if(e.freq!=null) o.freq=num(e.freq,1,20000,440);
+			      if(o.type==='drum'){ o.drumType=tipo(e.drumType); if(!o.drumType) return null; }
+			      if(e.sampleIdx!=null) o.sampleIdx=Math.round(num(e.sampleIdx,0,16,0));
+			      return o;
+			    }).filter(Boolean).sort(function(a,b){ return a.at-b.at; });
+			    const sec=ids.indexOf(String(t.sec))>=0 ? String(t.sec) : ids[0];
+			    return { name:tipo(t.name)||'piano', sec:sec, muted:!!t.muted, solo:!!t.solo, vol:num(t.vol,0,1.5,1), pan:num(t.pan,-1,1,0), events:ev };
+			  }).filter(Boolean);
+			  if(!takes.length) return null;
+			  return { bpm:Math.round(num(d.bpm,30,300,120)), compas:(/^\d{1,2}\/\d{1,2}$/.test(String(d.compas||''))?String(d.compas):undefined),
+			           secciones:secs, secActiva:secs[0].id, secSeq:secs.length+1, takes:takes };
+			}
+			async function gbEnlaceCancion(){
+			  if(!_gbTakes.length){ _gbEstado('No hay nada que compartir: graba y guarda alguna toma primero.'); return null; }
+			  if(typeof CompressionStream==='undefined'){ _gbEstado('Este navegador no puede crear enlaces de canción.'); return null; }
+			  const datos=await _ixComprimir(JSON.stringify(_gbCompacta()));
+			  if(datos.length>GB_ENLACE_MAX){ _gbEstado('🔗 La canción es demasiado larga para un enlace. Compártela como audio o MIDI.'); return null; }
+			  return location.origin+location.pathname+'?app=ixband#cancion='+datos;
+			}
+			async function gbCompartirEnlace(){
+			  const url=await gbEnlaceCancion();
+			  if(!url) return null;
+			  try{
+			    if(navigator.share){ await navigator.share({ title:'Mi canción de IXBand', text:'Escucha lo que he hecho en IXBand 🎸', url:url }); _gbEstado('🔗 Enlace compartido.'); return url; }
+			  }catch(e){ if(e && e.name==='AbortError') return null; }
+			  try{ await navigator.clipboard.writeText(url); _gbEstado('🔗 Enlace copiado: pégalo en WhatsApp, un correo…'); }
+			  catch(e){ _gbEstado('🔗 No se pudo copiar el enlace.'); }
+			  return url;
+			}
+			// Al abrir un enlace con «#cancion=…»: se guarda en Mis canciones y se abre.
+			// Se lee al cargar: al abrir IXBand, ixMarkOpen reescribe la dirección
+			// y el «#cancion=…» se perdería antes de mirarlo.
+			let _gbHashInicial=''; try{ _gbHashInicial=location.hash||''; }catch(e){}
+			async function gbRecibirDeEnlace(hash){
+			  const h=hash!=null ? hash : _gbHashInicial;
+			  _gbHashInicial='';
+			  const m=/^#cancion=([A-Za-z0-9_-]+)$/.exec(h);
+			  if(!m) return null;
+			  // Se quita del enlace ya: recargar no la tiene que volver a añadir.
+			  try{ history.replaceState(null,'', location.pathname+location.search); }catch(e){}
+			  let d=null;
+			  try{ if(m[1].length<=GB_ENLACE_MAX*1.1) d=_gbLimpiarRecibida(JSON.parse(await _ixDescomprimir(m[1]))); }catch(e){ d=null; }
+			  if(!d){ try{ ixToast('🔗 Ese enlace de canción está roto o incompleto'); }catch(e){} return null; }
+			  gbCargarLista();
+			  const c={ id:'c'+Date.now(), nombre:'Recibida '+new Date().toLocaleDateString('es'), fecha:Date.now(), datos:d };
+			  _gbCanciones.unshift(c);
+			  if(!gbGuardarLista()){ _gbCanciones.shift(); return null; }
+			  try{ openGarageBand(); }catch(e){}
+			  try{ gbAbrirCancion(c.id); }catch(e){}
+			  _gbEstado('🎁 Te han pasado una canción: está en Mis canciones como «'+c.nombre+'». Dale a ▶▶ para oírla.');
+			  return c.id;
+			}
+			setTimeout(function(){ gbRecibirDeEnlace(); }, 1500);
 			function gbExportarMidi(){
 			  const datos=ixMidiDeCancion();
 			  if(!datos){ _gbEstado('No hay nada que exportar: guarda alguna toma primero.'); return null; }
@@ -21816,6 +21913,7 @@
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion(\'wav\')" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Sin comprimir, para abrirla en un editor de audio. Pesa bastante más"')+'>⬇️ Exportar WAV</button>'
 			    +'<button class="gb-chip" onclick="gbExportarMidi()" title="Las notas en un archivo .mid para abrirlas en GarageBand, FL Studio, Logic…">🎹 MIDI</button>'
+			    +'<button class="gb-chip" onclick="gbCompartirEnlace()" title="Un enlace con la canción dentro: quien lo abra la tiene en su IXBand">🔗 Enlace</button>'
 			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.55;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'
