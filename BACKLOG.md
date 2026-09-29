@@ -169,6 +169,12 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Compartir un fondo por enlace** (29 de sept). «🔗 Compartir este fondo»
+  en Fondos: `?fondo=<id>` (galería) o `?fondo=yt:ID` (YouTube); las fotos
+  propias y el dinámico no (lo dice). Al abrirlo (`ixFondoDeEnlace`) se pone y
+  guarda, se quita `fondo` de la dirección (el resto de parámetros se queda) y
+  sale «Deshacer» 12 s. Un id que no existe avisa y no toca nada.
+  - Probado con `pruebas/enlacefondo.js`: 10/10; antes 1/10.
 - **Compartir una canción de IXBand por enlace** (29 de sept). «🔗 Enlace»:
   `_gbCompacta` → JSON → `CompressionStream('deflate-raw')` → base64url detrás
   de `?app=ixband#cancion=` (el «#» no llega al servidor). Tope de 60.000
@@ -1388,4 +1394,3 @@ Comprobado aquí:
 - Widgets de la pantalla de inicio reordenables arrastrando.
 - Modo claro además del oscuro.
 - Exportar lo grabado en IXBand como archivo de audio.
-- Compartir un fondo por enlace (la canción ya está: ver Hecho).

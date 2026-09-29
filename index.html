@@ -2057,6 +2057,14 @@
 					>
 						🌍 Fondo Dinámico (según la hora)
 					</button>
+					<button
+						id="wp-compartir"
+						class="w-full mb-2 p-2 rounded-xl text-xs font-bold shrink-0"
+						style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--txt);"
+						onclick="ixCompartirFondo()"
+					>
+						🔗 Compartir este fondo
+					</button>
 					<div class="relative mb-3 shrink-0">
 						<span
 							class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm"
@@ -16611,6 +16619,74 @@
 			    setTimeout(()=>{ window._wpRestoring = false; }, 500);
 			  }
 			})();
+			/* ── COMPARTIR UN FONDO POR ENLACE ──
+			   «?fondo=ios27» (uno de la galería) o «?fondo=yt:ID» (un video de
+			   YouTube). Las fotos tuyas NO: irían dentro del enlace y serían
+			   enormes (y son tuyas). Quien abre el enlace ve el fondo puesto, con
+			   «Deshacer» unos segundos por si prefiere el suyo.             */
+			function ixFondoCompartible(){
+			  try{
+			    if(localStorage.getItem('dynamic_bg_enabled')==='1') return null;
+			    const c=JSON.parse(localStorage.getItem('saved_wallpaper_custom')||'null');
+			    if(c){ return (c.type==='youtube' && /^[\w-]{11}$/.test(c.videoId||'')) ? {clave:'yt:'+c.videoId, nombre:'YouTube'} : null; }
+			    const wp=WALLPAPERS.find(function(w){ return w.id===localStorage.getItem('saved_wallpaper'); });
+			    return wp ? {clave:wp.id, nombre:wp.name} : null;
+			  }catch(e){ return null; }
+			}
+			async function ixCompartirFondo(){
+			  const f=ixFondoCompartible();
+			  if(!f){ try{ ixToast('🖼️ '+_uiT('Este fondo no se puede compartir: elige uno de la galería o de YouTube')); }catch(e){} return null; }
+			  const url=location.origin+location.pathname+'?fondo='+encodeURIComponent(f.clave);
+			  try{ if(navigator.share){ await navigator.share({ title:_uiT('Mi fondo de IXClocK'), url:url }); return url; } }
+			  catch(e){ if(e && e.name==='AbortError') return null; }
+			  try{ await navigator.clipboard.writeText(url); ixToast('🔗 '+_uiT('Enlace del fondo copiado')); }
+			  catch(e){ try{ ixToast('🔗 '+url); }catch(_){} }
+			  return url;
+			}
+			function ixFondoDeEnlace(){
+			  let v=null;
+			  try{ const q=new URLSearchParams(location.search); v=q.get('fondo'); if(v===null) return null;
+			       q.delete('fondo'); const r=q.toString(); history.replaceState(null,'', location.pathname+(r?'?'+r:'')+location.hash); }catch(e){ return null; }
+			  const antes={ dyn:localStorage.getItem('dynamic_bg_enabled')==='1', sw:localStorage.getItem('saved_wallpaper'), custom:localStorage.getItem('saved_wallpaper_custom') };
+			  let nombre=null;
+			  const yt=/^yt:([\w-]{11})$/.exec(v||'');
+			  if(yt){
+			    try{ localStorage.removeItem('dynamic_bg_enabled'); }catch(e){}
+			    _applyCustomWallpaper({ id:'yt-'+yt[1], name:'YouTube', tags:'video youtube movimiento', type:'youtube', videoId:yt[1] });
+			    nombre='YouTube';
+			  } else {
+			    const wp=WALLPAPERS.find(function(w){ return w.id===v; });
+			    if(!wp){ try{ ixToast('🖼️ '+_uiT('Ese fondo ya no existe')); }catch(e){} return null; }
+			    try{ localStorage.removeItem('dynamic_bg_enabled'); }catch(e){}
+			    window.setWallpaper(wp.id);
+			    nombre=wp.name;
+			  }
+			  _ixFondoDeshacerBoton(antes, nombre);
+			  return nombre;
+			}
+			function _ixFondoDeshacerBoton(antes, nombre){
+			  let d=document.getElementById('ix-fondo-recibido');
+			  if(d) d.remove();
+			  d=document.createElement('div');
+			  d.id='ix-fondo-recibido';
+			  d.setAttribute('role','status');
+			  d.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:2147483001;display:flex;align-items:center;gap:12px;background:rgba(20,20,24,.96);color:var(--txt);padding:10px 12px 10px 16px;border-radius:14px;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:92vw;';
+			  const t=document.createElement('span'); t.textContent='🖼️ '+_uiT('Te han pasado un fondo')+': «'+nombre+'»';
+			  const b=document.createElement('button'); b.textContent=_uiT('Deshacer');
+			  b.style.cssText='border:none;border-radius:9px;padding:7px 12px;background:#0a84ff;color:#fff;font-weight:800;cursor:pointer;';
+			  b.onclick=function(){
+			    try{
+			      if(antes.dyn){ setDynamicBg(); }
+			      else if(antes.custom){ const c=JSON.parse(antes.custom); _applyCustomWallpaper(c); }
+			      else window.setWallpaper(antes.sw && WALLPAPERS.find(function(w){ return w.id===antes.sw; }) ? antes.sw : 'ios27');
+			    }catch(e){}
+			    d.remove();
+			  };
+			  d.appendChild(t); d.appendChild(b);
+			  document.body.appendChild(d);
+			  setTimeout(function(){ if(d.isConnected) d.remove(); }, 12000);
+			}
+			setTimeout(ixFondoDeEnlace, 600);
 			/* Tamaño y altura del reloj (persisten y se restauran al abrir) */
 			function setClockScale(v){
 			  v = Math.max(60, Math.min(220, parseInt(v) || 100));
@@ -16978,6 +17054,7 @@
 			const IX_CHANGELOG = [
 			  { v:'4.10', fecha: '29 de septiembre de 2026', titulo:'Canciones que viajan', cambios: [
 			    '🔗 IXBand → «🔗 Enlace»: comparte tu canción con un enlace. Quien lo abra la recibe en su IXBand, lista para escucharla y seguir tocando. La canción va dentro del enlace: no se sube a ningún sitio',
+			    '🖼️ Fondos → «🔗 Compartir este fondo»: manda tu fondo (de la galería o de YouTube) con un enlace. Quien lo abre lo ve puesto, con «Deshacer» por si prefiere el suyo',
 			  ]},
 			  { v:'4.9', fecha: '29 de septiembre de 2026', titulo:'Avísame al llegar', cambios: [
 			    '📍 Mapas → «Avísame al llegar» o «al salir»: busca un sitio (la farmacia, el colegio) y IXClocK te avisa cuando llegues o te vayas. Funciona con la app abierta; los tienes en la app Avisos para quitarlos',
