@@ -176,9 +176,9 @@ async function arranca(ctx){
  await p.close();
 
  const pruebas=[
-  ['el registro tiene las 14 apps', o.registro.n===14,          o.registro.n+': '+o.registro.ids.join(',')],
+  ['el registro tiene al menos las 14 apps de entonces', o.registro.n>=14,  o.registro.n+': '+o.registro.ids.join(',')],
   ['ninguna apunta a algo que no existe', o.registro.rotas.length===0, o.registro.rotas.join(',')||'ninguna'],
-  ['y las 14 quedan enganchadas', o.registro.enganchadas===14,  o.registro.enganchadas],
+  ['y TODAS quedan enganchadas', o.registro.enganchadas===o.registro.n,  o.registro.enganchadas+' de '+o.registro.n],
   ['las 6 que faltaban se registran', o.abrir.faltan.length===0, 'faltan: '+(o.abrir.faltan.join(',')||'ninguna')],
   ['el conmutador ya no dice que está vacío', o.switcher.diceVacio===false, o.switcher.diceVacio],
   ['y las enseña por su nombre', o.switcher.saleNube===true && o.switcher.saleRadio===true, JSON.stringify(o.switcher)],

@@ -16271,6 +16271,7 @@
 			  {id:'canales', name:'Buscador de canales', icon:'📡', fn:'openSmartFinderModal'},
 			  {id:'buscar', name:'Buscar en IXClocK', icon:'🔎', fn:'ixAbrirBusqueda'},
 			  {id:'enfoque', name:'Modo Enfoque', icon:'🎯', fn:'ixAbrirEnfoque'},
+			  {id:'mesita', name:'Modo mesita', icon:'🌙', fn:'ixAbrirMesita'},
 			];
 			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
 			function _trackAppOpen(id){
@@ -16356,7 +16357,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','emuTeardown']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','emuTeardown']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -16443,6 +16444,9 @@
 			  { v:'4.2', fecha: '29 de septiembre de 2026', titulo:'Más fácil con lector de pantalla', cambios: [
 			    '🔊 Los 32 controles que no tenían nombre (deslizadores, desplegables, campos de hora…) ya se leen bien con lector de pantalla',
 			    '🎨 La etiqueta de la estación del año se lee mejor: tenía poco contraste',
+			    '🌙 Modo mesita: la hora enorme, el tiempo y tu próxima alarma para dejar el móvil cargando. La pantalla no se apaga, va atenuada y de noche en rojo. Está en la lista de apps',
+			    '🤝 Reloj mundial → «Comparar horas» ya te dice la mejor hora para quedar con todas tus ciudades a la vez, y la marca en verde',
+			    '⚠️ Tus ciudades del reloj mundial avisan si allí hay tormenta, calor extremo, helada o lluvia fuerte (una vez al día)',
 			  ]},
 			  { v:'4.1', fecha: '29 de septiembre de 2026', titulo:'Arreglos importantes y cosas nuevas', cambios: [
 			    '🛠️ Un recordatorio con fecha (por ejemplo «el día 5 a las 9:00») sonaba TODOS los días a esa hora hasta llegar el día, y ese día podía sonar dos veces. Ahora suena solo el día que toca, una vez',
@@ -21392,13 +21396,43 @@
 			  try{ localStorage.setItem('ica_clima_v1',JSON.stringify(_icaClima)); }catch(e){}
 			  return _icaClima[tz];
 			}
+			/* Avisos del tiempo en tus ciudades (idea 57): tormenta, calor
+			   extremo, helada, lluvia o nieve fuertes. Se marca en la ciudad y se
+			   avisa UNA vez al día por ciudad y tipo: un aviso que se repite cada
+			   vez que abres el reloj acaba ignorándose. */
+			function icaAlertaClima(c){
+			  if(!c || typeof c.temp!=='number') return null;
+			  if([95,96,99].indexOf(c.code)>=0) return { tipo:'tormenta', txt:'⛈️ '+_uiT('Tormenta') };
+			  if(c.temp>=35)                    return { tipo:'calor',    txt:'🥵 '+_uiT('Calor extremo') };
+			  if(c.temp<=0)                     return { tipo:'helada',   txt:'🥶 '+_uiT('Helada') };
+			  if([65,67,82].indexOf(c.code)>=0) return { tipo:'lluvia',   txt:'🌧️ '+_uiT('Lluvia fuerte') };
+			  if([75,86].indexOf(c.code)>=0)    return { tipo:'nieve',    txt:'❄️ '+_uiT('Nevada fuerte') };
+			  return null;
+			}
+			const IX_ALERTA_CLIMA='ix_alerta_clima_v1';
+			function _icaAvisarClima(tz, c){
+			  const a=icaAlertaClima(c);
+			  if(!a) return false;
+			  const d=new Date(), hoy=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+			  let hechos={};
+			  try{ hechos=JSON.parse(localStorage.getItem(IX_ALERTA_CLIMA)||'{}')||{}; }catch(e){}
+			  const k=tz+'|'+a.tipo;
+			  if(hechos[k]===hoy) return false;
+			  hechos[k]=hoy;
+			  try{ localStorage.setItem(IX_ALERTA_CLIMA, JSON.stringify(hechos)); }catch(e){}
+			  const ciudad=_icaNombreDeTz(tz);
+			  try{ ixNotificar(a.txt+' '+_uiT('en')+' '+ciudad, c.temp+'°', 'clima-'+k); }catch(e){}
+			  try{ ixToast(a.txt+' '+_uiT('en')+' '+ciudad); }catch(e){}
+			  return true;
+			}
 			// Se pide en segundo plano: la hora tiene que salir ya, sin esperar a la red.
 			function icaCargarClimas(){
 			  _icaWorldClocks.forEach(function(tz){
 			    if(!_icaTzValida(tz)) return;
 			    icaClimaDe(tz).then(function(c){
 			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
-			      if(el) el.textContent=(ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°';
+			      if(el) el.textContent=_icaClimaTexto(tz);
+			      _icaAvisarClima(tz, c);
 			    }).catch(function(){
 			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
 			      if(el) el.textContent='';   // sin internet, simplemente no se enseña
@@ -21459,7 +21493,9 @@
 			// dato de hace un rato que un hueco vacio mientras llega el nuevo.
 			function _icaClimaTexto(tz){
 			  const c=_icaClima[tz];
-			  return c ? ((ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°') : '';
+			  if(!c) return '';
+			  const a=icaAlertaClima(c);
+			  return (ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°'+(a?' · '+a.txt:'');
 			}
 			/* ── COMPARADOR DE HORAS ──────────────────────────────────────────
 			   Para quedar con alguien de otra ciudad no basta con ver su hora
@@ -21493,6 +21529,33 @@
 			  if((h>=7 && h<9) || (h>18 && h<=22)) return ['#ffd60a','rgba(255,214,10,.14)'];
 			  return ['#ff453a','rgba(255,69,58,.14)'];
 			}
+			/* La mejor hora para quedar (idea 31): se prueban las 24 horas de aquí
+			   y se mira el color de TODAS las ciudades a la vez (la tuya también).
+			   Verde = todas en horario de trabajo; si no hay ninguna así, la
+			   franja sin nadie durmiendo. Antes había que ir hora a hora a ojo. */
+			function icaMejoresHoras(){
+			  const zonas=(_icaWorldClocks||[]).filter(_icaTzValida);
+			  const verdes=[], ambar=[];
+			  for(let hb=0; hb<24; hb++){
+			    const hs=[hb].concat(zonas.map(function(tz){ return _icaHoraEn(tz,hb).h; }));
+			    const cols=hs.map(function(h){ return _icaColorHora(h)[0]; });
+			    if(cols.every(function(c){ return c==='#30d158'; })) verdes.push(hb);
+			    else if(cols.indexOf('#ff453a')<0) ambar.push(hb);
+			  }
+			  return { verdes:verdes, ambar:ambar };
+			}
+			// [9,10,11,15] → «09:00–12:00 · 15:00–16:00» (la franja termina al acabar la hora)
+			function _icaFranjas(horas){
+			  const tramos=[]; let ini=null, prev=null;
+			  horas.forEach(function(h){
+			    if(ini===null){ ini=h; prev=h; return; }
+			    if(h===prev+1){ prev=h; return; }
+			    tramos.push([ini,prev]); ini=h; prev=h;
+			  });
+			  if(ini!==null) tramos.push([ini,prev]);
+			  const f=function(h){ return String(h%24).padStart(2,'0')+':00'; };
+			  return tramos.map(function(t){ return f(t[0])+'–'+f(t[1]+1); }).join(' · ');
+			}
 			function icaCompMover(d){
 			  _icaCompHora=((_icaCompHora===null?new Date().getHours():_icaCompHora)+d+24)%24;
 			  icaPintarComparador();
@@ -21512,11 +21575,14 @@
 			    return;
 			  }
 			  // Selector de hora: una tira de horas del día, la elegida resaltada.
+			  const mejores=icaMejoresHoras();
 			  let tira='';
 			  for(let h=0;h<24;h++){
 			    const sel=(h===hb);
+			    const buena=mejores.verdes.indexOf(h)>=0;
 			    tira+='<button onclick="icaCompElegir('+h+')" style="flex-shrink:0;min-width:38px;padding:6px 4px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:'+(sel?'800':'600')+';'
-			      +(sel?'background:#0a84ff;color:var(--txt);':'background:rgba(255,255,255,.06);color:var(--txt-60);')+'">'+String(h).padStart(2,'0')+'</button>';
+			      +(sel?'background:#0a84ff;color:var(--txt);':'background:rgba(255,255,255,.06);color:var(--txt-60);')
+			      +(buena&&!sel?'box-shadow:inset 0 -3px 0 #30d158;':'')+'"'+(buena?' data-buena="1"':'')+'>'+String(h).padStart(2,'0')+'</button>';
 			  }
 			  let filas='';
 			  // Primero tu ciudad, que es la referencia de la que salen las demás.
@@ -21535,8 +21601,19 @@
 			      +  '<span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:'+col[0]+';">'+r.txt+'</span>'
 			      +'</span></div>';
 			  });
+			  let consejo;
+			  if(mejores.verdes.length){
+			    consejo='<div id="ica-comp-mejor" style="font-size:12px;font-weight:700;color:#30d158;margin-bottom:8px;">✅ '+_uiT('Buena hora para todos')+' ('+_uiT('tu hora')+'): '
+			      +escapeHtml(_icaFranjas(mejores.verdes))+'</div>';
+			  } else if(mejores.ambar.length){
+			    consejo='<div id="ica-comp-mejor" style="font-size:12px;font-weight:700;color:#ffd60a;margin-bottom:8px;">🟡 '+_uiT('No hay hora de trabajo para todos. Lo menos malo')+' ('+_uiT('tu hora')+'): '
+			      +escapeHtml(_icaFranjas(mejores.ambar))+'</div>';
+			  } else {
+			    consejo='<div id="ica-comp-mejor" style="font-size:12px;font-weight:700;color:#ff453a;margin-bottom:8px;">😴 '+_uiT('A cualquier hora alguien estará durmiendo')+'</div>';
+			  }
 			  c.innerHTML=
-			     '<div style="font-size:11px;opacity:.55;margin-bottom:8px;">Elige una hora tuya y mira qué hora sería en cada ciudad.</div>'
+			     consejo
+			    +'<div style="font-size:11px;opacity:.55;margin-bottom:8px;">Elige una hora tuya y mira qué hora sería en cada ciudad.</div>'
 			    +'<div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">'+tira+'</div>'
 			    +filas
 			    +'<div style="display:flex;gap:14px;font-size:10px;opacity:.55;margin-top:8px;">'
@@ -23296,6 +23373,87 @@
 			  e.stopPropagation();
 			  ixEnfoqueSalir();
 			}, true);
+
+			/* ═════════════ MODO MESITA (ideas 18 y 49) ═════════════
+			   Para dejar el móvil cargando en la mesita: la hora enorme, el tiempo
+			   y la próxima alarma, y NADA más. La pantalla no se apaga (Wake Lock)
+			   pero va muy atenuada, y de noche en rojo, que molesta menos a oscuras.
+			   Reutiliza lo que ya calcula la franja de arriba (_frClima, _frAlarma)
+			   para no tener dos sitios que puedan decir cosas distintas.
+			   Tocar en cualquier sitio o pulsar Esc lo cierra. */
+			let _mesTic=null, _mesWake=null;
+			function ixMesitaAbierta(){
+			  const ov=document.getElementById('ix-mesita');
+			  return !!ov && ov.style.display!=='none';
+			}
+			// De 22:00 a 7:00, en rojo: es la luz que menos despierta.
+			function _mesDeNoche(d){ const h=(d||new Date()).getHours(); return h>=22 || h<7; }
+			function _mesPintar(){
+			  const ov=document.getElementById('ix-mesita');
+			  if(!ov) return;
+			  const n=new Date();
+			  const hh=String(n.getHours()).padStart(2,'0'), mm=String(n.getMinutes()).padStart(2,'0');
+			  const noche=_mesDeNoche(n);
+			  ov.style.color = noche ? '#ff3b30' : '#f2f2f7';
+			  ov.style.opacity = noche ? '.55' : '.8';
+			  ov.dataset.noche = noche ? '1' : '0';
+			  let fecha='';
+			  try{ fecha=n.toLocaleDateString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{weekday:'long', day:'numeric', month:'long'}); }catch(e){}
+			  let clima=null, alarma=null;
+			  try{ clima=_frClima(); }catch(e){}
+			  try{ alarma=_frAlarma(); }catch(e){}
+			  const hora=document.getElementById('ix-mesita-hora'); if(hora) hora.textContent=hh+':'+mm;
+			  const f=document.getElementById('ix-mesita-fecha'); if(f) f.textContent=fecha;
+			  const extra=document.getElementById('ix-mesita-extra');
+			  if(extra){
+			    const trozos=[];
+			    if(clima) trozos.push(clima.emoji+' '+clima.texto);
+			    trozos.push(alarma ? alarma.emoji+' '+alarma.texto : '🔕 '+_uiT('Sin alarmas'));
+			    extra.textContent=trozos.join('     ');
+			  }
+			}
+			async function _mesWakeOn(){
+			  try{ if(navigator.wakeLock) _mesWake=await navigator.wakeLock.request('screen'); }catch(e){ _mesWake=null; }
+			}
+			function ixAbrirMesita(){
+			  let ov=document.getElementById('ix-mesita');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-mesita';
+			    ov.setAttribute('role','dialog');
+			    ov.setAttribute('aria-label',_uiT('Modo mesita'));
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482400;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;transition:color 1s,opacity 1s;padding:24px;';
+			    ov.innerHTML=''
+			      +'<div id="ix-mesita-hora" style="font-size:min(34vw,62vh);font-weight:200;line-height:.9;letter-spacing:-.04em;font-variant-numeric:tabular-nums;"></div>'
+			      +'<div id="ix-mesita-fecha" style="font-size:min(5vw,4.5vh);margin-top:2vh;text-transform:capitalize;"></div>'
+			      +'<div id="ix-mesita-extra" style="font-size:min(4.4vw,4vh);margin-top:3vh;white-space:pre;"></div>'
+			      +'<div style="position:absolute;bottom:14px;left:0;right:0;font-size:11px;opacity:.45;">'+escapeHtml(_uiT('Toca para salir'))+'</div>';
+			    ov.addEventListener('click', ixMesitaSalir);
+			    document.body.appendChild(ov);
+			  }
+			  ov.style.display='flex';
+			  _mesPintar();
+			  clearInterval(_mesTic);
+			  _mesTic=setInterval(_mesPintar, 1000);
+			  _mesWakeOn();
+			  try{ _trackAppOpen('mesita'); }catch(e){}
+			}
+			function ixMesitaSalir(){
+			  const ov=document.getElementById('ix-mesita');
+			  if(ov) ov.style.display='none';
+			  clearInterval(_mesTic); _mesTic=null;
+			  try{ if(_mesWake){ _mesWake.release(); _mesWake=null; } }catch(e){}
+			}
+			document.addEventListener('keydown', function(e){
+			  if(e.key!=='Escape' || !ixMesitaAbierta()) return;
+			  e.stopPropagation();
+			  ixMesitaSalir();
+			}, true);
+			// El Wake Lock se suelta solo al cambiar de pestaña: al volver, se pide
+			// otra vez, que si no la pantalla se apagaría a los pocos minutos.
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden && ixMesitaAbierta()){ _mesWakeOn(); _mesPintar(); }
+			});
 			// Al volver a la pestaña, lo que se ve tiene que ser la hora buena ya,
 			// sin esperar medio segundo al siguiente tic.
 			document.addEventListener('visibilitychange', function(){
@@ -23319,7 +23477,8 @@
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
 			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca canales de TV del mundo por país, idioma o deporte', open:'openSmartFinderModal', assets:[] },
 			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
-			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] }
+			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] },
+			  { id:'mesita',   n:'Modo mesita',   icon:'🌙', d:'Hora grande, tiempo y próxima alarma para dejar el móvil cargando de noche', open:'ixAbrirMesita', assets:[] },
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [
