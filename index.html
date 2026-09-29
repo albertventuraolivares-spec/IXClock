@@ -16949,6 +16949,7 @@
 			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
 			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
 			    '📋 IXBand: trae un estribillo (o cualquier sección) de otra de tus canciones con el botón 📋 de la barra de secciones',
+			    '📤 «Compartir mi día» (en Avisos): una imagen con la hora, el tiempo, tu próxima alarma y lo de hoy, lista para mandar por WhatsApp',
 			  ]},
 			  { v:'4.6', fecha: '29 de septiembre de 2026', titulo:'Tu voz, tu canción, tu día', cambios: [
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
@@ -24032,11 +24033,78 @@
 			    +l.map(function(x){ return '<div style="font-size:13px;line-height:1.55;">'+escapeHtml(x)+'</div>'; }).join('')
 			    +'</div>';
 			}
+			/* ── TARJETA DEL DÍA PARA COMPARTIR (idea 38) ──
+			   Una imagen con la hora, la fecha, el tiempo, la próxima alarma y lo
+			   de hoy, para mandarla por WhatsApp. Lee lo mismo que la franja de
+			   arriba (_frClima, _frAlarma, _frFest, _frEvento) y «Hoy en IXClocK»,
+			   así que no puede decir otra cosa. Se dibuja en un canvas, aquí:
+			   no sale nada del aparato hasta que TÚ la compartes.            */
+			function ixTarjetaDatos(){
+			  const n=new Date();
+			  let fecha='';
+			  try{ fecha=n.toLocaleDateString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{weekday:'long', day:'numeric', month:'long'}); }catch(e){}
+			  const filas=[];
+			  const add=function(f){ try{ const d=f(); if(d) filas.push(d); }catch(e){} };
+			  add(function(){ const c=_frClima(); return c && (c.emoji+' '+c.texto); });
+			  add(function(){ const a=_frAlarma(); return a && ('⏰ '+a.texto); });
+			  add(function(){ const e=_frEvento(); return e && ('📅 '+(e.titulo||e.texto)); });
+			  add(function(){ const f=_frFest(); return f && (f.emoji+' '+(f.titulo||f.texto)); });
+			  add(function(){ const h=ixHoyResumen(); return h.enfoque.min>0 && ('🎯 '+_enfMinTexto(h.enfoque.min)+' '+_uiT('de enfoque')); });
+			  return { hora:String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'),
+			           fecha:fecha.charAt(0).toUpperCase()+fecha.slice(1), filas:filas.slice(0,5) };
+			}
+			function ixTarjetaCanvas(){
+			  const d=ixTarjetaDatos();
+			  const W=1080, H=1350, cv=document.createElement('canvas');
+			  cv.width=W; cv.height=H;
+			  const g=cv.getContext('2d');
+			  const fondo=g.createLinearGradient(0,0,W,H);
+			  fondo.addColorStop(0,'#0b1a3a'); fondo.addColorStop(.55,'#1d1446'); fondo.addColorStop(1,'#3a0f3f');
+			  g.fillStyle=fondo; g.fillRect(0,0,W,H);
+			  const luz=g.createRadialGradient(W*.8,H*.15,10,W*.8,H*.15,620);
+			  luz.addColorStop(0,'rgba(10,132,255,.45)'); luz.addColorStop(1,'rgba(10,132,255,0)');
+			  g.fillStyle=luz; g.fillRect(0,0,W,H);
+			  const fam='-apple-system, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif';
+			  g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle='#ffffff';
+			  g.font='200 300px '+fam; g.fillText(d.hora, W/2, 440);
+			  g.globalAlpha=.8; g.font='500 54px '+fam; g.fillText(d.fecha, W/2, 540); g.globalAlpha=1;
+			  let y=720;
+			  d.filas.forEach(function(t){
+			    g.fillStyle='rgba(255,255,255,.1)';
+			    const x=110, w=W-220, h=108, r=30;
+			    g.beginPath(); g.moveTo(x+r,y-74); g.arcTo(x+w,y-74,x+w,y+34,r); g.arcTo(x+w,y+34,x,y+34,r); g.arcTo(x,y+34,x,y-74,r); g.arcTo(x,y-74,x+w,y-74,r); g.closePath(); g.fill();
+			    g.fillStyle='#ffffff'; g.font='600 46px '+fam;
+			    let txt=t; while(g.measureText(txt).width>w-60 && txt.length>4) txt=txt.slice(0,-2)+'…';
+			    g.fillText(txt, W/2, y);
+			    y+=138;
+			  });
+			  g.globalAlpha=.55; g.font='600 34px '+fam; g.fillText('IXClocK · ixclockplus.netlify.app', W/2, H-70); g.globalAlpha=1;
+			  return cv;
+			}
+			async function ixCompartirDia(){
+			  const cv=ixTarjetaCanvas();
+			  const blob=await new Promise(function(r){ cv.toBlob(r,'image/png'); });
+			  if(!blob){ try{ ixToast('⚠️ '+_uiT('No se pudo crear la imagen')); }catch(e){} return null; }
+			  const f=new File([blob],'ixclock-hoy.png',{type:'image/png'});
+			  try{
+			    if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
+			      await navigator.share({ files:[f], title:_uiT('Mi día en IXClocK') });
+			      return 'compartida';
+			    }
+			  }catch(e){ if(e && e.name==='AbortError') return 'cancelada'; }
+			  // Sin «compartir» (ordenador): se descarga.
+			  const a=document.createElement('a');
+			  a.href=URL.createObjectURL(blob); a.download='ixclock-hoy.png';
+			  document.body.appendChild(a); a.click(); a.remove();
+			  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 30000);
+			  try{ ixToast('🖼️ '+_uiT('Tarjeta del día descargada')); }catch(e){}
+			  return 'descargada';
+			}
 			function ixAvisosPintar(){
 			  const caja=document.getElementById('ix-avisos-lista');
 			  if(!caja) return;
 			  const l=ixAvisosLeer();
-			  const hoy=ixHoyHtml();
+			  const hoy=ixHoyHtml()+'<button id="ix-compartir-dia" onclick="ixCompartirDia()" style="width:100%;margin-bottom:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">📤 '+escapeHtml(_uiT('Compartir mi día'))+'</button>';
 			  if(!l.length){ caja.innerHTML=hoy+ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
 			  caja.innerHTML=hoy+l.map(function(a){
 			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'

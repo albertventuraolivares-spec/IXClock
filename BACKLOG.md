@@ -150,8 +150,6 @@ Comprobado aquí:
     navegación, la radio y la hora grande. Reaprovecha Mapas y Radio.
     («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
     convertir una nota en alarma.)
-38. **Tarjeta del día compartible**: imagen con hora, clima y próxima alarma
-    para mandar por WhatsApp. Usa los mismos datos que la franja de resumen.
 
 **Ya cubiertas, no repetir**:
 - «Notificaciones reales en segundo plano» y «Modo Antes de salir» se pidieron
@@ -169,6 +167,13 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Tarjeta del día para compartir** (idea 38, 29 de sept). Botón «📤
+  Compartir mi día» en Avisos: `ixTarjetaCanvas` dibuja 1080×1350 con hora,
+  fecha y las filas de la franja (`_frClima`, `_frAlarma`, `_frEvento`,
+  `_frFest`) + minutos de enfoque. Comparte el PNG con `navigator.share`
+  (archivos) o lo descarga; cancelar no descarga. Nada sale del aparato hasta
+  que lo compartes.
+  - Probado con `pruebas/tarjetadia.js`: 12/12; antes 1/12.
 - **Traer una sección de otra canción** (idea 34, 29 de sept). Botón 📋 en la
   barra de secciones: `gbSecTraer` lista Mis canciones (menos la abierta) con
   sus secciones y nº de pistas; `gbSecTraerDe` copia en profundidad las tomas
