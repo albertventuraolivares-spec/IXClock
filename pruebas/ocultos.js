@@ -17,7 +17,7 @@ const ROOT='/home/user/IXClock';
 const PUBLICOS=[
   /^index\.html$/, /^privacidad\.html$/, /^robots\.txt$/, /^sitemap\.xml$/, /^sw\.js$/,
   /^manifest\.webmanifest$/, /^tailwind\.css$/, /^favicon[^/]*$/, /^icon-[^/]+\.png$/,
-  /^apple-touch-icon\.png$/, /^screenshot-[^/]+\.png$/, /^videos\/[^/]+$/,
+  /^apple-touch-icon\.png$/, /^screenshot-[^/]+\.png$/, /^videos\/[^/]+$/, /^og-image\.jpg$/,
 ];
 
 // Mini lector de los bloques [[redirects]] del toml

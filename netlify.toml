@@ -25,6 +25,63 @@
     Content-Security-Policy = "frame-ancestors 'self'; object-src 'none'"
     Permissions-Policy = "usb=(), serial=(), bluetooth=(), hid=(), payment=(), browsing-topics=()"
 
+# Caché de los estáticos (idea 73). Sin esto Netlify manda «max-age=0» y el
+# navegador pregunta por cada icono en cada visita. Los nombres NO llevan
+# huella (icon-192.png siempre se llama igual), así que nada de «immutable»
+# ni de un año: si se cambia un icono, en como mucho una semana llega a todos,
+# y stale-while-revalidate hace que se renueve por detrás sin esperar.
+# index.html, sw.js y tailwind.css NO van aquí a propósito: si se quedaran en
+# caché, una actualización de la app tardaría días en verse.
+# Con nombre exacto: no está claro que Netlify acepte «/*.png» en `for`.
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/favicon-16.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/favicon-32.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/apple-touch-icon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/icon-192.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/icon-512.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/icon-512-maskable.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/screenshot-wide.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/screenshot-narrow.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/og-image.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/videos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
 # Archivos internos que NO son parte de la web (idea 70 del backlog).
 # Como `publish = "."` sube la carpeta entera, sin esto cualquiera podía abrir
 # /BACKLOG.md, /pruebas/..., el código de las funciones o package.json.
