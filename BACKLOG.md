@@ -152,11 +152,6 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-69. **Lighthouse de verdad**: el registro de npm ya responde (28 de sept), así
-    que se puede probar `npx lighthouse` contra el servidor local con el
-    Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
-    fiarse del informe, y atacar lo que salga.
-
 74. **Pasar las pruebas en GitHub Actions** (`sh pruebas/todas.sh` en cada PR)
     para que un fallo se vea antes de fusionar. Necesita Chromium de
     Playwright en el runner. Mediano.
@@ -185,6 +180,19 @@ Comprobado aquí:
     (la app Reloj). Mirar si ese panel se sigue usando; si sí, añadir la
     clave (y a `pruebas/nubeclaves.js`), si no, valorar quitarlo.
 
+81. **Rendimiento (Lighthouse 31 en móvil)**: FCP 8,6 s, 7.585 elementos en
+    el DOM, 24,7 s de trabajo del hilo principal con CPU ×4. Viene de que
+    `index.html` (1,3 MB) monta TODAS las apps al cargar. Lo que de verdad
+    lo arreglaría es crear las apps al abrirlas (plantillas o `<template>`),
+    que es un cambio grande: hacerlo app por app, midiendo con Lighthouse,
+    empezando por las más pesadas. NOTA: aquí el servidor no comprime y la
+    red externa está cortada; en Netlify saldrá algo mejor.
+82. **Pedir la ubicación al abrir** (Lighthouse «geolocation-on-start»): el
+    tiempo la pide nada más cargar. Lo recomendado es pedirla al tocar un
+    botón «📍 Usar mi ubicación» (y usarla sola si el permiso ya estaba
+    dado). Cambia lo que ve alguien nuevo (sin tiempo hasta que toque):
+    **PREGUNTAR AL USUARIO** antes.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
@@ -211,6 +219,15 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Lighthouse de verdad** (idea 69, 29 de sept). Instalado en el scratchpad
+  (`npm install lighthouse@12`) contra `python3 -m http.server` con el
+  Chromium de `/opt/pw-browsers`, móvil. **Antes: rendimiento 31,
+  accesibilidad 86, buenas prácticas 89, SEO 92. Después: accesibilidad 98,
+  SEO 100.** Arreglado: 32 controles sin nombre (`aria-label`), 2 enlaces
+  sin `href`, contraste de `.pill-accent` (color-mix con 22 % de negro,
+  3,6 → 5,6), saltos de títulos (h1→h4 y h1→h3 pasan a h2).
+  `pruebas/nombres.js` lo comprueba en TODA la página, también paneles
+  cerrados (más estricto que Lighthouse). Sin arreglar y apuntado: 81 y 82.
 - **Tanda del 29 de sept (madrugada)** — ideas 43, 54, 55, 60 y tres fallos:
   - **FALLO alarmas con fecha**: había DOS comprobadores de `_icaAlarms`; el
     viejo (`setInterval` de 5 s) miraba solo la hora, así que un recordatorio

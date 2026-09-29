@@ -46,20 +46,20 @@ const ALARMAS=[
  const o={};
  // Día 1: de 8:59 a 9:02
  await p.clock.setSystemTime(new Date('2026-10-01T08:59:30-04:00'));
- await p.clock.runFor(3*60*1000);
+ await p.clock.runFor(75*1000);   // de xx:59:30 a xx:00:45: basta para cruzar la hora
  o.dia1=await cuenta();
  // Día 2
  await p.clock.setSystemTime(new Date('2026-10-02T08:59:30-04:00'));
- await p.clock.runFor(3*60*1000);
+ await p.clock.runFor(75*1000);   // de xx:59:30 a xx:00:45: basta para cruzar la hora
  o.dia2=await cuenta();
  // Día 5: el suyo
  await p.clock.setSystemTime(new Date('2026-10-05T08:59:30-04:00'));
- await p.clock.runFor(3*60*1000);
+ await p.clock.runFor(75*1000);   // de xx:59:30 a xx:00:45: basta para cruzar la hora
  o.dia5=await cuenta();
  o.trasSonar=await p.evaluate(()=>_icaAlarms.map(a=>({l:a.label,on:a.on})));
  // Día 6: ya no
  await p.clock.setSystemTime(new Date('2026-10-06T08:59:30-04:00'));
- await p.clock.runFor(3*60*1000);
+ await p.clock.runFor(75*1000);   // de xx:59:30 a xx:00:45: basta para cruzar la hora
  o.dia6=await cuenta();
  await b.close(); srv.close();
 
