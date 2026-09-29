@@ -13844,6 +13844,9 @@
 			   nada, ni una nota metida en una carpeta que ya no existe.       */
 			let _notasCarpeta = null;          // null = todas
 			const NOTAS_SIN = '\u0000sin';     // marca interna de «sin carpeta»
+			// Una carpeta que ya empieza por su propio emoji («📍 Tokio») no lleva
+			// además el 📁: saldría «📁 📍 Tokio».
+			function notasIcono(c){ return /^\p{Extended_Pictographic}/u.test(String(c||'')) ? '' : '📁 '; }
 			function notasCarpetas(){
 			  const vistas = {};
 			  notes.forEach(function(n){ if(n && n.carpeta) vistas[n.carpeta]=1; });
@@ -13868,7 +13871,7 @@
 			  cs.forEach(function(c){
 			    const n=notes.filter(function(x){ return x.carpeta===c; }).length;
 			    h+='<button class="notas-chip'+(_notasCarpeta===c?' on':'')+'" onclick="notasIrCarpeta('
-			      +escapeHtml(JSON.stringify(c))+')" title="'+escapeHtml(c)+'">📁 '+escapeHtml(c)+' ('+n+')</button>';
+			      +escapeHtml(JSON.stringify(c))+')" title="'+escapeHtml(c)+'">'+notasIcono(c)+escapeHtml(c)+' ('+n+')</button>';
 			  });
 			  if(sueltas) h+='<button class="notas-chip'+(_notasCarpeta===NOTAS_SIN?' on':'')
 			    +'" onclick="notasIrCarpeta(NOTAS_SIN)">📄 '+_uiT('Sin carpeta')+' ('+sueltas+')</button>';
@@ -13927,7 +13930,7 @@
 			    row.onclick = ()=>notesOpen(n.id);
 			    row.innerHTML = '<div class="note-title">'+(n.fijada?'<span class="note-pin">📌 </span>':'')+escapeHtml(title)+'</div>'
 			      +'<div class="note-meta"><span>'+notesFormatDate(n.updatedAt||Date.now())+'</span>'
-			      +(n.carpeta && _notasCarpeta===null ? '<span>📁 '+escapeHtml(n.carpeta)+'</span>' : '')
+			      +(n.carpeta && _notasCarpeta===null ? '<span>'+notasIcono(n.carpeta)+escapeHtml(n.carpeta)+'</span>' : '')
 			      +(function(){ const pr=notasProgreso(n.content);
 			          return pr ? '<span>☑ '+pr.hechas+'/'+pr.total+'</span>' : ''; })()
 			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
@@ -13952,7 +13955,7 @@
 			    bf.style.color = on ? '#1c1c1e' : 'var(--txt)';
 			    bf.title = on ? 'Quitar de arriba' : 'Fijar arriba';
 			  }
-			  if(bc) bc.innerText = (n && n.carpeta) ? ('📁 '+n.carpeta) : '📁 Carpeta';
+			  if(bc) bc.innerText = (n && n.carpeta) ? (notasIcono(n.carpeta)+n.carpeta) : '📁 Carpeta';
 			}
 			// Mover a una carpeta. Sin prompt() del navegador: en el movil sale feo
 			// y no deja ver las carpetas que ya tienes.
@@ -13971,7 +13974,7 @@
 			    h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:12px;">';
 			    cs.forEach(function(c){
 			      h+='<button class="notas-chip'+(n.carpeta===c?' on':'')+'" onclick="notasMover('
-			        +escapeHtml(JSON.stringify(c))+')">📁 '+escapeHtml(c)+'</button>';
+			        +escapeHtml(JSON.stringify(c))+')">'+notasIcono(c)+escapeHtml(c)+'</button>';
 			    });
 			    h+='</div>';
 			  }
@@ -13997,7 +14000,7 @@
 			  saveNotes();
 			  notasCerrarHojaCarpeta();
 			  notasPintarBotones();
-			  try{ ixToast(carpeta?('📁 '+carpeta):'Fuera de la carpeta'); }catch(e){}
+			  try{ ixToast(carpeta?(notasIcono(carpeta)+carpeta):'Fuera de la carpeta'); }catch(e){}
 			}
 			function notasCrearCarpeta(){
 			  const inp=document.getElementById('notas-carpeta-nueva');
@@ -16537,6 +16540,7 @@
 			    '🧭 Brújula → «📍 Mis ciudades»: la distancia y una flecha que apunta hacia cada ciudad de tu reloj mundial',
 			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
 			    '💱 Modo Viaje: cada ciudad del reloj mundial tiene un botón con su moneda (💱 JPY, 💱 EUR…) que abre la calculadora ya convirtiendo a ella',
+			    '📝 Notas por ciudad: el botón 📝 de cada ciudad del reloj mundial abre sus notas («qué llevar a Tokio») o empieza la primera',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
@@ -21684,6 +21688,31 @@
 			  convertCurrency();
 			  return cur;
 			}
+			/* ── Notas de una ciudad (idea 24) ──
+			   «Qué llevar a Tokio»: las notas de una ciudad viven en la carpeta
+			   «📍 Tokio», que es una carpeta normal de Notas (se buscan, se
+			   sincronizan y se mueven igual que las demás). El reloj mundial
+			   enseña cuántas hay y las abre de un toque; si no hay ninguna,
+			   empieza la primera. */
+			function ixCarpetaDeTz(tz){ return '📍 '+_icaNombreDeTz(tz); }
+			function ixNotasDeCiudad(tz){
+			  const c=ixCarpetaDeTz(tz);
+			  try{ return notes.filter(function(n){ return n && n.carpeta===c; }).length; }catch(e){ return 0; }
+			}
+			function ixAbrirNotasCiudad(tz){
+			  const c=ixCarpetaDeTz(tz);
+			  try{ if(!notesPanelOpen) toggleNotesPanel(); }catch(e){}
+			  if(!ixNotasDeCiudad(tz)){
+			    const id='note-'+Date.now();
+			    notes.push({ id:id, content:_uiT('Para')+' '+_icaNombreDeTz(tz)+':\n', carpeta:c, updatedAt:Date.now() });
+			    saveNotes();
+			    notesOpen(id);
+			    return id;
+			  }
+			  try{ notesShowList(); }catch(e){}
+			  notasIrCarpeta(c);
+			  return c;
+			}
 			// Un id de HTML no puede llevar barras: America/New_York -> America-New_York
 			function _icaIdSeguro(tz){ return tz.replace(/[^A-Za-z0-9_-]/g,'-'); }
 			function icaRenderWorldClocks(){
@@ -21725,6 +21754,8 @@
 			      +'<div><div style="font-size:13px;opacity:.5;">Hoy <span id="ica-clima-'+_icaIdSeguro(tz)+'" style="margin-left:4px;">'+_icaClimaTexto(tz)+'</span></div><div style="font-size:17px;font-weight:500;">'+escapeHtml(city)+'</div></div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +  (function(){ const n=ixNotasDeCiudad(tz);
+			           return '<button class="ica-notas" onclick="ixAbrirNotasCiudad(&quot;'+tz+'&quot;)" title="Notas de esta ciudad" aria-label="Notas de '+escapeHtml(city)+(n?' ('+n+')':'')+'" style="background:rgba(255,214,10,.14);border:1px solid rgba(255,214,10,.4);color:#ffd60a;height:30px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;">📝'+(n?' '+n:'')+'</button>'; })()
 			      +  (ixMonedaDeTz(tz) ? '<button class="ica-moneda" onclick="ixViajeMoneda(&quot;'+tz+'&quot;)" title="Convertir a su moneda" aria-label="Convertir a '+ixMonedaDeTz(tz)+'" style="background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.4);color:#30d158;height:30px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;">💱 '+ixMonedaDeTz(tz)+'</button>' : '')
 			      +  '<button onclick="icaRemoveWorldClock(&quot;'+tz+'&quot;)" title="Quitar" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;">✕</button>'
 			      +'</div>'

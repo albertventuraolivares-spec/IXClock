@@ -81,9 +81,6 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
-    que salgan al abrir esa ciudad, y convertibles en alarma de un toque.
-    Pedida dos veces.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
 **IXBand**:
@@ -165,6 +162,10 @@ Comprobado aquí:
     dado). Cambia lo que ve alguien nuevo (sin tiempo hasta que toque):
     **PREGUNTAR AL USUARIO** antes.
 
+83. **Convertir una nota en alarma de un toque** (lo que faltó de la 24):
+    un botón ⏰ en el editor de notas que abra la hoja de alarma con la
+    primera línea de la nota como etiqueta.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
@@ -191,6 +192,12 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Notas por ciudad** (idea 24, 29 de sept). Carpeta normal de Notas
+  «📍 Ciudad» (`ixCarpetaDeTz`): se busca, sincroniza y mueve como las demás.
+  Botón 📝 N en cada fila del reloj mundial (`ixAbrirNotasCiudad`): abre la
+  carpeta o crea la primera nota «Para Tokio:». `notasIcono(c)` quita el 📁
+  si la carpeta ya empieza por emoji. `pruebas/notasciudad.js`. FALTA de la
+  idea original: «convertir la nota en alarma de un toque» (idea 83).
 - **Modo Viaje** (idea 25, 29 de sept). `ixPaisDeTz` saca el país de la
   bandera de `ICA_CITIES`, `IX_MONEDA_PAIS` lo pasa a moneda (solo las que
   hay en `IX_CURRENCIES`; si no, no hay botón) y `ixViajeMoneda(tz)` abre la
