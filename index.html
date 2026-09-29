@@ -16954,6 +16954,8 @@
 			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
 			    '🔁 IXBand → Pistas → «Práctica lenta»: repite la sección que estás viendo al 70 % y sube un 5 % en cada vuelta hasta el tempo de verdad, para aprenderla sin agobios',
 			    '🎙️ Notas de voz: en cualquier nota, toca 🎙️ para grabar y otra vez para parar. La grabación queda dentro de la nota y solo en tu aparato',
+			    '🎯 Modo Enfoque: escribe en qué vas a trabajar y verás en qué se te fue el día («Tesis 50 min · Correo 25 min»)',
+			    '📋 «Hoy en IXClocK» en la app Avisos: tus sesiones de enfoque, las alarmas que sonaron y cuánta radio escuchaste hoy',
 			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
@@ -23896,12 +23898,60 @@
 			  if(h<24) return _uiT('hace')+' '+h+' h';
 			  try{ return new Date(t).toLocaleString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; }
 			}
+			/* ── HOY EN IXCLOCK (idea 63) ──
+			   Arriba de los avisos, lo de hoy en una tarjeta: enfoque (y en qué),
+			   alarmas que sonaron y cuánta radio has escuchado. Solo salen las
+			   líneas que tienen algo: una tarjeta de ceros no dice nada.
+			   La radio no se contaba en ningún sitio: ahora, cada 30 s, si está
+			   sonando se suma lo que ha pasado (con tope, para que una pestaña
+			   dormida no apunte horas que no escuchaste).                     */
+			const IX_RADIO_HOY='ix_radio_hoy_v1';
+			let _ixRadioUltimo=Date.now();
+			function _ixRadioContar(){
+			  const ahora=Date.now(), paso=Math.min(ahora-_ixRadioUltimo, 90000);
+			  _ixRadioUltimo=ahora;
+			  let sonando=false; try{ sonando=!!isPlaying; }catch(e){}
+			  if(!sonando || !(paso>0)) return;
+			  let r=null; try{ r=JSON.parse(localStorage.getItem(IX_RADIO_HOY)||'null'); }catch(e){}
+			  const hoy=_enfHoy();
+			  if(!r || r.d!==hoy) r={d:hoy, ms:0};
+			  r.ms=(r.ms||0)+paso;
+			  try{ localStorage.setItem(IX_RADIO_HOY, JSON.stringify(r)); }catch(e){}
+			}
+			setInterval(_ixRadioContar, 30000);
+			function ixHoyResumen(){
+			  const e=enfoqueResumen();
+			  let alarmas=0;
+			  try{
+			    const hoy=new Date().toLocaleDateString();
+			    alarmas=(JSON.parse(localStorage.getItem('ica_alarm_history')||'[]')||[]).filter(function(h){ return h && h.date===hoy; }).length;
+			  }catch(err){}
+			  let radioMin=0;
+			  try{ const r=JSON.parse(localStorage.getItem(IX_RADIO_HOY)||'null'); if(r && r.d===_enfHoy()) radioMin=Math.floor((r.ms||0)/60000); }catch(err){}
+			  return { enfoque:{sesiones:e.sesionesHoy, min:e.minutosHoy, tareas:e.tareas||[]}, alarmas:alarmas, radioMin:radioMin };
+			}
+			function ixHoyHtml(){
+			  const r=ixHoyResumen(), l=[];
+			  if(r.enfoque.sesiones){
+			    let t='🎯 '+r.enfoque.sesiones+' '+_uiT(r.enfoque.sesiones===1?'sesión de enfoque':'sesiones de enfoque')+' · '+_enfMinTexto(r.enfoque.min);
+			    if(r.enfoque.tareas.length) t+=' ('+r.enfoque.tareas.slice(0,3).map(function(x){ return x.tarea+' '+_enfMinTexto(x.m); }).join(', ')+')';
+			    l.push(t);
+			  }
+			  if(r.alarmas) l.push('⏰ '+r.alarmas+' '+_uiT(r.alarmas===1?'alarma sonó':'alarmas sonaron'));
+			  if(r.radioMin>=1) l.push('📻 '+_enfMinTexto(r.radioMin)+' '+_uiT('de radio'));
+			  if(!l.length) return '';
+			  return '<div id="ix-hoy" style="padding:12px;border-radius:14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(10,132,255,.18),rgba(94,92,230,.14));border:1px solid rgba(255,255,255,.1);">'
+			    +'<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:6px;">'+escapeHtml(_uiT('Hoy en IXClocK'))+'</div>'
+			    +l.map(function(x){ return '<div style="font-size:13px;line-height:1.55;">'+escapeHtml(x)+'</div>'; }).join('')
+			    +'</div>';
+			}
 			function ixAvisosPintar(){
 			  const caja=document.getElementById('ix-avisos-lista');
 			  if(!caja) return;
 			  const l=ixAvisosLeer();
-			  if(!l.length){ caja.innerHTML=ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
-			  caja.innerHTML=l.map(function(a){
+			  const hoy=ixHoyHtml();
+			  if(!l.length){ caja.innerHTML=hoy+ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
+			  caja.innerHTML=hoy+l.map(function(a){
 			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'
 			      +'<div style="display:flex;justify-content:space-between;gap:8px;"><b style="font-size:13px;">'+escapeHtml(a.titulo)+'</b>'
 			      +'<span style="font-size:10px;opacity:.55;white-space:nowrap;">'+escapeHtml(_ixHaceCuanto(a.t))+'</span></div>'
@@ -24162,7 +24212,10 @@
 			function _enfApuntar(minutos){
 			  if(!isFinite(minutos) || minutos<=0) return;
 			  const h=_enfHistLeer();
-			  h.unshift({ d:_enfHoy(), m:Math.round(minutos), t:Date.now() });
+			  const e={ d:_enfHoy(), m:Math.round(minutos), t:Date.now() };
+			  const tarea=String(_enfCfg.tarea||'').trim().slice(0,40);
+			  if(tarea) e.tarea=tarea;
+			  h.unshift(e);
 			  if(h.length>IX_ENF_HIST_MAX) h.length=IX_ENF_HIST_MAX;
 			  try{ localStorage.setItem(IX_ENF_HIST, JSON.stringify(h)); }catch(e){}
 		}
@@ -24184,8 +24237,13 @@
 			  const deHoy=h.filter(function(x){ return x&&x.d===hoy; });
 			  const minHoy=deHoy.reduce(function(a,x){ return a+(x.m||0); },0);
 			  const minTotal=h.reduce(function(a,x){ return a+(x.m||0); },0);
+			  // Minutos de hoy por tarea (idea 63), de más a menos.
+			  const porTarea={};
+			  deHoy.forEach(function(x){ if(x.tarea) porTarea[x.tarea]=(porTarea[x.tarea]||0)+(x.m||0); });
+			  const tareas=Object.keys(porTarea).map(function(k){ return {tarea:k, m:porTarea[k]}; })
+			    .sort(function(a,b){ return b.m-a.m; });
 			  return { sesionesHoy:deHoy.length, minutosHoy:minHoy,
-			           sesionesTotal:h.length, minutosTotal:minTotal, racha:enfoqueRacha() };
+			           sesionesTotal:h.length, minutosTotal:minTotal, racha:enfoqueRacha(), tareas:tareas };
 		}
 			function _enfMinTexto(m){
 			  if(m<60) return m+' min';
@@ -24244,6 +24302,8 @@
 			    if(pu) pu.innerHTML=_enfPuntos(p, enCiclo);
 			    const hs=document.getElementById('enf-hechos');
 			    if(hs) hs.innerHTML=_enfLineaHechos();
+			    const ts=document.getElementById('enf-tareas');
+			    if(ts) ts.innerHTML=_enfLineaTareas();
 			    return;
 			  }
 			  ov.innerHTML=
@@ -24254,6 +24314,8 @@
 			    +  '<div style="width:100%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div id="enf-barra" style="height:100%;width:0;background:'+color+';transition:width .9s linear;"></div></div>'
 			    +  '<div id="enf-puntos" style="display:flex;gap:8px;">'+_enfPuntos(p, enCiclo)+'</div>'
 			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+_enfLineaHechos()+'</div>'
+			    +  '<input id="enf-tarea" type="text" maxlength="40" value="'+escapeHtml(_enfCfg.tarea||'')+'" oninput="ixEnfoqueTarea(this.value)" placeholder="'+escapeHtml(_uiT('¿En qué vas a trabajar?'))+'" aria-label="'+escapeHtml(_uiT('Tarea'))+'" style="width:min(320px,86vw);text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-full,999px);color:var(--txt);font-size:13px;padding:9px 14px;outline:none;">'
+			    +  '<div id="enf-tareas" style="font-size:11px;opacity:.6;text-align:center;">'+_enfLineaTareas()+'</div>'
 			    +  '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">'
 			    +    '<button id="enf-pausa" onclick="ixEnfoquePausar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:none;background:var(--txt);color:#000;font-size:13px;font-weight:800;cursor:pointer;">⏸ '+_uiT('Pausar')+'</button>'
 			    +    '<button onclick="ixEnfoqueSaltar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⏭ '+_uiT('Saltar')+'</button>'
@@ -24275,6 +24337,17 @@
 			  if(r.minutosHoy>0) t+=' · '+_enfMinTexto(r.minutosHoy);
 			  if(r.racha>=2) t+='   🔥 '+r.racha+' '+_uiT('días seguidos');
 			  return escapeHtml(t);
+			}
+			// «Tesis 50 min · Correo 25 min»: en qué se fue el tiempo de hoy.
+			function _enfLineaTareas(){
+			  const t=enfoqueResumen().tareas||[];
+			  if(!t.length) return '';
+			  return escapeHtml(_uiT('Hoy')+': '+t.slice(0,4).map(function(x){ return x.tarea+' '+_enfMinTexto(x.m); }).join(' · '));
+			}
+			// La tarea se guarda al escribirla y se apunta en cada sesión que termina.
+			function ixEnfoqueTarea(v){
+			  _enfCfg.tarea=String(v||'').slice(0,40);
+			  _enfGuardar();
 			}
 			function _enfPuntos(p, enCiclo){
 			  let h='';

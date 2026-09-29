@@ -87,7 +87,10 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     misma canción; falta copiar un estribillo de una canción a otra.
 35. **Pista de voz por micrófono** mezclada con los instrumentos.
 36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
-    por separado y nunca se cruzan.
+    por separado y nunca se cruzan. ⚠️ Mirado el 29 de sept y aparcado: casi
+    ninguna emisora manda cabeceras CORS, y sin ellas el navegador da SILENCIO
+    al capturar el audio. Haría falta pasar el stream por `hls-proxy`, y eso es
+    tráfico de audio por Netlify: decidirlo antes.
 
 **Mas pedidas (llegaron repetidas, aqui una sola vez)**:
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
@@ -95,8 +98,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     internet».
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
-63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
-    («Hoy en IXClocK»: enfoque + alarmas + radio).
 
 ### Informe de auditoría web que pegó el usuario (28 de sept) — YA VERIFICADO
 Es un informe genérico de otra IA: habla de tienda, «Comprar ahora», formulario
@@ -172,6 +173,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Tarea en Modo Enfoque + «Hoy en IXClocK»** (idea 63, 29 de sept). Campo
+  «¿En qué vas a trabajar?» (`_enfCfg.tarea`); cada sesión terminada se apunta
+  con su tarea y debajo sale el reparto de hoy (`enfoqueResumen().tareas`). La
+  radio antes no se contaba: `_ixRadioContar` suma cada 30 s lo que ha sonado
+  (tope 90 s por salto, para no contar pestañas dormidas) en `ix_radio_hoy_v1`.
+  La app Avisos enseña arriba la tarjeta `ixHoyHtml()` con enfoque, alarmas que
+  sonaron hoy y minutos de radio, solo con lo que tenga datos.
+  - Probado con `pruebas/hoy.js` (reloj controlado): 13/13; antes 1/13.
 - **Notas de voz** (idea 56, 29 de sept). Botón 🎙️ en la nota: graba con
   `MediaRecorder` (máx. 5 min), el botón cuenta el tiempo. El audio va a
   IndexedDB (`ixclock_voz`), la nota solo guarda `audios:[{id,dur,fecha}]`, así
