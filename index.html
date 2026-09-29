@@ -10319,6 +10319,7 @@
 			  else if(totalScore>=2000) rating='🥉 Normal';
 			  else rating='📉 Bajo';
 			  status.textContent=`${rating} — ${totalScore.toLocaleString()} puntos`;
+			  ixBenchPintarSugerencia(totalScore);
 			  btn.textContent='🔄 REPETIR BENCHMARK'; btn.style.opacity='1';
 			  _benchRunning=false;
 
@@ -10326,6 +10327,33 @@
 			  old.push({date:new Date().toISOString().slice(0,16),cpu:cpuScore,gpu:gpuScore,mem:memScore,ai:aiScore,total:totalScore});
 			  if(old.length>20)old.splice(0,old.length-20);
 			  localStorage.setItem('bench_history',JSON.stringify(old));}catch(e){}
+			}
+			/* IXBench ya medía la potencia pero no hacía nada con el resultado
+			   (idea 59). Ahora recomienda la calidad de los efectos y la aplica
+			   con un toque; nunca la cambia sola, que es tu ajuste. */
+			function ixBenchSugerir(total){
+			  if(!(total>0)) return null;
+			  if(total>=7000) return 'alta';
+			  if(total>=4000) return 'media';
+			  return 'ahorro';
+			}
+			function ixBenchPintarSugerencia(total){
+			  const status=document.getElementById('bench-status');
+			  if(!status) return;
+			  let caja=document.getElementById('bench-sugerencia');
+			  if(!caja){
+			    caja=document.createElement('div');
+			    caja.id='bench-sugerencia';
+			    caja.style.cssText='margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:12px;';
+			    status.parentNode.insertBefore(caja, status.nextSibling);
+			  }
+			  const sug=ixBenchSugerir(total);
+			  if(!sug){ caja.innerHTML=''; return; }
+			  const nombre={alta:'✨ Alta', media:'⚖️ Media', ahorro:'🔋 Ahorro'}[sug];
+			  const ya=(typeof ixCalidad==='function' && ixCalidad()===sug);
+			  caja.innerHTML='<span>'+_uiT('Calidad de efectos recomendada')+': <b>'+nombre+'</b></span>'
+			    +(ya ? '<span style="opacity:.7;">✓ '+_uiT('Ya la tienes puesta')+'</span>'
+			         : '<button onclick="ixPonerCalidad(\''+sug+'\');ixBenchPintarSugerencia('+Math.round(total)+')" style="padding:6px 14px;border-radius:999px;border:none;background:#0a84ff;color:#fff;font-weight:700;cursor:pointer;">'+_uiT('Aplicar')+'</button>');
 			}
 			function _benchShowScore(cat,score,max){
 			  document.getElementById('bench-'+cat+'-score').textContent=Math.round(score).toLocaleString();
@@ -16500,6 +16528,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
+			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
+			    '☁️ Las alarmas que te pone el asistente y las del panel del reloj ya también pasan al otro aparato al sincronizar',
+			    '🔥 IXBench, al terminar, te recomienda la calidad de efectos que le va a tu aparato y la pones con un toque',
+			  ]},
 			  { v:'4.2', fecha: '29 de septiembre de 2026', titulo:'Más fácil con lector de pantalla', cambios: [
 			    '🔊 Los 32 controles que no tenían nombre (deslizadores, desplegables, campos de hora…) ya se leen bien con lector de pantalla',
 			    '🎨 La etiqueta de la estación del año se lee mejor: tenía poco contraste',
