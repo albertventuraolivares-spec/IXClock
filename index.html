@@ -4174,6 +4174,7 @@
 					<option value="sci">🔬 Científica</option>
 					<option value="unit">📐 Conversión</option>
 					<option value="currency">💱 Divisas</option>
+					<option value="split">🧾 Dividir cuenta</option>
 					<option value="math">📊 Notas Mat.</option>
 				</select>
 				<button aria-label="Cerrar"
@@ -4323,6 +4324,34 @@
 					id="currency-rate-info"
 					style="font-size:9px;opacity:.55;text-align:center;font-family:'JetBrains Mono',monospace;"
 				></div>
+			</div>
+
+			<!-- DIVIDIR LA CUENTA: total + propina entre N personas. -->
+			<div
+				id="calc-split"
+				style="display:none;padding:12px 14px 14px;flex-direction:column;gap:10px;"
+			>
+				<label style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;" for="split-total">Total de la cuenta</label>
+				<div style="display:flex;gap:6px;">
+					<input id="split-total" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" oninput="ixSplitPintar()"
+						style="flex:1;min-width:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:var(--txt);font-size:1.6rem;font-weight:300;padding:8px 12px;text-align:right;outline:none;" />
+					<button onclick="ixSplitUsarCalculadora()" title="Usar el número de la calculadora" aria-label="Usar el número de la calculadora"
+						style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);padding:0 12px;cursor:pointer;font-size:16px;">🔢</button>
+				</div>
+				<div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;">Propina</div>
+				<div id="split-propinas" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+				<div style="display:flex;align-items:center;justify-content:space-between;">
+					<span style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;">Personas</span>
+					<div style="display:flex;align-items:center;gap:10px;">
+						<button onclick="ixSplitPersonas(-1)" aria-label="Una persona menos" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--txt);font-size:18px;cursor:pointer;">−</button>
+						<span id="split-personas" aria-live="polite" style="font-size:1.3rem;font-weight:600;min-width:28px;text-align:center;">2</span>
+						<button onclick="ixSplitPersonas(1)" aria-label="Una persona más" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--txt);font-size:18px;cursor:pointer;">+</button>
+					</div>
+				</div>
+				<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
+					<input id="split-redondear" type="checkbox" onchange="ixSplitPintar()" /> Redondear hacia arriba (sin céntimos)
+				</label>
+				<div id="split-resultado" aria-live="polite" style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px;"></div>
 			</div>
 
 			<!-- MATH NOTES MODE -->
@@ -7575,7 +7604,8 @@
 			  'ica_alarms',            // Alarmas y temporizadores
 			  'ica_world_clocks',      // Ciudades del reloj mundial
 			  'cal_events',            // Calendario
-			  'radio_favs',            // Emisoras favoritas
+			  'ix_radio_favorites',    // Emisoras favoritas (ponía «radio_favs», una
+			                           // clave que nadie escribe: nunca viajaban)
 			  'ix_modo',               // Claro / oscuro / automatico
 			  'text_color',            // Color de las letras
 			  'ix_calidad',            // Calidad de los efectos
@@ -8511,10 +8541,22 @@
 			  // Eliminar duplicados por nombre+fecha
 			  const seen = new Set();
 			  feriados = feriados.filter(f=>{ const k=f.name+f.diff; if(seen.has(k))return false; seen.add(k); return true; });
+			  // Tus eventos del calendario también cuentan hacia atrás aquí
+			  // (idea 54): el viaje, el examen, el cumpleaños. Ya estaban
+			  // guardados; faltaba que la lista de fechas que vienen los viera.
+			  // Van los primeros si coinciden en el día: son tuyos.
+			  let mios=[];
+			  try{
+			    mios=ixEventosCal().map(function(ev){
+			      return { name:ev.texto, emoji:'📌', date:ev.fecha, pais:_uiT('Tu calendario'), mio:true, ev:ev,
+			               diff:Math.round((ev.fecha - today0)/86400000) };
+			    }).filter(function(f){ return f.diff>=0 && f.diff<=366; });
+			  }catch(e){}
+			  feriados = mios.concat(feriados).sort((a,b)=>a.diff-b.diff || (b.mio?1:0)-(a.mio?1:0));
 			  const box = document.getElementById('events-box');
 			  box.innerHTML='';
 			  // Holiday banner: show if today is a holiday
-			  const todayHoliday = feriados.find(f=>f.diff===0);
+			  const todayHoliday = feriados.find(f=>f.diff===0 && !f.mio);
 			  const banner = document.getElementById('holiday-banner');
 			  if(banner){
 			    if(todayHoliday){
@@ -8533,13 +8575,24 @@
 			    const txtDias = f.diff===0 ? _uiT('¡Hoy!')+' 🎉' : (f.diff===1 ? _uiT('Mañana') : `${f.diff} ${_uiT('días')}`);
 			    const colorDias = f.diff===0 ? '#ffd60a' : (f.diff<=7 ? '#ff9500' : 'var(--txt-45)');
 			    const div=document.createElement('div');
-			    div.className='flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/5 transition-colors';
+			    div.className='flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/5 transition-colors'+(f.mio?' ix-fest-mio':'');
+			    // Lo tuyo es texto que escribiste: escapado y sin pasar por el
+			    // traductor. Al tocarlo se abre el calendario en ese día.
+			    const nombre = f.mio ? escapeHtml(f.name) : _uiT(f.name);
+			    if(f.mio){
+			      div.style.cursor='pointer'; div.style.borderLeft='3px solid #0a84ff';
+			      div.setAttribute('role','button'); div.tabIndex=0;
+			      div.onclick=function(){ ixAbrirCalendarioEn(f.ev); };
+			      div.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ixAbrirCalendarioEn(f.ev); } };
+			    }
+			    // El año es el DE ESA FECHA: antes se ponía el año actual siempre,
+			    // y el Año Nuevo que viene salía con el año de ahora.
 			    div.innerHTML = `
 			      <div class="flex items-center gap-2 flex-1 min-w-0">
 			        <span style="font-size:1.25rem;flex-shrink:0;">${f.emoji}</span>
 			        <div class="min-w-0">
-			          <div style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_uiT(f.name)}</div>
-			          <div style="font-size:9.5px;color:var(--txt-40);margin-top:1px;">${f.pais} · ${new Date().getFullYear() + (f.diff < 0 ? 1 : 0)}</div>
+			          <div style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div>
+			          <div style="font-size:9.5px;color:var(--txt-40);margin-top:1px;">${f.pais} · ${f.date.getFullYear()}</div>
 			        </div>
 			      </div>
 			      <div style="font-size:10px;font-weight:800;color:${colorDias};white-space:nowrap;flex-shrink:0;text-align:right;">${txtDias}</div>`;
@@ -9210,6 +9263,7 @@
 			    document.getElementById('global-play').innerHTML='<span class="text-2xl inline-block animate-spin">⏳</span>';
 			    streamPlayer.play().then(()=>{
 			      isPlaying=true;
+			      try{ ixMediaSesion(); }catch(e){}
 			      if(btn) btn.classList.remove('station-loading');
 			      document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			      document.getElementById('global-play').classList.add('animate-pulse');
@@ -9243,6 +9297,7 @@
 			  else ambientSource=createRain();
 			  if(ambientSource){
 			    ambientSource.start(); isPlaying=true;
+			    try{ ixMediaSesion(); }catch(e){}
 			    document.getElementById('global-play').innerHTML='<span class="text-2xl">⏸️</span>';
 			    document.getElementById('global-play').classList.add('animate-pulse');
 			  }
@@ -9254,6 +9309,7 @@
 			  isPlaying=false;
 			  document.getElementById('global-play').innerHTML='<span class="text-2xl">▶️</span>';
 			  document.getElementById('global-play').classList.remove('animate-pulse');
+			  try{ ixMediaSesion(); }catch(e){}
 			}
 			// Pausa/reanuda sin perder el src: necesario para archivos locales (stopAudio limpia el src).
 			function togglePlayPause(){
@@ -9304,6 +9360,46 @@
 			  const idx=STATIONS.findIndex(s=>s.id===currentStation);
 			  setStation(STATIONS[(idx-1+STATIONS.length)%STATIONS.length].id);
 			}
+			/* ── Controles del sistema (Media Session) ──
+			   Con esto, mientras suena la radio, el móvil enseña la emisora en la
+			   pantalla de bloqueo y en las notificaciones, con pausa y
+			   anterior/siguiente; en el ordenador, las teclas multimedia del
+			   teclado también sirven. Antes solo se podía parar desde la ficha
+			   de Radio (idea 43: control fuera de la ventana de Radio). */
+			function ixMediaSesion(){
+			  if(!('mediaSession' in navigator)) return;
+			  const ms=navigator.mediaSession;
+			  try{
+			    const lista=(typeof ALL_RADIO_STATIONS!=='undefined' && ALL_RADIO_STATIONS.length) ? ALL_RADIO_STATIONS : STATIONS;
+			    const st=lista.find(function(x){ return x.id===currentStation; }) || STATIONS.find(function(x){ return x.id===currentStation; });
+			    if(st && typeof MediaMetadata!=='undefined'){
+			      ms.metadata=new MediaMetadata({
+			        title:String(st.title||'IXClocK'), artist:String(st.sub||st.country||'Radio'), album:'IXClocK',
+			        artwork:[{src:'icon-192.png',sizes:'192x192',type:'image/png'},{src:'icon-512.png',sizes:'512x512',type:'image/png'}]
+			      });
+			    }
+			    // El evento «playing» del audio llega a veces ANTES de que el
+			    // código marque isPlaying: se mira también el propio reproductor.
+			    let suena=isPlaying;
+			    try{ if(!streamPlayer.paused && streamPlayer.src && !streamPlayer.error) suena=true; }catch(e){}
+			    ms.playbackState = suena ? 'playing' : 'paused';
+			  }catch(e){}
+			}
+			(function(){
+			  if(!('mediaSession' in navigator)) return;
+			  const h=function(accion, fn){ try{ navigator.mediaSession.setActionHandler(accion, fn); }catch(e){} };
+			  h('play',          function(){ if(!isPlaying) togglePlayPause(); });
+			  h('pause',         function(){ if(isPlaying) togglePlayPause(); });
+			  h('stop',          function(){ stopAudio(); });
+			  h('nexttrack',     function(){ nextStation(); });
+			  h('previoustrack', function(){ prevStation(); });
+			  try{
+			    streamPlayer.addEventListener('playing', ixMediaSesion);
+			    streamPlayer.addEventListener('pause', ixMediaSesion);
+			    // Una emisora caída: el sistema no puede seguir diciendo «sonando».
+			    streamPlayer.addEventListener('error', function(){ setTimeout(ixMediaSesion, 0); });
+			  }catch(e){}
+			})();
 			/* ── FAVORITOS DE EMISORAS ────────────────────────────────────────
 			   El navegador ya tenia favoritos (ix_browser_favorites) pero la radio
 			   no. Con miles de emisoras, sin esto cada vez se empieza de cero y hay
@@ -13362,16 +13458,25 @@
 			    const p=String(a.time).split(':');
 			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
 			    if(isNaN(h)) return;
+			    // Con otra ciudad, la hora y el dia que cuentan son los de ALLI.
+			    const tz=_icaZonaDe(a);
+			    const z=tz ? _icaAhoraEn(tz, now)
+			               : { y:now.getFullYear(), mo:now.getMonth(), d:now.getDate(), h:now.getHours(), m:now.getMinutes() };
 			    // Con fecha, solo suena ese dia. Y una sola vez: despues se apaga
 			    // sola, que si no se quedaria armada para siempre.
 			    if(a.fecha){
 			      const f=_icaFechaDe(a.fecha);
-			      if(!f || f.getFullYear()!==now.getFullYear() || f.getMonth()!==now.getMonth()
-			            || f.getDate()!==now.getDate()) return;
+			      if(!f || f.getFullYear()!==z.y || f.getMonth()!==z.mo || f.getDate()!==z.d) return;
 			    }
-			    if(h===now.getHours() && m===now.getMinutes() && _icaFired['a'+i]!==key){
+			    if(h===z.h && m===z.m && _icaFired['a'+i]!==key){
 			      _icaFired['a'+i]=key;
 			      ringAlarm({id:'ica-'+i, hour:h, minute:m, label:a.label||'Alarma', tone:a.tone||'radial'});
+			      try{
+			        if(typeof icaAddToHistory==='function'){
+			          const h12=((h%12)||12), ampm=h>=12?'p. m.':'a. m.';
+			          icaAddToHistory(h12+':'+String(m).padStart(2,'0')+' '+ampm, a.label||'Alarma');
+			        }
+			      }catch(e){}
 			      if(a.fecha){
 			        a.on=false;
 			        try{ localStorage.setItem('ica_alarms', JSON.stringify(lista)); }catch(e){}
@@ -15399,10 +15504,12 @@
 			  if(!calEvts[calSelDay])calEvts[calSelDay]=[];
 			  calEvts[calSelDay].push(val);localStorage.setItem('cal_events',JSON.stringify(calEvts));
 			  inp.value='';renderCalEvts(calSelDay);renderCalendar();
+			  try{ renderizarFeriados(); }catch(e){}
 			}
 			function delCalEvt(key,idx){
 			  calEvts[key].splice(idx,1);if(!calEvts[key].length)delete calEvts[key];
 			  localStorage.setItem('cal_events',JSON.stringify(calEvts));renderCalEvts(key);renderCalendar();
+			  try{ renderizarFeriados(); }catch(e){}
 			}
 			function calNav(d){calDate.setMonth(calDate.getMonth()+d);renderCalendar();}
 			function calNavToday(){calDate=new Date();renderCalendar();}
@@ -15578,7 +15685,7 @@
 			}
 			function switchCalcMode(mode){
 			  calcMode=mode;
-			  const modes=['basic','sci','unit','currency','math'];
+			  const modes=['basic','sci','unit','currency','split','math'];
 			  modes.forEach(m=>{const el=document.getElementById('calc-'+m);if(el)el.style.display='none';});
 			  const cur=document.getElementById('calc-'+mode);
 			  if(cur){
@@ -15588,6 +15695,68 @@
 			  if(mode==='unit') loadUnitCategory();
 			  if(mode==='currency') setTimeout(initCurrencyCalc,0);
 			  if(mode==='math') evalMathNote();
+			  if(mode==='split') ixSplitPintar();
+			}
+			/* ── Dividir la cuenta ──
+			   Todo en CÉNTIMOS enteros: con decimales, 10 entre 3 da 3,33 × 3 =
+			   9,99 y alguien se queda sin pagar un céntimo. Aquí el reparto
+			   cuadra siempre: si no sale exacto, a los primeros les toca un
+			   céntimo más, y se dice. */
+			const IX_SPLIT_PROPINAS=[0,10,15,20];
+			let _splitPropina=10, _splitPersonas=2;
+			function ixDividirCuenta(total, propinaPct, personas, redondear){
+			  const t=Math.round((parseFloat(total)||0)*100);
+			  const n=Math.max(1, Math.min(99, Math.floor(personas)||1));
+			  const pct=Math.max(0, parseFloat(propinaPct)||0);
+			  if(!(t>0)) return null;
+			  const propina=Math.round(t*pct/100);
+			  const conPropina=t+propina;
+			  if(redondear){
+			    const cada=Math.ceil(conPropina/n/100)*100;
+			    return { propina:propina/100, total:conPropina/100, porPersona:cada/100, personas:n,
+			             sobra:(cada*n-conPropina)/100, conCentimoMas:0 };
+			  }
+			  const base=Math.floor(conPropina/n), resto=conPropina-base*n;
+			  return { propina:propina/100, total:conPropina/100, porPersona:base/100, personas:n,
+			           sobra:0, conCentimoMas:resto };
+			}
+			function _splitDinero(v){
+			  return Number(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+			}
+			function ixSplitPersonas(d){
+			  _splitPersonas=Math.max(1, Math.min(99, _splitPersonas+d));
+			  ixSplitPintar();
+			}
+			function ixSplitPropina(p){ _splitPropina=p; ixSplitPintar(); }
+			function ixSplitUsarCalculadora(){
+			  const v=parseFloat(calcVal);
+			  const el=document.getElementById('split-total');
+			  if(el && v>0){ el.value=String(Math.round(v*100)/100); }
+			  ixSplitPintar();
+			}
+			function ixSplitPintar(){
+			  const caja=document.getElementById('split-propinas');
+			  if(caja) caja.innerHTML=IX_SPLIT_PROPINAS.map(function(p){
+			    const on=p===_splitPropina;
+			    return '<button onclick="ixSplitPropina('+p+')" aria-pressed="'+on+'" style="padding:8px 0;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;'
+			      +(on?'background:rgba(10,132,255,.25);border:1px solid rgba(10,132,255,.6);color:#0a84ff;':'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--txt);')
+			      +'">'+(p?p+' %':'Sin')+'</button>';
+			  }).join('');
+			  const np=document.getElementById('split-personas'); if(np) np.textContent=_splitPersonas;
+			  const out=document.getElementById('split-resultado'); if(!out) return;
+			  const tot=(document.getElementById('split-total')||{}).value;
+			  const red=!!(document.getElementById('split-redondear')||{}).checked;
+			  const r=ixDividirCuenta(tot, _splitPropina, _splitPersonas, red);
+			  if(!r){ out.innerHTML='<div style="font-size:12px;opacity:.6;text-align:center;">Escribe el total para repartirlo</div>'; return; }
+			  let nota='';
+			  if(r.sobra>0) nota='Redondeando sobran '+_splitDinero(r.sobra)+': para la propina o el bote.';
+			  else if(r.conCentimoMas>0) nota='No sale exacto: '+r.conCentimoMas+(r.conCentimoMas===1?' persona paga':' personas pagan')+' un céntimo más.';
+			  out.innerHTML=''
+			    +'<div style="font-size:11px;opacity:.6;">Cada persona paga</div>'
+			    +'<div id="split-cada" style="font-size:2rem;font-weight:300;line-height:1.1;">'+_splitDinero(r.porPersona)+'</div>'
+			    +'<div style="display:flex;justify-content:space-between;font-size:12px;opacity:.75;margin-top:6px;"><span>Propina</span><span>'+_splitDinero(r.propina)+'</span></div>'
+			    +'<div style="display:flex;justify-content:space-between;font-size:12px;opacity:.75;"><span>Total con propina</span><span>'+_splitDinero(r.total)+'</span></div>'
+			    +(nota?'<div style="font-size:11px;opacity:.6;margin-top:6px;">'+nota+'</div>':'');
 			}
 			// Override old renderCalcGrid
 			function renderCalcGrid(){
@@ -16271,6 +16440,16 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.1', fecha: '29 de septiembre de 2026', titulo:'Arreglos importantes y cosas nuevas', cambios: [
+			    '🛠️ Un recordatorio con fecha (por ejemplo «el día 5 a las 9:00») sonaba TODOS los días a esa hora hasta llegar el día, y ese día podía sonar dos veces. Ahora suena solo el día que toca, una vez',
+			    '🛠️ Tus emisoras favoritas no pasaban al otro aparato al sincronizar. Ahora sí viajan',
+			    '🧾 Calculadora → «Dividir cuenta»: el total con propina entre las personas que seáis, y te dice quién paga el céntimo de más',
+			    '📌 Tus eventos del calendario (un viaje, un examen, un cumpleaños) salen en «Próximas festividades» con los días que faltan. Tócalos para abrir ese día',
+			    '🎯 El Modo Enfoque calla la radio al empezar y te la devuelve al salir',
+			    '📻 La radio sale en la pantalla de bloqueo del móvil con pausa y siguiente, y funcionan las teclas multimedia del teclado',
+			    '🛠️ Las fiestas del año que viene (como Año Nuevo) salían con el año de ahora',
+			    '🌍 Alarmas con la hora de otra ciudad: al crear una alarma elige «Hora de Tokio» (o cualquier ciudad de tu reloj mundial) y te dice a qué hora sonará aquí',
+			  ]},
 			  { v:'4.0', fecha: '29 de septiembre de 2026', titulo:'Tu nube, bajo tu control', cambios: [
 			    '🗑️ Ya puedes borrar tu copia de la nube tú mismo: Configuración → Más → Sincronizar → «Borrar mi copia del servidor». Lo de tu aparato no se toca',
 			    '🖼️ Al compartir el enlace de IXClocK por WhatsApp o redes ya sale una imagen de portada (antes salía sin foto)',
@@ -21509,6 +21688,20 @@
 			  if(d.getFullYear()!==+m[1] || d.getMonth()!==+m[2]-1 || d.getDate()!==+m[3]) return null;
 			  return d;
 			}
+			/* ── Alarma con la hora de OTRA ciudad (idea 23) ──
+			   «Despiértame a las 9 de Tokio»: la alarma guarda la zona (a.tz) y
+			   se compara con la hora de ESA zona, no con la de aquí. Así también
+			   acierta cuando una de las dos cambia al horario de verano. */
+			function _icaAhoraEn(tz, d){
+			  const f=new Intl.DateTimeFormat('en-US',{timeZone:tz, hourCycle:'h23',
+			    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+			  const o={};
+			  f.formatToParts(d||new Date()).forEach(function(p){ o[p.type]=p.value; });
+			  return { y:+o.year, mo:+o.month-1, d:+o.day, h:(+o.hour)%24, m:+o.minute };
+			}
+			function _icaZonaDe(a){
+			  return (a && a.tz && _icaTzValida(a.tz)) ? a.tz : null;
+			}
 			// Minutos que faltan para que suene, o null si no va a sonar (apagada,
 			// hora invalida, o con una fecha que ya paso).
 			function icaFaltanPara(a, ahora){
@@ -21517,6 +21710,21 @@
 			  const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
 			  if(isNaN(h) || h<0 || h>23 || m<0 || m>59) return null;
 			  const n=ahora||new Date();
+			  const tz=_icaZonaDe(a);
+			  if(tz){
+			    // Todo se cuenta en la hora de esa ciudad.
+			    const z=_icaAhoraEn(tz, n);
+			    let min=(h*60+m)-(z.h*60+z.m);
+			    if(a.fecha){
+			      const f=_icaFechaDe(a.fecha);
+			      if(!f) return null;
+			      const dias=Math.round((Date.UTC(f.getFullYear(),f.getMonth(),f.getDate()) - Date.UTC(z.y,z.mo,z.d))/86400000);
+			      min+=dias*1440;
+			      return min<0 ? null : min;
+			    }
+			    if(min<0) min+=1440;
+			    return min;
+			  }
 			  if(a.fecha){
 			    const f=_icaFechaDe(a.fecha);
 			    if(!f) return null;
@@ -21574,6 +21782,12 @@
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
       +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+escapeHtml(a.label)+' · '+escapeHtml(icaToneName(a.tone))+' ›</div>'
+			      +(_icaZonaDe(a) ? '<div class="ica-alarm-zona" style="font-size:10.5px;font-weight:700;margin-top:2px;color:#30d158;">🌍 '
+			                   +escapeHtml(_uiT('Hora de')+' '+_icaNombreDeTz(a.tz))+(function(){
+			                     const min=icaFaltanPara(a); if(min===null) return '';
+			                     const q=new Date(Date.now()+min*60000);
+			                     return ' · '+escapeHtml(_uiT('aquí'))+' '+String(q.getHours()).padStart(2,'0')+':'+String(q.getMinutes()).padStart(2,'0');
+			                   })()+'</div>' : '')
 			      +(a.fecha ? '<div style="font-size:10.5px;font-weight:700;margin-top:2px;color:'
 			                   +(icaFaltanPara(a)===null?'var(--txt-40)':'#0a84ff')+';">🗓️ '
 			                   +escapeHtml(icaTextoFecha(a.fecha))+'</div>' : '')
@@ -21635,10 +21849,11 @@
 			  let s='<div style="width:min(400px,94vw);max-height:88vh;overflow:auto;background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:var(--txt);">'
 			    +'<div style="font-size:17px;font-weight:800;margin-bottom:16px;text-align:center;">'+(_icaEditIdx!==null?'Editar alarma':'Nueva alarma')+'</div>'
 			    +'<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px;">'
-			    +  '<select id="ica-alarm-h" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcH+'</select>'
+			    +  '<select id="ica-alarm-h" onchange="_icaZonaAviso()" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcH+'</select>'
 			    +  '<span style="font-size:30px;font-weight:200;opacity:.6;">:</span>'
-			    +  '<select id="ica-alarm-m" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
+			    +  '<select id="ica-alarm-m" onchange="_icaZonaAviso()" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
 			    +'</div>'
+			    +_icaZonaHoja(a && a.tz)
 			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
 			    +'<input id="ica-alarm-label" type="text" maxlength="40" value="'+escapeHtml(etiqueta)+'" placeholder="Alarma" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;">'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+tono+'">'
@@ -21665,6 +21880,32 @@
 			}
 			// 0 = todos los dias, 1 = un dia concreto. Al elegir dia, si no habia
 			// ninguno se pone el de hoy: un campo de fecha vacio no vale de nada.
+			// «Hora de…»: aquí o cualquiera de tus ciudades del reloj mundial.
+			function _icaZonaHoja(tzActual){
+			  const ciudades=(_icaWorldClocks||[]).filter(_icaTzValida);
+			  let h='<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">🌍 HORA DE</div>';
+			  if(!ciudades.length){
+			    return h+'<div style="font-size:11px;opacity:.5;line-height:1.5;margin-bottom:14px;">Añade ciudades en «Reloj mundial» y podrás poner la alarma con su hora («a las 9 de Tokio»).</div>';
+			  }
+			  h+='<select id="ica-alarm-tz" onchange="_icaZonaAviso()" aria-label="Hora de qué ciudad" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:14px;padding:10px 12px;margin-bottom:6px;">'
+			    +'<option value="">📍 Aquí (tu hora)</option>'
+			    +ciudades.map(function(tz){ return '<option value="'+escapeHtml(tz)+'"'+(tz===tzActual?' selected':'')+'>'+escapeHtml(_icaNombreDeTz(tz))+'</option>'; }).join('')
+			    +'</select><div id="ica-alarm-tz-aviso" style="font-size:11px;opacity:.65;min-height:14px;margin-bottom:12px;"></div>';
+			  setTimeout(_icaZonaAviso, 0);
+			  return h;
+			}
+			// Debajo del selector: a qué hora de AQUÍ sonará. Es lo que de verdad
+			// hay que saber para no llevarse un susto a las 3 de la mañana.
+			function _icaZonaAviso(){
+			  const sel=document.getElementById('ica-alarm-tz'), out=document.getElementById('ica-alarm-tz-aviso');
+			  if(!sel||!out) return;
+			  if(!sel.value){ out.textContent=''; return; }
+			  const h=document.getElementById('ica-alarm-h'), m=document.getElementById('ica-alarm-m');
+			  const min=icaFaltanPara({on:true, time:parseInt(h.value,10)+':'+m.value, tz:sel.value});
+			  if(min===null){ out.textContent=''; return; }
+			  const aqui=new Date(Date.now()+min*60000);
+			  out.textContent='Aquí sonará a las '+String(aqui.getHours()).padStart(2,'0')+':'+String(aqui.getMinutes()).padStart(2,'0');
+			}
 			function icaAlarmaRepetir(modo){
 			  const inp=document.getElementById('ica-alarm-fecha');
 			  const bd=document.getElementById('ica-rep-diario'), bf=document.getElementById('ica-rep-fecha');
@@ -21730,6 +21971,8 @@
 			                 label: (l&&l.value.trim())||'Alarma',
 			                 on:true, tone:(t&&t.value)||'radial' };
 			  if(fecha) alarma.fecha=fecha;
+			  const zsel=document.getElementById('ica-alarm-tz');
+			  if(zsel && zsel.value && _icaTzValida(zsel.value)) alarma.tz=zsel.value;
 			  if(_icaEditIdx!==null && _icaAlarms[_icaEditIdx]) _icaAlarms[_icaEditIdx]=alarma;
 			  else _icaAlarms.push(alarma);
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
@@ -21744,25 +21987,11 @@
 			function icaAddAlarm(){ _icaHojaAlarma(null); }
 			function icaChangeAlarmTone(i){ _icaHojaAlarma(i); }
 			icaRenderAlarms();
-			// Comprobador: hace sonar las alarmas de la app Reloj con su tono elegido
-			let _icaLastFired = null;
-			setInterval(()=>{
-			  const now = new Date();
-			  const key = now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
-			  if(_icaLastFired === key) return;
-			  _icaAlarms.forEach(a=>{
-			    if(!a.on) return;
-			    const [h,m] = a.time.split(':').map(Number);
-			    if(h===now.getHours() && m===now.getMinutes()){
-			      _icaLastFired = key;
-			      ringAlarm({hour:h, minute:m, label:a.label, tone:a.tone});
-			      if(typeof icaAddToHistory==='function'){
-			        const h12 = ((h%12)||12), ampm = h>=12?'p. m.':'a. m.';
-			        icaAddToHistory(h12+':'+String(m).padStart(2,'0')+' '+ampm, a.label);
-			      }
-			    }
-			  });
-			}, 5000);
+			// (Aquí había un SEGUNDO comprobador, cada 5 s, que miraba solo la
+			// hora y no la fecha: un recordatorio para otro día sonaba TODOS los
+			// días a esa hora, y el día bueno podía sonar dos veces. Las alarmas
+			// de la app Reloj las hace sonar solo checkIcaAlarms, desde el reloj
+			// principal; lo único que aportaba este, el historial, se pasó allí.)
 
 			// --- Stopwatch ---
 			let _icaSwRunning=false, _icaSwStart=0, _icaSwElapsed=0, _icaSwRaf=null, _icaSwLaps=[];
@@ -22936,6 +23165,7 @@
 			  if(ov) ov.style.display='none';
 			  clearInterval(_enfTic); _enfTic=null;
 			  _enfSonidoOff();
+			  _enfDevolverRadio();
 			  _enfWakeOff();
 			  if(_enfTitulo) document.title=_enfTitulo;   // la pestana vuelve a llamarse como antes
 			}
@@ -23004,7 +23234,41 @@
 			  }
 			  return h;
 			}
+			/* Lo que sonaba ANTES de entrar al modo enfoque (idea 60). Sin esto,
+			   con «sin sonido» la radio seguía sonando mientras intentabas
+			   concentrarte, y con un sonido de ambiente la radio se cortaba y al
+			   salir ya no volvía. Ahora se calla al entrar y vuelve al salir. */
+			let _enfRadioAntes=null;
+			function _enfCallarRadio(){
+			  if(!isPlaying) return;
+			  if(typeof _localAudioActive!=='undefined' && _localAudioActive){
+			    // Un archivo tuyo: se pausa sin perderlo (stopAudio lo borraría).
+			    try{ streamPlayer.pause(); }catch(e){}
+			    isPlaying=false;
+			    _enfRadioAntes={local:true};
+			  } else if(currentStation){
+			    _enfRadioAntes={id:currentStation};
+			    try{ stopAudio(); }catch(e){}
+			  }
+			}
+			function _enfDevolverRadio(){
+			  const r=_enfRadioAntes; _enfRadioAntes=null;
+			  if(!r) return;
+			  if(r.local){
+			    try{
+			      const pr=streamPlayer.play(); if(pr&&pr.catch) pr.catch(function(){});
+			      isPlaying=true;
+			      const gp=document.getElementById('global-play');
+			      if(gp){ gp.innerHTML='<span class="text-2xl">⏸️</span>'; gp.classList.add('animate-pulse'); }
+			    }catch(e){}
+			  }
+			  else if(r.id){ try{ setStation(r.id); }catch(e){} }
+			  try{ ixToast('📻 '+_uiT('Vuelve lo que estabas escuchando')); }catch(e){}
+			}
 			function ixAbrirEnfoque(){
+			  // Solo al ENTRAR: si ya estaba abierto, lo que suena es el ambiente
+			  // del propio modo enfoque y no hay que «recordarlo».
+			  if(!ixEnfoqueAbierto()) _enfCallarRadio();
 			  let ov=document.getElementById('ix-enfoque');
 			  if(!ov){
 			    ov=document.createElement('div');
