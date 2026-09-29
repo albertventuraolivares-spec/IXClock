@@ -17392,19 +17392,62 @@
 			    _aplMarker=L.marker(e.latlng).addTo(_aplMap).bindPopup('📍 '+e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5)).openPopup();
 			  });
 			}
+			// El último lugar encontrado, para los botones de su ficha.
+			let _amapLugar=null;
 			function amapSearch(q){
 			  if(!q||!_aplMap)return;
-			  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'Accept-Language':'es'}})
+			  // addressdetails=1: trae el código del país, para «Radio de aquí».
+			  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1&addressdetails=1',{headers:{'Accept-Language':'es'}})
 			    .then(r=>r.json()).then(d=>{
-			      if(!d.length){alert(_uiT('Lugar no encontrado'));return;}
+			      // Antes era un alert() del navegador: en el móvil sale feo y bloquea.
+			      if(!d || !d.length){ try{ ixToast('🔎 '+_uiT('Lugar no encontrado')); }catch(e){} return; }
 			      const lat=parseFloat(d[0].lat),lon=parseFloat(d[0].lon);
+			      const nombre=String(d[0].display_name||'').split(',').slice(0,2).map(function(x){ return x.trim(); }).filter(Boolean).join(', ')||q;
+			      const cc=((d[0].address||{}).country_code||'').toLowerCase();
+			      _amapLugar={ nombre:nombre, lat:lat, lon:lon, cc:/^[a-z]{2}$/.test(cc)?cc:'', pais:(d[0].address||{}).country||'' };
 			      _aplMap.flyTo([lat,lon],14,{duration:1.5});
 			      if(_aplMarker)_aplMap.removeLayer(_aplMarker);
 			      // display_name lo escribe quien edita OpenStreetMap, y bindPopup
 			      // mete la cadena como HTML: sin escapar, se ejecuta.
-			      _aplMarker=L.marker([lat,lon]).addTo(_aplMap)
-			        .bindPopup('<b>'+escapeHtml(d[0].display_name.split(',').slice(0,2).join(', '))+'</b>').openPopup();
-			    });
+			      _aplMarker=L.marker([lat,lon]).addTo(_aplMap).bindPopup(_amapFichaLugar()).openPopup();
+			    })
+			    // Sin esto, sin conexión la búsqueda no hacía nada y no decía nada.
+			    .catch(function(){ try{ ixToast('⚠️ '+_uiT('Sin conexión: no se pudo buscar')); }catch(e){} });
+			}
+			/* La ficha del lugar lleva dos atajos que unen Mapas con otras apps
+			   (ideas 26 y 48): oír la radio de ese país y guardar el sitio en una
+			   nota con el enlace para volver a él. */
+			function _amapFichaLugar(){
+			  const L0=_amapLugar; if(!L0) return '';
+			  const b='style="margin-top:6px;margin-right:4px;padding:5px 10px;border-radius:999px;border:none;background:#0a84ff;color:#fff;font-weight:700;font-size:11px;cursor:pointer;"';
+			  return '<b>'+escapeHtml(L0.nombre)+'</b><br>'
+			    +(L0.cc ? '<button class="amap-radio" onclick="amapRadioDeAqui()" '+b+'>📻 '+escapeHtml(_uiT('Radio de aquí'))+'</button>' : '')
+			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>';
+			}
+			function amapLugarANota(){
+			  const L0=_amapLugar; if(!L0) return null;
+			  const la=L0.lat.toFixed(5), lo=L0.lon.toFixed(5);
+			  const id='note-'+Date.now();
+			  notes.push({ id:id, updatedAt:Date.now(),
+			    content:'📍 '+L0.nombre+'\nhttps://www.openstreetmap.org/?mlat='+la+'&mlon='+lo+'#map=16/'+la+'/'+lo+'\n' });
+			  saveNotes();
+			  try{ if(!notesPanelOpen) toggleNotesPanel(); notesOpen(id); }catch(e){}
+			  try{ ixToast('📝 '+_uiT('Lugar guardado en una nota')); }catch(e){}
+			  return id;
+			}
+			async function amapRadioDeAqui(){
+			  const L0=_amapLugar; if(!L0 || !L0.cc) return false;
+			  return ixRadioDePais(L0.cc);
+			}
+			// Radio Mundial ya buscada por un país (código ISO de 2 letras).
+			async function ixRadioDePais(cc){
+			  cc=String(cc||'').toUpperCase();
+			  if(!/^[A-Z]{2}$/.test(cc)) return false;
+			  openWorldRadioModal();
+			  _worldParams='&countrycode='+encodeURIComponent(cc);
+			  _worldOffset=0; _worldEndReached=false; _lastWorldResults=[];
+			  await fetchWorldPage(false);
+			  return true;
 			}
 			function amapMyLocation(){
 			  if(!navigator.geolocation||!_aplMap)return;
