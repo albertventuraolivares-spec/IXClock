@@ -4174,6 +4174,7 @@
 					<option value="sci">🔬 Científica</option>
 					<option value="unit">📐 Conversión</option>
 					<option value="currency">💱 Divisas</option>
+					<option value="split">🧾 Dividir cuenta</option>
 					<option value="math">📊 Notas Mat.</option>
 				</select>
 				<button aria-label="Cerrar"
@@ -4323,6 +4324,34 @@
 					id="currency-rate-info"
 					style="font-size:9px;opacity:.55;text-align:center;font-family:'JetBrains Mono',monospace;"
 				></div>
+			</div>
+
+			<!-- DIVIDIR LA CUENTA: total + propina entre N personas. -->
+			<div
+				id="calc-split"
+				style="display:none;padding:12px 14px 14px;flex-direction:column;gap:10px;"
+			>
+				<label style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;" for="split-total">Total de la cuenta</label>
+				<div style="display:flex;gap:6px;">
+					<input id="split-total" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" oninput="ixSplitPintar()"
+						style="flex:1;min-width:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:var(--txt);font-size:1.6rem;font-weight:300;padding:8px 12px;text-align:right;outline:none;" />
+					<button onclick="ixSplitUsarCalculadora()" title="Usar el número de la calculadora" aria-label="Usar el número de la calculadora"
+						style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);padding:0 12px;cursor:pointer;font-size:16px;">🔢</button>
+				</div>
+				<div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;">Propina</div>
+				<div id="split-propinas" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+				<div style="display:flex;align-items:center;justify-content:space-between;">
+					<span style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.08em;">Personas</span>
+					<div style="display:flex;align-items:center;gap:10px;">
+						<button onclick="ixSplitPersonas(-1)" aria-label="Una persona menos" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--txt);font-size:18px;cursor:pointer;">−</button>
+						<span id="split-personas" aria-live="polite" style="font-size:1.3rem;font-weight:600;min-width:28px;text-align:center;">2</span>
+						<button onclick="ixSplitPersonas(1)" aria-label="Una persona más" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--txt);font-size:18px;cursor:pointer;">+</button>
+					</div>
+				</div>
+				<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
+					<input id="split-redondear" type="checkbox" onchange="ixSplitPintar()" /> Redondear hacia arriba (sin céntimos)
+				</label>
+				<div id="split-resultado" aria-live="polite" style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px;"></div>
 			</div>
 
 			<!-- MATH NOTES MODE -->
@@ -15578,7 +15607,7 @@
 			}
 			function switchCalcMode(mode){
 			  calcMode=mode;
-			  const modes=['basic','sci','unit','currency','math'];
+			  const modes=['basic','sci','unit','currency','split','math'];
 			  modes.forEach(m=>{const el=document.getElementById('calc-'+m);if(el)el.style.display='none';});
 			  const cur=document.getElementById('calc-'+mode);
 			  if(cur){
@@ -15588,6 +15617,68 @@
 			  if(mode==='unit') loadUnitCategory();
 			  if(mode==='currency') setTimeout(initCurrencyCalc,0);
 			  if(mode==='math') evalMathNote();
+			  if(mode==='split') ixSplitPintar();
+			}
+			/* ── Dividir la cuenta ──
+			   Todo en CÉNTIMOS enteros: con decimales, 10 entre 3 da 3,33 × 3 =
+			   9,99 y alguien se queda sin pagar un céntimo. Aquí el reparto
+			   cuadra siempre: si no sale exacto, a los primeros les toca un
+			   céntimo más, y se dice. */
+			const IX_SPLIT_PROPINAS=[0,10,15,20];
+			let _splitPropina=10, _splitPersonas=2;
+			function ixDividirCuenta(total, propinaPct, personas, redondear){
+			  const t=Math.round((parseFloat(total)||0)*100);
+			  const n=Math.max(1, Math.min(99, Math.floor(personas)||1));
+			  const pct=Math.max(0, parseFloat(propinaPct)||0);
+			  if(!(t>0)) return null;
+			  const propina=Math.round(t*pct/100);
+			  const conPropina=t+propina;
+			  if(redondear){
+			    const cada=Math.ceil(conPropina/n/100)*100;
+			    return { propina:propina/100, total:conPropina/100, porPersona:cada/100, personas:n,
+			             sobra:(cada*n-conPropina)/100, conCentimoMas:0 };
+			  }
+			  const base=Math.floor(conPropina/n), resto=conPropina-base*n;
+			  return { propina:propina/100, total:conPropina/100, porPersona:base/100, personas:n,
+			           sobra:0, conCentimoMas:resto };
+			}
+			function _splitDinero(v){
+			  return Number(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+			}
+			function ixSplitPersonas(d){
+			  _splitPersonas=Math.max(1, Math.min(99, _splitPersonas+d));
+			  ixSplitPintar();
+			}
+			function ixSplitPropina(p){ _splitPropina=p; ixSplitPintar(); }
+			function ixSplitUsarCalculadora(){
+			  const v=parseFloat(calcVal);
+			  const el=document.getElementById('split-total');
+			  if(el && v>0){ el.value=String(Math.round(v*100)/100); }
+			  ixSplitPintar();
+			}
+			function ixSplitPintar(){
+			  const caja=document.getElementById('split-propinas');
+			  if(caja) caja.innerHTML=IX_SPLIT_PROPINAS.map(function(p){
+			    const on=p===_splitPropina;
+			    return '<button onclick="ixSplitPropina('+p+')" aria-pressed="'+on+'" style="padding:8px 0;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;'
+			      +(on?'background:rgba(10,132,255,.25);border:1px solid rgba(10,132,255,.6);color:#0a84ff;':'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--txt);')
+			      +'">'+(p?p+' %':'Sin')+'</button>';
+			  }).join('');
+			  const np=document.getElementById('split-personas'); if(np) np.textContent=_splitPersonas;
+			  const out=document.getElementById('split-resultado'); if(!out) return;
+			  const tot=(document.getElementById('split-total')||{}).value;
+			  const red=!!(document.getElementById('split-redondear')||{}).checked;
+			  const r=ixDividirCuenta(tot, _splitPropina, _splitPersonas, red);
+			  if(!r){ out.innerHTML='<div style="font-size:12px;opacity:.6;text-align:center;">Escribe el total para repartirlo</div>'; return; }
+			  let nota='';
+			  if(r.sobra>0) nota='Redondeando sobran '+_splitDinero(r.sobra)+': para la propina o el bote.';
+			  else if(r.conCentimoMas>0) nota='No sale exacto: '+r.conCentimoMas+(r.conCentimoMas===1?' persona paga':' personas pagan')+' un céntimo más.';
+			  out.innerHTML=''
+			    +'<div style="font-size:11px;opacity:.6;">Cada persona paga</div>'
+			    +'<div id="split-cada" style="font-size:2rem;font-weight:300;line-height:1.1;">'+_splitDinero(r.porPersona)+'</div>'
+			    +'<div style="display:flex;justify-content:space-between;font-size:12px;opacity:.75;margin-top:6px;"><span>Propina</span><span>'+_splitDinero(r.propina)+'</span></div>'
+			    +'<div style="display:flex;justify-content:space-between;font-size:12px;opacity:.75;"><span>Total con propina</span><span>'+_splitDinero(r.total)+'</span></div>'
+			    +(nota?'<div style="font-size:11px;opacity:.6;margin-top:6px;">'+nota+'</div>':'');
 			}
 			// Override old renderCalcGrid
 			function renderCalcGrid(){
