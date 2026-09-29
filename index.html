@@ -16946,6 +16946,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
+			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
+			  ]},
 			  { v:'4.6', fecha: '29 de septiembre de 2026', titulo:'Tu voz, tu canción, tu día', cambios: [
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
 			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
@@ -17864,7 +17867,33 @@
 			  const b='style="margin-top:6px;margin-right:4px;padding:5px 10px;border-radius:999px;border:none;background:#0a84ff;color:#fff;font-weight:700;font-size:11px;cursor:pointer;"';
 			  return '<b>'+escapeHtml(L0.nombre)+'</b><br>'
 			    +(L0.cc ? '<button class="amap-radio" onclick="amapRadioDeAqui()" '+b+'>📻 '+escapeHtml(_uiT('Radio de aquí'))+'</button>' : '')
-			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>';
+			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>'
+			    +'<button class="amap-reloj" onclick="amapAlReloj()" '+b+'>🕐 '+escapeHtml(_uiT('Al reloj mundial'))+'</button>';
+			}
+			/* Mapas → reloj mundial (idea 27). Un lugar no trae su zona horaria,
+			   así que se le pregunta a Open-Meteo (el mismo servicio del tiempo,
+			   sin clave) con timezone=auto. La ciudad que sale en el reloj es la
+			   de su zona: Kioto usa la hora de Tokio y así lo dice. */
+			async function amapAlReloj(){
+			  const L0=_amapLugar; if(!L0) return null;
+			  let tz='';
+			  try{
+			    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+L0.lat.toFixed(4)+'&longitude='+L0.lon.toFixed(4)+'&timezone=auto&current=temperature_2m');
+			    const d=await r.json();
+			    tz=String((d&&d.timezone)||'');
+			  }catch(e){ tz=''; }
+			  if(!tz || !_icaTzValida(tz)){ try{ ixToast('⚠️ '+_uiT('Sin conexión: no se pudo saber su hora')); }catch(e){} return null; }
+			  const ciudad=_icaNombreDeTz(tz);
+			  if(_icaWorldClocks.indexOf(tz)>=0){
+			    try{ ixToast('🕐 '+ciudad+' '+_uiT('ya está en tu reloj mundial')); }catch(e){}
+			    return tz;
+			  }
+			  icaPickCity(tz);
+			  let hora='';
+			  try{ hora=new Date().toLocaleTimeString('es',{timeZone:tz,hour:'2-digit',minute:'2-digit'}); }catch(e){}
+			  const mismo=_icaNorm(ciudad)===_icaNorm(String(L0.nombre).split(',')[0]);
+			  try{ ixToast('🕐 '+(mismo ? ciudad : L0.nombre.split(',')[0]+' → '+_uiT('hora de')+' '+ciudad)+(hora?' · '+hora:'')); }catch(e){}
+			  return tz;
 			}
 			function amapLugarANota(){
 			  const L0=_amapLugar; if(!L0) return null;

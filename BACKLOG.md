@@ -79,8 +79,6 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
-    mundial».
 **IXBand**:
 33. **Exportar pistas por separado**, no solo la mezcla.
 34. **Sección como plantilla entre canciones**: hoy se duplica dentro de la
@@ -173,6 +171,12 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Mapas → reloj mundial** (idea 27, 29 de sept). Botón «🕐 Al reloj mundial»
+  en la ficha del lugar: `amapAlReloj` pide la zona a Open-Meteo
+  (`timezone=auto`, ya nombrado en privacidad), la valida con `Intl` y la añade
+  con `icaPickCity`. Dice «Kioto → hora de Tokio · hh:mm»; sin red o con zona
+  rara avisa y no añade; no duplica.
+  - Probado con `pruebas/mapareloj.js`: 10/10; antes 1/10.
 - **Tarea en Modo Enfoque + «Hoy en IXClocK»** (idea 63, 29 de sept). Campo
   «¿En qué vas a trabajar?» (`_enfCfg.tarea`); cada sesión terminada se apunta
   con su tarea y debajo sale el reparto de hoy (`enfoqueResumen().tareas`). La
