@@ -16810,6 +16810,7 @@
 			    '🎹 IXBand exporta MIDI: el botón «🎹 MIDI» guarda tu canción nota a nota para abrirla y editarla en GarageBand, FL Studio, Logic…',
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
 			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
+			    '🔁 IXBand → Pistas → «Práctica lenta»: repite la sección que estás viendo al 70 % y sube un 5 % en cada vuelta hasta el tempo de verdad, para aprenderla sin agobios',
 			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
@@ -18929,7 +18930,7 @@
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" title="Instrumento">🎹</button>'
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="loops" onclick="gbView(\'loops\')" title="Live Loops">🔁</button>'
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="tracks" onclick="gbView(\'tracks\')" title="Pistas">🎚️</button>'
-			    +    '<button class="gb-tb-btn" onclick="document.getElementById(\'garageband-modal\').style.display=\'none\'" title="Cerrar">✕</button>'
+			    +    '<button class="gb-tb-btn" onclick="gbPracticaParar(true);document.getElementById(\'garageband-modal\').style.display=\'none\'" title="Cerrar">✕</button>'
 			    +  '</div>'
 			    +'</div>'
 			    +'<canvas id="gb-waveform" width="900" height="30" style="width:100%;height:30px;background:#0d0d0d;flex-shrink:0;border-bottom:1px solid #000;"></canvas>'
@@ -20806,7 +20807,7 @@
 			  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 			  return L[n%26] + (n>=26 ? String(Math.floor(n/26)+1) : '');
 			}
-			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto(); } }
+			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ if(id!==_gbSecActiva) gbPracticaParar(true); _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto(); } }
 			function gbSecNueva(){
 			  _gbSecSeq++;
 			  const id='s'+_gbSecSeq;
@@ -20834,6 +20835,7 @@
 			  gbRenderTracks(); _gbGuardarPronto();
 			}
 			function gbSecBorrar(){
+			  gbPracticaParar(true);
 			  if(_gbSecciones.length<=1){ _gbEstado('La canción necesita al menos una sección.'); return; }
 			  const i=_gbSecIdx(_gbSecActiva); if(i<0) return;
 			  const id=_gbSecciones[i].id;
@@ -20883,6 +20885,61 @@
 			  _gbEstado('▶ Canción entera: '+_gbSecciones.length+' sección(es), '+Math.round(off/1000)+' s.');
 			  _gbCabezal(off);
 			  return off;
+			}
+			/* ── BUCLE DE PRÁCTICA (idea 62) ──
+			   Para aprender una parte: repite la sección que estás viendo más
+			   despacio (70 %) y en cada vuelta sube un 5 % hasta llegar al tempo
+			   de verdad, y ahí sigue. Solo cambia el ritmo, no el tono: IXBand
+			   guarda las notas, no el audio, así que no suena «a cámara lenta».
+			   Se para con el mismo botón, al cerrar IXBand o al vaciarse.      */
+			const GB_PRACTICA_DESDE=0.7, GB_PRACTICA_PASO=0.05;
+			let _gbPractica=null;
+			function gbPracticaToggle(){ _gbPractica ? gbPracticaParar() : gbPracticaEmpezar(); }
+			function gbPracticaEmpezar(){
+			  gbPracticaParar(true);
+			  const id=_gbSecActiva;
+			  // Cada toma con su sección puesta: una toma sin sección es de la primera.
+			  const d={ secciones:[{id:id}], takes:_gbTomasDe(id).map(function(x){ return Object.assign({}, x.t, {sec:id}); }) };
+			  const e=_ixEventosCancion(d);
+			  if(!e.lista.length){ _gbEstado('No hay nada que practicar en esta sección: guarda alguna toma primero.'); return false; }
+			  if(!_gbAudioCtx){ try{ _gbAudioCtx=getAudioCtx(); }catch(err){ return false; } }
+			  const pr={ vel:GB_PRACTICA_DESDE, vuelta:0, timers:[], sec:id };
+			  _gbPractica=pr;
+			  const largo=e.lista[e.lista.length-1].at+400;
+			  function ronda(){
+			    if(_gbPractica!==pr) return;
+			    pr.vuelta++; pr.timers=[];
+			    const vel=pr.vel, canales=new Map();
+			    e.lista.forEach(function(x){
+			      pr.timers.push(setTimeout(function(){
+			        if(_gbPractica!==pr) return;
+			        if(!canales.has(x.t)) canales.set(x.t, _gbCanalPista(x.t));
+			        _gbSalidaPista=canales.get(x.t);
+			        try{ x.ev.type==='drum' ? gbPlayDrum(x.ev.drumType,x.ev.freq,x.ev.vel) : gbPlayNote(x.ev.freq,x.ev.type,x.ev.vel); }
+			        catch(err){}
+			        finally{ _gbSalidaPista=null; }
+			      }, x.at/vel));
+			    });
+			    const tempo=Math.round((parseInt(_gbBpm)||120)*vel);
+			    _gbEstado('🔁 Práctica · vuelta '+pr.vuelta+' · '+Math.round(vel*100)+' % ('+tempo+' bpm)'+(vel>=1?' · ¡a tempo!':''));
+			    try{ _gbCabezal(largo/vel); }catch(err){}
+			    pr.vel=Math.min(1, Math.round((vel+GB_PRACTICA_PASO)*100)/100);
+			    pr.timers.push(setTimeout(ronda, largo/vel+600));
+			  }
+			  ronda();
+			  _gbPracticaBoton();
+			  return true;
+			}
+			function gbPracticaParar(callado){
+			  if(!_gbPractica) return;
+			  _gbPractica.timers.forEach(clearTimeout);
+			  _gbPractica=null;
+			  _gbPracticaBoton();
+			  if(!callado) _gbEstado('⏹ Práctica parada.');
+			}
+			function _gbPracticaBoton(){
+			  const b=document.getElementById('gb-practica-btn');
+			  if(b){ b.textContent=_gbPractica?'⏹ Parar práctica':'🔁 Práctica lenta'; b.classList.toggle('on', !!_gbPractica); }
 			}
 			/* ── EXPORTAR A MIDI (idea 32) ──
 			   IXBand guarda cada nota con su momento exacto, así que en vez de
@@ -21181,6 +21238,7 @@
 			  return true;
 			}
 			function gbBorrarCancionGuardada(){
+			  gbPracticaParar(true);
 			  try{ localStorage.removeItem(GB_CLAVE_CANCION); }catch(e){}
 			  _gbTakes=[]; _gbSecciones=[{id:'s1',nombre:'A'}]; _gbSecActiva='s1'; _gbSecSeq=1;
 			  _gbCancionActual=null;   // se sale de la cancion abierta, no se vacia la guardada
@@ -21230,6 +21288,7 @@
 			  _gbEstado('💾 Guardada como «'+c.nombre+'». Está en Mis canciones.');
 			}
 			function gbAbrirCancion(id){
+			  gbPracticaParar(true);
 			  gbCargarLista();
 			  const c=_gbCanciones.find(function(x){ return x.id===id; });
 			  if(!c || !c.datos) return;
@@ -21387,6 +21446,7 @@
 			    +'<button class="gb-chip" onclick="gbSaveTake()" style="background:linear-gradient(180deg,#4a4a4c,#38383a);">＋ Guardar toma actual</button>'
 			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
 			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
+			    +'<button id="gb-practica-btn" class="gb-chip'+(_gbPractica?' on':'')+'" onclick="gbPracticaToggle()" title="Repite esta sección más despacio y va subiendo el tempo en cada vuelta">'+(_gbPractica?'⏹ Parar práctica':'🔁 Práctica lenta')+'</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'

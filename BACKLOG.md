@@ -96,8 +96,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
-    subirlo poco a poco.
 63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
     («Hoy en IXClocK»: enfoque + alarmas + radio).
 
@@ -175,6 +173,13 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Bucle de práctica en IXBand** (idea 62, 29 de sept). Botón «🔁 Práctica
+  lenta» en Pistas: `gbPracticaEmpezar` toca la sección activa (reusa
+  `_ixEventosCancion`, así respeta mute/solo) al 70 % y sube un 5 % por vuelta
+  hasta el 100 %, donde se queda; la barra dice vuelta, % y bpm. Solo cambia el
+  ritmo, no el tono (son notas, no audio). Se para con el botón, al cerrar
+  IXBand, al cambiar/borrar sección, al abrir otra canción o al empezar de cero.
+  - Probado con `pruebas/practica.js` (reloj controlado): 13/13; antes 1/13.
 - **Canción de IXBand como tono de alarma** (idea 61, 29 de sept). El tono se
   guarda como `ixband:<id>` (Mis canciones) o `ixband:actual` (el guardado
   automático). `_ixEventosCancion` aplana la canción en el orden de «Toda la
