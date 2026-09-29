@@ -7604,7 +7604,8 @@
 			  'ica_alarms',            // Alarmas y temporizadores
 			  'ica_world_clocks',      // Ciudades del reloj mundial
 			  'cal_events',            // Calendario
-			  'radio_favs',            // Emisoras favoritas
+			  'ix_radio_favorites',    // Emisoras favoritas (ponía «radio_favs», una
+			                           // clave que nadie escribe: nunca viajaban)
 			  'ix_modo',               // Claro / oscuro / automatico
 			  'text_color',            // Color de las letras
 			  'ix_calidad',            // Calidad de los efectos
@@ -13467,6 +13468,12 @@
 			    if(h===now.getHours() && m===now.getMinutes() && _icaFired['a'+i]!==key){
 			      _icaFired['a'+i]=key;
 			      ringAlarm({id:'ica-'+i, hour:h, minute:m, label:a.label||'Alarma', tone:a.tone||'radial'});
+			      try{
+			        if(typeof icaAddToHistory==='function'){
+			          const h12=((h%12)||12), ampm=h>=12?'p. m.':'a. m.';
+			          icaAddToHistory(h12+':'+String(m).padStart(2,'0')+' '+ampm, a.label||'Alarma');
+			        }
+			      }catch(e){}
 			      if(a.fecha){
 			        a.on=false;
 			        try{ localStorage.setItem('ica_alarms', JSON.stringify(lista)); }catch(e){}
@@ -21903,25 +21910,11 @@
 			function icaAddAlarm(){ _icaHojaAlarma(null); }
 			function icaChangeAlarmTone(i){ _icaHojaAlarma(i); }
 			icaRenderAlarms();
-			// Comprobador: hace sonar las alarmas de la app Reloj con su tono elegido
-			let _icaLastFired = null;
-			setInterval(()=>{
-			  const now = new Date();
-			  const key = now.getHours()+':'+now.getMinutes()+':'+now.toDateString();
-			  if(_icaLastFired === key) return;
-			  _icaAlarms.forEach(a=>{
-			    if(!a.on) return;
-			    const [h,m] = a.time.split(':').map(Number);
-			    if(h===now.getHours() && m===now.getMinutes()){
-			      _icaLastFired = key;
-			      ringAlarm({hour:h, minute:m, label:a.label, tone:a.tone});
-			      if(typeof icaAddToHistory==='function'){
-			        const h12 = ((h%12)||12), ampm = h>=12?'p. m.':'a. m.';
-			        icaAddToHistory(h12+':'+String(m).padStart(2,'0')+' '+ampm, a.label);
-			      }
-			    }
-			  });
-			}, 5000);
+			// (Aquí había un SEGUNDO comprobador, cada 5 s, que miraba solo la
+			// hora y no la fecha: un recordatorio para otro día sonaba TODOS los
+			// días a esa hora, y el día bueno podía sonar dos veces. Las alarmas
+			// de la app Reloj las hace sonar solo checkIcaAlarms, desde el reloj
+			// principal; lo único que aportaba este, el historial, se pasó allí.)
 
 			// --- Stopwatch ---
 			let _icaSwRunning=false, _icaSwStart=0, _icaSwElapsed=0, _icaSwRaf=null, _icaSwLaps=[];
