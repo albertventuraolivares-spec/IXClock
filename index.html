@@ -7602,8 +7602,10 @@
 			const IX_NUBE_CLAVES=[
 			  'notes',                 // Notas
 			  'ica_alarms',            // Alarmas y temporizadores
+			  'alarms',                // Alarmas del panel del reloj y las que pone el asistente
 			  'ica_world_clocks',      // Ciudades del reloj mundial
 			  'cal_events',            // Calendario
+			  'ix_radio_etiquetas',    // Etiquetas de las favoritas (dormir, trabajar…)
 			  'ix_radio_favorites',    // Emisoras favoritas (ponía «radio_favs», una
 			                           // clave que nadie escribe: nunca viajaban)
 			  'ix_modo',               // Claro / oscuro / automatico
@@ -9422,6 +9424,46 @@
 			  renderStations();
 			  try{ ixToast(i>=0 ? '☆ Quitada de favoritas' : '★ Guardada en favoritas'); }catch(e){}
 			}
+			/* ── Etiquetas en las favoritas (idea 45) ──
+			   «Para dormir», «para trabajar»: con muchas favoritas, poder quedarte
+			   solo con las de un momento. Una etiqueta por emisora, a propósito:
+			   se pone con un toque (🏷️ va pasando por las cuatro) y no hace falta
+			   ningún formulario. Se guardan aparte de las favoritas para no
+			   cambiar el formato de ix_radio_favorites, que ya se sincroniza. */
+			const IX_RADIO_ETQ='ix_radio_etiquetas', IX_RADIO_ETQ_FILTRO='ix_radio_etq_filtro';
+			const RADIO_ETIQUETAS=[
+			  {id:'dormir',   txt:'😴 Dormir'},
+			  {id:'trabajar', txt:'💼 Trabajar'},
+			  {id:'deporte',  txt:'🏃 Deporte'},
+			  {id:'coche',    txt:'🚗 Coche'},
+			];
+			let _radioEtq=(function(){
+			  try{ const v=JSON.parse(localStorage.getItem(IX_RADIO_ETQ)||'{}'); return (v && typeof v==='object' && !Array.isArray(v)) ? v : {}; }
+			  catch(e){ return {}; }
+			})();
+			function radioEtiquetaDe(id){
+			  const e=RADIO_ETIQUETAS.find(function(x){ return x.id===_radioEtq[id]; });
+			  return e || null;
+			}
+			function radioCambiarEtiqueta(id, ev){
+			  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+			  const ids=RADIO_ETIQUETAS.map(function(x){ return x.id; });
+			  const i=ids.indexOf(_radioEtq[id]);
+			  const sig=(i+1<ids.length) ? ids[i+1] : null;      // la última vuelve a «sin etiqueta»
+			  if(sig) _radioEtq[id]=sig; else delete _radioEtq[id];
+			  try{ localStorage.setItem(IX_RADIO_ETQ, JSON.stringify(_radioEtq)); }catch(e){}
+			  renderStations();
+			  const e=radioEtiquetaDe(id);
+			  try{ ixToast(e ? '🏷️ '+e.txt : '🏷️ '+_uiT('Sin etiqueta')); }catch(x){}
+			  return sig;
+			}
+			function radioFiltroEtiqueta(){
+			  try{ return localStorage.getItem(IX_RADIO_ETQ_FILTRO)||''; }catch(e){ return ''; }
+			}
+			function radioFiltrarEtiqueta(id){
+			  try{ if(id) localStorage.setItem(IX_RADIO_ETQ_FILTRO, id); else localStorage.removeItem(IX_RADIO_ETQ_FILTRO); }catch(e){}
+			  renderStations();
+			}
 			// La ficha de una emisora. Se usa igual en favoritas y en la lista normal.
 			function _radioFicha(s){
 			  const fav=esFavoritaRadio(s.id);
@@ -9433,9 +9475,15 @@
 			    +' onmouseover="this.style.background=\'rgba(255,255,255,.1)\'" onmouseout="this.style.background=\'rgba(255,255,255,.05)\'">'
 			    +'<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1a3a5f,#0a84ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">'+(s.flag||'📻')+'</div>'
 			    +'<div style="text-align:left;flex:1;min-width:0;">'
-			    +  '<div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);">'+escapeHtml(s.title||'')+liveBadge+'</div>'
+			    +  '<div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);">'+escapeHtml(s.title||'')+liveBadge
+			    +    (fav && radioEtiquetaDe(s.id) ? '<span class="radio-etq" style="font-size:9px;font-weight:700;margin-left:6px;padding:1px 6px;border-radius:999px;background:rgba(10,132,255,.2);color:#64d2ff;">'+escapeHtml(radioEtiquetaDe(s.id).txt)+'</span>' : '')
+			    +  '</div>'
 			    +  '<div style="font-size:9px;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(s.sub||'')+'</div>'
 			    +'</div>'
+			    +(fav ? '<span role="button" tabindex="0" class="radio-etq-btn" aria-label="Cambiar la etiqueta"'
+			      +' title="Etiqueta: dormir, trabajar, deporte, coche"'
+			      +' onclick="radioCambiarEtiqueta(\''+s.id+'\',event)"'
+			      +' style="flex-shrink:0;font-size:13px;line-height:1;padding:6px;border-radius:8px;cursor:pointer;opacity:.7;">🏷️</span>' : '')
 			    +'<span role="button" tabindex="0" aria-label="'+(fav?'Quitar de favoritas':'Guardar en favoritas')+'"'
 			    +' title="'+(fav?'Quitar de favoritas':'Guardar en favoritas')+'"'
 			    +' onclick="toggleFavoritaRadio(\''+s.id+'\',event)"'
@@ -9476,7 +9524,18 @@
 			                         .filter(Boolean);
 			  if(favs.length){
 			    html += '<div style="font-size:9px;font-weight:800;opacity:.55;text-transform:uppercase;letter-spacing:.1em;padding:8px 2px 4px;">★ Tus favoritas</div>';
-			    favs.forEach(function(s){ html += _radioFicha(s); });
+			    // Filtros: solo las etiquetas que de verdad estás usando.
+			    const usadas=RADIO_ETIQUETAS.filter(function(e){ return favs.some(function(s){ return _radioEtq[s.id]===e.id; }); });
+			    let filtro=radioFiltroEtiqueta();
+			    if(filtro && !usadas.some(function(e){ return e.id===filtro; })) filtro='';
+			    if(usadas.length){
+			      const chip=function(id, txt){ const on=(id===filtro);
+			        return '<button onclick="radioFiltrarEtiqueta(\''+id+'\')" aria-pressed="'+on+'" class="radio-etq-filtro" style="padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;cursor:pointer;'
+			          +(on?'background:rgba(10,132,255,.3);border:1px solid rgba(10,132,255,.6);color:#64d2ff;':'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--txt);')+'">'+escapeHtml(txt)+'</button>'; };
+			      html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin:0 2px 6px;">'+chip('', _uiT('Todas'))+usadas.map(function(e){ return chip(e.id, e.txt); }).join('')+'</div>';
+			    }
+			    favs.filter(function(s){ return !filtro || _radioEtq[s.id]===filtro; })
+			        .forEach(function(s){ html += _radioFicha(s); });
 			    html += '<div style="height:1px;background:rgba(255,255,255,.1);margin:10px 2px 4px;"></div>';
 			  }
 
