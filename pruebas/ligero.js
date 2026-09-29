@@ -8,7 +8,9 @@
 //  · fechas: 30 próximas + TODAS las tuyas del calendario, y el botón dice
 //    cuántas quedan y las pinta todas (sin duplicar);
 //  · novedades: las 3 últimas versiones (la primera con «NUEVO») y el botón
-//    pinta el historial entero.
+//    pinta el historial entero;
+//  · estilos de reloj: no se pintan al abrir, sí al abrir «Relojes», con el
+//    guardado marcado, y el buscador de IXClocK los encuentra igual.
 const http=require('http'),fs=require('fs'),path=require('path');
 const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
 const ROOT=process.env.IXROOT||'/home/user/IXClock';
@@ -28,6 +30,7 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
    const ev={}; ev[k]=['Viaje a Lima'];
    localStorage.setItem('cal_events', JSON.stringify(ev));
+   localStorage.setItem('saved_clock_style','neon-tokyo');
  }catch(e){} });
  await p.goto('http://localhost:9301/',{waitUntil:'load'});
  await p.waitForTimeout(3000);
@@ -55,6 +58,25 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
    r.despues=vers(); r.botonTras=!!document.getElementById('nov-ver-todo');
    return r;
  });
+ o.rel=await p.evaluate(()=>{
+   const r={ alAbrir:document.querySelectorAll('.clock-style-btn').length, estilos:CLOCK_STYLES.length };
+   showTab('clocks');
+   r.trasTab=document.querySelectorAll('.clock-style-btn').length;
+   const act=document.querySelector('.clock-style-btn.active'); r.activo=act?act.id:null;
+   showTab('wallpapers');
+   return r;
+ });
+ // El buscador los encuentra aunque la pestaña no se haya abierto (página nueva)
+ const p2=await b.newPage({viewport:{width:1300,height:1000}, locale:'es-ES'});
+ await p2.route(/^https?:\/\/(?!localhost)/,r=>r.abort());
+ await p2.goto('http://localhost:9301/',{waitUntil:'load'});
+ await p2.waitForTimeout(2500);
+ o.busca=await p2.evaluate(()=>{
+   const antes=document.querySelectorAll('.clock-style-btn').length;
+   let hay=false;
+   try{ const nombre=CLOCK_STYLES[3].name; const t=ixBuscarTodo(nombre)||[]; hay=t.some(x=>x.grupo==='Relojes'); }catch(e){}
+   return { antes, despues:document.querySelectorAll('.clock-style-btn').length, hay };
+ });
  await b.close(); srv.close();
 
  const f=o.fest||{}, n=o.nov||{};
@@ -66,6 +88,9 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
   ['y las pinta todas, sin duplicar',               f.despues>100 && f.unicas===f.despues && f.botonTras===false, f.despues+' / '+f.unicas],
   ['novedades: las 3 últimas, con «NUEVO»',         n.antes===3 && n.nuevo, n.antes],
   ['el botón pinta el historial entero',            new RegExp('\\('+n.total+' versiones\\)').test(n.boton||'') && n.despues===n.total && !n.botonTras, (n.boton||'')+' → '+n.despues],
+  ['relojes: no se pintan al abrir',                 !!o.rel && o.rel.alAbrir===0, o.rel&&o.rel.alAbrir],
+  ['sí al abrir «Relojes», con el guardado marcado', !!o.rel && o.rel.trasTab===o.rel.estilos && o.rel.activo==='clockbtn-neon-tokyo', JSON.stringify(o.rel)],
+  ['el buscador de IXClocK los encuentra',          !!o.busca && o.busca.antes===0 && o.busca.despues>0 && o.busca.hay, JSON.stringify(o.busca)],
   ['sin errores de página',                         errs.length===0, errs.slice(0,3).join(' | ')],
  ];
  let ok=0;

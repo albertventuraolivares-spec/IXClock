@@ -7278,9 +7278,17 @@
 			  const btn = document.getElementById('clockbtn-' + id);
 			  if(btn) btn.classList.add('active');
 			}
+			/* Rendimiento (idea 81): los ~110 estilos de reloj (760 elementos) se
+			   pintaban al abrir la app en una pestaña oculta. Ahora se pintan la
+			   primera vez que hacen falta: al abrir «Relojes», al filtrar o al
+			   buscar en IXClocK (que los lee de la pantalla). */
+			let _clockGridHecho=false;
+			function _asegurarClockGrid(){ if(!_clockGridHecho) renderClockGrid(); }
 			function renderClockGrid(){
+			  _clockGridHecho = true;
 			  const grid = document.getElementById('clock-style-grid');
 			  grid.innerHTML = '';
+			  let guardado=null; try{ guardado=localStorage.getItem('saved_clock_style'); }catch(e){}
 			  CLOCK_STYLES.forEach(s=>{
 			    const btn = document.createElement('div');
 			    btn.className = 'clock-style-btn';
@@ -7311,10 +7319,12 @@
 			    label.innerText = s.name;
 			    btn.appendChild(preview);
 			    btn.appendChild(label);
+			    if(guardado===s.id) btn.classList.add('active');
 			    grid.appendChild(btn);
 			  });
 			}
 			function filterClockStyles(){
+			  _asegurarClockGrid();
 			  const q = document.getElementById('clock-search').value.toLowerCase();
 			  document.querySelectorAll('.clock-style-btn').forEach(b=>{
 			    b.style.display = b.getAttribute('data-tags').includes(q) ? 'flex' : 'none';
@@ -7977,6 +7987,7 @@
 			    try{ ixGooglePintar(); }catch(e){}
 			    try{ ixCorreoPintar(); }catch(e){}
 			  }
+			  if(name==='clocks'){ try{ _asegurarClockGrid(); }catch(e){} }
 			  ['wallpapers','clocks','more','manual'].forEach(t=>{
 			    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
 			    document.getElementById('tab-'+t).classList.toggle('flex', t===name);
@@ -16577,7 +16588,6 @@
 			renderWallpaperGrid();
 			_wpPumpThumbs();
 			_wpImgSelfTest();
-			renderClockGrid();
 			renderColorPalette();
 			renderTextColorPalette();
 			renderStations();
@@ -16967,7 +16977,7 @@
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
 			  { v:'4.8', fecha: '29 de septiembre de 2026', titulo:'Más ligera', cambios: [
-			    '⚡ La app abre más ligera: un 27 % menos de cosas pintadas al arrancar. Las fechas que vienen enseñan las 30 próximas (y todas las tuyas) con un botón para ver el resto, y las Novedades las 3 últimas versiones',
+			    '⚡ La app abre más ligera: un 37 % menos de cosas pintadas al arrancar. Las fechas que vienen enseñan las 30 próximas (y todas las tuyas) con un botón para ver el resto, las Novedades las 3 últimas versiones y los 248 estilos de reloj se preparan al abrir «Relojes»',
 			  ]},
 			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
 			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
@@ -25353,6 +25363,7 @@
 			  // 6-8. Lo que ya está pintado en pantalla
 			  try{
 			    todo.push.apply(todo,_ixDeDom('.wallpaper-card','Fondos','🖼️','Poner este fondo','.wp-label'));
+			    try{ _asegurarClockGrid(); }catch(e){}
 			    todo.push.apply(todo,_ixDeDom('.clock-style-btn','Relojes','🕰️','Poner este reloj','div:last-child'));
 			  }catch(e){}
 			  /* Los eventos del Calendario. El buscador promete «buscar en todo» y
