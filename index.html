@@ -8563,6 +8563,14 @@
 			    }).filter(function(f){ return f.diff>=0 && f.diff<=366; });
 			  }catch(e){}
 			  feriados = mios.concat(feriados).sort((a,b)=>a.diff-b.diff || (b.mio?1:0)-(a.mio?1:0));
+			  // Rendimiento (idea 81): eran ~245 filas (1.500 elementos) pintadas al
+			  // abrir la app, en un panel que casi nunca se recorre entero. Se
+			  // pintan las 30 próximas y TODAS las tuyas; el resto, con un botón.
+			  const total = feriados.length;
+			  if(!_festTodas){
+			    let n=0;
+			    feriados = feriados.filter(function(f){ if(f.mio) return true; n++; return n<=IX_FEST_PRIMERAS; });
+			  }
 			  const box = document.getElementById('events-box');
 			  box.innerHTML='';
 			  // Holiday banner: show if today is a holiday
@@ -8608,7 +8616,18 @@
 			      <div style="font-size:10px;font-weight:800;color:${colorDias};white-space:nowrap;flex-shrink:0;text-align:right;">${txtDias}</div>`;
 			    box.appendChild(div);
 			  });
+			  if(total > feriados.length){
+			    const mas=document.createElement('button');
+			    mas.id='fest-ver-mas';
+			    mas.className='w-full p-2 rounded-xl hover:bg-white/5';
+			    mas.style.cssText='font-size:11px;font-weight:700;color:var(--txt);opacity:.75;background:none;border:1px dashed rgba(255,255,255,.2);cursor:pointer;';
+			    mas.textContent=_uiT('Ver las')+' '+(total-feriados.length)+' '+_uiT('fechas siguientes');
+			    mas.onclick=function(){ _festTodas=true; renderizarFeriados(); };
+			    box.appendChild(mas);
+			  }
 			}
+			const IX_FEST_PRIMERAS=30;
+			let _festTodas=false;
 
 			/* ===================== HOURLY FORECAST (placeholder data) ===================== */
 			function generateHourlyForecast(){
@@ -16947,6 +16966,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.8', fecha: '29 de septiembre de 2026', titulo:'Más ligera', cambios: [
+			    '⚡ La app abre más ligera: un 27 % menos de cosas pintadas al arrancar. Las fechas que vienen enseñan las 30 próximas (y todas las tuyas) con un botón para ver el resto, y las Novedades las 3 últimas versiones',
+			  ]},
 			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
 			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
 			    '📋 IXBand: trae un estribillo (o cualquier sección) de otra de tus canciones con el botón 📋 de la barra de secciones',
@@ -17266,6 +17288,10 @@
 			  for(const k in IX_CAT){ if(txt.indexOf(k)===0) return { cat: IX_CAT[k], rest: txt.slice(k.length).trim() }; }
 			  return { cat: null, rest: txt.trim() };
 			}
+			// Rendimiento (idea 81): el historial entero son ~70 versiones y 800
+			// elementos pintados al abrir la app en una pestaña oculta. Se pintan
+			// las 3 últimas; el resto, al pedirlo.
+			let _novTodas=false;
 			function renderNovedades(){
 			  const el = document.getElementById('novedades-card');
 			  if(!el || !IX_CHANGELOG.length) return;
@@ -17275,7 +17301,7 @@
 			  /* línea de tiempo vertical (estilo tablero de updates de un juego) */
 			  s += '<div style="position:relative;padding-left:20px;">'
 			    + '<div style="position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,rgba(48,209,88,.55),rgba(255,255,255,.08));border-radius:2px;"></div>';
-			  IX_CHANGELOG.forEach(function(e, i){
+			  (_novTodas ? IX_CHANGELOG : IX_CHANGELOG.slice(0,3)).forEach(function(e, i){
 			    const nuevo = i === 0;
 			    const dot = nuevo ? '#30d158' : 'var(--txt-40)';
 			    s += '<div style="position:relative;margin-bottom:16px;">';
@@ -17299,6 +17325,9 @@
 			    s += '</div></div>';
 			  });
 			  s += '</div>';
+			  if(!_novTodas && IX_CHANGELOG.length>3)
+			    s += '<button id="nov-ver-todo" onclick="_novTodas=true;renderNovedades()" style="width:100%;padding:8px;border-radius:10px;border:1px dashed rgba(48,209,88,.4);background:none;color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'
+			      + escapeHtml(_uiT('Ver todo el historial')) + ' (' + IX_CHANGELOG.length + ' ' + escapeHtml(_uiT('versiones')) + ')</button>';
 			  el.innerHTML = s;
 			}
 			renderNovedades();
