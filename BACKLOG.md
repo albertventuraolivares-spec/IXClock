@@ -148,8 +148,6 @@ Comprobado aquí:
     **PREGUNTAR AL USUARIO** antes.
 
 **Otras**:
-39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
-    sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
 40. ~~Modo Coche~~ hecho (ver Hecho). Falta: meter el mapa en navegación
     DENTRO del modo coche (hoy «Mapas» sale del modo y abre Mapas).
     («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
@@ -171,6 +169,15 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Recordatorios por ubicación** (idea 39, 29 de sept). Ficha del lugar en
+  Mapas: «📍 Avísame al llegar» / «🚪 al salir» (radio 200 m, en
+  `ix_lugares_aviso_v1`). `watchPosition` con `maximumAge:0` (una posición
+  vieja hacía saltar «al salir» en falso: lo cazó la prueba) y solo mientras
+  haya avisos; al abrir la app solo vigila si el permiso YA estaba dado (no
+  pregunta: ver ítem 82). «Al salir» exige haberte visto dentro. Avisa con
+  `ixNotificar` y se quita. Lista con ✕ en Avisos, con el límite dicho: solo
+  con la app abierta.
+  - Probado con `pruebas/lugares.js` (GPS simulado): 14/14; antes 1/14.
 - **Las pruebas pasan en GitHub Actions** (idea 74, 29 de sept).
   `.github/workflows/pruebas.yml` corre `sh pruebas/todas.sh` en cada PR (y a
   mano): instala Playwright 1.56.1 + Chromium y se lo dice a las pruebas con
