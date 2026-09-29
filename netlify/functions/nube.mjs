@@ -23,7 +23,7 @@ import { getStore } from '@netlify/blobs';
 const HEADERS = {
 	'content-type': 'application/json',
 	'access-control-allow-origin': '*',
-	'access-control-allow-methods': 'GET, POST, OPTIONS',
+	'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
 	'access-control-allow-headers': 'content-type',
 };
 
@@ -88,6 +88,20 @@ export default async (req) => {
 		const guardado = new Date().toISOString();
 		await store.setJSON(await claveDe(codigo), { datos: body.datos, guardado });
 		return new Response(JSON.stringify({ ok: true, guardado }), { status: 200, headers: HEADERS });
+	}
+
+	// Borrar la copia del servidor. Lo pide la politica de privacidad: sin
+	// esto, para borrarla habia que mandarnos el codigo por correo, que es
+	// justo lo que se le dice al usuario que no haga. Con el codigo basta,
+	// igual que para leerla: quien puede leerla puede borrarla.
+	if (req.method === 'DELETE') {
+		const url = new URL(req.url);
+		const codigo = normaliza(url.searchParams.get('codigo'));
+		if (!VALIDO.test(codigo)) {
+			return new Response('{"error":"codigo"}', { status: 400, headers: HEADERS });
+		}
+		await store.delete(await claveDe(codigo));
+		return new Response('{"ok":true}', { status: 200, headers: HEADERS });
 	}
 
 	return new Response('{"error":"metodo"}', { status: 405, headers: HEADERS });
