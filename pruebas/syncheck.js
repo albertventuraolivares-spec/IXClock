@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm');
-const h=fs.readFileSync('/home/user/IXClock/index.html','utf8');
+const h=fs.readFileSync((process.env.IXROOT||'/home/user/IXClock')+'/index.html','utf8');
 // Solo JavaScript: los <script type="application/ld+json"> son datos, no código.
 const re=/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/gi;
 let m,i=0,ok=0,bad=0;

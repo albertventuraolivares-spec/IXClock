@@ -4822,6 +4822,7 @@
 						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
 						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
 						<button id="notes-alarma-btn" onclick="notasAAlarma()" title="Convertir en alarma" aria-label="Convertir la nota en alarma" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">⏰</button>
+						<button id="notes-voz-btn" onclick="notasVozToggle()" title="Nota de voz" aria-label="Grabar una nota de voz" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎙️</button>
 						<button id="notes-lista-btn" onclick="notasCasilla()" title="Casilla" aria-label="Convertir la línea en casilla" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">☑</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
@@ -4837,6 +4838,8 @@
 				<!-- Las casillas de la nota, para tocarlas. El texto de arriba sigue
 				     siendo la verdad: esto solo lo lee y lo cambia. -->
 				<div id="notes-casillas" class="hidden" style="max-height:40%;overflow:auto;padding:4px 12px 10px;border-top:1px solid rgba(255,255,255,.08);"></div>
+				<!-- Notas de voz de esta nota (el audio vive en IndexedDB). -->
+				<div id="notes-audios" class="hidden" style="max-height:40%;overflow:auto;padding:4px 12px 10px;border-top:1px solid rgba(255,255,255,.08);"></div>
 				<!-- Lienzo de dibujo estilo Apple Notes: lápiz, bolígrafo, marcador,
 				     resaltador, borrador + colores; compatible con lápices de iPad y
 				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
@@ -12847,6 +12850,7 @@
 			  juegos, emulador, radio, musica, vpn, bench, nube, brujula, buscador, buscar)
 			- Fondo:       [[FONDO nombre="tokio"]]                       ("ponme un fondo de Tokio")
 			- Radio:       [[RADIO nombre="jazz"]]                        ("pon jazz")
+			- Imagen:      [[IMAGEN prompt="descripción en inglés, detallada"]] ("dibújame un gato astronauta")
 			Si no te piden hacer nada, no pongas ninguna etiqueta.
 			Responde de forma concisa y útil. No repitas la pregunta del usuario.`;
 
@@ -12964,6 +12968,14 @@
 			      try{ setWallpaper(w.id); }catch(e){ return null; }
 			      return '🖼️ Fondo cambiado a '+w.name;
 			    }},
+			  // Imágenes (idea 15): Pollinations, el mismo servicio gratis que ya
+			  // da el texto, también dibuja. Se pinta en el chat con un enlace para
+			  // bajarla; si no carga (sin conexión), lo dice en vez de un hueco.
+			  IMAGEN: { campos:['prompt'], hacer:function(a){
+			      const pr=String(a.prompt||'').trim().slice(0,300); if(!pr) return null;
+			      ixaPintarImagen(pr);
+			      return '🎨 '+_uiT('Imagen')+': '+pr;
+			    }},
 			  RADIO:  { campos:['nombre'], hacer:function(a){
 			      const n=(a.nombre||'').trim().toLowerCase(); if(!n) return null;
 			      const st=(typeof STATIONS!=='undefined'?STATIONS:[]).find(function(x){
@@ -12974,6 +12986,29 @@
 			      return '📻 Sonando: '+st.title;
 			    }}
 			};
+			function ixaUrlImagen(prompt){
+			  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(prompt)+'?width=768&height=768&nologo=true';
+			}
+			function ixaPintarImagen(prompt){
+			  const box=document.getElementById('ai-messages');
+			  if(!box) return null;
+			  const div=document.createElement('div');
+			  div.className='ai-msg bot ai-imagen';
+			  const img=document.createElement('img');
+			  img.src=ixaUrlImagen(prompt);
+			  img.alt=prompt;                       // es texto: alt no ejecuta nada
+			  img.loading='lazy';
+			  img.style.cssText='display:block;width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.06);object-fit:cover;';
+			  const pie=document.createElement('a');
+			  pie.href=img.src; pie.target='_blank'; pie.rel='noopener';
+			  pie.textContent='⬇️ '+_uiT('Abrir o guardar la imagen');
+			  pie.style.cssText='display:inline-block;margin-top:6px;font-size:12px;';
+			  img.onerror=function(){ div.textContent='⚠️ '+_uiT('No se pudo crear la imagen (¿sin conexión?)'); };
+			  div.appendChild(img); div.appendChild(pie);
+			  box.appendChild(div);
+			  box.scrollTop=box.scrollHeight;
+			  return div;
+			}
 			// Saca las etiquetas del texto y devuelve lo que hay que hacer.
 			function ixaExtraerAcciones(texto){
 			  const acciones=[];
@@ -13523,6 +13558,10 @@
 			    const n=nombreDeEmisora(emisoraDelTono(toneId));
 			    return n ? ('📻 '+n) : '📻 Radio';
 			  }
+			  if(esTonoDeCancion(toneId)){
+			    const c=_ixCancionDelTono(toneId);
+			    return c ? ('🎸 '+c.nombre) : '🎸 IXBand';
+			  }
 			  const t = ALARM_TONES.find(x=>x.id===toneId);
 			  return t ? t.name : 'Radial';
 			}
@@ -13608,8 +13647,92 @@
 			    return st ? st.title : null;
 			  }catch(e){ return null; }
 			}
+			/* ── DESPERTAR CON TU CANCIÓN DE IXBAND (idea 61) ──
+			   El tono se guarda como "ixband:<id>" (una de Mis canciones) o
+			   "ixband:actual" (lo último que tocaste, que IXBand guarda solo).
+			   Suena con los mismos instrumentos de IXBand, sin internet, y en
+			   bucle hasta que la apagues. Si la canción ya no existe o no tiene
+			   nada que suene, suena el tono de siempre.                       */
+			const IXBAND_TONO = 'ixband:';
+			function esTonoDeCancion(toneId){ return String(toneId||'').indexOf(IXBAND_TONO)===0; }
+			// Mismo orden que «Toda la canción»: secciones una tras otra con 400 ms
+			// de respiro, y el silencio y el solo cuentan por sección.
+			function _ixEventosCancion(d){
+			  const takes=Array.isArray(d&&d.takes)?d.takes:[];
+			  const secs=(Array.isArray(d&&d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1'}];
+			  const secDe=function(t){ return t.sec||secs[0].id; };
+			  const lista=[]; let off=0;
+			  secs.forEach(function(sec){
+			    const tomas=takes.filter(function(t){ return t && secDe(t)===sec.id && Array.isArray(t.events); });
+			    const haySolo=tomas.some(function(t){ return t.solo; });
+			    let dur=0;
+			    tomas.forEach(function(t){
+			      if(t.muted || (haySolo && !t.solo)) return;
+			      t.events.forEach(function(ev){ lista.push({at:off+(ev.at||0), ev:ev, t:t}); });
+			      const d2=t.events.length?(t.events[t.events.length-1].at||0):0;
+			      if(d2>dur) dur=d2;
+			    });
+			    if(dur>0) off+=dur+400;
+			  });
+			  lista.sort(function(a,b){ return a.at-b.at; });
+			  return {lista:lista, dur:off};
+			}
+			function ixCancionesParaAlarma(){
+			  const r=[];
+			  try{
+			    const d=JSON.parse(localStorage.getItem('ixband_cancion_v1')||'null');
+			    if(d && Array.isArray(d.takes)) r.push({id:'actual', nombre:'Lo último que tocaste', datos:d});
+			  }catch(e){}
+			  try{
+			    const l=JSON.parse(localStorage.getItem('ixband_canciones_v1')||'[]');
+			    (Array.isArray(l)?l:[]).forEach(function(c){ if(c && c.id && c.datos) r.push({id:String(c.id), nombre:c.nombre||'Canción', datos:c.datos}); });
+			  }catch(e){}
+			  return r.filter(function(c){ return _ixEventosCancion(c.datos).lista.length>0; });
+			}
+			function _ixCancionDelTono(toneId){
+			  if(!esTonoDeCancion(toneId)) return null;
+			  const id=String(toneId).slice(IXBAND_TONO.length);
+			  return ixCancionesParaAlarma().find(function(c){ return c.id===id; }) || null;
+			}
+			// Toca la canción en bucle; devuelve la función para pararla (o null si
+			// no hay nada que tocar).
+			function ixTocarCancion(datos){
+			  const e=_ixEventosCancion(datos);
+			  if(!e.lista.length) return null;
+			  try{
+			    if(!_gbAudioCtx) _gbAudioCtx=getAudioCtx();
+			    if(_gbAudioCtx.state==='suspended') _gbAudioCtx.resume();
+			  }catch(err){ return null; }
+			  let parado=false, timers=[];
+			  const vuelta=Math.max(e.dur, e.lista[e.lista.length-1].at+400, 1500)+1200;
+			  function ronda(){
+			    if(parado) return;
+			    timers=[];
+			    const canales=new Map();
+			    e.lista.forEach(function(x){
+			      timers.push(setTimeout(function(){
+			        if(parado) return;
+			        if(!canales.has(x.t)) canales.set(x.t, _gbCanalPista(x.t));
+			        _gbSalidaPista=canales.get(x.t);
+			        try{ x.ev.type==='drum' ? gbPlayDrum(x.ev.drumType,x.ev.freq,x.ev.vel) : gbPlayNote(x.ev.freq,x.ev.type,x.ev.vel); }
+			        catch(err){}
+			        finally{ _gbSalidaPista=null; }
+			      }, x.at));
+			    });
+			    timers.push(setTimeout(ronda, vuelta));
+			  }
+			  ronda();
+			  return function(){ parado=true; timers.forEach(clearTimeout); timers=[]; };
+			}
 			let _radioDespertarVigila=null;
 			function playRingingSound(toneId){
+			  if(esTonoDeCancion(toneId)){
+			    const c=_ixCancionDelTono(toneId);
+			    let parar=null;
+			    try{ parar = c ? ixTocarCancion(c.datos) : null; }catch(e){ parar=null; }
+			    ringingAudioStop = parar || playAlarmTone('radial');
+			    return;
+			  }
 			  const emisora = emisoraDelTono(toneId);
 			  if(!emisora){ ringingAudioStop = playAlarmTone(toneId); return; }
 
@@ -13929,7 +14052,8 @@
 			    const rest = n.content.split('\n').slice(1)
 			      .map(function(l){ return l.replace(/^\s*[-*] \[ \] ?/,'☐ ').replace(/^\s*[-*] \[[xX]\] ?/,'✓ '); })
 			      .join(' ').trim().slice(0,80);
-			    const title = firstLine || 'Nota nueva';
+			    const nAudios = Array.isArray(n.audios) ? n.audios.length : 0;
+			    const title = firstLine || (nAudios ? 'Nota de voz' : 'Nota nueva');
 			    const row = document.createElement('div');
 			    row.className = 'note-row';
 			    row.onclick = ()=>notesOpen(n.id);
@@ -13938,6 +14062,7 @@
 			      +(n.carpeta && _notasCarpeta===null ? '<span>'+notasIcono(n.carpeta)+escapeHtml(n.carpeta)+'</span>' : '')
 			      +(function(){ const pr=notasProgreso(n.content);
 			          return pr ? '<span>☑ '+pr.hechas+'/'+pr.total+'</span>' : ''; })()
+			      +(nAudios ? '<span>🎙️ '+nAudios+'</span>' : '')
 			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
 			    list.appendChild(row);
 			  });
@@ -14038,6 +14163,7 @@
 			  notasPintarBotones();
 			  notesSetMode('text');
 			  try{ notasPintarCasillas(); }catch(e){}
+			  try{ notasVozPintar(); }catch(e){}
 			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
 			}
@@ -14183,9 +14309,145 @@
 			}
 			function notesDeleteCurrent(){
 			  if(!currentNoteId) return;
+			  const borrada = notes.find(x=>x.id===currentNoteId);
+			  // Sus audios se van con ella: si no, quedarían ocupando sitio para siempre.
+			  if(borrada && Array.isArray(borrada.audios)) borrada.audios.forEach(function(a){ notasVozBorrar(a.id); });
 			  notes = notes.filter(x=>x.id!==currentNoteId);
 			  saveNotes();
 			  notesShowList();
+			}
+
+			/* ── NOTAS DE VOZ (idea 56) ──
+			   El botón 🎙️ graba con el micrófono y la grabación queda dentro de la
+			   nota. El audio va en IndexedDB, no en localStorage: un minuto de voz
+			   ya llenaría el hueco de toda la app. La nota solo guarda la lista
+			   {id, dur, fecha}, así que buscar, fijar, carpetas y sincronizar
+			   siguen igual; en otro aparato se ve la nota y se dice que el audio
+			   está en el que lo grabó. Cada grabación dura como mucho 5 minutos. */
+			const NOTAS_VOZ_DB='ixclock_voz', NOTAS_VOZ_ST='audios', NOTAS_VOZ_MAX=5*60000;
+			let _notasRec=null, _notasVozUrls=[];
+			function _notasVozTx(modo, fn){
+			  return new Promise(function(res, rej){
+			    let req;
+			    try{ req=indexedDB.open(NOTAS_VOZ_DB,1); }catch(e){ return rej(e); }
+			    req.onupgradeneeded=function(){ const db=req.result; if(!db.objectStoreNames.contains(NOTAS_VOZ_ST)) db.createObjectStore(NOTAS_VOZ_ST,{keyPath:'id'}); };
+			    req.onerror=function(){ rej(req.error); };
+			    req.onsuccess=function(){
+			      const db=req.result;
+			      const tx=db.transaction(NOTAS_VOZ_ST, modo);
+			      const r=fn(tx.objectStore(NOTAS_VOZ_ST));
+			      tx.oncomplete=function(){ db.close(); res(r && r.result!==undefined ? r.result : null); };
+			      tx.onerror=tx.onabort=function(){ db.close(); rej(tx.error||new Error('abortada')); };
+			    };
+			  });
+			}
+			function notasVozGuardar(id, blob){ return _notasVozTx('readwrite', function(st){ return st.put({id:id, blob:blob}); }); }
+			function notasVozLeer(id){ return _notasVozTx('readonly', function(st){ return st.get(id); }).then(function(r){ return r ? r.blob : null; }).catch(function(){ return null; }); }
+			function notasVozBorrar(id){ return _notasVozTx('readwrite', function(st){ return st.delete(id); }).catch(function(){}); }
+			function _notasVozMmss(seg){ seg=Math.max(0,Math.round(seg)); return Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0'); }
+			function notasVozBoton(){
+			  const b=document.getElementById('notes-voz-btn');
+			  if(!b) return;
+			  if(_notasRec){
+			    b.textContent='⏹ '+_notasVozMmss((Date.now()-_notasRec.t0)/1000);
+			    b.style.background='#ff453a'; b.setAttribute('aria-label','Parar la grabación');
+			  } else {
+			    b.textContent='🎙️'; b.style.background='rgba(255,255,255,.1)'; b.setAttribute('aria-label','Grabar una nota de voz');
+			  }
+			}
+			async function notasVozToggle(){
+			  if(_notasRec){ _notasRec.parar(); return; }
+			  const notaId=currentNoteId;
+			  if(!notaId) return;
+			  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+			    try{ ixToast('Este navegador no deja grabar audio'); }catch(e){} return;
+			  }
+			  let stream;
+			  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+			  catch(e){ try{ ixToast('🎙️ Hace falta permiso para usar el micrófono'); }catch(_){} return; }
+			  let rec;
+			  try{ rec=new MediaRecorder(stream); }
+			  catch(e){ stream.getTracks().forEach(function(t){ t.stop(); }); try{ ixToast('No se pudo grabar en este navegador'); }catch(_){} return; }
+			  const trozos=[], t0=Date.now();
+			  let tope=null, reloj=null;
+			  rec.ondataavailable=function(e){ if(e.data && e.data.size) trozos.push(e.data); };
+			  rec.onstop=async function(){
+			    stream.getTracks().forEach(function(t){ t.stop(); });
+			    clearTimeout(tope); clearInterval(reloj);
+			    _notasRec=null; notasVozBoton();
+			    const blob=new Blob(trozos, {type:rec.mimeType||'audio/webm'});
+			    if(!blob.size){ try{ ixToast('No se grabó nada'); }catch(e){} return; }
+			    const a={ id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), dur:Math.max(1,Math.round((Date.now()-t0)/1000)), fecha:Date.now() };
+			    try{ await notasVozGuardar(a.id, blob); }
+			    catch(e){ try{ ixToast('⚠️ No se pudo guardar el audio en este dispositivo'); }catch(_){} return; }
+			    const n=notes.find(function(x){ return x.id===notaId; });
+			    if(!n){ notasVozBorrar(a.id); return; }        // la nota se borró mientras grababas
+			    (n.audios=Array.isArray(n.audios)?n.audios:[]).push(a);
+			    n.updatedAt=Date.now();
+			    await saveNotes();
+			    if(currentNoteId===notaId) notasVozPintar();
+			    try{ ixToast('🎙️ Nota de voz guardada ('+_notasVozMmss(a.dur)+')'); }catch(e){}
+			  };
+			  _notasRec={ t0:t0, parar:function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} } };
+			  tope=setTimeout(function(){ if(_notasRec) _notasRec.parar(); }, NOTAS_VOZ_MAX);
+			  reloj=setInterval(notasVozBoton, 500);
+			  rec.start(1000);
+			  notasVozBoton();
+			}
+			async function notasVozPintar(){
+			  const caja=document.getElementById('notes-audios');
+			  if(!caja) return;
+			  const notaId=currentNoteId;
+			  const n=notes.find(function(x){ return x.id===notaId; });
+			  const lista=(n && Array.isArray(n.audios)) ? n.audios : [];
+			  _notasVozUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} });
+			  _notasVozUrls=[];
+			  if(!lista.length){ caja.classList.add('hidden'); caja.innerHTML=''; return; }
+			  const blobs=await Promise.all(lista.map(function(a){ return notasVozLeer(a.id); }));
+			  if(currentNoteId!==notaId) return;               // se abrió otra nota mientras tanto
+			  caja.innerHTML='';
+			  const cab=document.createElement('div');
+			  cab.style.cssText='font-size:10px;font-weight:800;opacity:.6;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 4px;';
+			  cab.textContent='🎙️ Notas de voz';
+			  caja.appendChild(cab);
+			  lista.forEach(function(a, i){
+			    const fila=document.createElement('div');
+			    fila.className='nota-voz';
+			    fila.style.cssText='display:flex;align-items:center;gap:8px;margin:4px 0;';
+			    const info=document.createElement('span');
+			    info.style.cssText='font-size:11px;opacity:.7;white-space:nowrap;';
+			    info.textContent=_notasVozMmss(a.dur)+' · '+notesFormatDate(a.fecha);
+			    fila.appendChild(info);
+			    if(blobs[i]){
+			      const u=URL.createObjectURL(blobs[i]); _notasVozUrls.push(u);
+			      const au=document.createElement('audio');
+			      au.controls=true; au.preload='metadata'; au.src=u;
+			      au.style.cssText='flex:1;min-width:0;height:34px;';
+			      au.setAttribute('aria-label','Nota de voz de '+_notasVozMmss(a.dur));
+			      fila.appendChild(au);
+			    } else {
+			      const f=document.createElement('span');
+			      f.className='nota-voz-fuera';
+			      f.style.cssText='flex:1;font-size:11px;opacity:.55;';
+			      f.textContent='Este audio está en el dispositivo donde se grabó';
+			      fila.appendChild(f);
+			    }
+			    const x=document.createElement('button');
+			    x.textContent='✕'; x.title='Borrar esta nota de voz'; x.setAttribute('aria-label','Borrar esta nota de voz');
+			    x.style.cssText='background:rgba(255,69,58,.18);border:none;border-radius:8px;color:#ff6961;font-size:12px;padding:6px 9px;cursor:pointer;';
+			    x.onclick=function(){ notasVozQuitar(a.id); };
+			    fila.appendChild(x);
+			    caja.appendChild(fila);
+			  });
+			  caja.classList.remove('hidden');
+			}
+			async function notasVozQuitar(id){
+			  const n=notes.find(function(x){ return x.id===currentNoteId; });
+			  if(!n || !Array.isArray(n.audios)) return;
+			  n.audios=n.audios.filter(function(a){ return a.id!==id; });
+			  await saveNotes();
+			  notasVozBorrar(id);
+			  notasVozPintar();
 			}
 
 			/* ===================== NOTAS — DIBUJO estilo Apple Notes =====================
@@ -16684,6 +16946,14 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.6', fecha: '29 de septiembre de 2026', titulo:'Tu voz, tu canción, tu día', cambios: [
+			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
+			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
+			    '🔁 IXBand → Pistas → «Práctica lenta»: repite la sección que estás viendo al 70 % y sube un 5 % en cada vuelta hasta el tempo de verdad, para aprenderla sin agobios',
+			    '🎙️ Notas de voz: en cualquier nota, toca 🎙️ para grabar y otra vez para parar. La grabación queda dentro de la nota y solo en tu aparato',
+			    '🎯 Modo Enfoque: escribe en qué vas a trabajar y verás en qué se te fue el día («Tesis 50 min · Correo 25 min»)',
+			    '📋 «Hoy en IXClocK» en la app Avisos: tus sesiones de enfoque, las alarmas que sonaron y cuánta radio escuchaste hoy',
+			  ]},
 			  { v:'4.5', fecha: '29 de septiembre de 2026', titulo:'Divisas con memoria', cambios: [
 			    '📈 Calculadora → Divisas: debajo del resultado ves cómo ha ido el cambio en los últimos 30 días, con la subida o bajada',
 			    '🔔 «Avísame si 1 USD baja de 0,85 EUR»: pon un aviso de cambio y IXClocK te avisa cuando pase (lo mira al abrir la app y cada hora)',
@@ -18807,7 +19077,7 @@
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="inst" onclick="gbView(\'inst\')" title="Instrumento">🎹</button>'
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="loops" onclick="gbView(\'loops\')" title="Live Loops">🔁</button>'
 			    +    '<button class="gb-tb-btn gb-view-btn" data-v="tracks" onclick="gbView(\'tracks\')" title="Pistas">🎚️</button>'
-			    +    '<button class="gb-tb-btn" onclick="document.getElementById(\'garageband-modal\').style.display=\'none\'" title="Cerrar">✕</button>'
+			    +    '<button class="gb-tb-btn" onclick="gbPracticaParar(true);document.getElementById(\'garageband-modal\').style.display=\'none\'" title="Cerrar">✕</button>'
 			    +  '</div>'
 			    +'</div>'
 			    +'<canvas id="gb-waveform" width="900" height="30" style="width:100%;height:30px;background:#0d0d0d;flex-shrink:0;border-bottom:1px solid #000;"></canvas>'
@@ -20684,7 +20954,7 @@
 			  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 			  return L[n%26] + (n>=26 ? String(Math.floor(n/26)+1) : '');
 			}
-			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto(); } }
+			function gbSecIr(id){ if(_gbSecIdx(id)>=0){ if(id!==_gbSecActiva) gbPracticaParar(true); _gbSecActiva=id; gbRenderTracks(); _gbGuardarPronto(); } }
 			function gbSecNueva(){
 			  _gbSecSeq++;
 			  const id='s'+_gbSecSeq;
@@ -20712,6 +20982,7 @@
 			  gbRenderTracks(); _gbGuardarPronto();
 			}
 			function gbSecBorrar(){
+			  gbPracticaParar(true);
 			  if(_gbSecciones.length<=1){ _gbEstado('La canción necesita al menos una sección.'); return; }
 			  const i=_gbSecIdx(_gbSecActiva); if(i<0) return;
 			  const id=_gbSecciones[i].id;
@@ -20761,6 +21032,61 @@
 			  _gbEstado('▶ Canción entera: '+_gbSecciones.length+' sección(es), '+Math.round(off/1000)+' s.');
 			  _gbCabezal(off);
 			  return off;
+			}
+			/* ── BUCLE DE PRÁCTICA (idea 62) ──
+			   Para aprender una parte: repite la sección que estás viendo más
+			   despacio (70 %) y en cada vuelta sube un 5 % hasta llegar al tempo
+			   de verdad, y ahí sigue. Solo cambia el ritmo, no el tono: IXBand
+			   guarda las notas, no el audio, así que no suena «a cámara lenta».
+			   Se para con el mismo botón, al cerrar IXBand o al vaciarse.      */
+			const GB_PRACTICA_DESDE=0.7, GB_PRACTICA_PASO=0.05;
+			let _gbPractica=null;
+			function gbPracticaToggle(){ _gbPractica ? gbPracticaParar() : gbPracticaEmpezar(); }
+			function gbPracticaEmpezar(){
+			  gbPracticaParar(true);
+			  const id=_gbSecActiva;
+			  // Cada toma con su sección puesta: una toma sin sección es de la primera.
+			  const d={ secciones:[{id:id}], takes:_gbTomasDe(id).map(function(x){ return Object.assign({}, x.t, {sec:id}); }) };
+			  const e=_ixEventosCancion(d);
+			  if(!e.lista.length){ _gbEstado('No hay nada que practicar en esta sección: guarda alguna toma primero.'); return false; }
+			  if(!_gbAudioCtx){ try{ _gbAudioCtx=getAudioCtx(); }catch(err){ return false; } }
+			  const pr={ vel:GB_PRACTICA_DESDE, vuelta:0, timers:[], sec:id };
+			  _gbPractica=pr;
+			  const largo=e.lista[e.lista.length-1].at+400;
+			  function ronda(){
+			    if(_gbPractica!==pr) return;
+			    pr.vuelta++; pr.timers=[];
+			    const vel=pr.vel, canales=new Map();
+			    e.lista.forEach(function(x){
+			      pr.timers.push(setTimeout(function(){
+			        if(_gbPractica!==pr) return;
+			        if(!canales.has(x.t)) canales.set(x.t, _gbCanalPista(x.t));
+			        _gbSalidaPista=canales.get(x.t);
+			        try{ x.ev.type==='drum' ? gbPlayDrum(x.ev.drumType,x.ev.freq,x.ev.vel) : gbPlayNote(x.ev.freq,x.ev.type,x.ev.vel); }
+			        catch(err){}
+			        finally{ _gbSalidaPista=null; }
+			      }, x.at/vel));
+			    });
+			    const tempo=Math.round((parseInt(_gbBpm)||120)*vel);
+			    _gbEstado('🔁 Práctica · vuelta '+pr.vuelta+' · '+Math.round(vel*100)+' % ('+tempo+' bpm)'+(vel>=1?' · ¡a tempo!':''));
+			    try{ _gbCabezal(largo/vel); }catch(err){}
+			    pr.vel=Math.min(1, Math.round((vel+GB_PRACTICA_PASO)*100)/100);
+			    pr.timers.push(setTimeout(ronda, largo/vel+600));
+			  }
+			  ronda();
+			  _gbPracticaBoton();
+			  return true;
+			}
+			function gbPracticaParar(callado){
+			  if(!_gbPractica) return;
+			  _gbPractica.timers.forEach(clearTimeout);
+			  _gbPractica=null;
+			  _gbPracticaBoton();
+			  if(!callado) _gbEstado('⏹ Práctica parada.');
+			}
+			function _gbPracticaBoton(){
+			  const b=document.getElementById('gb-practica-btn');
+			  if(b){ b.textContent=_gbPractica?'⏹ Parar práctica':'🔁 Práctica lenta'; b.classList.toggle('on', !!_gbPractica); }
 			}
 			/* ── EXPORTAR A MIDI (idea 32) ──
 			   IXBand guarda cada nota con su momento exacto, así que en vez de
@@ -21059,6 +21385,7 @@
 			  return true;
 			}
 			function gbBorrarCancionGuardada(){
+			  gbPracticaParar(true);
 			  try{ localStorage.removeItem(GB_CLAVE_CANCION); }catch(e){}
 			  _gbTakes=[]; _gbSecciones=[{id:'s1',nombre:'A'}]; _gbSecActiva='s1'; _gbSecSeq=1;
 			  _gbCancionActual=null;   // se sale de la cancion abierta, no se vacia la guardada
@@ -21108,6 +21435,7 @@
 			  _gbEstado('💾 Guardada como «'+c.nombre+'». Está en Mis canciones.');
 			}
 			function gbAbrirCancion(id){
+			  gbPracticaParar(true);
 			  gbCargarLista();
 			  const c=_gbCanciones.find(function(x){ return x.id===id; });
 			  if(!c || !c.datos) return;
@@ -21265,6 +21593,7 @@
 			    +'<button class="gb-chip" onclick="gbSaveTake()" style="background:linear-gradient(180deg,#4a4a4c,#38383a);">＋ Guardar toma actual</button>'
 			    +'<button class="gb-chip" onclick="gbPlayAllTakes()" style="color:#6ee787;">▶ Reproducir mezcla</button>'
 			    +'<button class="gb-chip" onclick="gbPlayCancion()" style="color:#6ee787;font-weight:800;" title="Suena cada sección en orden">▶▶ Toda la canción</button>'
+			    +'<button id="gb-practica-btn" class="gb-chip'+(_gbPractica?' on':'')+'" onclick="gbPracticaToggle()" title="Repite esta sección más despacio y va subiendo el tempo en cada vuelta">'+(_gbPractica?'⏹ Parar práctica':'🔁 Práctica lenta')+'</button>'
 			    +'<button class="gb-chip" onclick="gbClear()" title="Borra lo grabado sin guardar">Vaciar grabadora</button>'
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
@@ -21621,6 +21950,8 @@
 			  if(!confirm(_uiT('¿Borrar TODOS los datos guardados?'))) return;
 			  const r=await ixCopiaHacer('antes-de-borrar');
 			  localStorage.clear();
+			  // Las notas de voz viven aparte (IndexedDB): también se van.
+			  try{ indexedDB.deleteDatabase(NOTAS_VOZ_DB); }catch(e){}
 			  alert(r.ok ? _uiT('Datos borrados. Se guardó una copia por si acaso: está en Respaldo → Copias automáticas.')
 			             : _uiT('Datos borrados'));
 			  cloudTab('backup');
@@ -22425,7 +22756,8 @@
 			    b.style.borderColor=on?'rgba(10,132,255,.7)':'var(--txt-40)';
 			  });
 			  const inp=document.getElementById('ica-alarm-tone'); if(inp) inp.value=id;
-			  // Y se apaga la emisora, que es lo otro: o tono o radio.
+			  // Y se apaga la emisora (o la canción), que es lo otro: o tono o radio.
+			  _icaMarcarCancion(null);
 			  document.querySelectorAll('.ica-emisora').forEach(function(b){
 			    b.style.background='rgba(255,255,255,.07)'; b.style.borderColor='rgba(255,255,255,.16)';
 			  });
@@ -22468,6 +22800,7 @@
 			    +'</div>'
 			    +'<input id="ica-alarm-fecha" type="date" min="'+_hoyISO+'" value="'+escapeHtml(fecha)+'" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;color-scheme:dark;display:'+(fecha?'block':'none')+';">'
 			    +_icaEmisorasHoja(tono)
+			    +_icaCancionesHoja(tono)
 			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">O UN TONO <span style="opacity:.7;font-weight:600;letter-spacing:0;">· tócalo para oírlo</span></div>'
 			    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:20px;">';
 			  ALARM_TONES.forEach(function(t){
@@ -22549,6 +22882,51 @@
 			  h+='</div>';
 			  return h;
 			}
+			// Tus canciones de IXBand, para despertarte con ellas (idea 61).
+			function _icaCancionesHoja(tonoActual){
+			  const cs=ixCancionesParaAlarma();
+			  let h='<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin:4px 0 6px;">🎸 O CON TU CANCIÓN DE IXBAND</div>';
+			  if(!cs.length){
+			    return h+'<div style="font-size:11px;opacity:.5;line-height:1.5;margin-bottom:14px;">'
+			      +'Graba algo en IXBand y podrás despertarte con tu propia canción.</div>';
+			  }
+			  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">';
+			  cs.forEach(function(c){
+			    const on = tonoActual === (IXBAND_TONO+c.id);
+			    h+='<button class="ica-cancion" data-c="'+escapeHtml(c.id)+'" onclick="icaElegirCancion('+JSON.stringify(c.id).replace(/"/g,'&quot;')+')" '
+			      +'style="border-radius:999px;font-size:11px;font-weight:700;padding:8px 12px;cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+			      +'background:'+(on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)')+';border:1px solid '+(on?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)')+';">🎸 '+escapeHtml(c.nombre)+'</button>';
+			  });
+			  h+='</div>';
+			  return h;
+			}
+			function _icaMarcarCancion(id){
+			  document.querySelectorAll('.ica-cancion').forEach(function(b){
+			    const on=id!==null && b.dataset.c===id;
+			    b.style.background=on?'rgba(10,132,255,.3)':'rgba(255,255,255,.07)';
+			    b.style.borderColor=on?'rgba(10,132,255,.7)':'rgba(255,255,255,.16)';
+			  });
+			}
+			// Elegirla la deja puesta y la hace sonar unos segundos, como los tonos.
+			function icaElegirCancion(id){
+			  const c=ixCancionesParaAlarma().find(function(x){ return x.id===id; });
+			  if(!c) return;
+			  const inp=document.getElementById('ica-alarm-tone');
+			  if(inp) inp.value=IXBAND_TONO+id;
+			  _icaMarcarCancion(id);
+			  document.querySelectorAll('.ica-tono').forEach(function(b){
+			    b.style.background='var(--txt-40)'; b.style.borderColor='var(--txt-40)';
+			  });
+			  document.querySelectorAll('.ica-emisora').forEach(function(b){
+			    b.style.background='rgba(255,255,255,.07)'; b.style.borderColor='rgba(255,255,255,.16)';
+			  });
+			  if(_icaTonoPrueba){ try{_icaTonoPrueba();}catch(e){} _icaTonoPrueba=null; }
+			  try{
+			    const stop=ixTocarCancion(c.datos);
+			    if(stop){ _icaTonoPrueba=stop; setTimeout(function(){ if(_icaTonoPrueba===stop){ try{stop();}catch(e){} _icaTonoPrueba=null; } },5000); }
+			  }catch(e){}
+			  try{ ixToast('🎸 Te despertará «'+c.nombre+'»'); }catch(e){}
+			}
 			// Elegir emisora apaga el tono elegido, y al reves: es uno u otro.
 			function icaElegirEmisora(id){
 			  const inp=document.getElementById('ica-alarm-tone');
@@ -22561,6 +22939,7 @@
 			  document.querySelectorAll('.ica-tono').forEach(function(b){
 			    b.style.background='var(--txt-40)'; b.style.borderColor='var(--txt-40)';
 			  });
+			  _icaMarcarCancion(null);
 			  if(_icaTonoPrueba){ try{_icaTonoPrueba();}catch(e){} _icaTonoPrueba=null; }
 			  try{ ixToast('📻 Te despertará '+(nombreDeEmisora(id)||'esa emisora')); }catch(e){}
 			}
@@ -23521,12 +23900,60 @@
 			  if(h<24) return _uiT('hace')+' '+h+' h';
 			  try{ return new Date(t).toLocaleString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; }
 			}
+			/* ── HOY EN IXCLOCK (idea 63) ──
+			   Arriba de los avisos, lo de hoy en una tarjeta: enfoque (y en qué),
+			   alarmas que sonaron y cuánta radio has escuchado. Solo salen las
+			   líneas que tienen algo: una tarjeta de ceros no dice nada.
+			   La radio no se contaba en ningún sitio: ahora, cada 30 s, si está
+			   sonando se suma lo que ha pasado (con tope, para que una pestaña
+			   dormida no apunte horas que no escuchaste).                     */
+			const IX_RADIO_HOY='ix_radio_hoy_v1';
+			let _ixRadioUltimo=Date.now();
+			function _ixRadioContar(){
+			  const ahora=Date.now(), paso=Math.min(ahora-_ixRadioUltimo, 90000);
+			  _ixRadioUltimo=ahora;
+			  let sonando=false; try{ sonando=!!isPlaying; }catch(e){}
+			  if(!sonando || !(paso>0)) return;
+			  let r=null; try{ r=JSON.parse(localStorage.getItem(IX_RADIO_HOY)||'null'); }catch(e){}
+			  const hoy=_enfHoy();
+			  if(!r || r.d!==hoy) r={d:hoy, ms:0};
+			  r.ms=(r.ms||0)+paso;
+			  try{ localStorage.setItem(IX_RADIO_HOY, JSON.stringify(r)); }catch(e){}
+			}
+			setInterval(_ixRadioContar, 30000);
+			function ixHoyResumen(){
+			  const e=enfoqueResumen();
+			  let alarmas=0;
+			  try{
+			    const hoy=new Date().toLocaleDateString();
+			    alarmas=(JSON.parse(localStorage.getItem('ica_alarm_history')||'[]')||[]).filter(function(h){ return h && h.date===hoy; }).length;
+			  }catch(err){}
+			  let radioMin=0;
+			  try{ const r=JSON.parse(localStorage.getItem(IX_RADIO_HOY)||'null'); if(r && r.d===_enfHoy()) radioMin=Math.floor((r.ms||0)/60000); }catch(err){}
+			  return { enfoque:{sesiones:e.sesionesHoy, min:e.minutosHoy, tareas:e.tareas||[]}, alarmas:alarmas, radioMin:radioMin };
+			}
+			function ixHoyHtml(){
+			  const r=ixHoyResumen(), l=[];
+			  if(r.enfoque.sesiones){
+			    let t='🎯 '+r.enfoque.sesiones+' '+_uiT(r.enfoque.sesiones===1?'sesión de enfoque':'sesiones de enfoque')+' · '+_enfMinTexto(r.enfoque.min);
+			    if(r.enfoque.tareas.length) t+=' ('+r.enfoque.tareas.slice(0,3).map(function(x){ return x.tarea+' '+_enfMinTexto(x.m); }).join(', ')+')';
+			    l.push(t);
+			  }
+			  if(r.alarmas) l.push('⏰ '+r.alarmas+' '+_uiT(r.alarmas===1?'alarma sonó':'alarmas sonaron'));
+			  if(r.radioMin>=1) l.push('📻 '+_enfMinTexto(r.radioMin)+' '+_uiT('de radio'));
+			  if(!l.length) return '';
+			  return '<div id="ix-hoy" style="padding:12px;border-radius:14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(10,132,255,.18),rgba(94,92,230,.14));border:1px solid rgba(255,255,255,.1);">'
+			    +'<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:6px;">'+escapeHtml(_uiT('Hoy en IXClocK'))+'</div>'
+			    +l.map(function(x){ return '<div style="font-size:13px;line-height:1.55;">'+escapeHtml(x)+'</div>'; }).join('')
+			    +'</div>';
+			}
 			function ixAvisosPintar(){
 			  const caja=document.getElementById('ix-avisos-lista');
 			  if(!caja) return;
 			  const l=ixAvisosLeer();
-			  if(!l.length){ caja.innerHTML=ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
-			  caja.innerHTML=l.map(function(a){
+			  const hoy=ixHoyHtml();
+			  if(!l.length){ caja.innerHTML=hoy+ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
+			  caja.innerHTML=hoy+l.map(function(a){
 			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'
 			      +'<div style="display:flex;justify-content:space-between;gap:8px;"><b style="font-size:13px;">'+escapeHtml(a.titulo)+'</b>'
 			      +'<span style="font-size:10px;opacity:.55;white-space:nowrap;">'+escapeHtml(_ixHaceCuanto(a.t))+'</span></div>'
@@ -23787,7 +24214,10 @@
 			function _enfApuntar(minutos){
 			  if(!isFinite(minutos) || minutos<=0) return;
 			  const h=_enfHistLeer();
-			  h.unshift({ d:_enfHoy(), m:Math.round(minutos), t:Date.now() });
+			  const e={ d:_enfHoy(), m:Math.round(minutos), t:Date.now() };
+			  const tarea=String(_enfCfg.tarea||'').trim().slice(0,40);
+			  if(tarea) e.tarea=tarea;
+			  h.unshift(e);
 			  if(h.length>IX_ENF_HIST_MAX) h.length=IX_ENF_HIST_MAX;
 			  try{ localStorage.setItem(IX_ENF_HIST, JSON.stringify(h)); }catch(e){}
 		}
@@ -23809,8 +24239,13 @@
 			  const deHoy=h.filter(function(x){ return x&&x.d===hoy; });
 			  const minHoy=deHoy.reduce(function(a,x){ return a+(x.m||0); },0);
 			  const minTotal=h.reduce(function(a,x){ return a+(x.m||0); },0);
+			  // Minutos de hoy por tarea (idea 63), de más a menos.
+			  const porTarea={};
+			  deHoy.forEach(function(x){ if(x.tarea) porTarea[x.tarea]=(porTarea[x.tarea]||0)+(x.m||0); });
+			  const tareas=Object.keys(porTarea).map(function(k){ return {tarea:k, m:porTarea[k]}; })
+			    .sort(function(a,b){ return b.m-a.m; });
 			  return { sesionesHoy:deHoy.length, minutosHoy:minHoy,
-			           sesionesTotal:h.length, minutosTotal:minTotal, racha:enfoqueRacha() };
+			           sesionesTotal:h.length, minutosTotal:minTotal, racha:enfoqueRacha(), tareas:tareas };
 		}
 			function _enfMinTexto(m){
 			  if(m<60) return m+' min';
@@ -23869,6 +24304,8 @@
 			    if(pu) pu.innerHTML=_enfPuntos(p, enCiclo);
 			    const hs=document.getElementById('enf-hechos');
 			    if(hs) hs.innerHTML=_enfLineaHechos();
+			    const ts=document.getElementById('enf-tareas');
+			    if(ts) ts.innerHTML=_enfLineaTareas();
 			    return;
 			  }
 			  ov.innerHTML=
@@ -23879,6 +24316,8 @@
 			    +  '<div style="width:100%;height:5px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div id="enf-barra" style="height:100%;width:0;background:'+color+';transition:width .9s linear;"></div></div>'
 			    +  '<div id="enf-puntos" style="display:flex;gap:8px;">'+_enfPuntos(p, enCiclo)+'</div>'
 			    +  '<div id="enf-hechos" style="font-size:11px;opacity:.5;">'+_enfLineaHechos()+'</div>'
+			    +  '<input id="enf-tarea" type="text" maxlength="40" value="'+escapeHtml(_enfCfg.tarea||'')+'" oninput="ixEnfoqueTarea(this.value)" placeholder="'+escapeHtml(_uiT('¿En qué vas a trabajar?'))+'" aria-label="'+escapeHtml(_uiT('Tarea'))+'" style="width:min(320px,86vw);text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-full,999px);color:var(--txt);font-size:13px;padding:9px 14px;outline:none;">'
+			    +  '<div id="enf-tareas" style="font-size:11px;opacity:.6;text-align:center;">'+_enfLineaTareas()+'</div>'
 			    +  '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">'
 			    +    '<button id="enf-pausa" onclick="ixEnfoquePausar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:none;background:var(--txt);color:#000;font-size:13px;font-weight:800;cursor:pointer;">⏸ '+_uiT('Pausar')+'</button>'
 			    +    '<button onclick="ixEnfoqueSaltar()" style="padding:12px 22px;border-radius:var(--r-full,999px);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">⏭ '+_uiT('Saltar')+'</button>'
@@ -23900,6 +24339,17 @@
 			  if(r.minutosHoy>0) t+=' · '+_enfMinTexto(r.minutosHoy);
 			  if(r.racha>=2) t+='   🔥 '+r.racha+' '+_uiT('días seguidos');
 			  return escapeHtml(t);
+			}
+			// «Tesis 50 min · Correo 25 min»: en qué se fue el tiempo de hoy.
+			function _enfLineaTareas(){
+			  const t=enfoqueResumen().tareas||[];
+			  if(!t.length) return '';
+			  return escapeHtml(_uiT('Hoy')+': '+t.slice(0,4).map(function(x){ return x.tarea+' '+_enfMinTexto(x.m); }).join(' · '));
+			}
+			// La tarea se guarda al escribirla y se apunta en cada sesión que termina.
+			function ixEnfoqueTarea(v){
+			  _enfCfg.tarea=String(v||'').slice(0,40);
+			  _enfGuardar();
 			}
 			function _enfPuntos(p, enCiclo){
 			  let h='';

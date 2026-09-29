@@ -74,8 +74,6 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 Las manda de dos tandas. **Antes de tocar nada hay que comprobar una por una
 si ya existe**, como se hizo con la lista del 3.
 
-15. **IA más lista: que cree imágenes.** Hay que mirar qué proveedor hay puesto
-    (`ai_provider`) y si su API da imágenes.
 ### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
 Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
@@ -89,7 +87,10 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     misma canción; falta copiar un estribillo de una canción a otra.
 35. **Pista de voz por micrófono** mezclada con los instrumentos.
 36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
-    por separado y nunca se cruzan.
+    por separado y nunca se cruzan. ⚠️ Mirado el 29 de sept y aparcado: casi
+    ninguna emisora manda cabeceras CORS, y sin ellas el navegador da SILENCIO
+    al capturar el audio. Haría falta pasar el stream por `hls-proxy`, y eso es
+    tráfico de audio por Netlify: decidirlo antes.
 
 **Mas pedidas (llegaron repetidas, aqui una sola vez)**:
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
@@ -97,12 +98,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     internet».
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
-56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-61. **Pista de IXBand como tono de alarma.**
-62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
-    subirlo poco a poco.
-63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
-    («Hoy en IXClocK»: enfoque + alarmas + radio).
 
 ### Informe de auditoría web que pegó el usuario (28 de sept) — YA VERIFICADO
 Es un informe genérico de otra IA: habla de tienda, «Comprar ahora», formulario
@@ -178,6 +173,46 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Tarea en Modo Enfoque + «Hoy en IXClocK»** (idea 63, 29 de sept). Campo
+  «¿En qué vas a trabajar?» (`_enfCfg.tarea`); cada sesión terminada se apunta
+  con su tarea y debajo sale el reparto de hoy (`enfoqueResumen().tareas`). La
+  radio antes no se contaba: `_ixRadioContar` suma cada 30 s lo que ha sonado
+  (tope 90 s por salto, para no contar pestañas dormidas) en `ix_radio_hoy_v1`.
+  La app Avisos enseña arriba la tarjeta `ixHoyHtml()` con enfoque, alarmas que
+  sonaron hoy y minutos de radio, solo con lo que tenga datos.
+  - Probado con `pruebas/hoy.js` (reloj controlado): 13/13; antes 1/13.
+- **Notas de voz** (idea 56, 29 de sept). Botón 🎙️ en la nota: graba con
+  `MediaRecorder` (máx. 5 min), el botón cuenta el tiempo. El audio va a
+  IndexedDB (`ixclock_voz`), la nota solo guarda `audios:[{id,dur,fecha}]`, así
+  que sincronizar/buscar/copias no cambian; en otro aparato se dice que el audio
+  está donde se grabó. ✕ y borrar la nota borran también el audio; «Borrar
+  todos los datos» borra la base. Anotado en `privacidad.html`.
+  - Pendiente: las copias automáticas y el archivo de respaldo NO llevan los
+    audios (solo localStorage).
+  - Probado con `pruebas/notasvoz.js` (micrófono de prueba): 14/14; antes 1/14.
+- **Bucle de práctica en IXBand** (idea 62, 29 de sept). Botón «🔁 Práctica
+  lenta» en Pistas: `gbPracticaEmpezar` toca la sección activa (reusa
+  `_ixEventosCancion`, así respeta mute/solo) al 70 % y sube un 5 % por vuelta
+  hasta el 100 %, donde se queda; la barra dice vuelta, % y bpm. Solo cambia el
+  ritmo, no el tono (son notas, no audio). Se para con el botón, al cerrar
+  IXBand, al cambiar/borrar sección, al abrir otra canción o al empezar de cero.
+  - Probado con `pruebas/practica.js` (reloj controlado): 13/13; antes 1/13.
+- **Canción de IXBand como tono de alarma** (idea 61, 29 de sept). El tono se
+  guarda como `ixband:<id>` (Mis canciones) o `ixband:actual` (el guardado
+  automático). `_ixEventosCancion` aplana la canción en el orden de «Toda la
+  canción» (secciones + 400 ms, mute/solo por sección) y `ixTocarCancion` la
+  toca en bucle con `gbPlayNote`/`gbPlayDrum`, sin abrir IXBand y sin red. La
+  hoja de alarma ofrece solo las canciones que suenan; si la elegida ya no
+  existe, suena el tono «Radial». `syncheck.js` ya acepta `IXROOT`.
+  - Probado con `pruebas/alarmacancion.js`: 16/16; con la versión anterior 3/16.
+- **El asistente crea imágenes** (idea 15, 29 de sept). El modelo responde con
+  `[[IMAGEN prompt="…"]]` (nueva acción en `IXA_ACCIONES`) y `ixaPintarImagen`
+  pinta la imagen de Pollinations (`image.pollinations.ai`, el mismo servicio
+  gratis del texto, sin clave) en el chat: `img` creado por DOM con la
+  descripción como `alt` (nada de innerHTML: una descripción con código se queda
+  en texto), enlace para guardarla y aviso si no hay conexión. Anotado en
+  `privacidad.html` (y `pruebas/privacidad.js` lo exige).
+  - Probado con `pruebas/imagenia.js`: 10/10; con la versión anterior falla.
 - **IXBand exporta MIDI** (idea 32, 29 de sept; la 50 queda cubierta: la
   canción ya se exportaba a WAV y ahora también a MIDI). `ixMidiDeCancion()`
   escribe un SMF formato 1, 480 PPQ: pista de tempo (`_gbBpm`) y una por toma

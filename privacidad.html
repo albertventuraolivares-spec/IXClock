@@ -43,6 +43,7 @@
 
 <h2 id="aparato">1. Lo que se queda en tu aparato</h2>
 <p>Notas, alarmas, ciudades, ajustes, favoritos, calendario y el resto de lo que configuras se guardan en el almacenamiento del navegador (<code>localStorage</code>) de ese aparato. No se envían a ningún sitio salvo que actives la sincronización (punto 2).</p>
+<p><strong>Notas de voz:</strong> lo que grabas con el micrófono en Notas se guarda solo en ese aparato (en <code>IndexedDB</code>, otra zona de almacenamiento del navegador). No se sube a ningún sitio, tampoco con la sincronización: en tus otros aparatos verás la nota, pero no el audio.</p>
 <p><strong>Para borrarlo todo:</strong> Configuración → «Borrar todos los datos». También se borra si limpias los datos del sitio desde tu navegador.</p>
 
 <h2 id="servicios">2. Lo que sale de tu aparato, y solo si usas esa función</h2>
@@ -63,7 +64,7 @@
 <p>Para darte el tiempo, las coordenadas de tu ubicación (o de la ciudad que elijas) se envían a Open-Meteo. El mapa descarga sus imágenes de OpenStreetMap, y las búsquedas de lugares van a Nominatim (de OpenStreetMap). La ubicación solo se pide si das permiso en el navegador.</p>
 
 <h3>🤖 Asistente de IA</h3>
-<p>Lo que escribes al asistente se envía para generar la respuesta: primero se intenta con Anthropic (Claude) y, si no responde, con Pollinations, un servicio gratuito. No escribas ahí datos que no quieras compartir.</p>
+<p>Lo que escribes al asistente se envía para generar la respuesta: primero se intenta con Anthropic (Claude) y, si no responde, con Pollinations, un servicio gratuito. Si le pides una imagen, la descripción se envía también a Pollinations para dibujarla. No escribas ahí datos que no quieras compartir.</p>
 
 <h3>💱 Divisas</h3>
 <p>El conversor pide los tipos de cambio del día a open.er-api.com, y el historial de 30 días al servicio Frankfurter (datos del Banco Central Europeo). Solo se envían las monedas que eliges, nunca cantidades ni datos tuyos. Los avisos de cambio que pongas se guardan solo en tu aparato.</p>
