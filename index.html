@@ -16359,6 +16359,7 @@
 			  {id:'buscar', name:'Buscar en IXClocK', icon:'🔎', fn:'ixAbrirBusqueda'},
 			  {id:'enfoque', name:'Modo Enfoque', icon:'🎯', fn:'ixAbrirEnfoque'},
 			  {id:'mesita', name:'Modo mesita', icon:'🌙', fn:'ixAbrirMesita'},
+			  {id:'avisos', name:'Avisos', icon:'🔔', fn:'ixAbrirAvisos'},
 			];
 			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
 			function _trackAppOpen(id){
@@ -16444,7 +16445,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','emuTeardown']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','ixAvisosCerrar','emuTeardown']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -16532,6 +16533,9 @@
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
 			    '📝 «Guardar en una nota»: el lugar queda en una nota con su enlace para volver a él',
 			    '🛠️ Si Mapas no encuentra un sitio, o no hay conexión, ahora te lo dice con un aviso de la app (antes salía una ventanita del navegador, o nada)',
+			    '🔔 Nueva app «Avisos»: guarda tus últimos 50 avisos (alarmas, temporizadores, el tiempo de tus ciudades) para verlos aunque no estuvieras mirando',
+			    '🧭 Brújula → «📍 Mis ciudades»: la distancia y una flecha que apunta hacia cada ciudad de tu reloj mundial',
+			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
@@ -21073,6 +21077,8 @@
 			    <div id="compass-heading" style="font-size:2rem;font-weight:200;letter-spacing:-.02em;color:var(--txt);">0°</div>
 			    <div id="compass-dir" style="font-size:13px;font-weight:700;color:#ff453a;letter-spacing:.15em;">NORTE</div>
 			    <div style="font-size:10px;opacity:.55;text-align:center;">Requiere sensor de orientación del dispositivo</div>
+			    <div id="compass-ciudades" style="width:100%;display:flex;flex-direction:column;gap:4px;"></div>
+			    <button onclick="brujulaCiudades()" style="background:rgba(48,209,88,.16);border:1px solid rgba(48,209,88,.4);color:#30d158;padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📍 Mis ciudades</button>
 			    <button onclick="requestCompassPermission()" style="background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;padding:8px 16px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;width:100%;">Activar sensor</button>
 			  `;
 			  document.body.appendChild(modal);
@@ -21082,23 +21088,87 @@
 			  drawCompass(0);
 			  if(_compassOrient)return;
 			  const handler=e=>{
-			    const heading=e.webkitCompassHeading??e.alpha??0;
+			    // En iPhone, webkitCompassHeading ya es el rumbo. En Android, alpha
+			    // va al REVÉS (crece hacia el oeste): usarlo tal cual confundía este
+			    // con oeste. El rumbo es 360 − alpha.
+			    const heading=brujulaRumbo(e);
 			    _compassAngle=heading;
 			    drawCompass(heading);
 			    document.getElementById('compass-heading').textContent=Math.round(heading)+'°';
 			    const dirs=['NORTE','NNE','NE','ENE','ESTE','ESE','SE','SSE','SUR','SSO','SO','OSO','OESTE','ONO','NO','NNO'];
 			    document.getElementById('compass-dir').textContent=dirs[Math.round(heading/22.5)%16];
+			    _brujulaGirarFlechas();
 			  };
 			  window.addEventListener('deviceorientationabsolute',handler,true);
 			  window.addEventListener('deviceorientation',handler,true);
 			  _compassOrient=handler;
 			}
+			function brujulaRumbo(e){
+			  if(e && typeof e.webkitCompassHeading==='number') return e.webkitCompassHeading;
+			  if(e && typeof e.alpha==='number') return (360 - e.alpha) % 360;
+			  return 0;
+			}
 			function requestCompassPermission(){
-			  if(DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
-			    DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startCompass();}).catch(console.error);
+			  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+			    DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startCompass();}).catch(function(){});
 			  }else{
-			    alert(_uiT('Tu dispositivo no tiene sensor de orientación o ya está activo.'));
+			    try{ ixToast(_uiT('Tu dispositivo no tiene sensor de orientación o ya está activo.')); }catch(e){}
 			  }
+			}
+			/* ── La brújula apunta a tus ciudades (idea 58) ──
+			   Rumbo y distancia desde donde estás hasta cada ciudad de tu reloj
+			   mundial. Las coordenadas de las ciudades son las que ya se guardan
+			   para el tiempo (_icaCoords); la tuya se pide solo al tocar el botón.
+			   La flecha de cada ciudad gira con el móvil: apunta de verdad. */
+			let _brujulaDestinos=[];
+			function brujulaCalcular(lat1, lon1, lat2, lon2){
+			  const R=6371, rad=Math.PI/180;
+			  const f1=lat1*rad, f2=lat2*rad, dF=(lat2-lat1)*rad, dL=(lon2-lon1)*rad;
+			  const a=Math.sin(dF/2)*Math.sin(dF/2)+Math.cos(f1)*Math.cos(f2)*Math.sin(dL/2)*Math.sin(dL/2);
+			  const km=2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+			  const y=Math.sin(dL)*Math.cos(f2);
+			  const x=Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dL);
+			  const rumbo=(Math.atan2(y,x)/rad+360)%360;
+			  return { km:km, rumbo:rumbo };
+			}
+			function _brujulaGirarFlechas(){
+			  document.querySelectorAll('#compass-ciudades .brj-flecha').forEach(function(el){
+			    const r=parseFloat(el.dataset.rumbo)||0;
+			    el.style.transform='rotate('+(((r-_compassAngle)%360+360)%360)+'deg)';
+			  });
+			}
+			function _brujulaPintar(){
+			  const caja=document.getElementById('compass-ciudades');
+			  if(!caja) return;
+			  if(!_brujulaDestinos.length){ caja.innerHTML=''; return; }
+			  caja.innerHTML=_brujulaDestinos.map(function(d){
+			    return '<div class="brj-fila" style="display:flex;align-items:center;gap:8px;font-size:12px;">'
+			      +'<span class="brj-flecha" data-rumbo="'+d.rumbo.toFixed(1)+'" style="display:inline-block;width:18px;text-align:center;color:#30d158;font-weight:900;">↑</span>'
+			      +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(d.nombre)+'</span>'
+			      +'<span style="opacity:.6;font-variant-numeric:tabular-nums;">'+Math.round(d.km).toLocaleString('es')+' km</span></div>';
+			  }).join('');
+			  _brujulaGirarFlechas();
+			}
+			async function brujulaCiudades(){
+			  const caja=document.getElementById('compass-ciudades');
+			  const ciudades=((typeof _icaWorldClocks!=='undefined' && _icaWorldClocks) || []).filter(_icaTzValida);
+			  if(!ciudades.length){ if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">'+escapeHtml(_uiT('Añade ciudades en «Reloj mundial» y aquí verás hacia dónde quedan.'))+'</div>'; return 0; }
+			  if(!navigator.geolocation){ try{ ixToast(_uiT('Sin GPS')); }catch(e){} return 0; }
+			  if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">📍 …</div>';
+			  const pos=await new Promise(function(ok){ navigator.geolocation.getCurrentPosition(ok, function(){ ok(null); }, {timeout:10000, maximumAge:300000}); });
+			  if(!pos){ if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">'+escapeHtml(_uiT('Sin permiso de ubicación'))+'</div>'; return 0; }
+			  const yo={lat:pos.coords.latitude, lon:pos.coords.longitude};
+			  const destinos=[];
+			  for(const tz of ciudades){
+			    try{
+			      const c=await _icaCoords(tz);
+			      const r=brujulaCalcular(yo.lat, yo.lon, c.lat, c.lon);
+			      destinos.push({ nombre:_icaNombreDeTz(tz), km:r.km, rumbo:r.rumbo });
+			    }catch(e){}
+			  }
+			  _brujulaDestinos=destinos;
+			  _brujulaPintar();
+			  return destinos.length;
 			}
 			function drawCompass(heading){
 			  const canvas=document.getElementById('compass-canvas');if(!canvas)return;
@@ -23112,7 +23182,78 @@
 			  document.addEventListener('DOMContentLoaded', ixCorreoPintar);
 			else ixCorreoPintar();
 
+			/* ── Centro de avisos (idea 44) ──
+			   Un aviso del sistema dura unos segundos y se pierde; si no estabas
+			   mirando, no hay forma de saber qué pasó. Aquí se guardan los últimos
+			   50 (alarmas, temporizadores, tiempo en tus ciudades…) y se ven en la
+			   app «🔔 Avisos». Se guardan aunque el navegador no tenga permiso para
+			   notificar: es justo cuando más falta hacen. */
+			const IX_AVISOS='ix_avisos_v1', IX_AVISOS_MAX=50;
+			function ixAvisosLeer(){
+			  try{ const v=JSON.parse(localStorage.getItem(IX_AVISOS)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; }
+			}
+			function _ixAvisoGuardar(titulo, cuerpo){
+			  const l=ixAvisosLeer();
+			  l.unshift({ t:Date.now(), titulo:String(titulo||'').slice(0,140), cuerpo:String(cuerpo||'').slice(0,300), leido:false });
+			  if(l.length>IX_AVISOS_MAX) l.length=IX_AVISOS_MAX;
+			  try{ localStorage.setItem(IX_AVISOS, JSON.stringify(l)); }catch(e){}
+			  try{ if(ixAvisosAbierto()) ixAvisosPintar(); }catch(e){}
+			}
+			function ixAvisosSinLeer(){ return ixAvisosLeer().filter(function(a){ return !a.leido; }).length; }
+			function ixAvisosAbierto(){ const o=document.getElementById('ix-avisos'); return !!o && o.style.display!=='none'; }
+			function _ixHaceCuanto(t){
+			  const min=Math.floor((Date.now()-t)/60000);
+			  if(min<1) return _uiT('ahora');
+			  if(min<60) return _uiT('hace')+' '+min+' min';
+			  const h=Math.floor(min/60);
+			  if(h<24) return _uiT('hace')+' '+h+' h';
+			  try{ return new Date(t).toLocaleString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; }
+			}
+			function ixAvisosPintar(){
+			  const caja=document.getElementById('ix-avisos-lista');
+			  if(!caja) return;
+			  const l=ixAvisosLeer();
+			  if(!l.length){ caja.innerHTML=ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
+			  caja.innerHTML=l.map(function(a){
+			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'
+			      +'<div style="display:flex;justify-content:space-between;gap:8px;"><b style="font-size:13px;">'+escapeHtml(a.titulo)+'</b>'
+			      +'<span style="font-size:10px;opacity:.55;white-space:nowrap;">'+escapeHtml(_ixHaceCuanto(a.t))+'</span></div>'
+			      +(a.cuerpo && a.cuerpo!==a.titulo ? '<div style="font-size:12px;opacity:.7;margin-top:2px;">'+escapeHtml(a.cuerpo)+'</div>' : '')
+			      +'</div>';
+			  }).join('');
+			}
+			function ixAbrirAvisos(){
+			  let ov=document.getElementById('ix-avisos');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-avisos';
+			    ov.setAttribute('role','dialog'); ov.setAttribute('aria-label',_uiT('Avisos'));
+			    ov.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:16px;';
+			    ov.innerHTML='<div class="glass" style="width:min(440px,100%);max-height:80vh;display:flex;flex-direction:column;border-radius:var(--r-2xl,24px);padding:16px;">'
+			      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+			      +  '<div style="font-size:17px;font-weight:800;">🔔 '+escapeHtml(_uiT('Avisos'))+'</div>'
+			      +  '<div style="display:flex;gap:6px;">'
+			      +    '<button onclick="ixAvisosBorrar()" style="padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+escapeHtml(_uiT('Borrar todo'))+'</button>'
+			      +    '<button onclick="ixAvisosCerrar()" aria-label="'+escapeHtml(_uiT('Cerrar'))+'" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:var(--txt);cursor:pointer;">✕</button>'
+			      +  '</div></div>'
+			      +'<div id="ix-avisos-lista" style="overflow:auto;"></div></div>';
+			    ov.addEventListener('click', function(e){ if(e.target===ov) ixAvisosCerrar(); });
+			    document.body.appendChild(ov);
+			  }
+			  ov.style.display='flex';
+			  ixAvisosPintar();
+			  // Se ven con su color de «nuevo» y se marcan leídos para la próxima vez.
+			  const l=ixAvisosLeer(); l.forEach(function(a){ a.leido=true; });
+			  try{ localStorage.setItem(IX_AVISOS, JSON.stringify(l)); }catch(e){}
+			  try{ _trackAppOpen('avisos'); }catch(e){}
+			}
+			function ixAvisosCerrar(){ const o=document.getElementById('ix-avisos'); if(o) o.style.display='none'; }
+			function ixAvisosBorrar(){
+			  try{ localStorage.removeItem(IX_AVISOS); }catch(e){}
+			  ixAvisosPintar();
+			}
 			function ixNotificar(titulo, cuerpo, tag){
+			  try{ _ixAvisoGuardar(titulo, cuerpo); }catch(e){}
 			  // Si los avisos por correo estan puestos, va tambien por ahi. No
 			  // sustituye al del sistema: se suma, porque son para momentos
 			  // distintos (uno con la app abierta, otro con el movil guardado).
@@ -23620,6 +23761,7 @@
 			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
 			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] },
 			  { id:'mesita',   n:'Modo mesita',   icon:'🌙', d:'Hora grande, tiempo y próxima alarma para dejar el móvil cargando de noche', open:'ixAbrirMesita', assets:[] },
+			  { id:'avisos',   n:'Avisos',        icon:'🔔', d:'Lo que te ha avisado IXClocK: alarmas, temporizadores y el tiempo de tus ciudades', open:'ixAbrirAvisos', assets:[] },
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [

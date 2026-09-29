@@ -104,7 +104,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     como una alarma más.
 42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
     tendencia: hoy el conversor da el valor puntual, sin contexto.
-44. **Centro de notificaciones** con historial de alarmas y descargas.
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
@@ -114,8 +113,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-58. **Brújula que apunta a tus ciudades**: rumbo y distancia usando las
-    coordenadas que el reloj mundial ya guarda.
 61. **Pista de IXBand como tono de alarma.**
 62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
     subirlo poco a poco.
@@ -196,6 +193,21 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Brújula a tus ciudades + FALLO este/oeste en Android** (idea 58, 29 de
+  sept). `brujulaRumbo(e)`: `webkitCompassHeading` (iPhone) o `360 − alpha`
+  (Android; antes se usaba `alpha` tal cual y la brújula iba al revés).
+  `brujulaCalcular` (haversine + rumbo inicial), «📍 Mis ciudades» pide la
+  ubicación SOLO al tocarlo y usa `_icaCoords` de cada ciudad del reloj
+  mundial; la flecha gira con `rumbo − _compassAngle`. `alert()` → toast.
+  `pruebas/brujula.js` (NY→Londres 5.570 km / 51°).
+- **Centro de avisos** (idea 44, 29 de sept). `ixNotificar` guarda cada
+  aviso en `ix_avisos_v1` (50 como mucho, solo en el aparato, no se
+  sincroniza) ANTES de mirar el permiso del navegador. App «🔔 Avisos»
+  (`ixAbrirAvisos`, en `IX_APPS` y el conmutador): lista del más nuevo al más
+  viejo, «nuevo» en azul y se marcan leídos al abrir, se repinta si llega
+  uno con la lista abierta, «Borrar todo». Las descargas de la idea original
+  NO pasan por aquí (no usan `ixNotificar`). `pruebas/centroavisos.js`
+  (`pruebas/avisos.js` es otra: la de permisos).
 - **Mapas → Radio y Mapas → Notas** (ideas 26 y 48, 29 de sept). La búsqueda
   pide `addressdetails=1` para el código de país; `_amapLugar` guarda el
   último sitio y `_amapFichaLugar()` pinta la ficha con «📻 Radio de aquí»
