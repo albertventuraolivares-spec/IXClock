@@ -8540,10 +8540,22 @@
 			  // Eliminar duplicados por nombre+fecha
 			  const seen = new Set();
 			  feriados = feriados.filter(f=>{ const k=f.name+f.diff; if(seen.has(k))return false; seen.add(k); return true; });
+			  // Tus eventos del calendario también cuentan hacia atrás aquí
+			  // (idea 54): el viaje, el examen, el cumpleaños. Ya estaban
+			  // guardados; faltaba que la lista de fechas que vienen los viera.
+			  // Van los primeros si coinciden en el día: son tuyos.
+			  let mios=[];
+			  try{
+			    mios=ixEventosCal().map(function(ev){
+			      return { name:ev.texto, emoji:'📌', date:ev.fecha, pais:_uiT('Tu calendario'), mio:true, ev:ev,
+			               diff:Math.round((ev.fecha - today0)/86400000) };
+			    }).filter(function(f){ return f.diff>=0 && f.diff<=366; });
+			  }catch(e){}
+			  feriados = mios.concat(feriados).sort((a,b)=>a.diff-b.diff || (b.mio?1:0)-(a.mio?1:0));
 			  const box = document.getElementById('events-box');
 			  box.innerHTML='';
 			  // Holiday banner: show if today is a holiday
-			  const todayHoliday = feriados.find(f=>f.diff===0);
+			  const todayHoliday = feriados.find(f=>f.diff===0 && !f.mio);
 			  const banner = document.getElementById('holiday-banner');
 			  if(banner){
 			    if(todayHoliday){
@@ -8562,13 +8574,24 @@
 			    const txtDias = f.diff===0 ? _uiT('¡Hoy!')+' 🎉' : (f.diff===1 ? _uiT('Mañana') : `${f.diff} ${_uiT('días')}`);
 			    const colorDias = f.diff===0 ? '#ffd60a' : (f.diff<=7 ? '#ff9500' : 'var(--txt-45)');
 			    const div=document.createElement('div');
-			    div.className='flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/5 transition-colors';
+			    div.className='flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/5 transition-colors'+(f.mio?' ix-fest-mio':'');
+			    // Lo tuyo es texto que escribiste: escapado y sin pasar por el
+			    // traductor. Al tocarlo se abre el calendario en ese día.
+			    const nombre = f.mio ? escapeHtml(f.name) : _uiT(f.name);
+			    if(f.mio){
+			      div.style.cursor='pointer'; div.style.borderLeft='3px solid #0a84ff';
+			      div.setAttribute('role','button'); div.tabIndex=0;
+			      div.onclick=function(){ ixAbrirCalendarioEn(f.ev); };
+			      div.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ixAbrirCalendarioEn(f.ev); } };
+			    }
+			    // El año es el DE ESA FECHA: antes se ponía el año actual siempre,
+			    // y el Año Nuevo que viene salía con el año de ahora.
 			    div.innerHTML = `
 			      <div class="flex items-center gap-2 flex-1 min-w-0">
 			        <span style="font-size:1.25rem;flex-shrink:0;">${f.emoji}</span>
 			        <div class="min-w-0">
-			          <div style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_uiT(f.name)}</div>
-			          <div style="font-size:9.5px;color:var(--txt-40);margin-top:1px;">${f.pais} · ${new Date().getFullYear() + (f.diff < 0 ? 1 : 0)}</div>
+			          <div style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div>
+			          <div style="font-size:9.5px;color:var(--txt-40);margin-top:1px;">${f.pais} · ${f.date.getFullYear()}</div>
 			        </div>
 			      </div>
 			      <div style="font-size:10px;font-weight:800;color:${colorDias};white-space:nowrap;flex-shrink:0;text-align:right;">${txtDias}</div>`;
@@ -15428,10 +15451,12 @@
 			  if(!calEvts[calSelDay])calEvts[calSelDay]=[];
 			  calEvts[calSelDay].push(val);localStorage.setItem('cal_events',JSON.stringify(calEvts));
 			  inp.value='';renderCalEvts(calSelDay);renderCalendar();
+			  try{ renderizarFeriados(); }catch(e){}
 			}
 			function delCalEvt(key,idx){
 			  calEvts[key].splice(idx,1);if(!calEvts[key].length)delete calEvts[key];
 			  localStorage.setItem('cal_events',JSON.stringify(calEvts));renderCalEvts(key);renderCalendar();
+			  try{ renderizarFeriados(); }catch(e){}
 			}
 			function calNav(d){calDate.setMonth(calDate.getMonth()+d);renderCalendar();}
 			function calNavToday(){calDate=new Date();renderCalendar();}
