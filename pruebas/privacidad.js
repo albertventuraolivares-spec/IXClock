@@ -25,6 +25,8 @@ const SERVICIOS=[
   [/nominatim\.openstreetmap\.org/,                app,        /Nominatim/],
   [/translate\.googleapis\.com/,                   app,        /Google Translate/],
   [/lingva/,                                       app,        /Lingva/],
+  [/open\.er-api\.com/,                            app,        /open\.er-api\.com/],
+  [/api\.frankfurter\.app/,                        app,        /Frankfurter/],
   [/accounts\.google\.com\/gsi/,                   app,        /Google/],
   [/api\.resend\.com/,                             funciones,  /Resend/],
   [/@netlify\/blobs/,                              funciones,  /Netlify/],

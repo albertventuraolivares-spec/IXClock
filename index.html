@@ -4324,6 +4324,10 @@
 					id="currency-rate-info"
 					style="font-size:9px;opacity:.55;text-align:center;font-family:'JetBrains Mono',monospace;"
 				></div>
+				<!-- Últimos 30 días del cambio (idea 42) -->
+				<div id="currency-hist" style="min-height:14px;"></div>
+				<!-- Avisos de cambio (idea 41) -->
+				<div id="currency-alertas" style="display:flex;flex-direction:column;gap:6px;"></div>
 			</div>
 
 			<!-- DIVIDIR LA CUENTA: total + propina entre N personas. -->
@@ -15765,6 +15769,122 @@
 			  try{ return n.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:dec}); }
 			  catch(e){ return n.toFixed(dec); }
 			}
+			/* ── Historial del cambio: 30 días (idea 42) ──
+			   El conversor daba el número de hoy sin contexto: ¿está caro o
+			   barato? Frankfurter (datos del Banco Central Europeo, gratis y sin
+			   clave) da la serie; se guarda un día por par. El BCE no publica
+			   todas las monedas (por ejemplo el peso dominicano): entonces se dice
+			   en vez de enseñar un gráfico vacío. */
+			const IX_CUR_HIST='ix_cur_hist_v1';
+			let _ixHistPedido='';
+			function _ixHoyISO(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+			async function ixDivisaHistorial(f, t){
+			  if(!f || !t || f===t) return null;
+			  const k=f+'>'+t, hoy=_ixHoyISO();
+			  let cache={};
+			  try{ cache=JSON.parse(localStorage.getItem(IX_CUR_HIST)||'{}')||{}; }catch(e){}
+			  if(cache[k] && cache[k].dia===hoy) return cache[k].puntos;
+			  const desde=new Date(); desde.setDate(desde.getDate()-30);
+			  let puntos=null;
+			  try{
+			    const r=await fetch('https://api.frankfurter.app/'+_ixHoyISO(desde)+'..?from='+encodeURIComponent(f)+'&to='+encodeURIComponent(t));
+			    if(r.ok){
+			      const d=await r.json();
+			      puntos=Object.keys(d.rates||{}).sort().map(function(dia){ return [dia, d.rates[dia][t]]; })
+			                  .filter(function(p){ return typeof p[1]==='number'; });
+			    } else puntos=[];            // moneda que el BCE no publica
+			  }catch(e){ return null; }      // sin conexión: no se guarda nada
+			  cache[k]={ dia:hoy, puntos:puntos };
+			  try{ localStorage.setItem(IX_CUR_HIST, JSON.stringify(cache)); }catch(e){}
+			  return puntos;
+			}
+			function ixDivisaPintarHistorial(f, t, puntos){
+			  const caja=document.getElementById('currency-hist');
+			  if(!caja) return;
+			  if(puntos===null){ caja.innerHTML=''; return; }
+			  if(puntos.length<2){ caja.innerHTML='<div style="font-size:10px;opacity:.5;text-align:center;">'+escapeHtml(_uiT('Sin historial para este par (el BCE no publica esa moneda)'))+'</div>'; return; }
+			  const vals=puntos.map(function(p){ return p[1]; });
+			  const min=Math.min.apply(null,vals), max=Math.max.apply(null,vals), W=280, H=44;
+			  const x=function(i){ return (i/(vals.length-1))*W; }, y=function(v){ return max===min ? H/2 : H-((v-min)/(max-min))*(H-6)-3; };
+			  const linea=vals.map(function(v,i){ return x(i).toFixed(1)+','+y(v).toFixed(1); }).join(' ');
+			  const cambio=(vals[vals.length-1]/vals[0]-1)*100;
+			  const color=cambio>=0 ? '#30d158' : '#ff453a';
+			  caja.innerHTML='<div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-bottom:2px;">'
+			    +'<span>'+escapeHtml(_uiT('30 días'))+' · 1 '+escapeHtml(f)+' → '+escapeHtml(t)+'</span>'
+			    +'<span id="currency-hist-cambio" style="color:'+color+';font-weight:800;">'+(cambio>=0?'↗ +':'↘ ')+cambio.toFixed(1).replace('.',',')+' %</span></div>'
+			    +'<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+escapeHtml(_uiT('Evolución del cambio en 30 días'))+'">'
+			    +'<polyline points="'+linea+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/></svg>'
+			    +'<div style="display:flex;justify-content:space-between;font-size:9px;opacity:.5;"><span>min '+_ixFmt(min,t)+'</span><span>max '+_ixFmt(max,t)+'</span></div>';
+			}
+			async function _ixActualizarHistorial(){
+			  const f=(document.getElementById('currency-from')||{}).value, t=(document.getElementById('currency-to')||{}).value;
+			  const k=f+'>'+t; _ixHistPedido=k;
+			  const puntos=await ixDivisaHistorial(f,t);
+			  if(_ixHistPedido!==k) return;   // cambiaste de monedas mientras llegaba
+			  ixDivisaPintarHistorial(f,t,puntos);
+			}
+			/* ── Avisos de cambio (idea 41) ──
+			   «Avísame si 1 USD baja de 0,85 EUR». Se miran al abrir la app y cada
+			   hora con las tasas del día; al cumplirse avisan (ixNotificar: sistema,
+			   centro de avisos y correo si está puesto) y se quitan solos. */
+			const IX_CUR_ALERTAS='ix_cur_alertas_v1';
+			function ixDivisaAlertas(){ try{ const v=JSON.parse(localStorage.getItem(IX_CUR_ALERTAS)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+			function _ixGuardarAlertas(l){ try{ localStorage.setItem(IX_CUR_ALERTAS, JSON.stringify(l)); }catch(e){} }
+			function _ixTasa(f,t){ const r=_ixRates||IX_RATES_FALLBACK; return (r[f]&&r[t]) ? r[t]/r[f] : null; }
+			function ixDivisaCrearAlerta(f, t, dir, valor){
+			  valor=parseFloat(String(valor).replace(',','.'));
+			  if(!f || !t || f===t || !(valor>0) || (dir!=='<' && dir!=='>')) return false;
+			  const l=ixDivisaAlertas();
+			  l.push({ f:f, t:t, dir:dir, valor:valor, creada:Date.now() });
+			  _ixGuardarAlertas(l);
+			  ixDivisaPintarAlertas();
+			  try{ ixToast('🔔 '+_uiT('Te avisaré')+': 1 '+f+(dir==='<'?' < ':' > ')+_ixFmt(valor,t)+' '+t); }catch(e){}
+			  return true;
+			}
+			function ixDivisaQuitarAlerta(i){ const l=ixDivisaAlertas(); l.splice(i,1); _ixGuardarAlertas(l); ixDivisaPintarAlertas(); }
+			// Solo mira las tasas DE VERDAD (las de respaldo son aproximadas: avisar
+			// con ellas sería inventarse que el cambio se ha movido).
+			function ixDivisaComprobarAlertas(){
+			  if(!_ixRatesLive) return 0;
+			  const quedan=[]; let avisos=0;
+			  ixDivisaAlertas().forEach(function(a){
+			    const tasa=_ixTasa(a.f,a.t);
+			    const cumple = tasa!==null && (a.dir==='<' ? tasa<a.valor : tasa>a.valor);
+			    if(!cumple){ quedan.push(a); return; }
+			    avisos++;
+			    try{ ixNotificar('💱 1 '+a.f+' = '+_ixFmt(tasa,a.t)+' '+a.t,
+			      (a.dir==='<'?_uiT('Ha bajado de'):_uiT('Ha subido de'))+' '+_ixFmt(a.valor,a.t)+', '+_uiT('como pediste'), 'divisa-'+a.f+a.t); }catch(e){}
+			  });
+			  _ixGuardarAlertas(quedan);
+			  ixDivisaPintarAlertas();
+			  return avisos;
+			}
+			function ixDivisaPintarAlertas(){
+			  const caja=document.getElementById('currency-alertas');
+			  if(!caja) return;
+			  const f=(document.getElementById('currency-from')||{}).value||'USD', t=(document.getElementById('currency-to')||{}).value||'EUR';
+			  const hoy=_ixTasa(f,t);
+			  const lista=ixDivisaAlertas();
+			  const st='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;color:var(--txt);font-size:11px;padding:5px 6px;';
+			  caja.innerHTML='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;">🔔 1 '+escapeHtml(f)
+			    +' <select id="currency-alerta-dir" aria-label="'+escapeHtml(_uiT('Cuándo avisar'))+'" style="'+st+'"><option value="<">'+escapeHtml(_uiT('baja de'))+'</option><option value=">">'+escapeHtml(_uiT('sube de'))+'</option></select>'
+			    +' <input id="currency-alerta-valor" type="number" inputmode="decimal" step="any" min="0" aria-label="'+escapeHtml(_uiT('Valor del aviso'))+'" value="'+(hoy?Number(hoy.toPrecision(4)):'')+'" style="'+st+'width:80px;">'
+			    +' '+escapeHtml(t)
+			    +' <button onclick="ixDivisaCrearAlerta(document.getElementById(\'currency-from\').value,document.getElementById(\'currency-to\').value,document.getElementById(\'currency-alerta-dir\').value,document.getElementById(\'currency-alerta-valor\').value)" style="padding:5px 10px;border-radius:999px;border:none;background:#0a84ff;color:#fff;font-weight:700;font-size:11px;cursor:pointer;">'+escapeHtml(_uiT('Avisarme'))+'</button></div>'
+			    +lista.map(function(a,i){
+			      return '<div class="currency-alerta" style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(10,132,255,.12);">'
+			        +'<span>1 '+escapeHtml(a.f)+' '+(a.dir==='<'?'&lt;':'&gt;')+' '+_ixFmt(a.valor,a.t)+' '+escapeHtml(a.t)+'</span>'
+			        +'<button onclick="ixDivisaQuitarAlerta('+i+')" aria-label="'+escapeHtml(_uiT('Quitar aviso'))+'" style="background:none;border:none;color:var(--txt);cursor:pointer;">✕</button></div>';
+			    }).join('');
+			}
+			// Con avisos pendientes, las tasas se miran al abrir la app y cada hora
+			// aunque no abras la calculadora.
+			function _ixVigilarDivisas(){
+			  if(!ixDivisaAlertas().length) return;
+			  _ixLoadRates().then(ixDivisaComprobarAlertas).catch(function(){});
+			}
+			setTimeout(_ixVigilarDivisas, 4000);
+			setInterval(_ixVigilarDivisas, 60*60*1000);
 			function convertCurrency(){
 			  const amtEl=document.getElementById('currency-amount');
 			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
@@ -15774,6 +15894,12 @@
 			  const a=parseFloat(amtEl.value);
 			  const f=from.value||'USD', t=to.value||'EUR';
 			  try{ localStorage.setItem('ix_cur_pair',JSON.stringify([f,t])); }catch(e){}
+			  // Solo al cambiar de monedas: con cada cifra de la cantidad se
+			  // borraría lo que estés escribiendo en el aviso.
+			  if(_ixHistPedido!==f+'>'+t){
+			    try{ _ixActualizarHistorial(); }catch(e){}
+			    try{ ixDivisaPintarAlertas(); }catch(e){}
+			  }
 			  const rf=_ixRates[f], rt=_ixRates[t];
 			  if(!rf||!rt){
 			    out.textContent='—';
@@ -16558,6 +16684,10 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.5', fecha: '29 de septiembre de 2026', titulo:'Divisas con memoria', cambios: [
+			    '📈 Calculadora → Divisas: debajo del resultado ves cómo ha ido el cambio en los últimos 30 días, con la subida o bajada',
+			    '🔔 «Avísame si 1 USD baja de 0,85 EUR»: pon un aviso de cambio y IXClocK te avisa cuando pase (lo mira al abrir la app y cada hora)',
+			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
 			    '📝 «Guardar en una nota»: el lugar queda en una nota con su enlace para volver a él',

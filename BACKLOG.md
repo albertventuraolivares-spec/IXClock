@@ -95,10 +95,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     por separado y nunca se cruzan.
 
 **Mas pedidas (llegaron repetidas, aqui una sola vez)**:
-41. **Alertas de cambio de divisa**: «avísame si EUR/USD baja de X», sonando
-    como una alarma más.
-42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
-    tendencia: hoy el conversor da el valor puntual, sin contexto.
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
@@ -188,6 +184,15 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Divisas: historial y avisos** (ideas 41 y 42, 29 de sept). Historial:
+  Frankfurter (BCE, sin clave) `…/YYYY-MM-DD..?from=&to=`, guardado por día y
+  par en `ix_cur_hist_v1`; SVG con línea, % y mín./máx. en `#currency-hist`;
+  si el BCE no publica la moneda (DOP, ARS, COP…) lo dice. Avisos:
+  `ix_cur_alertas_v1`, se comprueban al abrir (4 s) y cada hora SOLO con
+  tasas reales (`_ixRatesLive`), avisan con `ixNotificar` y se quitan. OJO:
+  la tasa del día viene de la caché de 12 h de `_ixLoadRates`. Servicios
+  añadidos a `privacidad.html` (también open.er-api, que no estaba) y a la
+  lista de `pruebas/privacidad.js`. `pruebas/divisas.js`.
 - **Notas por ciudad** (idea 24, 29 de sept). Carpeta normal de Notas
   «📍 Ciudad» (`ixCarpetaDeTz`): se busca, sincroniza y mueve como las demás.
   Botón 📝 N en cada fila del reloj mundial (`ixAbrirNotasCiudad`): abre la
