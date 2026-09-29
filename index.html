@@ -16976,6 +16976,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.9', fecha: '29 de septiembre de 2026', titulo:'Avísame al llegar', cambios: [
+			    '📍 Mapas → «Avísame al llegar» o «al salir»: busca un sitio (la farmacia, el colegio) y IXClocK te avisa cuando llegues o te vayas. Funciona con la app abierta; los tienes en la app Avisos para quitarlos',
+			  ]},
 			  { v:'4.8', fecha: '29 de septiembre de 2026', titulo:'Más ligera', cambios: [
 			    '⚡ La app abre más ligera: un 37 % menos de cosas pintadas al arrancar. Las fechas que vienen enseñan las 30 próximas (y todas las tuyas) con un botón para ver el resto, las Novedades las 3 últimas versiones y los 248 estilos de reloj se preparan al abrir «Relojes»',
 			  ]},
@@ -17911,8 +17914,95 @@
 			  return '<b>'+escapeHtml(L0.nombre)+'</b><br>'
 			    +(L0.cc ? '<button class="amap-radio" onclick="amapRadioDeAqui()" '+b+'>📻 '+escapeHtml(_uiT('Radio de aquí'))+'</button>' : '')
 			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>'
-			    +'<button class="amap-reloj" onclick="amapAlReloj()" '+b+'>🕐 '+escapeHtml(_uiT('Al reloj mundial'))+'</button>';
+			    +'<button class="amap-reloj" onclick="amapAlReloj()" '+b+'>🕐 '+escapeHtml(_uiT('Al reloj mundial'))+'</button>'
+			    +'<button class="amap-llegar" onclick="amapAvisoLugar(\'llegar\')" '+b+'>📍 '+escapeHtml(_uiT('Avísame al llegar'))+'</button>'
+			    +'<button class="amap-salir" onclick="amapAvisoLugar(\'salir\')" '+b+'>🚪 '+escapeHtml(_uiT('Avísame al salir'))+'</button>';
 			}
+			/* ── RECORDATORIOS POR UBICACIÓN (idea 39) ──
+			   «Avísame al llegar a la farmacia»: se guarda el sitio con un radio de
+			   200 m y, mientras la app esté abierta, se mira el GPS (el mismo
+			   watchPosition que usa la navegación). Al cruzar el borde avisa por
+			   el camino de siempre (ixNotificar: aviso del sistema + centro de
+			   avisos) y el recordatorio se quita. LÍMITE, dicho en pantalla: una
+			   web no puede vigilar la ubicación con la app cerrada.
+			   La ubicación NUNCA se pide sola al abrir: solo se vigila si hay
+			   recordatorios y el permiso ya estaba dado (o al crear uno).     */
+			const IX_LUGARES='ix_lugares_aviso_v1', IX_LUGAR_RADIO=200;
+			let _lugWatch=null, _lugDentro={};
+			function ixLugaresLeer(){ try{ const v=JSON.parse(localStorage.getItem(IX_LUGARES)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+			function _ixLugaresGuardar(l){ try{ localStorage.setItem(IX_LUGARES, JSON.stringify(l)); }catch(e){} }
+			function ixDistanciaM(a1,o1,a2,o2){
+			  const R=6371000, r=Math.PI/180;
+			  const dA=(a2-a1)*r, dO=(o2-o1)*r;
+			  const h=Math.sin(dA/2)*Math.sin(dA/2)+Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dO/2)*Math.sin(dO/2);
+			  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+			}
+			function amapAvisoLugar(tipo){
+			  const L0=_amapLugar; if(!L0) return null;
+			  if(!navigator.geolocation){ try{ ixToast('⚠️ '+_uiT('Este aparato no da la ubicación')); }catch(e){} return null; }
+			  const l=ixLugaresLeer();
+			  const nombre=String(L0.nombre).split(',')[0];
+			  if(l.some(function(x){ return x.tipo===tipo && Math.abs(x.lat-L0.lat)<1e-5 && Math.abs(x.lon-L0.lon)<1e-5; })){
+			    try{ ixToast('📍 '+_uiT('Ya tienes ese aviso')); }catch(e){} return null;
+			  }
+			  const r={ id:'l'+Date.now().toString(36), nombre:nombre, lat:L0.lat, lon:L0.lon, tipo:tipo==='salir'?'salir':'llegar', creado:Date.now() };
+			  l.push(r); _ixLugaresGuardar(l);
+			  _ixLugaresVigilar(true);
+			  try{ ixToast((r.tipo==='llegar'?'📍 ':'🚪 ')+_uiT(r.tipo==='llegar'?'Te avisaré al llegar a':'Te avisaré al salir de')+' '+nombre+' · '+_uiT('con la app abierta')); }catch(e){}
+			  return r.id;
+			}
+			function ixLugarQuitar(id){
+			  _ixLugaresGuardar(ixLugaresLeer().filter(function(x){ return x.id!==id; }));
+			  delete _lugDentro[id];
+			  if(!ixLugaresLeer().length) _ixLugaresParar();
+			  try{ if(ixAvisosAbierto()) ixAvisosPintar(); }catch(e){}
+			}
+			function _ixLugaresParar(){
+			  if(_lugWatch!==null){ try{ navigator.geolocation.clearWatch(_lugWatch); }catch(e){} _lugWatch=null; }
+			}
+			// Cada posición: ¿has cruzado el borde de alguno? «Salir» solo avisa si
+			// antes se te vio DENTRO: si creas el aviso estando lejos, no salta.
+			function ixLugaresPosicion(lat, lon){
+			  const l=ixLugaresLeer(), quedan=[], avisados=[];
+			  l.forEach(function(x){
+			    const d=ixDistanciaM(lat, lon, x.lat, x.lon), dentro=d<=IX_LUGAR_RADIO;
+			    const antes=_lugDentro[x.id];
+			    _lugDentro[x.id]=dentro;
+			    let salta=false;
+			    if(x.tipo==='llegar' && dentro) salta=true;
+			    if(x.tipo==='salir' && antes===true && !dentro) salta=true;
+			    if(salta){
+			      avisados.push(x.id);
+			      try{ ixNotificar((x.tipo==='llegar'?'📍 '+_uiT('Has llegado a'):'🚪 '+_uiT('Has salido de'))+' '+x.nombre, _uiT('Recordatorio de lugar'), 'lugar-'+x.id); }catch(e){}
+			    } else quedan.push(x);
+			  });
+			  if(avisados.length){
+			    _ixLugaresGuardar(quedan);
+			    avisados.forEach(function(id){ delete _lugDentro[id]; });
+			    if(!quedan.length) _ixLugaresParar();
+			  }
+			  return avisados;
+			}
+			async function _ixLugaresVigilar(pedir){
+			  if(_lugWatch!==null || !ixLugaresLeer().length || !navigator.geolocation) return false;
+			  if(!pedir){
+			    // Al abrir la app NO se pregunta: solo si el permiso ya estaba dado.
+			    try{
+			      if(!navigator.permissions) return false;
+			      const st=await navigator.permissions.query({name:'geolocation'});
+			      if(st.state!=='granted') return false;
+			    }catch(e){ return false; }
+			  }
+			  try{
+			    _lugWatch=navigator.geolocation.watchPosition(function(p){
+			      ixLugaresPosicion(p.coords.latitude, p.coords.longitude);
+			    }, function(){}, {enableHighAccuracy:true, maximumAge:0, timeout:60000});
+			    // maximumAge:0 a propósito: una posición guardada de hace un rato
+			    // (p. ej. de cuando estabas dentro) haría saltar «al salir» en falso.
+			  }catch(e){ _lugWatch=null; return false; }
+			  return true;
+			}
+			setTimeout(function(){ _ixLugaresVigilar(false); }, 3000);
 			/* Mapas → reloj mundial (idea 27). Un lugar no trae su zona horaria,
 			   así que se le pregunta a Open-Meteo (el mismo servicio del tiempo,
 			   sin clave) con timezone=auto. La ciudad que sale en el reloj es la
@@ -24145,7 +24235,13 @@
 			  const caja=document.getElementById('ix-avisos-lista');
 			  if(!caja) return;
 			  const l=ixAvisosLeer();
-			  const hoy=ixHoyHtml()+'<button id="ix-compartir-dia" onclick="ixCompartirDia()" style="width:100%;margin-bottom:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">📤 '+escapeHtml(_uiT('Compartir mi día'))+'</button>';
+			  const lug=ixLugaresLeer();
+			  const lugares = lug.length ? '<div id="ix-lugares" style="padding:10px 12px;border-radius:12px;margin-bottom:10px;background:rgba(255,255,255,.05);">'
+			    +'<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:6px;">📍 '+escapeHtml(_uiT('Avisos por lugar'))+'</div>'
+			    +lug.map(function(x){ return '<div class="ix-lugar" style="display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0;"><span style="flex:1;">'+(x.tipo==='llegar'?'📍 '+escapeHtml(_uiT('Al llegar a')):'🚪 '+escapeHtml(_uiT('Al salir de')))+' '+escapeHtml(x.nombre)+'</span>'
+			      +'<button onclick="ixLugarQuitar(\''+escapeHtml(x.id)+'\')" aria-label="'+escapeHtml(_uiT('Quitar este aviso'))+'" style="border:none;background:rgba(255,69,58,.18);color:#ff6961;border-radius:8px;padding:4px 9px;cursor:pointer;">✕</button></div>'; }).join('')
+			    +'<div style="font-size:10px;opacity:.5;margin-top:4px;">'+escapeHtml(_uiT('Solo funcionan con IXClocK abierto: una web no puede mirar tu ubicación con la app cerrada.'))+'</div></div>' : '';
+			  const hoy=lugares+ixHoyHtml()+'<button id="ix-compartir-dia" onclick="ixCompartirDia()" style="width:100%;margin-bottom:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">📤 '+escapeHtml(_uiT('Compartir mi día'))+'</button>';
 			  if(!l.length){ caja.innerHTML=hoy+ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
 			  caja.innerHTML=hoy+l.map(function(a){
 			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'
