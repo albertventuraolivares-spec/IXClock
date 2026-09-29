@@ -84,8 +84,6 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-23. **Alarma con la hora de otra ciudad** («despiértame a las 9h de Tokio»).
-    Alarmas y reloj mundial no se cruzan. Pedida dos veces.
 24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
     que salgan al abrir esa ciudad, y convertibles en alarma de un toque.
     Pedida dos veces.
@@ -182,6 +180,11 @@ Comprobado aquí:
     Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
     pasarla a obligatoria. Mediano y con riesgo de romper apps.
 
+80. **Las alarmas del panel lateral viejo (`alarms`, vía window.storage) no
+    viajan con la sincronización**: `IX_NUBE_CLAVES` solo lleva `ica_alarms`
+    (la app Reloj). Mirar si ese panel se sigue usando; si sí, añadir la
+    clave (y a `pruebas/nubeclaves.js`), si no, valorar quitarlo.
+
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
@@ -227,6 +230,12 @@ Comprobado aquí:
     añadir/borrar). `pruebas/cuentaatras.js`.
   - **60 Enfoque y radio**: `_enfCallarRadio`/`_enfDevolverRadio`; un
     archivo local se pausa en vez de pararse. `pruebas/enfoqueradio.js`.
+  - **23 Alarma con hora de otra ciudad**: `a.tz` (zona IANA de una
+    ciudad del reloj mundial). `_icaAhoraEn(tz)` da la hora y fecha de allí;
+    `_checkIcaMinuto` y `icaFaltanPara` comparan con ella (vale con horario
+    de verano). La hoja avisa «Aquí sonará a las…» y la lista «Hora de
+    Tokio · aquí 20:00». Zona inválida = hora de aquí.
+    `pruebas/alarmaciudad.js` (Santo Domingo vs Tokio con `page.clock`).
   - **43 Media Session**: emisora en la pantalla de bloqueo, play/pausa/
     siguiente/anterior, teclas multimedia; pasa a «en pausa» si la emisora
     falla. No es un mini-reproductor dentro de la app (eso sigue libre si se
