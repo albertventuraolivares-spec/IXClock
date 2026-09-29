@@ -104,7 +104,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     como una alarma más.
 42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
     tendencia: hoy el conversor da el valor puntual, sin contexto.
-44. **Centro de notificaciones** con historial de alarmas y descargas.
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
@@ -196,6 +195,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Centro de avisos** (idea 44, 29 de sept). `ixNotificar` guarda cada
+  aviso en `ix_avisos_v1` (50 como mucho, solo en el aparato, no se
+  sincroniza) ANTES de mirar el permiso del navegador. App «🔔 Avisos»
+  (`ixAbrirAvisos`, en `IX_APPS` y el conmutador): lista del más nuevo al más
+  viejo, «nuevo» en azul y se marcan leídos al abrir, se repinta si llega
+  uno con la lista abierta, «Borrar todo». Las descargas de la idea original
+  NO pasan por aquí (no usan `ixNotificar`). `pruebas/centroavisos.js`
+  (`pruebas/avisos.js` es otra: la de permisos).
 - **Mapas → Radio y Mapas → Notas** (ideas 26 y 48, 29 de sept). La búsqueda
   pide `addressdetails=1` para el código de país; `_amapLugar` guarda el
   último sitio y `_amapFichaLugar()` pinta la ficha con «📻 Radio de aquí»
