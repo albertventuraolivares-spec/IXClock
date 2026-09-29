@@ -199,6 +199,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **FALLO service worker sin conexión** (29 de sept): la navegación guardaba
+  CUALQUIER página como `./index.html` (también un 404 o `privacidad.html`),
+  así que sin conexión se abría esa página en vez de la app. Ahora cada
+  página se guarda con su ruta y solo si `res.ok`; `VERSION` pasa a
+  `ixclock-v2` para borrar las copias estropeadas. `pruebas/swnav.js`
+  instala el SW de verdad y APAGA el servidor para cortar la red (el
+  `setOffline` de Playwright no alcanza a las peticiones del propio SW:
+  con él la prueba pasaba aunque el fallo estuviera). Antes: 1/4.
 - **Etiquetas de radio, IXBench recomienda y alarmas viejas en la nube**
   (ideas 45, 59 y 80, 29 de sept). Etiquetas: `ix_radio_etiquetas`
   ({id: 'dormir'|'trabajar'|'deporte'|'coche'}), 🏷️ en la ficha de una
