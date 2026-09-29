@@ -13458,14 +13458,17 @@
 			    const p=String(a.time).split(':');
 			    const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
 			    if(isNaN(h)) return;
+			    // Con otra ciudad, la hora y el dia que cuentan son los de ALLI.
+			    const tz=_icaZonaDe(a);
+			    const z=tz ? _icaAhoraEn(tz, now)
+			               : { y:now.getFullYear(), mo:now.getMonth(), d:now.getDate(), h:now.getHours(), m:now.getMinutes() };
 			    // Con fecha, solo suena ese dia. Y una sola vez: despues se apaga
 			    // sola, que si no se quedaria armada para siempre.
 			    if(a.fecha){
 			      const f=_icaFechaDe(a.fecha);
-			      if(!f || f.getFullYear()!==now.getFullYear() || f.getMonth()!==now.getMonth()
-			            || f.getDate()!==now.getDate()) return;
+			      if(!f || f.getFullYear()!==z.y || f.getMonth()!==z.mo || f.getDate()!==z.d) return;
 			    }
-			    if(h===now.getHours() && m===now.getMinutes() && _icaFired['a'+i]!==key){
+			    if(h===z.h && m===z.m && _icaFired['a'+i]!==key){
 			      _icaFired['a'+i]=key;
 			      ringAlarm({id:'ica-'+i, hour:h, minute:m, label:a.label||'Alarma', tone:a.tone||'radial'});
 			      try{
@@ -21684,6 +21687,20 @@
 			  if(d.getFullYear()!==+m[1] || d.getMonth()!==+m[2]-1 || d.getDate()!==+m[3]) return null;
 			  return d;
 			}
+			/* ── Alarma con la hora de OTRA ciudad (idea 23) ──
+			   «Despiértame a las 9 de Tokio»: la alarma guarda la zona (a.tz) y
+			   se compara con la hora de ESA zona, no con la de aquí. Así también
+			   acierta cuando una de las dos cambia al horario de verano. */
+			function _icaAhoraEn(tz, d){
+			  const f=new Intl.DateTimeFormat('en-US',{timeZone:tz, hourCycle:'h23',
+			    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+			  const o={};
+			  f.formatToParts(d||new Date()).forEach(function(p){ o[p.type]=p.value; });
+			  return { y:+o.year, mo:+o.month-1, d:+o.day, h:(+o.hour)%24, m:+o.minute };
+			}
+			function _icaZonaDe(a){
+			  return (a && a.tz && _icaTzValida(a.tz)) ? a.tz : null;
+			}
 			// Minutos que faltan para que suene, o null si no va a sonar (apagada,
 			// hora invalida, o con una fecha que ya paso).
 			function icaFaltanPara(a, ahora){
@@ -21692,6 +21709,21 @@
 			  const h=parseInt(p[0],10), m=parseInt(p[1],10)||0;
 			  if(isNaN(h) || h<0 || h>23 || m<0 || m>59) return null;
 			  const n=ahora||new Date();
+			  const tz=_icaZonaDe(a);
+			  if(tz){
+			    // Todo se cuenta en la hora de esa ciudad.
+			    const z=_icaAhoraEn(tz, n);
+			    let min=(h*60+m)-(z.h*60+z.m);
+			    if(a.fecha){
+			      const f=_icaFechaDe(a.fecha);
+			      if(!f) return null;
+			      const dias=Math.round((Date.UTC(f.getFullYear(),f.getMonth(),f.getDate()) - Date.UTC(z.y,z.mo,z.d))/86400000);
+			      min+=dias*1440;
+			      return min<0 ? null : min;
+			    }
+			    if(min<0) min+=1440;
+			    return min;
+			  }
 			  if(a.fecha){
 			    const f=_icaFechaDe(a.fecha);
 			    if(!f) return null;
@@ -21749,6 +21781,12 @@
 			    return '<div class="ica-alarm-row">'
 			      +'<div><div><span class="ica-alarm-time">'+h12+':'+m.padStart(2,'0')+'</span><span class="ica-alarm-ampm">'+ampm+'</span></div>'
       +'<div class="ica-alarm-label" onclick="icaChangeAlarmTone('+i+')" style="cursor:pointer;">'+escapeHtml(a.label)+' · '+escapeHtml(icaToneName(a.tone))+' ›</div>'
+			      +(_icaZonaDe(a) ? '<div class="ica-alarm-zona" style="font-size:10.5px;font-weight:700;margin-top:2px;color:#30d158;">🌍 '
+			                   +escapeHtml(_uiT('Hora de')+' '+_icaNombreDeTz(a.tz))+(function(){
+			                     const min=icaFaltanPara(a); if(min===null) return '';
+			                     const q=new Date(Date.now()+min*60000);
+			                     return ' · '+escapeHtml(_uiT('aquí'))+' '+String(q.getHours()).padStart(2,'0')+':'+String(q.getMinutes()).padStart(2,'0');
+			                   })()+'</div>' : '')
 			      +(a.fecha ? '<div style="font-size:10.5px;font-weight:700;margin-top:2px;color:'
 			                   +(icaFaltanPara(a)===null?'var(--txt-40)':'#0a84ff')+';">🗓️ '
 			                   +escapeHtml(icaTextoFecha(a.fecha))+'</div>' : '')
@@ -21810,10 +21848,11 @@
 			  let s='<div style="width:min(400px,94vw);max-height:88vh;overflow:auto;background:rgba(28,28,30,.98);border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:20px;color:var(--txt);">'
 			    +'<div style="font-size:17px;font-weight:800;margin-bottom:16px;text-align:center;">'+(_icaEditIdx!==null?'Editar alarma':'Nueva alarma')+'</div>'
 			    +'<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px;">'
-			    +  '<select id="ica-alarm-h" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcH+'</select>'
+			    +  '<select id="ica-alarm-h" onchange="_icaZonaAviso()" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcH+'</select>'
 			    +  '<span style="font-size:30px;font-weight:200;opacity:.6;">:</span>'
-			    +  '<select id="ica-alarm-m" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
+			    +  '<select id="ica-alarm-m" onchange="_icaZonaAviso()" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--txt);font-size:34px;font-weight:200;padding:10px 14px;outline:none;cursor:pointer;font-variant-numeric:tabular-nums;">'+opcM+'</select>'
 			    +'</div>'
+			    +_icaZonaHoja(a && a.tz)
 			    +'<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">ETIQUETA</div>'
 			    +'<input id="ica-alarm-label" type="text" maxlength="40" value="'+escapeHtml(etiqueta)+'" placeholder="Alarma" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:15px;padding:11px 14px;outline:none;box-sizing:border-box;margin-bottom:18px;">'
 			    +'<input id="ica-alarm-tone" type="hidden" value="'+tono+'">'
@@ -21840,6 +21879,32 @@
 			}
 			// 0 = todos los dias, 1 = un dia concreto. Al elegir dia, si no habia
 			// ninguno se pone el de hoy: un campo de fecha vacio no vale de nada.
+			// «Hora de…»: aquí o cualquiera de tus ciudades del reloj mundial.
+			function _icaZonaHoja(tzActual){
+			  const ciudades=(_icaWorldClocks||[]).filter(_icaTzValida);
+			  let h='<div style="font-size:10px;font-weight:800;opacity:.55;letter-spacing:.08em;margin-bottom:6px;">🌍 HORA DE</div>';
+			  if(!ciudades.length){
+			    return h+'<div style="font-size:11px;opacity:.5;line-height:1.5;margin-bottom:14px;">Añade ciudades en «Reloj mundial» y podrás poner la alarma con su hora («a las 9 de Tokio»).</div>';
+			  }
+			  h+='<select id="ica-alarm-tz" onchange="_icaZonaAviso()" aria-label="Hora de qué ciudad" style="width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:14px;padding:10px 12px;margin-bottom:6px;">'
+			    +'<option value="">📍 Aquí (tu hora)</option>'
+			    +ciudades.map(function(tz){ return '<option value="'+escapeHtml(tz)+'"'+(tz===tzActual?' selected':'')+'>'+escapeHtml(_icaNombreDeTz(tz))+'</option>'; }).join('')
+			    +'</select><div id="ica-alarm-tz-aviso" style="font-size:11px;opacity:.65;min-height:14px;margin-bottom:12px;"></div>';
+			  setTimeout(_icaZonaAviso, 0);
+			  return h;
+			}
+			// Debajo del selector: a qué hora de AQUÍ sonará. Es lo que de verdad
+			// hay que saber para no llevarse un susto a las 3 de la mañana.
+			function _icaZonaAviso(){
+			  const sel=document.getElementById('ica-alarm-tz'), out=document.getElementById('ica-alarm-tz-aviso');
+			  if(!sel||!out) return;
+			  if(!sel.value){ out.textContent=''; return; }
+			  const h=document.getElementById('ica-alarm-h'), m=document.getElementById('ica-alarm-m');
+			  const min=icaFaltanPara({on:true, time:parseInt(h.value,10)+':'+m.value, tz:sel.value});
+			  if(min===null){ out.textContent=''; return; }
+			  const aqui=new Date(Date.now()+min*60000);
+			  out.textContent='Aquí sonará a las '+String(aqui.getHours()).padStart(2,'0')+':'+String(aqui.getMinutes()).padStart(2,'0');
+			}
 			function icaAlarmaRepetir(modo){
 			  const inp=document.getElementById('ica-alarm-fecha');
 			  const bd=document.getElementById('ica-rep-diario'), bf=document.getElementById('ica-rep-fecha');
@@ -21905,6 +21970,8 @@
 			                 label: (l&&l.value.trim())||'Alarma',
 			                 on:true, tone:(t&&t.value)||'radial' };
 			  if(fecha) alarma.fecha=fecha;
+			  const zsel=document.getElementById('ica-alarm-tz');
+			  if(zsel && zsel.value && _icaTzValida(zsel.value)) alarma.tz=zsel.value;
 			  if(_icaEditIdx!==null && _icaAlarms[_icaEditIdx]) _icaAlarms[_icaEditIdx]=alarma;
 			  else _icaAlarms.push(alarma);
 			  localStorage.setItem('ica_alarms',JSON.stringify(_icaAlarms));
