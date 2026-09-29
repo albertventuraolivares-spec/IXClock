@@ -76,9 +76,6 @@ si ya existe**, como se hizo con la lista del 3.
 
 15. **IA más lista: que cree imágenes.** Hay que mirar qué proveedor hay puesto
     (`ai_provider`) y si su API da imágenes.
-18. **Modo mesita al girar en horizontal** (tipo StandBy del iPhone): reloj
-    gigante con lo mínimo — hora, clima y siguiente alarma. La franja de
-    resumen ya calcula esos tres datos.
 ### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
 Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
@@ -93,10 +90,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     aquí», filtrando Radio Mundial por ese país.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
-31. **Mejor hora para una reunión**: que el comparador mire todas tus ciudades
-    guardadas y diga la franja en que todas están en verde, en vez de que lo
-    calcules a ojo.
-
 **IXBand**:
 32. **Exportar MIDI de verdad**, no solo audio grabado. Hoy exporta webm/mp4/wav
     «cocinado»; como IXBand ya modela cada nota con su tiempo exacto, seria
@@ -119,16 +112,12 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
 48. **Adjuntar una ubicación de Mapas a una nota**, y al tocarla abrir la ruta.
-49. **Modo mesita de noche**: pantalla atenuada, hora grande y próxima alarma,
-    para dejar el móvil cargando. (Parecido al 18, pero ese era al girar.)
 50. **Exportar las tomas de IXBand** (`_gbTakes`) a WAV/MP3: hoy solo se oyen
     dentro del estudio.
 
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-57. **Alertas del tiempo por ciudad guardada** (tormenta, calor extremo,
-    helada), sonando como una alarma.
 58. **Brújula que apunta a tus ciudades**: rumbo y distancia usando las
     coordenadas que el reloj mundial ya guarda.
 59. **IXBench sugiere la calidad de los efectos**: el banco de pruebas mide la
@@ -219,6 +208,22 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Modo mesita, mejor hora para quedar y avisos del tiempo** (ideas 18,
+  49, 31 y 57, 29 de sept, madrugada):
+  - **Mesita** (`ixAbrirMesita`, app `mesita` en `IX_APPS` y el conmutador,
+    también `/?app=mesita`): hora enorme, fecha, `_frClima`/`_frAlarma` (los
+    de la franja), Wake Lock (se vuelve a pedir al volver a la pestaña), rojo
+    y más tenue de 22 a 7. Tocar/Esc/«cerrar todas» lo cierran. NO se abre
+    solo al girar el móvil (lo pedía la 18): se puede añadir si se quiere.
+    `pruebas/mesita.js` (16).
+  - **Mejor hora** (`icaMejoresHoras`, `_icaFranjas`): prueba las 24 horas
+    con todas las ciudades y la tuya; verde si todas en 9–18, si no la
+    franja sin nadie durmiendo. `pruebas/reunion.js` con casos a mano.
+  - **Avisos del tiempo** (`icaAlertaClima`, `_icaAvisarClima`): tormenta
+    (95/96/99), ≥35°, ≤0°, lluvia fuerte (65/67/82), nieve fuerte (75/86).
+    Una vez al día por ciudad y tipo (`ix_alerta_clima_v1`). Avisa con
+    `ixNotificar`, así que si los avisos por correo están puestos, también
+    llega por correo. `pruebas/climaaviso.js` simula Open-Meteo.
 - **Lighthouse de verdad** (idea 69, 29 de sept). Instalado en el scratchpad
   (`npm install lighthouse@12`) contra `python3 -m http.server` con el
   Chromium de `/opt/pw-browsers`, móvil. **Antes: rendimiento 31,
