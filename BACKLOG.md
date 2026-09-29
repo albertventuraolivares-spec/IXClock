@@ -146,8 +146,8 @@ Comprobado aquí:
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
-40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
-    navegación, la radio y la hora grande. Reaprovecha Mapas y Radio.
+40. ~~Modo Coche~~ hecho (ver Hecho). Falta: meter el mapa en navegación
+    DENTRO del modo coche (hoy «Mapas» sale del modo y abre Mapas).
     («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
     convertir una nota en alarma.)
 
@@ -167,6 +167,11 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Modo coche** (idea 40, 29 de sept). App 🚗 (`ixAbrirCoche`, también en el
+  conmutador y en «cerrar todas»): negro y blanco, hora grande, próxima alarma
+  (`_frAlarma`) y la radio con ⏮ ⏯ ⏭ de 96 px que recorren tus favoritas (o la
+  lista si no hay). Wake Lock mientras está abierto; Esc, ✕ o «Mapas» salen.
+  - Probado con `pruebas/coche.js` (móvil 390×844): 17/17; antes 2/17.
 - **Tarjeta del día para compartir** (idea 38, 29 de sept). Botón «📤
   Compartir mi día» en Avisos: `ixTarjetaCanvas` dibuja 1080×1350 con hora,
   fecha y las filas de la franja (`_frClima`, `_frAlarma`, `_frEvento`,
