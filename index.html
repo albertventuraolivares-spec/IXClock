@@ -886,6 +886,12 @@
 			#calc-panel { left: 50% !important; }
 			#alarm-panel { right: 26px; bottom: 80px; }
 		</style>
+		<!-- Datos estructurados: le dicen a Google que esto es una aplicacion
+		     web gratuita, no un articulo. Gratis es verdad mientras el cobro
+		     siga en pausa; si algun dia se activa, CAMBIAR «price». -->
+		<script type="application/ld+json">
+		{"@context":"https://schema.org","@type":"WebApplication","name":"IXClocK","url":"https://ixclockplus.netlify.app/","description":"Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de música IXBand, todo en un mismo panel.","applicationCategory":"UtilitiesApplication","operatingSystem":"Web","inLanguage":"es","browserRequirements":"Requiere JavaScript","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+		</script>
 	</head>
 	<!-- ====== TOP APP DOCK ====== -->
 	<style>
@@ -909,8 +915,18 @@
 		#siri-fs-canvas{width:min(92vw,560px);height:min(46vh,280px);display:block;}
 		#siri-fs-caption{margin-top:8px;color:var(--txt);opacity:.7;font-size:15px;font-weight:600;letter-spacing:.02em;min-height:20px;}
 		#siri-fs-hint{position:absolute;bottom:8%;color:var(--txt-40);font-size:12px;}
+		/* Oculto a la vista pero no a lectores de pantalla ni buscadores. */
+		.ix-oculto{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+		.ix-saltar{position:fixed;left:12px;top:-60px;z-index:100000;padding:10px 16px;border-radius:12px;background:#ffd60a;color:#1c1c1e;font-weight:700;text-decoration:none;transition:top .15s;}
+		.ix-saltar:focus{top:12px;}
+		#ix-contenido:focus{outline:none;}
 	</style>
-	<div id="top-dock">
+	<!-- Para quien usa teclado o lector de pantalla: sin esto, antes de
+	     llegar a la pantalla hay que pasar por los ~20 botones de la barra de
+	     apps. Va ANTES de la barra (que en el documento está delante de
+	     <body>) para ser lo primero que coge el Tab. Invisible hasta entonces. -->
+	<a href="#ix-contenido" class="ix-saltar">Saltar al contenido</a>
+	<div id="top-dock" role="navigation" aria-label="Apps">
 		<!-- Todas las apps y buscar: los dos SIN .dock-secondary, porque en modo
 		     compacto se ocultan 10 de los 17 botones y estos dos son justo los
 		     que dan acceso a lo que se ha ocultado. -->
@@ -2662,9 +2678,14 @@
 
 		<!-- ================= MAIN ================= -->
 		<main
+			id="ix-contenido" tabindex="-1"
 			class="flex flex-col items-center justify-center relative p-8 overflow-hidden"
 			style="padding-top:80px;padding-bottom:80px;"
 		>
+			<!-- El titulo de la pantalla de inicio. La hora grande ya hace de
+			     titulo a la vista, asi que este va oculto: es para lectores de
+			     pantalla y buscadores, que sin el no sabian de que va la pagina. -->
+			<h1 class="ix-oculto">IXClocK: reloj mundial, alarmas, notas, radio y más</h1>
 			<div class="text-center z-10 w-full max-w-4xl">
 				<!-- Franja de resumen: clima, siguiente alarma, próxima festividad y
 				     fase lunar en una sola línea. La luna ya vivía aquí; las otras
@@ -10887,7 +10908,7 @@
 			    const safeName = escapeHtml((c.name || 'Canal').trim().slice(0,60));
 			    const safeGroup = escapeHtml(c.group || '');
 			    const thumb = c.logo
-			      ? `<img src="${escapeHtml(c.logo)}" loading="lazy" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#222;" onerror="this.outerHTML='<div style=&quot;width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a5f,#ff453a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;&quot;>📺</div>'">`
+			      ? `<img src="${escapeHtml(c.logo)}" alt="" loading="lazy" style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#222;" onerror="this.outerHTML='<div style=&quot;width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a5f,#ff453a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;&quot;>📺</div>'">`
 			      : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a3a5f,#ff453a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">📺</div>`;
 			    return `<button onclick="playTVChannel(${i})" style="width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;margin-bottom:5px;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
 			        ${thumb}
@@ -16224,6 +16245,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'3.9', fecha: '29 de septiembre de 2026', titulo:'Más fácil sin ratón', cambios: [
+			    '⌨️ Si usas el teclado, el primer Tab te ofrece «Saltar al contenido» y te ahorra pasar por toda la barra de apps',
+			    '🔊 Los lectores de pantalla ya saben cómo se llama la pantalla de inicio, qué es la barra de apps y qué fondo vas a quitar',
+			    '🔎 Google ya sabe que IXClocK es una aplicación web gratuita',
+			  ]},
 			  { v:'3.8', fecha: '28 de septiembre de 2026', titulo:'Privacidad, por escrito', cambios: [
 			    '📄 Nueva página de privacidad y condiciones (Configuración → Más): qué datos salen de tu aparato, adónde van y cómo borrarlos',
 			  ]},
@@ -20819,7 +20845,7 @@
 			  `;
 			  if(!custom.length) html+='</div>'+ixVacio('🖼️','Tu galería está vacía','Sube una foto tuya con el botón de arriba y podrás ponerla de fondo de pantalla.')+'<div style="display:none;">';
 			  custom.forEach((wp,i)=>{
-			    html+=`<div style="position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;cursor:pointer;" onclick="setWallpaper('custom_${i}')"><img src="${wp.url}" style="width:100%;height:100%;object-fit:cover;"><button aria-label="Cerrar" onclick="event.stopPropagation();removeCustomWallpaper(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:var(--txt);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button></div>`;
+			    html+=`<div style="position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;cursor:pointer;" onclick="setWallpaper('custom_${i}')"><img src="${wp.url}" alt="Tu fondo ${i+1}" style="width:100%;height:100%;object-fit:cover;"><button aria-label="Quitar tu fondo ${i+1}" onclick="event.stopPropagation();removeCustomWallpaper(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:var(--txt);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button></div>`;
 			  });
 			  html+='</div>';
 			  cont.innerHTML=html;

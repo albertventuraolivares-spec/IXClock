@@ -161,20 +161,11 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-67. **`alt` en dos `<img>` generadas por JS**: el logo de canal de TV
-    (~línea 10879) y las miniaturas de fondos propios (~20766). Las «6» del
-    informe eran casi todas comentarios que mencionan `<img onerror>`.
-68. **Cuatro `<h1>`** (Reloj mundial, Alarmas, Timers, Dispositivos): son
-    pantallas distintas dentro de la app, no un error grave, pero la pantalla
-    de inicio no tiene ningún `<h1>`. Poner uno (puede ir oculto
-    visualmente) con el nombre de la app, y dejar los otros.
 69. **Lighthouse de verdad**: el registro de npm ya responde (28 de sept), así
     que se puede probar `npx lighthouse` contra el servidor local con el
     Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
     fiarse del informe, y atacar lo que salga.
 
-72. **Enlace «Saltar al contenido»** para teclado, y que `<nav>`/`<header>`
-    existan donde toque: hoy solo hay un `<main>`. Pequeño.
 73. **`Cache-Control`** para los estáticos (iconos, `tailwind.css`) en las
     mismas `[[headers]]` de la idea 66. OJO: `index.html` NO debe llevar caché
     larga, o las actualizaciones tardarían en llegar.
@@ -232,9 +223,6 @@ Comprobado aquí:
   grandes se crean por JS, poco que ganar.
 - Meta título y descripción, HTTPS: ya estaban bien.
 - HSTS: `.app` entero está en la lista precargada, no hace falta cabecera.
-76. **Datos estructurados JSON-LD** (`"@type":"WebApplication"`, nombre,
-    descripción, gratis): no hay ninguno. Pequeño; va bien junto al `<h1>`
-    de la idea 68. Comprobar con la prueba de resultados enriquecidos.
 77. **CSP de scripts** (lo que quedó de la idea 66): primero en
     `Content-Security-Policy-Report-Only` con la lista real de dominios que
     carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
@@ -272,6 +260,17 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Accesibilidad y SEO de inicio** (ideas 67, 68, 72 y 76, 29 de sept):
+  enlace «Saltar al contenido» (lo primero que coge el Tab; OJO, va antes de
+  `#top-dock`, que en el documento está ANTES de `<body>` y el navegador lo
+  mete primero en el body), `<main id="ix-contenido" tabindex="-1">`, `<h1>`
+  oculto con `.ix-oculto` (Tailwind precompilado no trae `sr-only`), la barra
+  de apps con `role="navigation" aria-label="Apps"`, `alt=""` en el logo de
+  canal de TV (decorativo), `alt` y «Quitar tu fondo N» en la galería, y
+  JSON-LD `WebApplication` gratis (si algún día se cobra, cambiar `price`).
+  `syncheck.js` ahora salta los `<script type="application/ld+json">`.
+  `pruebas/accesible.js` (16) usa el teclado de verdad y el árbol de
+  accesibilidad. Sin el arreglo: 2/16.
 - **Archivos internos tapados** (idea 70, 29 de sept): `[[redirects]]` con
   `status = 404` y `force = true` para `/pruebas/*`, `/netlify/*`,
   `/.github/*`, `/BACKLOG.md`, `/package.json` y `/netlify.toml`.
