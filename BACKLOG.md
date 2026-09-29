@@ -96,7 +96,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-61. **Pista de IXBand como tono de alarma.**
 62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
     subirlo poco a poco.
 63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
@@ -176,6 +175,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Canción de IXBand como tono de alarma** (idea 61, 29 de sept). El tono se
+  guarda como `ixband:<id>` (Mis canciones) o `ixband:actual` (el guardado
+  automático). `_ixEventosCancion` aplana la canción en el orden de «Toda la
+  canción» (secciones + 400 ms, mute/solo por sección) y `ixTocarCancion` la
+  toca en bucle con `gbPlayNote`/`gbPlayDrum`, sin abrir IXBand y sin red. La
+  hoja de alarma ofrece solo las canciones que suenan; si la elegida ya no
+  existe, suena el tono «Radial». `syncheck.js` ya acepta `IXROOT`.
+  - Probado con `pruebas/alarmacancion.js`: 16/16; con la versión anterior 3/16.
 - **El asistente crea imágenes** (idea 15, 29 de sept). El modelo responde con
   `[[IMAGEN prompt="…"]]` (nueva acción en `IXA_ACCIONES`) y `ixaPintarImagen`
   pinta la imagen de Pollinations (`image.pollinations.ai`, el mismo servicio
