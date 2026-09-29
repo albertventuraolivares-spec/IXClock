@@ -1,6 +1,7 @@
 const fs=require('fs'),vm=require('vm');
 const h=fs.readFileSync('/home/user/IXClock/index.html','utf8');
-const re=/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+// Solo JavaScript: los <script type="application/ld+json"> son datos, no código.
+const re=/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/gi;
 let m,i=0,ok=0,bad=0;
 while((m=re.exec(h))){
   i++; const code=m[1]; if(!code.trim()){ok++;continue;}
