@@ -84,8 +84,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
     que salgan al abrir esa ciudad, y convertibles en alarma de un toque.
     Pedida dos veces.
-25. **Modo Viaje**: al elegir ciudad en el reloj mundial, que el conversor de
-    divisas cambie solo a su moneda y se cargue su clima.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
 **IXBand**:
@@ -193,6 +191,11 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Modo Viaje** (idea 25, 29 de sept). `ixPaisDeTz` saca el país de la
+  bandera de `ICA_CITIES`, `IX_MONEDA_PAIS` lo pasa a moneda (solo las que
+  hay en `IX_CURRENCIES`; si no, no hay botón) y `ixViajeMoneda(tz)` abre la
+  calculadora en Divisas hacia esa moneda desde la que tenías (nunca «X → X»).
+  El clima de la ciudad ya salía en su fila. `pruebas/viaje.js`.
 - **Brújula a tus ciudades + FALLO este/oeste en Android** (idea 58, 29 de
   sept). `brujulaRumbo(e)`: `webkitCompassHeading` (iPhone) o `360 − alpha`
   (Android; antes se usaba `alpha` tal cual y la brújula iba al revés).

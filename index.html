@@ -16536,6 +16536,7 @@
 			    '🔔 Nueva app «Avisos»: guarda tus últimos 50 avisos (alarmas, temporizadores, el tiempo de tus ciudades) para verlos aunque no estuvieras mirando',
 			    '🧭 Brújula → «📍 Mis ciudades»: la distancia y una flecha que apunta hacia cada ciudad de tu reloj mundial',
 			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
+			    '💱 Modo Viaje: cada ciudad del reloj mundial tiene un botón con su moneda (💱 JPY, 💱 EUR…) que abre la calculadora ya convirtiendo a ella',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
@@ -21650,6 +21651,39 @@
 			    });
 			  });
 			}
+			/* ── Modo Viaje (idea 25): de una ciudad a su moneda ──
+			   Cada ciudad de la lista lleva la bandera de su país; de la bandera
+			   sale el código del país y de ahí la moneda. Solo las que el
+			   conversor sabe convertir: si no, no se ofrece el botón. */
+			const IX_MONEDA_PAIS={AE:'AED',AR:'ARS',AT:'EUR',AU:'AUD',BE:'EUR',BO:'BOB',BR:'BRL',CA:'CAD',CH:'CHF',CL:'CLP',CN:'CNY',CO:'COP',CR:'CRC',CU:'CUP',CZ:'CZK',DE:'EUR',DK:'DKK',DO:'DOP',EC:'USD',EG:'EGP',ES:'EUR',FI:'EUR',FR:'EUR',GB:'GBP',GR:'EUR',GT:'GTQ',HK:'HKD',HN:'HNL',ID:'IDR',IE:'EUR',IL:'ILS',IN:'INR',IT:'EUR',JM:'JMD',JP:'JPY',KR:'KRW',MA:'MAD',MX:'MXN',MY:'MYR',NG:'NGN',NI:'NIO',NL:'EUR',NO:'NOK',NZ:'NZD',PA:'PAB',PE:'PEN',PH:'PHP',PL:'PLN',PR:'USD',PT:'EUR',PY:'PYG',RU:'RUB',SA:'SAR',SE:'SEK',SG:'SGD',SV:'USD',TH:'THB',TR:'TRY',US:'USD',UY:'UYU',VE:'VES',ZA:'ZAR'};
+			function ixPaisDeTz(tz){
+			  const c=ICA_CITIES.find(function(x){ return x[1]===tz; });
+			  if(!c || !c[2]) return '';
+			  const pts=Array.from(c[2]).map(function(ch){ return ch.codePointAt(0)-0x1F1E6+65; });
+			  if(pts.length!==2 || pts.some(function(n){ return n<65||n>90; })) return '';
+			  return String.fromCharCode(pts[0],pts[1]);
+			}
+			function ixMonedaDeTz(tz){
+			  const m=IX_MONEDA_PAIS[ixPaisDeTz(tz)]||null;
+			  return (m && typeof IX_CURRENCIES!=='undefined' && IX_CURRENCIES.some(function(c){ return c[0]===m; })) ? m : null;
+			}
+			function ixViajeMoneda(tz){
+			  const cur=ixMonedaDeTz(tz);
+			  if(!cur) return false;
+			  const panel=document.getElementById('calc-panel');
+			  if(panel && panel.style.opacity!=='1') toggleCalcPanel();
+			  const sel=document.getElementById('calc-mode'); if(sel) sel.value='currency';
+			  switchCalcMode('currency');
+			  initCurrencyCalc();
+			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
+			  if(!from || !to) return false;
+			  // Se convierte DESDE lo que ya tenías puesto; si justo era esa moneda,
+			  // desde la otra (o el dólar), para no quedarte con «JPY → JPY».
+			  if(from.value===cur) from.value=(to.value && to.value!==cur) ? to.value : (cur==='USD'?'EUR':'USD');
+			  to.value=cur;
+			  convertCurrency();
+			  return cur;
+			}
 			// Un id de HTML no puede llevar barras: America/New_York -> America-New_York
 			function _icaIdSeguro(tz){ return tz.replace(/[^A-Za-z0-9_-]/g,'-'); }
 			function icaRenderWorldClocks(){
@@ -21691,6 +21725,7 @@
 			      +'<div><div style="font-size:13px;opacity:.5;">Hoy <span id="ica-clima-'+_icaIdSeguro(tz)+'" style="margin-left:4px;">'+_icaClimaTexto(tz)+'</span></div><div style="font-size:17px;font-weight:500;">'+escapeHtml(city)+'</div></div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +  (ixMonedaDeTz(tz) ? '<button class="ica-moneda" onclick="ixViajeMoneda(&quot;'+tz+'&quot;)" title="Convertir a su moneda" aria-label="Convertir a '+ixMonedaDeTz(tz)+'" style="background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.4);color:#30d158;height:30px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;">💱 '+ixMonedaDeTz(tz)+'</button>' : '')
 			      +  '<button onclick="icaRemoveWorldClock(&quot;'+tz+'&quot;)" title="Quitar" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;">✕</button>'
 			      +'</div>'
 			      +'</div>';
