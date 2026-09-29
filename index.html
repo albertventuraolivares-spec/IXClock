@@ -16948,6 +16948,7 @@
 			const IX_CHANGELOG = [
 			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
 			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
+			    '📋 IXBand: trae un estribillo (o cualquier sección) de otra de tus canciones con el botón 📋 de la barra de secciones',
 			  ]},
 			  { v:'4.6', fecha: '29 de septiembre de 2026', titulo:'Tu voz, tu canción, tu día', cambios: [
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
@@ -21004,6 +21005,60 @@
 			  _gbSecActiva=nueva.id; gbRenderTracks(); _gbGuardarPronto();
 			  _gbEstado('⧉ Sección duplicada con sus '+copias.length+' pista(s).');
 			}
+			/* ── TRAER UNA SECCIÓN DE OTRA CANCIÓN (idea 34) ──
+			   Duplicar sirve dentro de la misma canción; esto copia un estribillo
+			   (con sus pistas) desde cualquiera de Mis canciones a la que tienes
+			   abierta. Es una copia: cambiarla aquí no toca la otra canción.    */
+			function gbSecTraer(){
+			  gbCargarLista();
+			  const cs=_gbCanciones.filter(function(c){ return c && c.datos && c.id!==_gbCancionActual; });
+			  let ov=document.getElementById('gb-traer'); if(ov) ov.remove();
+			  ov=document.createElement('div');
+			  ov.id='gb-traer';
+			  ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','Traer una sección de otra canción');
+			  ov.style.cssText='position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px;';
+			  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+			  let h='<div style="width:min(440px,100%);max-height:80vh;overflow:auto;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:16px;padding:16px;color:var(--txt);">'
+			    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><b style="font-size:15px;">📋 Traer una sección</b>'
+			    +'<button onclick="document.getElementById(\'gb-traer\').remove()" aria-label="Cerrar" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:var(--txt);cursor:pointer;">✕</button></div>';
+			  if(!cs.length){
+			    h+='<div class="gb-traer-vacio" style="font-size:12px;opacity:.6;line-height:1.5;">No hay otras canciones en «Mis canciones». Guarda alguna con «💾 Guardar en Mis canciones» y podrás traer sus secciones aquí.</div>';
+			  } else {
+			    cs.forEach(function(c){
+			      const d=c.datos, secs=(Array.isArray(d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1',nombre:'A'}];
+			      const secDe=function(t){ return t.sec||secs[0].id; };
+			      h+='<div style="font-size:11px;font-weight:800;opacity:.6;margin:10px 0 6px;">🎵 '+escapeHtml(c.nombre||'Canción')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+			      secs.forEach(function(sec){
+			        const n=(d.takes||[]).filter(function(t){ return t && secDe(t)===sec.id; }).length;
+			        h+='<button class="gb-chip gb-traer-sec" onclick="gbSecTraerDe('+JSON.stringify(String(c.id)).replace(/"/g,'&quot;')+','+JSON.stringify(String(sec.id)).replace(/"/g,'&quot;')+')"'
+			          +(n?'':' disabled style="opacity:.4;"')+'>'+escapeHtml(sec.nombre||'?')+' <span style="opacity:.55;">'+n+'</span></button>';
+			      });
+			      h+='</div>';
+			    });
+			  }
+			  ov.innerHTML=h+'</div>';
+			  document.body.appendChild(ov);
+			}
+			function gbSecTraerDe(cid, sid){
+			  gbCargarLista();
+			  const c=_gbCanciones.find(function(x){ return String(x.id)===String(cid); });
+			  if(!c || !c.datos) return false;
+			  const d=c.datos, secs=(Array.isArray(d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1',nombre:'A'}];
+			  const sec=secs.find(function(x){ return x.id===sid; });
+			  if(!sec) return false;
+			  const secDe=function(t){ return t.sec||secs[0].id; };
+			  const tomas=(d.takes||[]).filter(function(t){ return t && secDe(t)===sid && Array.isArray(t.events); });
+			  if(!tomas.length){ _gbEstado('Esa sección está vacía.'); return false; }
+			  gbPracticaParar(true);
+			  let id; do{ _gbSecSeq++; id='s'+_gbSecSeq; }while(_gbSecIdx(id)>=0);
+			  _gbSecciones.push({id:id, nombre:sec.nombre||_gbNombreSec(_gbSecciones.length)});
+			  tomas.forEach(function(t){ _gbTakes.push(Object.assign(_gbClonar(t), {sec:id})); });
+			  _gbSecActiva=id;
+			  const ov=document.getElementById('gb-traer'); if(ov) ov.remove();
+			  gbRenderTracks(); _gbGuardarPronto();
+			  _gbEstado('📋 «'+(sec.nombre||'')+'» traída de «'+(c.nombre||'')+'» con '+tomas.length+' pista(s).');
+			  return true;
+			}
 			function gbSecMover(dir){
 			  const i=_gbSecIdx(_gbSecActiva), j=i+dir;
 			  if(i<0 || j<0 || j>=_gbSecciones.length) return;
@@ -21613,6 +21668,7 @@
 			    +'<span style="width:10px;"></span>'
 			    +'<button class="gb-chip" onclick="gbSecNueva()" title="Añadir una sección nueva">＋</button>'
 			    +'<button class="gb-chip" onclick="gbSecDuplicar()" title="Duplicar esta sección con sus pistas">⧉</button>'
+			    +'<button class="gb-chip" onclick="gbSecTraer()" title="Traer una sección de otra de tus canciones" aria-label="Traer una sección de otra canción">📋</button>'
 			    +'<button class="gb-chip" onclick="gbSecRenombrar()" title="Cambiar el nombre de esta sección">✎</button>'
 			    +'<button class="gb-chip" onclick="gbSecMover(-1)" title="Mover antes"'+(secIdx<=0?' disabled style="opacity:.3;"':'')+'>‹</button>'
 			    +'<button class="gb-chip" onclick="gbSecMover(1)" title="Mover después"'+(secIdx>=_gbSecciones.length-1?' disabled style="opacity:.3;"':'')+'>›</button>'

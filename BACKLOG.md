@@ -81,8 +81,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
 **IXBand**:
 33. **Exportar pistas por separado**, no solo la mezcla.
-34. **Sección como plantilla entre canciones**: hoy se duplica dentro de la
-    misma canción; falta copiar un estribillo de una canción a otra.
 35. **Pista de voz por micrófono** mezclada con los instrumentos.
 36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
     por separado y nunca se cruzan. ⚠️ Mirado el 29 de sept y aparcado: casi
@@ -171,6 +169,11 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Traer una sección de otra canción** (idea 34, 29 de sept). Botón 📋 en la
+  barra de secciones: `gbSecTraer` lista Mis canciones (menos la abierta) con
+  sus secciones y nº de pistas; `gbSecTraerDe` copia en profundidad las tomas
+  a una sección NUEVA (id libre, no pisa) al final y la abre. Vacías, apagadas.
+  - Probado con `pruebas/traerseccion.js`: 11/11; antes 2/11.
 - **Mapas → reloj mundial** (idea 27, 29 de sept). Botón «🕐 Al reloj mundial»
   en la ficha del lugar: `amapAlReloj` pide la zona a Open-Meteo
   (`timezone=auto`, ya nombrado en privacidad), la valida con `Intl` y la añade
