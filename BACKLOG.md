@@ -115,8 +115,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     como una alarma más.
 42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
     tendencia: hoy el conversor da el valor puntual, sin contexto.
-43. **Mini-reproductor flotante de radio** que se vea al cambiar de app: el
-    audio ya sigue sonando, pero no hay control fuera de la ventana de Radio.
 44. **Centro de notificaciones** con historial de alarmas y descargas.
 45. **Favoritos de radio con etiqueta** («para dormir», «para currar»).
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
@@ -130,10 +128,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
-54. **Cuenta atrás propia** (viaje, examen, cumpleaños) además de las
-    festividades automáticas, reusando el motor que ya existe.
-55. **Divide la cuenta en la Calculadora**: reparto entre N personas + propina,
-    con la conversión de divisas en vivo. Pedida dos veces.
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
 57. **Alertas del tiempo por ciudad guardada** (tormenta, calor extremo,
     helada), sonando como una alarma.
@@ -142,7 +136,6 @@ llegaron repetidas y algunas ya estaban hechas):
 59. **IXBench sugiere la calidad de los efectos**: el banco de pruebas mide la
     potencia y no hace nada con el resultado; podría ofrecer «aplicar
     Ahorro/Media/Alta» al terminar.
-60. **Modo Enfoque silencia Radio Mundial** al empezar y la devuelve al acabar.
 61. **Pista de IXBand como tono de alarma.**
 62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
     subirlo poco a poco.
@@ -215,6 +208,29 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Tanda del 29 de sept (madrugada)** — ideas 43, 54, 55, 60 y tres fallos:
+  - **FALLO alarmas con fecha**: había DOS comprobadores de `_icaAlarms`; el
+    viejo (`setInterval` de 5 s) miraba solo la hora, así que un recordatorio
+    para otro día sonaba todos los días y el día bueno dos veces. Quitado;
+    el historial (`icaAddToHistory`) pasó a `_checkIcaMinuto`.
+    `pruebas/alarmafecha.js` mueve el reloj con `page.clock`.
+  - **FALLO sincronización**: `IX_NUBE_CLAVES` tenía «radio_favs», pero las
+    favoritas se guardan en «ix_radio_favorites»: nunca viajaban.
+    `pruebas/nubeclaves.js` comprueba además que TODA clave de la lista la
+    escribe algún sitio del código.
+  - **FALLO año de festividades**: la línea «País · año» ponía siempre el año
+    actual (Año Nuevo 2027 salía «2026»). Ahora `f.date.getFullYear()`.
+  - **55 Dividir cuenta** (modo `split` de la calculadora, `ixDividirCuenta`
+    en céntimos enteros: el reparto cuadra siempre). `pruebas/reparto.js`.
+  - **54 Cuenta atrás**: los eventos de `cal_events` salen en «Próximas
+    festividades» (📌, escapados, clic/Enter abre ese día, se repintan al
+    añadir/borrar). `pruebas/cuentaatras.js`.
+  - **60 Enfoque y radio**: `_enfCallarRadio`/`_enfDevolverRadio`; un
+    archivo local se pausa en vez de pararse. `pruebas/enfoqueradio.js`.
+  - **43 Media Session**: emisora en la pantalla de bloqueo, play/pausa/
+    siguiente/anterior, teclas multimedia; pasa a «en pausa» si la emisora
+    falla. No es un mini-reproductor dentro de la app (eso sigue libre si se
+    quiere). `pruebas/mediasesion.js`.
 - **Borrar la copia de la nube, imagen para compartir y caché** (ideas 78,
   73 y 79 nueva, 29 de sept). `nube.mjs` acepta `DELETE ?codigo=` (quien
   puede leerla puede borrarla) y la ficha de sincronizar tiene «Borrar mi
