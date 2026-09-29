@@ -95,7 +95,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     internet».
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
-56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
 63. **Etiqueta de tarea en Modo Enfoque** + resumen diario combinado
     («Hoy en IXClocK»: enfoque + alarmas + radio).
 
@@ -173,6 +172,15 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Notas de voz** (idea 56, 29 de sept). Botón 🎙️ en la nota: graba con
+  `MediaRecorder` (máx. 5 min), el botón cuenta el tiempo. El audio va a
+  IndexedDB (`ixclock_voz`), la nota solo guarda `audios:[{id,dur,fecha}]`, así
+  que sincronizar/buscar/copias no cambian; en otro aparato se dice que el audio
+  está donde se grabó. ✕ y borrar la nota borran también el audio; «Borrar
+  todos los datos» borra la base. Anotado en `privacidad.html`.
+  - Pendiente: las copias automáticas y el archivo de respaldo NO llevan los
+    audios (solo localStorage).
+  - Probado con `pruebas/notasvoz.js` (micrófono de prueba): 14/14; antes 1/14.
 - **Bucle de práctica en IXBand** (idea 62, 29 de sept). Botón «🔁 Práctica
   lenta» en Pistas: `gbPracticaEmpezar` toca la sección activa (reusa
   `_ixEventosCancion`, así respeta mute/solo) al 70 % y sube un 5 % por vuelta

@@ -4822,6 +4822,7 @@
 						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
 						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
 						<button id="notes-alarma-btn" onclick="notasAAlarma()" title="Convertir en alarma" aria-label="Convertir la nota en alarma" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">⏰</button>
+						<button id="notes-voz-btn" onclick="notasVozToggle()" title="Nota de voz" aria-label="Grabar una nota de voz" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎙️</button>
 						<button id="notes-lista-btn" onclick="notasCasilla()" title="Casilla" aria-label="Convertir la línea en casilla" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">☑</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
@@ -4837,6 +4838,8 @@
 				<!-- Las casillas de la nota, para tocarlas. El texto de arriba sigue
 				     siendo la verdad: esto solo lo lee y lo cambia. -->
 				<div id="notes-casillas" class="hidden" style="max-height:40%;overflow:auto;padding:4px 12px 10px;border-top:1px solid rgba(255,255,255,.08);"></div>
+				<!-- Notas de voz de esta nota (el audio vive en IndexedDB). -->
+				<div id="notes-audios" class="hidden" style="max-height:40%;overflow:auto;padding:4px 12px 10px;border-top:1px solid rgba(255,255,255,.08);"></div>
 				<!-- Lienzo de dibujo estilo Apple Notes: lápiz, bolígrafo, marcador,
 				     resaltador, borrador + colores; compatible con lápices de iPad y
 				     stylus de Samsung/Android (presión y tilt vía Pointer Events) -->
@@ -14049,7 +14052,8 @@
 			    const rest = n.content.split('\n').slice(1)
 			      .map(function(l){ return l.replace(/^\s*[-*] \[ \] ?/,'☐ ').replace(/^\s*[-*] \[[xX]\] ?/,'✓ '); })
 			      .join(' ').trim().slice(0,80);
-			    const title = firstLine || 'Nota nueva';
+			    const nAudios = Array.isArray(n.audios) ? n.audios.length : 0;
+			    const title = firstLine || (nAudios ? 'Nota de voz' : 'Nota nueva');
 			    const row = document.createElement('div');
 			    row.className = 'note-row';
 			    row.onclick = ()=>notesOpen(n.id);
@@ -14058,6 +14062,7 @@
 			      +(n.carpeta && _notasCarpeta===null ? '<span>'+notasIcono(n.carpeta)+escapeHtml(n.carpeta)+'</span>' : '')
 			      +(function(){ const pr=notasProgreso(n.content);
 			          return pr ? '<span>☑ '+pr.hechas+'/'+pr.total+'</span>' : ''; })()
+			      +(nAudios ? '<span>🎙️ '+nAudios+'</span>' : '')
 			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
 			    list.appendChild(row);
 			  });
@@ -14158,6 +14163,7 @@
 			  notasPintarBotones();
 			  notesSetMode('text');
 			  try{ notasPintarCasillas(); }catch(e){}
+			  try{ notasVozPintar(); }catch(e){}
 			  _notesDrawing = n && n.drawing ? n.drawing : null; // dataURL guardado
 			  document.getElementById('notes-textarea').focus();
 			}
@@ -14303,9 +14309,145 @@
 			}
 			function notesDeleteCurrent(){
 			  if(!currentNoteId) return;
+			  const borrada = notes.find(x=>x.id===currentNoteId);
+			  // Sus audios se van con ella: si no, quedarían ocupando sitio para siempre.
+			  if(borrada && Array.isArray(borrada.audios)) borrada.audios.forEach(function(a){ notasVozBorrar(a.id); });
 			  notes = notes.filter(x=>x.id!==currentNoteId);
 			  saveNotes();
 			  notesShowList();
+			}
+
+			/* ── NOTAS DE VOZ (idea 56) ──
+			   El botón 🎙️ graba con el micrófono y la grabación queda dentro de la
+			   nota. El audio va en IndexedDB, no en localStorage: un minuto de voz
+			   ya llenaría el hueco de toda la app. La nota solo guarda la lista
+			   {id, dur, fecha}, así que buscar, fijar, carpetas y sincronizar
+			   siguen igual; en otro aparato se ve la nota y se dice que el audio
+			   está en el que lo grabó. Cada grabación dura como mucho 5 minutos. */
+			const NOTAS_VOZ_DB='ixclock_voz', NOTAS_VOZ_ST='audios', NOTAS_VOZ_MAX=5*60000;
+			let _notasRec=null, _notasVozUrls=[];
+			function _notasVozTx(modo, fn){
+			  return new Promise(function(res, rej){
+			    let req;
+			    try{ req=indexedDB.open(NOTAS_VOZ_DB,1); }catch(e){ return rej(e); }
+			    req.onupgradeneeded=function(){ const db=req.result; if(!db.objectStoreNames.contains(NOTAS_VOZ_ST)) db.createObjectStore(NOTAS_VOZ_ST,{keyPath:'id'}); };
+			    req.onerror=function(){ rej(req.error); };
+			    req.onsuccess=function(){
+			      const db=req.result;
+			      const tx=db.transaction(NOTAS_VOZ_ST, modo);
+			      const r=fn(tx.objectStore(NOTAS_VOZ_ST));
+			      tx.oncomplete=function(){ db.close(); res(r && r.result!==undefined ? r.result : null); };
+			      tx.onerror=tx.onabort=function(){ db.close(); rej(tx.error||new Error('abortada')); };
+			    };
+			  });
+			}
+			function notasVozGuardar(id, blob){ return _notasVozTx('readwrite', function(st){ return st.put({id:id, blob:blob}); }); }
+			function notasVozLeer(id){ return _notasVozTx('readonly', function(st){ return st.get(id); }).then(function(r){ return r ? r.blob : null; }).catch(function(){ return null; }); }
+			function notasVozBorrar(id){ return _notasVozTx('readwrite', function(st){ return st.delete(id); }).catch(function(){}); }
+			function _notasVozMmss(seg){ seg=Math.max(0,Math.round(seg)); return Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0'); }
+			function notasVozBoton(){
+			  const b=document.getElementById('notes-voz-btn');
+			  if(!b) return;
+			  if(_notasRec){
+			    b.textContent='⏹ '+_notasVozMmss((Date.now()-_notasRec.t0)/1000);
+			    b.style.background='#ff453a'; b.setAttribute('aria-label','Parar la grabación');
+			  } else {
+			    b.textContent='🎙️'; b.style.background='rgba(255,255,255,.1)'; b.setAttribute('aria-label','Grabar una nota de voz');
+			  }
+			}
+			async function notasVozToggle(){
+			  if(_notasRec){ _notasRec.parar(); return; }
+			  const notaId=currentNoteId;
+			  if(!notaId) return;
+			  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+			    try{ ixToast('Este navegador no deja grabar audio'); }catch(e){} return;
+			  }
+			  let stream;
+			  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+			  catch(e){ try{ ixToast('🎙️ Hace falta permiso para usar el micrófono'); }catch(_){} return; }
+			  let rec;
+			  try{ rec=new MediaRecorder(stream); }
+			  catch(e){ stream.getTracks().forEach(function(t){ t.stop(); }); try{ ixToast('No se pudo grabar en este navegador'); }catch(_){} return; }
+			  const trozos=[], t0=Date.now();
+			  let tope=null, reloj=null;
+			  rec.ondataavailable=function(e){ if(e.data && e.data.size) trozos.push(e.data); };
+			  rec.onstop=async function(){
+			    stream.getTracks().forEach(function(t){ t.stop(); });
+			    clearTimeout(tope); clearInterval(reloj);
+			    _notasRec=null; notasVozBoton();
+			    const blob=new Blob(trozos, {type:rec.mimeType||'audio/webm'});
+			    if(!blob.size){ try{ ixToast('No se grabó nada'); }catch(e){} return; }
+			    const a={ id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), dur:Math.max(1,Math.round((Date.now()-t0)/1000)), fecha:Date.now() };
+			    try{ await notasVozGuardar(a.id, blob); }
+			    catch(e){ try{ ixToast('⚠️ No se pudo guardar el audio en este dispositivo'); }catch(_){} return; }
+			    const n=notes.find(function(x){ return x.id===notaId; });
+			    if(!n){ notasVozBorrar(a.id); return; }        // la nota se borró mientras grababas
+			    (n.audios=Array.isArray(n.audios)?n.audios:[]).push(a);
+			    n.updatedAt=Date.now();
+			    await saveNotes();
+			    if(currentNoteId===notaId) notasVozPintar();
+			    try{ ixToast('🎙️ Nota de voz guardada ('+_notasVozMmss(a.dur)+')'); }catch(e){}
+			  };
+			  _notasRec={ t0:t0, parar:function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} } };
+			  tope=setTimeout(function(){ if(_notasRec) _notasRec.parar(); }, NOTAS_VOZ_MAX);
+			  reloj=setInterval(notasVozBoton, 500);
+			  rec.start(1000);
+			  notasVozBoton();
+			}
+			async function notasVozPintar(){
+			  const caja=document.getElementById('notes-audios');
+			  if(!caja) return;
+			  const notaId=currentNoteId;
+			  const n=notes.find(function(x){ return x.id===notaId; });
+			  const lista=(n && Array.isArray(n.audios)) ? n.audios : [];
+			  _notasVozUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} });
+			  _notasVozUrls=[];
+			  if(!lista.length){ caja.classList.add('hidden'); caja.innerHTML=''; return; }
+			  const blobs=await Promise.all(lista.map(function(a){ return notasVozLeer(a.id); }));
+			  if(currentNoteId!==notaId) return;               // se abrió otra nota mientras tanto
+			  caja.innerHTML='';
+			  const cab=document.createElement('div');
+			  cab.style.cssText='font-size:10px;font-weight:800;opacity:.6;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 4px;';
+			  cab.textContent='🎙️ Notas de voz';
+			  caja.appendChild(cab);
+			  lista.forEach(function(a, i){
+			    const fila=document.createElement('div');
+			    fila.className='nota-voz';
+			    fila.style.cssText='display:flex;align-items:center;gap:8px;margin:4px 0;';
+			    const info=document.createElement('span');
+			    info.style.cssText='font-size:11px;opacity:.7;white-space:nowrap;';
+			    info.textContent=_notasVozMmss(a.dur)+' · '+notesFormatDate(a.fecha);
+			    fila.appendChild(info);
+			    if(blobs[i]){
+			      const u=URL.createObjectURL(blobs[i]); _notasVozUrls.push(u);
+			      const au=document.createElement('audio');
+			      au.controls=true; au.preload='metadata'; au.src=u;
+			      au.style.cssText='flex:1;min-width:0;height:34px;';
+			      au.setAttribute('aria-label','Nota de voz de '+_notasVozMmss(a.dur));
+			      fila.appendChild(au);
+			    } else {
+			      const f=document.createElement('span');
+			      f.className='nota-voz-fuera';
+			      f.style.cssText='flex:1;font-size:11px;opacity:.55;';
+			      f.textContent='Este audio está en el dispositivo donde se grabó';
+			      fila.appendChild(f);
+			    }
+			    const x=document.createElement('button');
+			    x.textContent='✕'; x.title='Borrar esta nota de voz'; x.setAttribute('aria-label','Borrar esta nota de voz');
+			    x.style.cssText='background:rgba(255,69,58,.18);border:none;border-radius:8px;color:#ff6961;font-size:12px;padding:6px 9px;cursor:pointer;';
+			    x.onclick=function(){ notasVozQuitar(a.id); };
+			    fila.appendChild(x);
+			    caja.appendChild(fila);
+			  });
+			  caja.classList.remove('hidden');
+			}
+			async function notasVozQuitar(id){
+			  const n=notes.find(function(x){ return x.id===currentNoteId; });
+			  if(!n || !Array.isArray(n.audios)) return;
+			  n.audios=n.audios.filter(function(a){ return a.id!==id; });
+			  await saveNotes();
+			  notasVozBorrar(id);
+			  notasVozPintar();
 			}
 
 			/* ===================== NOTAS — DIBUJO estilo Apple Notes =====================
@@ -16811,6 +16953,7 @@
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
 			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
 			    '🔁 IXBand → Pistas → «Práctica lenta»: repite la sección que estás viendo al 70 % y sube un 5 % en cada vuelta hasta el tempo de verdad, para aprenderla sin agobios',
+			    '🎙️ Notas de voz: en cualquier nota, toca 🎙️ para grabar y otra vez para parar. La grabación queda dentro de la nota y solo en tu aparato',
 			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
@@ -21803,6 +21946,8 @@
 			  if(!confirm(_uiT('¿Borrar TODOS los datos guardados?'))) return;
 			  const r=await ixCopiaHacer('antes-de-borrar');
 			  localStorage.clear();
+			  // Las notas de voz viven aparte (IndexedDB): también se van.
+			  try{ indexedDB.deleteDatabase(NOTAS_VOZ_DB); }catch(e){}
 			  alert(r.ok ? _uiT('Datos borrados. Se guardó una copia por si acaso: está en Respaldo → Copias automáticas.')
 			             : _uiT('Datos borrados'));
 			  cloudTab('backup');
