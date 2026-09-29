@@ -322,7 +322,7 @@
 			.clock-display.has-gradient{background:var(--clock-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4));}
 
 			.pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:9999px;font-size:.85rem;backdrop-filter:blur(20px);transition:all .3s ease;}
-			.pill-accent{background:var(--accent-color);border-color:rgba(255,255,255,.3);color:var(--txt);}
+			.pill-accent{background:var(--accent-color);background:color-mix(in srgb,var(--accent-color) 78%,#000);border-color:rgba(255,255,255,.3);color:var(--txt);} /* un poco más oscuro: el blanco sobre el azul puro no llegaba al contraste mínimo (3,6 de 4,5) */
 			.light-mode .pill{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1);}
 
 			.hide-scrollbar::-webkit-scrollbar{display:none;}
@@ -714,7 +714,7 @@
 			  display:flex;justify-content:space-around;padding:20px 40px;margin-top:auto;
 			}
 			.ica-timer-recent{margin-top:20px;}
-			.ica-timer-recent h3{font-size:13px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+			.ica-timer-recent h2,.ica-timer-recent h3{font-size:13px;opacity:.4;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
 
 			/* ===== DEVICE TRACKER (MacTracker-style) ===== */
 			#device-tracker-app{
@@ -1879,7 +1879,7 @@
 						<span style="font-size:11px;opacity:.55;">A</span>
 						<input
 							type="range"
-							id="font-size-slider"
+							id="font-size-slider" aria-label="Tamaño del texto"
 							min="70"
 							max="150"
 							value="100"
@@ -2105,12 +2105,12 @@
 							<span style="font-size:11px;font-weight:800;opacity:.75;">📏 Tamaño del reloj</span>
 							<span id="clock-scale-label" style="font-size:11px;font-weight:700;color:#0a84ff;">100%</span>
 						</div>
-						<input type="range" min="60" max="220" value="100" id="clock-scale-slider" oninput="setClockScale(this.value)" style="width:100%;" />
+						<input type="range" min="60" max="220" value="100" id="clock-scale-slider" aria-label="Tamaño del reloj" oninput="setClockScale(this.value)" style="width:100%;" />
 						<div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 4px;">
 							<span style="font-size:11px;font-weight:800;opacity:.75;">↕️ Altura de los números</span>
 							<span id="clock-stretch-label" style="font-size:11px;font-weight:700;color:#0a84ff;">100%</span>
 						</div>
-						<input type="range" min="100" max="200" value="100" id="clock-stretch-slider" oninput="setClockStretch(this.value)" style="width:100%;" />
+						<input type="range" min="100" max="200" value="100" id="clock-stretch-slider" aria-label="Altura de los números" oninput="setClockStretch(this.value)" style="width:100%;" />
 						<div style="font-size:9px;opacity:.55;margin-top:6px;">Como en iOS: estira los números del reloj hacia arriba</div>
 					</div>
 					<div class="relative mb-3 shrink-0">
@@ -2247,7 +2247,7 @@
 							>
 							<input
 								type="color"
-								id="text-color-custom"
+								id="text-color-custom" aria-label="Color de texto personalizado"
 								value="#ffffff"
 								style="width:36px;height:28px;border:none;border-radius:8px;cursor:pointer;background:none;padding:0;"
 								oninput="setTextColor(this.value,'custom')"
@@ -2273,7 +2273,7 @@
 						</div>
 						<input
 							class="w-full h-1 appearance-none bg-white/20 rounded-full"
-							id="size-slider"
+							id="size-slider" aria-label="Tamaño del reloj"
 							max="13"
 							min="4"
 							step="0.5"
@@ -2320,7 +2320,7 @@
 						</div>
 						<div id="clockmode-tz-controls" style="display:none;">
 							<select
-								id="clock-tz-select"
+								id="clock-tz-select" aria-label="País o zona horaria del reloj"
 								class="w-full bg-black/30 border border-white/10 rounded-xl py-2 px-3 text-xs"
 								onchange="applyClockTimezone(this.value)"
 							>
@@ -2329,11 +2329,11 @@
 						</div>
 						<div id="clockmode-manual-controls" style="display:none;">
 							<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-								<input id="manual-h" type="number" min="0" max="23" value="12" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<input id="manual-h" aria-label="Horas" type="number" min="0" max="23" value="12" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
 								<span style="opacity:.5;">:</span>
-								<input id="manual-m" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<input id="manual-m" aria-label="Minutos" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
 								<span style="opacity:.5;">:</span>
-								<input id="manual-s" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
+								<input id="manual-s" aria-label="Segundos" type="number" min="0" max="59" value="0" style="width:48px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--txt);font-size:13px;font-weight:700;padding:4px;text-align:center;outline:none;" />
 								<button class="btn-option" onclick="applyManualClockTime()" style="font-size:10px;padding:6px 10px;">✔ Aplicar</button>
 							</div>
 						</div>
@@ -2347,7 +2347,7 @@
 						</div>
 						<input
 							class="w-full h-1 appearance-none bg-white/20 rounded-full"
-							id="brightness-slider"
+							id="brightness-slider" aria-label="Brillo"
 							max="90"
 							min="0"
 							step="1"
@@ -2370,7 +2370,7 @@
 							</div>
 							<input
 								class="w-full h-1 appearance-none bg-white/20 rounded-full"
-								id="glass-blur-slider"
+								id="glass-blur-slider" aria-label="Desenfoque"
 								max="100"
 								min="0"
 								step="1"
@@ -2388,7 +2388,7 @@
 							</div>
 							<input
 								class="w-full h-1 appearance-none bg-white/20 rounded-full"
-								id="glass-op-slider"
+								id="glass-op-slider" aria-label="Opacidad"
 								max="80"
 								min="5"
 								step="1"
@@ -2406,7 +2406,7 @@
 							</div>
 							<input
 								class="w-full h-1 appearance-none bg-white/20 rounded-full"
-								id="glass-border-slider"
+								id="glass-border-slider" aria-label="Brillo del borde"
 								max="100"
 								min="0"
 								step="1"
@@ -2446,7 +2446,7 @@
 									>Desde:</label
 								>
 								<input
-									id="campana-desde"
+									id="campana-desde" aria-label="Campanadas desde la hora"
 									type="number"
 									min="0"
 									max="23"
@@ -2461,7 +2461,7 @@
 									>Hasta:</label
 								>
 								<input
-									id="campana-hasta"
+									id="campana-hasta" aria-label="Campanadas hasta la hora"
 									type="number"
 									min="0"
 									max="23"
@@ -2912,11 +2912,11 @@
 				id="hourly-container-wrap"
 			>
 				<div class="flex justify-between items-center mb-5 px-1">
-					<h4
+					<h2
 						class="text-[9px] font-bold uppercase tracking-[0.3em] opacity-60"
 					>
 						Pronóstico por Horas
-					</h4>
+					</h2>
 					<span
 						class="text-[9px] font-bold text-blue-400 uppercase tracking-widest"
 						>Sensores Activos</span
@@ -3247,7 +3247,7 @@
 				style="display:flex;align-items:center;gap:8px;padding:12px 14px 0;"
 			>
 				<select
-					id="trans-from"
+					id="trans-from" aria-label="Idioma de origen"
 					class="trans-select"
 					onchange="onTransLangChange()"
 				>
@@ -3342,7 +3342,7 @@
 					⇄
 				</button>
 				<select
-					id="trans-to"
+					id="trans-to" aria-label="Idioma de destino"
 					class="trans-select"
 					onchange="onTransLangChange()"
 				>
@@ -3524,7 +3524,7 @@
 					onkeydown="if(event.key==='Enter')tvSearchEnter()"
 					style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--txt);font-size:12px;padding:9px 12px;outline:none;"
 				/>
-				<select id="tv-country-select" data-notrans>
+				<select id="tv-country-select" aria-label="País de los canales" data-notrans>
 					<option value="">🌍 Elige un país…</option>
 				</select>
 				<button
@@ -3852,7 +3852,7 @@
 				<div class="alarm-list" id="alarm-list"></div>
 				<div class="alarm-add-row">
 					<input
-						id="new-alarm-time"
+						id="new-alarm-time" aria-label="Hora de la alarma"
 						type="time"
 						class="flex-1 bg-black/40 border border-white/20 rounded-xl py-2 px-3 text-xs"
 						value="07:00"
@@ -3881,7 +3881,7 @@
 			>
 				<div class="text-5xl font-light" id="timer-display">05:00</div>
 				<input
-					id="timer-minutes-input"
+					id="timer-minutes-input" aria-label="Minutos del temporizador"
 					type="number"
 					min="1"
 					max="180"
@@ -4025,7 +4025,7 @@
 				</div>
 				<!-- Dormir con la radio: apaga la musica, no suena ninguna alarma -->
 				<div class="ica-timer-recent">
-					<h3>😴 Dormir con la radio</h3>
+					<h2>😴 Dormir con la radio</h2>
 					<div style="font-size:11px;opacity:.55;margin:-4px 0 10px;">La música se va bajando sola y se apaga. No suena ninguna alarma.</div>
 					<div id="ica-dormir-botones" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
 					<!-- «Otra vez con la de anoche»: solo sale si hubo una. -->
@@ -4036,7 +4036,7 @@
 					</div>
 				</div>
 				<div class="ica-timer-recent">
-					<h3>Recientes</h3>
+					<h2>Recientes</h2>
 					<div id="ica-timer-recents" style="display:flex;flex-direction:column;gap:8px;"></div>
 				</div>
 			</div>
@@ -4166,7 +4166,7 @@
 				style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 0;"
 			>
 				<select
-					id="calc-mode"
+					id="calc-mode" aria-label="Modo de la calculadora"
 					onchange="switchCalcMode(this.value)"
 					style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--txt);font-size:11px;padding:5px 8px;outline:none;cursor:pointer;font-weight:700;"
 				>
@@ -4226,7 +4226,7 @@
 				style="display:none;padding:10px 14px 14px;flex-direction:column;gap:10px;"
 			>
 				<select
-					id="unit-category"
+					id="unit-category" aria-label="Tipo de unidad"
 					onchange="loadUnitCategory()"
 					style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--txt);font-size:12px;padding:8px 10px;outline:none;"
 				>
@@ -4243,11 +4243,11 @@
 						style="flex:1;display:flex;flex-direction:column;gap:4px;"
 					>
 						<select
-							id="unit-from"
+							id="unit-from" aria-label="Unidad de origen"
 							style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--txt);font-size:11px;padding:6px;outline:none;"
 						></select>
 						<input
-							id="unit-val-from"
+							id="unit-val-from" aria-label="Cantidad a convertir"
 							type="number"
 							value="1"
 							oninput="convertUnits('from')"
@@ -4264,11 +4264,11 @@
 						style="flex:1;display:flex;flex-direction:column;gap:4px;"
 					>
 						<select
-							id="unit-to"
+							id="unit-to" aria-label="Unidad de destino"
 							style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--txt);font-size:11px;padding:6px;outline:none;"
 						></select>
 						<input
-							id="unit-val-to"
+							id="unit-val-to" aria-label="Resultado de la conversión"
 							type="number"
 							oninput="convertUnits('to')"
 							style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--txt);font-size:1.5rem;padding:8px;text-align:center;outline:none;width:100%;"
@@ -4288,7 +4288,7 @@
 			>
 				<div style="display:flex;flex-direction:column;gap:6px;">
 					<input
-						id="currency-amount"
+						id="currency-amount" aria-label="Cantidad"
 						type="number"
 						value="1"
 						min="0"
@@ -4296,7 +4296,7 @@
 						style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:var(--txt);font-size:2rem;font-weight:300;padding:10px 14px;text-align:right;outline:none;width:100%;box-sizing:border-box;"
 					/>
 					<select
-						id="currency-from"
+						id="currency-from" aria-label="Moneda de origen"
 						onchange="convertCurrency()"
 						style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:var(--txt);font-size:12px;padding:8px 10px;outline:none;cursor:pointer;"
 					></select>
@@ -4309,7 +4309,7 @@
 				</button>
 				<div style="display:flex;flex-direction:column;gap:6px;">
 					<select
-						id="currency-to"
+						id="currency-to" aria-label="Moneda de destino"
 						onchange="convertCurrency()"
 						style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:var(--txt);font-size:12px;padding:8px 10px;outline:none;cursor:pointer;"
 					></select>
@@ -4577,7 +4577,7 @@
 				<div style="margin-top:10px;padding:0 4px;">
 				  <div style="display:flex;align-items:center;gap:6px;">
 				    <span style="font-size:11px;opacity:.55;">🔈</span>
-				    <input type="range" min="0" max="200" value="70" id="ipod-volume" oninput="setIpodVolume(this.value)" style="flex:1;accent-color:#0a84ff;height:4px;cursor:pointer;"/>
+				    <input type="range" min="0" max="200" value="70" id="ipod-volume" aria-label="Volumen" oninput="setIpodVolume(this.value)" style="flex:1;accent-color:#0a84ff;height:4px;cursor:pointer;"/>
 				    <span style="font-size:11px;opacity:.55;">🔊</span>
 				    <span id="ipod-vol-pct" style="font-size:10px;color:var(--txt-50);min-width:28px;text-align:right;">70%</span>
 				  </div>
@@ -4585,7 +4585,7 @@
 				</div>
 				<!-- Archivo local (MP3/MP4) -->
 				<input
-					id="local-media-input"
+					id="local-media-input" aria-label="Elegir un archivo de audio o vídeo"
 					type="file"
 					accept="audio/*,video/*,.mp3,.mp4"
 					style="display:none;"
@@ -4964,7 +4964,7 @@
 					</button>
 					<div style="text-align:center;font-size:0.72rem;color:var(--txt-45);">
 						¿No tienes cuenta?
-						<a onclick="loginShowSignUp()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Crear cuenta</a>
+						<a href="#" onclick="event.preventDefault();loginShowSignUp()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Crear cuenta</a>
 					</div>
 					<button
 						onclick="loginShowChooser()"
@@ -5017,7 +5017,7 @@
 					</button>
 					<div style="text-align:center;font-size:0.72rem;color:var(--txt-45);">
 						¿Ya tienes cuenta?
-						<a onclick="loginShowSignIn()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Iniciar sesión</a>
+						<a href="#" onclick="event.preventDefault();loginShowSignIn()" style="color:#0a84ff;cursor:pointer;font-weight:700;">Iniciar sesión</a>
 					</div>
 					<button
 						onclick="loginShowChooser()"
@@ -14766,7 +14766,7 @@
 			    +_LR_LANGS.map(x=>'<button onclick="_lrPickLang(\''+x[0]+'\')" data-lr-lang="'+x[0]+'" style="padding:8px 4px;border-radius:10px;border:1.5px solid '+(det.lang===x[0]?'#0a84ff':'var(--txt-40)')+';background:'+(det.lang===x[0]?'rgba(10,132,255,.22)':'var(--txt-40)')+';color:var(--txt);font-size:11px;font-weight:700;cursor:pointer;">'+x[1]+' '+x[2]+'</button>').join('')
 			    +'</div>'
 			    +'<div><div style="font-size:.7rem;color:var(--txt-50);margin-bottom:5px;font-weight:700;">REGIÓN</div>'
-			    +'<select id="lr-region" data-notrans style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:var(--txt);padding:10px 12px;font-size:13px;">'
+			    +'<select id="lr-region" aria-label="Tu región" data-notrans style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:var(--txt);padding:10px 12px;font-size:13px;">'
 			    +'<option value="">🌐 Otra / no decir</option>'
 			    +_LR_REGIONS.map(r=>'<option value="'+r[0]+'"'+(det.region===r[0]?' selected':'')+'>'+r[1]+' '+_lrRegionName(r[0], uiLang)+'</option>').join('')
 			    +'</select></div>'
@@ -16440,6 +16440,10 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.2', fecha: '29 de septiembre de 2026', titulo:'Más fácil con lector de pantalla', cambios: [
+			    '🔊 Los 32 controles que no tenían nombre (deslizadores, desplegables, campos de hora…) ya se leen bien con lector de pantalla',
+			    '🎨 La etiqueta de la estación del año se lee mejor: tenía poco contraste',
+			  ]},
 			  { v:'4.1', fecha: '29 de septiembre de 2026', titulo:'Arreglos importantes y cosas nuevas', cambios: [
 			    '🛠️ Un recordatorio con fecha (por ejemplo «el día 5 a las 9:00») sonaba TODOS los días a esa hora hasta llegar el día, y ese día podía sonar dos veces. Ahora suena solo el día que toca, una vez',
 			    '🛠️ Tus emisoras favoritas no pasaban al otro aparato al sincronizar. Ahora sí viajan',
