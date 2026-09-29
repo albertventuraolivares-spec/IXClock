@@ -9,7 +9,7 @@
 //    manda el DELETE, deja de sincronizar este aparato y NO borra las notas
 //    de aquí; y si el servidor falla, no finge que se borró.
 const fs=require('fs'), path=require('path'), os=require('os'), http=require('http'), crypto=require('crypto');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
 const ROOT=process.env.IXROOT||'/home/user/IXClock';
 
 // ── Doble de @netlify/blobs, como en pruebas/nube.js ──
@@ -64,7 +64,7 @@ const pet=(m,cuerpo,qs)=>new Request('http://x/.netlify/functions/nube'+(qs||'')
    const p=path.join(ROOT,f); if(!p.startsWith(ROOT)||!fs.existsSync(p)||fs.statSync(p).isDirectory()){s.writeHead(404);return s.end('nf');}
    s.writeHead(200,{'content-type':MIME[path.extname(p)]||'application/octet-stream'}); s.end(fs.readFileSync(p));
  }).listen(9267);
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const p=await b.newPage({viewport:{width:1200,height:900}});
  const errs=[]; p.on('pageerror',e=>errs.push(e.message.split('\n')[0]));
  await p.route(/^https?:\/\/(?!localhost)/,r=>r.abort());

@@ -107,9 +107,6 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-74. **Pasar las pruebas en GitHub Actions** (`sh pruebas/todas.sh` en cada PR)
-    para que un fallo se vea antes de fusionar. Necesita Chromium de
-    Playwright en el runner. Mediano.
 - **NO aplica**: blog, página de precios, registro con contraseña, carrito,
   panel de administración, CMS, comparativas Stripe/Auth0/etc. (el cobro sigue
   en pausa), diagramas y «prompt maestro» (son texto del informe, no tareas).
@@ -167,6 +164,12 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Las pruebas pasan en GitHub Actions** (idea 74, 29 de sept).
+  `.github/workflows/pruebas.yml` corre `sh pruebas/todas.sh` en cada PR (y a
+  mano): instala Playwright 1.56.1 + Chromium y se lo dice a las pruebas con
+  `IX_PW`, `IX_CHROME` e `IXROOT` (las 90 pruebas ya leen esas variables; en
+  esta máquina siguen usando las rutas de siempre). `todas.sh` sale con error
+  si algo falla dos veces, para que el PR salga en rojo. No despliega nada.
 - **Modo coche** (idea 40, 29 de sept). App 🚗 (`ixAbrirCoche`, también en el
   conmutador y en «cerrar todas»): negro y blanco, hora grande, próxima alarma
   (`_frAlarma`) y la radio con ⏮ ⏯ ⏭ de 96 px que recorren tus favoritas (o la

@@ -28,3 +28,5 @@ echo "Las tres revisiones grandes van aparte porque tardan varios minutos:"
 echo "  node pruebas/auditoria.js     (4 tamanos de pantalla, todas las apps)"
 echo "  node pruebas/interaccion.js   (pulsa todos los botones)"
 echo "  node pruebas/calidad.js       (rendimiento y accesibilidad)"
+# Para GitHub Actions: si algo falla dos veces, la ejecución sale en rojo.
+[ "$mal" -eq 0 ]

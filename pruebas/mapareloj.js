@@ -11,7 +11,7 @@
 //  · con una ciudad que es la de su zona, no repite el nombre;
 //  · sin conexión o con una zona rara, avisa y no añade nada.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
 const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json'};
 const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]);if(f==='/')f='/index.html';
@@ -38,7 +38,7 @@ window.L={ map:_cap, tileLayer:_cap, marker:_cap, polyline:_cap, layerGroup:_cap
 
 let NOMINATIM=null, sinRed=false, ZONA='Asia/Tokyo'; const pedidos=[];
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const p=await b.newPage({viewport:{width:1280,height:1000}, locale:'es-ES'});
  const errs=[]; p.on('pageerror',e=>errs.push(e.message.split('\n')[0]));
  await p.addInitScript(LEAFLET);

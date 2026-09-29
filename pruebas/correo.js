@@ -26,7 +26,7 @@ export function getStore(n){ __c[n]=__c[n]||{}; return {
   async setJSON(k,v){ __c[n][k]=v; },
 }; }
 `);
-fs.copyFileSync('/home/user/IXClock/netlify/functions/correo.mjs', path.join(tmp,'correo.mjs'));
+fs.copyFileSync((process.env.IXROOT||'/home/user/IXClock')+'/netlify/functions/correo.mjs', path.join(tmp,'correo.mjs'));
 
 const CLAVE='re_claveSecretaDePrueba_noDebeSalirNunca';
 const DESTINO='albert@ejemplo.com';

@@ -35,7 +35,7 @@ export function getStore(nombre){
 }
 `);
 // El archivo real, copiado al temporal para que resuelva el doble.
-fs.copyFileSync('/home/user/IXClock/netlify/functions/nube.mjs', path.join(tmp,'nube.mjs'));
+fs.copyFileSync((process.env.IXROOT||'/home/user/IXClock')+'/netlify/functions/nube.mjs', path.join(tmp,'nube.mjs'));
 
 const COD='ABCD-EFGH-JKMN-PQRS-TUVW';
 const OTRO='2345-6789-ABCD-EFGH-JKMN';

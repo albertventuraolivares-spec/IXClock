@@ -11,7 +11,7 @@
 // las dos hace fallar la prueba, y así nadie sube un archivo interno sin darse
 // cuenta de que queda a la vista.
 const fs=require('fs'),path=require('path'),{execSync}=require('child_process');
-const ROOT='/home/user/IXClock';
+const ROOT=process.env.IXROOT||'/home/user/IXClock';
 
 // Lo que SÍ es la web.
 const PUBLICOS=[
