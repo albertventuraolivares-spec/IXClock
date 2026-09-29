@@ -162,10 +162,6 @@ Comprobado aquí:
     dado). Cambia lo que ve alguien nuevo (sin tiempo hasta que toque):
     **PREGUNTAR AL USUARIO** antes.
 
-83. **Convertir una nota en alarma de un toque** (lo que faltó de la 24):
-    un botón ⏰ en el editor de notas que abra la hoja de alarma con la
-    primera línea de la nota como etiqueta.
-
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
@@ -196,8 +192,13 @@ Comprobado aquí:
   «📍 Ciudad» (`ixCarpetaDeTz`): se busca, sincroniza y mueve como las demás.
   Botón 📝 N en cada fila del reloj mundial (`ixAbrirNotasCiudad`): abre la
   carpeta o crea la primera nota «Para Tokio:». `notasIcono(c)` quita el 📁
-  si la carpeta ya empieza por emoji. `pruebas/notasciudad.js`. FALTA de la
-  idea original: «convertir la nota en alarma de un toque» (idea 83).
+  si la carpeta ya empieza por emoji. `pruebas/notasciudad.js`.
+- **Nota → alarma** (idea 83): botón ⏰ `#notes-alarma-btn` en el editor;
+  `notasAAlarma()` abre `_icaHojaAlarma(null)` con la primera línea (sin
+  casilla ni viñeta) de etiqueta y la hora de la nota si la hay
+  (`notasHoraEn`: 18:30, 7.30, 9h05; no 25:00). OJO: «precio 12.50» también
+  se lee como 12:50; se acepta porque la hoja se revisa antes de guardar.
+  `pruebas/notaalarma.js`.
 - **Modo Viaje** (idea 25, 29 de sept). `ixPaisDeTz` saca el país de la
   bandera de `ICA_CITIES`, `IX_MONEDA_PAIS` lo pasa a moneda (solo las que
   hay en `IX_CURRENCIES`; si no, no hay botón) y `ixViajeMoneda(tz)` abre la

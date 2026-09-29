@@ -4817,6 +4817,7 @@
 					<div class="flex gap-1">
 						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
 						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
+						<button id="notes-alarma-btn" onclick="notasAAlarma()" title="Convertir en alarma" aria-label="Convertir la nota en alarma" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">⏰</button>
 						<button id="notes-lista-btn" onclick="notasCasilla()" title="Casilla" aria-label="Convertir la línea en casilla" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">☑</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
@@ -14134,6 +14135,31 @@
 			  }
 			  notesAutoSave();
 			}
+			/* ── De nota a alarma de un toque (idea 83) ──
+			   «Llamar al médico a las 18:30»: la primera línea es la etiqueta y,
+			   si en la nota hay una hora (18:30, 7.30, 9 h), sale ya puesta en la
+			   hoja de la alarma. La hoja es la de siempre: se revisa y se guarda. */
+			function notasHoraEn(texto){
+			  const m=/(?:^|[^\d])([01]?\d|2[0-3])[:.h]([0-5]\d)(?!\d)/.exec(String(texto||''));
+			  return m ? { h:parseInt(m[1],10), m:parseInt(m[2],10) } : null;
+			}
+			function notasAAlarma(){
+			  const ta=document.getElementById('notes-textarea');
+			  const texto=ta ? ta.value : '';
+			  const primera=(String(texto).split('\n').map(function(l){ return l.replace(NOTAS_CASILLA,'$1$3').replace(/^\s*[-*•]\s+/,'').trim(); })
+			                 .find(function(l){ return l; }) || 'Alarma');
+			  const hora=notasHoraEn(texto);
+			  _icaHojaAlarma(null);
+			  const lab=document.getElementById('ica-alarm-label');
+			  if(lab) lab.value=primera.slice(0,40);
+			  if(hora){
+			    const h=document.getElementById('ica-alarm-h'), mi=document.getElementById('ica-alarm-m');
+			    if(h) h.value=String(hora.h).padStart(2,'0');
+			    if(mi) mi.value=String(hora.m).padStart(2,'0');
+			  }
+			  try{ _icaZonaAviso(); }catch(e){}
+			  return { etiqueta:primera.slice(0,40), hora:hora };
+			}
 			function notesUpdateWordCount(){
 			  const txt = document.getElementById('notes-textarea').value.trim();
 			  const words = txt.length ? txt.split(/\s+/).length : 0;
@@ -16541,6 +16567,7 @@
 			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
 			    '💱 Modo Viaje: cada ciudad del reloj mundial tiene un botón con su moneda (💱 JPY, 💱 EUR…) que abre la calculadora ya convirtiendo a ella',
 			    '📝 Notas por ciudad: el botón 📝 de cada ciudad del reloj mundial abre sus notas («qué llevar a Tokio») o empieza la primera',
+			    '⏰ En una nota, el botón ⏰ la convierte en alarma: la primera línea es la etiqueta, y si la nota dice una hora («a las 18:30») ya sale puesta',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
