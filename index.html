@@ -16271,6 +16271,7 @@
 			  {id:'canales', name:'Buscador de canales', icon:'📡', fn:'openSmartFinderModal'},
 			  {id:'buscar', name:'Buscar en IXClocK', icon:'🔎', fn:'ixAbrirBusqueda'},
 			  {id:'enfoque', name:'Modo Enfoque', icon:'🎯', fn:'ixAbrirEnfoque'},
+			  {id:'mesita', name:'Modo mesita', icon:'🌙', fn:'ixAbrirMesita'},
 			];
 			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
 			function _trackAppOpen(id){
@@ -16356,7 +16357,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','emuTeardown']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','emuTeardown']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -23296,6 +23297,87 @@
 			  e.stopPropagation();
 			  ixEnfoqueSalir();
 			}, true);
+
+			/* ═════════════ MODO MESITA (ideas 18 y 49) ═════════════
+			   Para dejar el móvil cargando en la mesita: la hora enorme, el tiempo
+			   y la próxima alarma, y NADA más. La pantalla no se apaga (Wake Lock)
+			   pero va muy atenuada, y de noche en rojo, que molesta menos a oscuras.
+			   Reutiliza lo que ya calcula la franja de arriba (_frClima, _frAlarma)
+			   para no tener dos sitios que puedan decir cosas distintas.
+			   Tocar en cualquier sitio o pulsar Esc lo cierra. */
+			let _mesTic=null, _mesWake=null;
+			function ixMesitaAbierta(){
+			  const ov=document.getElementById('ix-mesita');
+			  return !!ov && ov.style.display!=='none';
+			}
+			// De 22:00 a 7:00, en rojo: es la luz que menos despierta.
+			function _mesDeNoche(d){ const h=(d||new Date()).getHours(); return h>=22 || h<7; }
+			function _mesPintar(){
+			  const ov=document.getElementById('ix-mesita');
+			  if(!ov) return;
+			  const n=new Date();
+			  const hh=String(n.getHours()).padStart(2,'0'), mm=String(n.getMinutes()).padStart(2,'0');
+			  const noche=_mesDeNoche(n);
+			  ov.style.color = noche ? '#ff3b30' : '#f2f2f7';
+			  ov.style.opacity = noche ? '.55' : '.8';
+			  ov.dataset.noche = noche ? '1' : '0';
+			  let fecha='';
+			  try{ fecha=n.toLocaleDateString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{weekday:'long', day:'numeric', month:'long'}); }catch(e){}
+			  let clima=null, alarma=null;
+			  try{ clima=_frClima(); }catch(e){}
+			  try{ alarma=_frAlarma(); }catch(e){}
+			  const hora=document.getElementById('ix-mesita-hora'); if(hora) hora.textContent=hh+':'+mm;
+			  const f=document.getElementById('ix-mesita-fecha'); if(f) f.textContent=fecha;
+			  const extra=document.getElementById('ix-mesita-extra');
+			  if(extra){
+			    const trozos=[];
+			    if(clima) trozos.push(clima.emoji+' '+clima.texto);
+			    trozos.push(alarma ? alarma.emoji+' '+alarma.texto : '🔕 '+_uiT('Sin alarmas'));
+			    extra.textContent=trozos.join('     ');
+			  }
+			}
+			async function _mesWakeOn(){
+			  try{ if(navigator.wakeLock) _mesWake=await navigator.wakeLock.request('screen'); }catch(e){ _mesWake=null; }
+			}
+			function ixAbrirMesita(){
+			  let ov=document.getElementById('ix-mesita');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-mesita';
+			    ov.setAttribute('role','dialog');
+			    ov.setAttribute('aria-label',_uiT('Modo mesita'));
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482400;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;transition:color 1s,opacity 1s;padding:24px;';
+			    ov.innerHTML=''
+			      +'<div id="ix-mesita-hora" style="font-size:min(34vw,62vh);font-weight:200;line-height:.9;letter-spacing:-.04em;font-variant-numeric:tabular-nums;"></div>'
+			      +'<div id="ix-mesita-fecha" style="font-size:min(5vw,4.5vh);margin-top:2vh;text-transform:capitalize;"></div>'
+			      +'<div id="ix-mesita-extra" style="font-size:min(4.4vw,4vh);margin-top:3vh;white-space:pre;"></div>'
+			      +'<div style="position:absolute;bottom:14px;left:0;right:0;font-size:11px;opacity:.45;">'+escapeHtml(_uiT('Toca para salir'))+'</div>';
+			    ov.addEventListener('click', ixMesitaSalir);
+			    document.body.appendChild(ov);
+			  }
+			  ov.style.display='flex';
+			  _mesPintar();
+			  clearInterval(_mesTic);
+			  _mesTic=setInterval(_mesPintar, 1000);
+			  _mesWakeOn();
+			  try{ _trackAppOpen('mesita'); }catch(e){}
+			}
+			function ixMesitaSalir(){
+			  const ov=document.getElementById('ix-mesita');
+			  if(ov) ov.style.display='none';
+			  clearInterval(_mesTic); _mesTic=null;
+			  try{ if(_mesWake){ _mesWake.release(); _mesWake=null; } }catch(e){}
+			}
+			document.addEventListener('keydown', function(e){
+			  if(e.key!=='Escape' || !ixMesitaAbierta()) return;
+			  e.stopPropagation();
+			  ixMesitaSalir();
+			}, true);
+			// El Wake Lock se suelta solo al cambiar de pestaña: al volver, se pide
+			// otra vez, que si no la pantalla se apagaría a los pocos minutos.
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden && ixMesitaAbierta()){ _mesWakeOn(); _mesPintar(); }
+			});
 			// Al volver a la pestaña, lo que se ve tiene que ser la hora buena ya,
 			// sin esperar medio segundo al siguiente tic.
 			document.addEventListener('visibilitychange', function(){
@@ -23319,7 +23401,8 @@
 			  { id:'brujula',  n:'Brújula',       icon:'🧭', d:'Orientación y sensores', open:'openCompass', assets:[] },
 			  { id:'buscador', n:'Buscador de canales', icon:'📡', d:'Busca canales de TV del mundo por país, idioma o deporte', open:'openSmartFinderModal', assets:[] },
 			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
-			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] }
+			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] },
+			  { id:'mesita',   n:'Modo mesita',   icon:'🌙', d:'Hora grande, tiempo y próxima alarma para dejar el móvil cargando de noche', open:'ixAbrirMesita', assets:[] },
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.
 			const IX_CORE_ASSETS = [
