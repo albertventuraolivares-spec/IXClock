@@ -107,7 +107,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 42. **Historial de tipo de cambio** en la calculadora, con mini-gráfico de
     tendencia: hoy el conversor da el valor puntual, sin contexto.
 44. **Centro de notificaciones** con historial de alarmas y descargas.
-45. **Favoritos de radio con etiqueta** («para dormir», «para currar»).
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
@@ -120,9 +119,6 @@ llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
 58. **Brújula que apunta a tus ciudades**: rumbo y distancia usando las
     coordenadas que el reloj mundial ya guarda.
-59. **IXBench sugiere la calidad de los efectos**: el banco de pruebas mide la
-    potencia y no hace nada con el resultado; podría ofrecer «aplicar
-    Ahorro/Media/Alta» al terminar.
 61. **Pista de IXBand como tono de alarma.**
 62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
     subirlo poco a poco.
@@ -164,11 +160,6 @@ Comprobado aquí:
     Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
     pasarla a obligatoria. Mediano y con riesgo de romper apps.
 
-80. **Las alarmas del panel lateral viejo (`alarms`, vía window.storage) no
-    viajan con la sincronización**: `IX_NUBE_CLAVES` solo lleva `ica_alarms`
-    (la app Reloj). Mirar si ese panel se sigue usando; si sí, añadir la
-    clave (y a `pruebas/nubeclaves.js`), si no, valorar quitarlo.
-
 81. **Rendimiento (Lighthouse 31 en móvil)**: FCP 8,6 s, 7.585 elementos en
     el DOM, 24,7 s de trabajo del hilo principal con CPU ×4. Viene de que
     `index.html` (1,3 MB) monta TODAS las apps al cargar. Lo que de verdad
@@ -208,6 +199,24 @@ Comprobado aquí:
 
 ## Hecho
 
+- **FALLO service worker sin conexión** (29 de sept): la navegación guardaba
+  CUALQUIER página como `./index.html` (también un 404 o `privacidad.html`),
+  así que sin conexión se abría esa página en vez de la app. Ahora cada
+  página se guarda con su ruta y solo si `res.ok`; `VERSION` pasa a
+  `ixclock-v2` para borrar las copias estropeadas. `pruebas/swnav.js`
+  instala el SW de verdad y APAGA el servidor para cortar la red (el
+  `setOffline` de Playwright no alcanza a las peticiones del propio SW:
+  con él la prueba pasaba aunque el fallo estuviera). Antes: 1/4.
+- **Etiquetas de radio, IXBench recomienda y alarmas viejas en la nube**
+  (ideas 45, 59 y 80, 29 de sept). Etiquetas: `ix_radio_etiquetas`
+  ({id: 'dormir'|'trabajar'|'deporte'|'coche'}), 🏷️ en la ficha de una
+  favorita va rotando, filtros solo de las usadas, el filtro se quita solo
+  si se queda vacío; se sincronizan. `pruebas/radioetq.js`. IXBench:
+  `ixBenchSugerir` (≥7000 alta, ≥4000 media, si no ahorro) y
+  `ixBenchPintarSugerencia` bajo `#bench-status`; NUNCA aplica sola.
+  `pruebas/benchcalidad.js`. Alarmas viejas: el panel `#alarm-btn` y el
+  asistente (`[[ALARM]]` → `addAlarm`) guardan en `alarms`, que no viajaba;
+  añadida a `IX_NUBE_CLAVES` (comprobado en `pruebas/nubeclaves.js`).
 - **Modo mesita, mejor hora para quedar y avisos del tiempo** (ideas 18,
   49, 31 y 57, 29 de sept, madrugada):
   - **Mesita** (`ixAbrirMesita`, app `mesita` en `IX_APPS` y el conmutador,

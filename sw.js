@@ -4,7 +4,9 @@
    - Las tipografías y librerías externas se guardan la primera vez que se usan.
    - Nunca se tocan las funciones de Netlify ni las peticiones de datos en vivo
      (clima, radio, proxies): esas deben ir siempre a la red. */
-const VERSION = 'ixclock-v1';
+// v2: la v1 podía tener guardada como «la app» una página de error o la de
+// privacidad (ver la navegación de abajo); subir la versión borra esas copias.
+const VERSION = 'ixclock-v2';
 const CORE = VERSION + '-core';
 const RUNTIME = VERSION + '-runtime';
 
@@ -66,16 +68,26 @@ self.addEventListener('fetch', (e) => {
 
   const sameOrigin = url.origin === self.location.origin;
 
-  // Navegación: red primero (para ver cambios), con el armazón guardado de red de seguridad.
+  // Navegación: red primero (para ver cambios), con lo guardado de red de seguridad.
+  // OJO: antes CUALQUIER página se guardaba como si fuera index.html, así que
+  // abrir la privacidad o una dirección que daba 404 y quedarse sin conexión
+  // hacía que IXClocK abriera ESA página en vez de la app. Ahora cada página
+  // se guarda con su nombre, y solo si ha ido bien.
   if (req.mode === 'navigate') {
+    const esApp = sameOrigin && (url.pathname === '/' || url.pathname === '/index.html');
+    const clave = esApp ? './index.html' : url.pathname;
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CORE).then((c) => c.put('./index.html', copy)).catch(() => {});
+          if (res && res.ok && sameOrigin) {
+            const copy = res.clone();
+            caches.open(CORE).then((c) => c.put(clave, copy)).catch(() => {});
+          }
           return res;
         })
-        .catch(() => caches.match('./index.html').then((r) => r || caches.match('./')))
+        .catch(() => caches.match(clave)
+          .then((r) => r || caches.match('./index.html'))
+          .then((r) => r || caches.match('./')))
     );
     return;
   }

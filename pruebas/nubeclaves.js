@@ -33,9 +33,12 @@ const html=fs.readFileSync(ROOT+'/index.html','utf8');
    const w=m=>new Promise(r=>setTimeout(r,m));
    const st=STATIONS.find(s=>s.type==='stream');
    toggleFavoritaRadio(st.id); await w(100);
+   // Una alarma como las que pone el asistente («ponme una alarma a las 7»)
+   addAlarm(7, 15, 'Del asistente'); await w(200);
    const sube=ixNubeRecoger();
    let favSubida=null; for(const k in sube){ if(sube[k].indexOf(st.id)>=0 && /fav/i.test(k)) favSubida=k; }
    return { claves:IX_NUBE_CLAVES.slice(), fav:st.id, favSubida, subeFav:Object.keys(sube).filter(k=>/fav/i.test(k)),
+            alarmaSubida:(sube.alarms||'').indexOf('Del asistente')>=0,
             // Y al revés: lo que baja se aplica y, al recargar, la app lo lee
             aplica:(function(){ localStorage.removeItem('ix_radio_favorites'); ixNubeAplicar(sube); return localStorage.getItem('ix_radio_favorites'); })() };
  });
@@ -54,6 +57,7 @@ const html=fs.readFileSync(ROOT+'/index.html','utf8');
  const pruebas=[
   ['una favorita marcada SE SUBE a la nube',   o.favSubida==='ix_radio_favorites', o.favSubida+' '+JSON.stringify(o.subeFav)],
   ['y al bajarla se guarda donde la app lee',  (o.aplica||'').indexOf(o.fav)>=0, o.aplica],
+  ['las alarmas que pone el asistente también se suben', o.alarmaSubida===true, o.alarmaSubida],
   ['la lista ya no nombra «radio_favs»',       o.claves.indexOf('radio_favs')<0, o.claves.join(',')],
   ['TODA clave de la lista la escribe alguien',huerfanas.length===0, huerfanas.join(' ')||o.claves.length+' claves'],
   ['sin errores de página',                    errs.length===0, errs.slice(0,3).join(' | ')],
