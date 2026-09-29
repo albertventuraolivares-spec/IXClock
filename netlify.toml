@@ -24,3 +24,41 @@
     X-Frame-Options = "SAMEORIGIN"
     Content-Security-Policy = "frame-ancestors 'self'; object-src 'none'"
     Permissions-Policy = "usb=(), serial=(), bluetooth=(), hid=(), payment=(), browsing-topics=()"
+
+# Archivos internos que NO son parte de la web (idea 70 del backlog).
+# Como `publish = "."` sube la carpeta entera, sin esto cualquiera podía abrir
+# /BACKLOG.md, /pruebas/..., el código de las funciones o package.json.
+# `force = true` hace falta porque los archivos existen: sin él, Netlify los
+# serviría igual y la regla no haría nada. Responden 404, como si no
+# existieran. Si se añade otra carpeta o archivo interno, AÑADIRLO aquí; la
+# prueba pruebas/ocultos.js avisa de cualquier archivo nuevo sin decidir.
+[[redirects]]
+  from = "/pruebas/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/.github/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/BACKLOG.md"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/package.json"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404"
+  status = 404
+  force = true

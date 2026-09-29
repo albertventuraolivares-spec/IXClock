@@ -173,28 +173,6 @@ nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31)
     Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
     fiarse del informe, y atacar lo que salga.
 
-70. **El sitio publica TODO el repo**: `netlify.toml` tiene `publish = "."`,
-    así que `pruebas/`, `BACKLOG.md` y `package.json` se sirven en
-    internet (p. ej. `/BACKLOG.md`). No hay secretos ahí, pero sí notas
-    internas. Salida contenida: reglas `[[redirects]]` con `status = 404`
-    para esas rutas en `netlify.toml`, con su prueba. `robots.txt` NO sirve
-    para esto: solo pide a los buscadores que no miren, no lo esconde.
-
-**Segundo informe pegado el mismo día — también verificado:**
-Mezcla IXClocK con su juego de Roblox. **Falso** para IXClocK: «sin favicon»
-(hay 4), «sin title/description» (están), placeholders «Nombre del juego» (0),
-HSTS (todo el dominio `.app` está en la lista de precarga HSTS de los
-navegadores: se aplica solo). Lo que SÍ es verdad y se añade:
-71. **Política de privacidad**: no hay ninguna, y desde septiembre hace falta
-    de verdad: la sincronización guarda notas y alarmas en el servidor
-    (Netlify Blobs), «Entrar con Google» muestra nombre, correo y foto, los
-    avisos por correo usan Resend, y el muro de opiniones publica nombres.
-    Página corta y HONRADA que describa exactamente esos flujos, enlazada
-    desde Configuración y desde el pie. **Antes de publicarla, pedir al
-    usuario un correo de contacto** para ella; no inventarlo. Incluir unos
-    términos de uso cortos (lo pidió el quinto informe).
-    - NO hace falta banner de cookies: la app no usa ninguna cookie (solo
-      `localStorage`). Decirlo así en la política.
 72. **Enlace «Saltar al contenido»** para teclado, y que `<nav>`/`<header>`
     existan donde toque: hoy solo hay un `<main>`. Pequeño.
 73. **`Cache-Control`** para los estáticos (iconos, `tailwind.css`) en las
@@ -262,6 +240,11 @@ Comprobado aquí:
     carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
     Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
     pasarla a obligatoria. Mediano y con riesgo de romper apps.
+78. **Botón «Borrar mi copia de la nube»** en la ficha de sincronizar
+    (método DELETE en `nube.mjs`). Hoy la política de privacidad dice
+    «escríbenos para borrarla», y para encontrarla habría que mandar el
+    código por correo, que es justo lo que se le dice al usuario que no haga.
+    Pequeño.
 
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
@@ -289,6 +272,33 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Archivos internos tapados** (idea 70, 29 de sept): `[[redirects]]` con
+  `status = 404` y `force = true` para `/pruebas/*`, `/netlify/*`,
+  `/.github/*`, `/BACKLOG.md`, `/package.json` y `/netlify.toml`.
+  `pruebas/ocultos.js` (12) aplica las reglas como Netlify a CADA archivo del
+  repo: todo archivo tiene que estar en la lista de públicos o tapado; uno
+  nuevo sin decidir hace fallar la prueba. Comprueba también que no se tapan
+  las funciones (`/.netlify/...`), la app, la privacidad ni nada que cargue
+  `index.html` o `sw.js`. Sin las reglas: 6/12.
+- **Quitada la copia en GitHub Pages** (28 de sept, lo decidió el usuario:
+  «ponlo como es mejor»). `.github/workflows/deploy.yml` publicaba el repo
+  ENTERO en GitHub Pages en cada push: una copia sin funciones del servidor
+  (sin sincronizar, correo, opiniones ni proxy) y con `pruebas/` y
+  `BACKLOG.md` a la vista. Borrado el workflow; la app es solo la de Netlify.
+  La copia vieja se queda congelada hasta que se despublique en GitHub →
+  Settings → Pages (eso no se puede hacer desde aquí).
+- **Política de privacidad y condiciones** (idea 71, 28 de sept):
+  `privacidad.html`, página suelta sin nada de fuera, enlazada desde
+  Configuración → Más. Correo de contacto: el que dio el usuario
+  (albertventuraolivares@gmail.com) — se le recomendó uno aparte por el spam
+  y eligió este. Describe cada flujo tal cual está en el código
+  (sincronización, opiniones públicas, Google solo en el aparato, Resend,
+  Open-Meteo/OSM/Nominatim, Anthropic→Pollinations, Google Translate/Lingva,
+  proxy) y unas condiciones cortas (tal cual; no fiarse para medicinas).
+  `pruebas/privacidad.js` (25) comprueba que **cuadra con el código**: si el
+  código usa un servicio de la lista, la página tiene que nombrarlo; y que
+  «sin cookies propias» es verdad. Si se añade un servicio nuevo, AÑADIRLO a
+  la página y a la lista `SERVICIOS` de la prueba.
 - **Páginas del proxy aisladas + cabeceras de seguridad** (idea 66, 28 de
   sept). Al ir a por las cabeceras salió algo peor: las webs que abre el
   navegador interno por `/.netlify/functions/proxy` se servían desde el

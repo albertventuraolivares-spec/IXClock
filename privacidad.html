@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacidad y condiciones — IXClocK</title>
+<meta name="description" content="Qué datos usa IXClocK, adónde van y cómo borrarlos. Sin cuentas obligatorias, sin cookies propias, sin anuncios ni analítica." />
+<link rel="canonical" href="https://ixclockplus.netlify.app/privacidad.html" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<!-- Página suelta y sin nada de fuera: una política de privacidad que cargara
+     fuentes o scripts de terceros se contradiría a sí misma. -->
+<style>
+  :root{ --bg:#0b0b0f; --txt:#f2f2f7; --suave:#a1a1aa; --linea:rgba(255,255,255,.1); --acento:#ffd60a; --caja:rgba(255,255,255,.04); }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f7f7f8; --txt:#1c1c1e; --suave:#55555c; --linea:rgba(0,0,0,.1); --acento:#8a6d00; --caja:rgba(0,0,0,.03); }
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--txt); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main{ max-width:720px; margin:0 auto; padding:32px 16px 64px; }
+  h1{ font-size:1.8rem; line-height:1.2; margin:0 0 4px; }
+  h2{ font-size:1.15rem; margin:36px 0 8px; padding-top:16px; border-top:1px solid var(--linea); }
+  h3{ font-size:1rem; margin:20px 0 4px; }
+  p,li{ color:var(--txt); }
+  .fecha,.nota{ color:var(--suave); font-size:.9rem; }
+  a{ color:var(--acento); }
+  ul{ padding-left:20px; }
+  li{ margin:4px 0; }
+  .resumen{ background:var(--caja); border:1px solid var(--linea); border-radius:12px; padding:14px 18px; margin:20px 0; }
+  .volver{ display:inline-block; margin-bottom:20px; text-decoration:none; font-weight:600; }
+  :focus-visible{ outline:2px solid var(--acento); outline-offset:2px; }
+</style>
+</head>
+<body>
+<main>
+<a class="volver" href="./">← Volver a IXClocK</a>
+<h1>Privacidad y condiciones de uso</h1>
+<p class="fecha">Última actualización: 28 de septiembre de 2026</p>
+
+<div class="resumen">
+  <p><strong>En corto:</strong> IXClocK no te pide cuenta, no pone cookies propias, no tiene anuncios y no mide lo que haces. Casi todo se guarda <strong>solo en tu aparato</strong>. Algunos datos salen de él únicamente cuando <em>tú</em> usas una función que lo necesita, y abajo se explica cuál, qué sale y adónde va.</p>
+  <p>Contacto para cualquier cosa de esta página: <a href="mailto:albertventuraolivares@gmail.com">albertventuraolivares@gmail.com</a></p>
+</div>
+
+<h2 id="aparato">1. Lo que se queda en tu aparato</h2>
+<p>Notas, alarmas, ciudades, ajustes, favoritos, calendario y el resto de lo que configuras se guardan en el almacenamiento del navegador (<code>localStorage</code>) de ese aparato. No se envían a ningún sitio salvo que actives la sincronización (punto 2).</p>
+<p><strong>Para borrarlo todo:</strong> Configuración → «Borrar todos los datos». También se borra si limpias los datos del sitio desde tu navegador.</p>
+
+<h2 id="servicios">2. Lo que sale de tu aparato, y solo si usas esa función</h2>
+
+<h3>☁️ Sincronizar entre aparatos</h3>
+<p>Si la activas, una copia de tus notas, alarmas, ciudades y ajustes se guarda en el servidor de la app (Netlify, en Estados Unidos). Se guarda bajo una <em>huella</em> de tu código personal, no bajo tu nombre ni tu correo: no pedimos ninguno de los dos. Quien tenga tu código puede ver esa copia, así que no lo compartas. Para que la borremos, escríbenos al correo de contacto.</p>
+
+<h3>💬 Opiniones</h3>
+<p>Si dejas una opinión, se guardan el nombre que escribas (puede ser inventado), las estrellas, el texto y la fecha, y <strong>son públicos</strong>: cualquiera que abra la app los ve. Se guardan en Netlify. Para retirarla, escríbenos.</p>
+
+<h3>🔐 Entrar con Google</h3>
+<p>Google te identifica con su propia ventana. La app recibe tu nombre, tu correo y tu foto y los guarda <strong>solo en tu aparato</strong> para enseñártelos; no los envía a nuestro servidor. Al cerrar sesión se borran. Durante el inicio de sesión se aplica la <a href="https://policies.google.com/privacy" rel="noopener">política de privacidad de Google</a>.</p>
+
+<h3>📧 Avisos por correo</h3>
+<p>Si los activas, el título y el texto de la alarma que suena se envían a través de Resend (un servicio de correo) a la dirección configurada en el servidor. La app no te pide ninguna dirección.</p>
+
+<h3>🌤️ Tiempo y 🗺️ mapas</h3>
+<p>Para darte el tiempo, las coordenadas de tu ubicación (o de la ciudad que elijas) se envían a Open-Meteo. El mapa descarga sus imágenes de OpenStreetMap, y las búsquedas de lugares van a Nominatim (de OpenStreetMap). La ubicación solo se pide si das permiso en el navegador.</p>
+
+<h3>🤖 Asistente de IA</h3>
+<p>Lo que escribes al asistente se envía para generar la respuesta: primero se intenta con Anthropic (Claude) y, si no responde, con Pollinations, un servicio gratuito. No escribas ahí datos que no quieras compartir.</p>
+
+<h3>🌐 Traductor</h3>
+<p>El texto que traduces se envía a Google Translate (y, si falla, a servidores alternativos de Lingva).</p>
+
+<h3>🧭 Navegador de la app</h3>
+<p>Las webs que abres las carga tu navegador directamente. Si usas el modo «proxy», la dirección pasa por nuestro servidor para cargarla; no la guardamos, aunque Netlify puede conservar registros técnicos durante un tiempo. Esas webs van aisladas: no pueden leer tus datos de IXClocK.</p>
+
+<h3>📻 Radio, TV, fondos, juegos y vídeos</h3>
+<p>Se cargan desde las webs de quienes los emiten o publican. Como con cualquier web, esos servicios ven tu dirección IP y pueden aplicar sus propias condiciones.</p>
+
+<h2 id="cookies">3. Cookies</h2>
+<p>La app <strong>no pone cookies propias</strong> y no usa analítica ni publicidad, así que no hay banner que aceptar. Los servicios de terceros de arriba (por ejemplo, Google al iniciar sesión o una web abierta en el navegador) pueden poner las suyas.</p>
+
+<h2 id="derechos">4. Tus derechos</h2>
+<p>Puedes pedir en cualquier momento qué datos tuyos hay en el servidor de la app (sincronización u opiniones), que se corrijan o que se borren, escribiendo a <a href="mailto:albertventuraolivares@gmail.com">albertventuraolivares@gmail.com</a>. Lo que está solo en tu aparato lo controlas tú directamente. Si vives en la Unión Europea también puedes reclamar ante la autoridad de protección de datos de tu país.</p>
+<p>Si tienes menos de 14 años, pide permiso a tu madre, padre o tutor antes de usar las funciones que envían datos (sincronización, opiniones o entrar con Google).</p>
+
+<h2 id="condiciones">5. Condiciones de uso</h2>
+<ul>
+  <li>IXClocK es gratis y se ofrece <strong>tal cual</strong>, sin garantías. Puede fallar o cambiar.</li>
+  <li><strong>No confíes en ella para algo crítico</strong>, como tomar una medicina: el navegador puede no avisar si la app está cerrada o el móvil está en ahorro de energía.</li>
+  <li>No la uses para nada ilegal ni para molestar a otros. Las opiniones ofensivas o con datos personales de terceros se pueden retirar.</li>
+  <li>Las radios, canales, webs, juegos e imágenes de terceros pertenecen a sus dueños; la app solo los enlaza o los muestra.</li>
+</ul>
+
+<h2 id="cambios">6. Cambios</h2>
+<p>Si esta página cambia, se actualizará la fecha de arriba. Si el cambio es importante, se avisará en las Novedades de la app.</p>
+
+<p class="nota"><a href="./">← Volver a IXClocK</a></p>
+</main>
+</body>
+</html>

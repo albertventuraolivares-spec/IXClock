@@ -37,7 +37,7 @@ const web=http.createServer((q,s)=>{ s.writeHead(200,{'content-type':'text/html;
 // Las cabeceras se leen del netlify.toml de verdad, no se copian aquí.
 const toml=fs.readFileSync(ROOT+'/netlify.toml','utf8');
 const CAB={};
-const bloque=(toml.split('[headers.values]')[1]||'');
+const bloque=(toml.split('[headers.values]')[1]||'').split(/\n\s*\[/)[0];   // solo hasta la siguiente sección
 bloque.split('\n').forEach(l=>{ const m=/^\s*([A-Za-z-]+)\s*=\s*"(.*)"\s*$/.exec(l); if(m) CAB[m[1]]=m[2]; });
 
 const app=http.createServer(async(q,s)=>{
