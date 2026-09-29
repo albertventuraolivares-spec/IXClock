@@ -30,6 +30,7 @@ export function getStore(nombre){
   return {
     async get(clave, opts){ __log.push(['get',nombre,clave]); const v=__cajas[nombre][clave]; return v===undefined?null:v; },
     async setJSON(clave, valor){ __log.push(['set',nombre,clave]); __cajas[nombre][clave]=valor; },
+    async delete(clave){ __log.push(['del',nombre,clave]); delete __cajas[nombre][clave]; },
   };
 }
 `);
@@ -112,7 +113,9 @@ const pet=(metodo,cuerpo,qs)=>({
  o.sobrescrito=JSON.parse(await r.text());
 
  // ── métodos y CORS ──
- r=await handler(pet('DELETE',null,'?codigo='+COD));  o.borrar=r.status;
+ // DELETE ya se puede (borrar tu copia: pruebas/nubeborrar.js). Otro método
+ // cualquiera tiene que seguir rechazándose.
+ r=await handler(pet('PUT',null,'?codigo='+COD));  o.borrar=r.status;
  r=await handler(pet('OPTIONS',null));                o.options=r.status;
  o.cors=r.headers.get('access-control-allow-origin');
 
@@ -138,7 +141,7 @@ const pet=(metodo,cuerpo,qs)=>({
   ['hay tope de tamaño',               o.gordo===413,            o.gordo],
   ['y lo gordo no pisó lo bueno',      o.trasGordo.datos && o.trasGordo.datos.notes==='[{"t":"hola"}]', JSON.stringify(o.trasGordo.datos)],
   ['guardar otra vez sobrescribe',     o.sobrescrito.datos.notes==='[{"t":"nuevo"}]', JSON.stringify(o.sobrescrito.datos)],
-  ['DELETE no está permitido',         o.borrar===405,           o.borrar],
+  ['PUT no está permitido',            o.borrar===405,           o.borrar],
   ['OPTIONS responde para CORS',       o.options===204 && o.cors==='*', o.options+' '+o.cors],
  ];
  let ok=0;

@@ -23,10 +23,19 @@
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="IXClocK" />
 		<meta name="format-detection" content="telephone=no" />
-		<meta property="og:title" content="IXClocK -- Universal OS Dashboard" />
-		<meta property="og:description" content="Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de musica IXBand." />
-		<meta property="og:image" content="icon-512.png" />
+		<!-- Lo que sale al compartir el enlace (WhatsApp, redes...). La imagen
+		     TIENE que ir con la dirección completa: con «icon-512.png» a secas,
+		     como estaba, WhatsApp y Facebook no la encuentran y sale sin foto. -->
+		<meta property="og:title" content="IXClocK: tu reloj, alarmas, notas y radio en un solo panel" />
+		<meta property="og:description" content="Reloj mundial, clima, radio, mapas, juegos, emulador y el estudio de música IXBand. Gratis y sin registro." />
+		<meta property="og:image" content="https://ixclockplus.netlify.app/og-image.jpg" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="IXClocK: una hora grande, el clima y las apps de reloj, alarmas, notas, radio e IXBand" />
+		<meta property="og:url" content="https://ixclockplus.netlify.app/" />
 		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="es_ES" />
+		<meta name="twitter:card" content="summary_large_image" />
 		<link rel="stylesheet" href="tailwind.css" />
 		<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
 		<link
@@ -7691,6 +7700,22 @@
 			  ixNubeBajarYAvisar();
 			  return true;
 			}
+			// Borra la copia del SERVIDOR (no la de este aparato) y deja de
+			// sincronizar aqui. Si otro aparato sigue con el mismo codigo y
+			// guarda, la vuelve a crear: se avisa en la pregunta.
+			async function ixNubeBorrarServidor(){
+			  const cod=ixNubeCodigo();
+			  if(!cod) return {ok:false, error:'sin-codigo'};
+			  if(!confirm('¿Borrar tu copia del servidor?\n\nLo de este aparato se queda. Si otro aparato sigue usando este código y guarda, la volverá a crear: apágalo también allí.')) return {ok:false, error:'cancelado'};
+			  try{
+			    const r=await fetch(IX_NUBE_URL+'?codigo='+encodeURIComponent(cod),{ method:'DELETE' });
+			    const j=await r.json().catch(function(){ return {}; });
+			    if(!r.ok || !j.ok){ try{ ixToast('⚠️ No se pudo borrar'); }catch(e){} return {ok:false, error:j.error||('http'+r.status)}; }
+			  }catch(e){ try{ ixToast('⚠️ Sin conexión: no se borró'); }catch(x){} return {ok:false, error:'red'}; }
+			  ixNubeApagar();
+			  try{ ixToast('🗑️ Copia del servidor borrada'); }catch(e){}
+			  return {ok:true};
+			}
 			function ixNubeCopiar(){
 			  const c=ixNubeCodigo(); if(!c) return;
 			  try{ navigator.clipboard.writeText(c); ixToast('Código copiado'); }catch(e){}
@@ -7728,7 +7753,8 @@
 			    +'</div>'
 			    +(ult?'<p class="text-[10px] opacity-60 mt-2">'+escapeHtml(ult)+'</p>':'')
 			    +'<button onclick="ixNubeApagar()" class="btn-option w-full" style="margin-top:8px;">Dejar de sincronizar este aparato</button>'
-			    +'<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Solo deja de sincronizar AQUÍ. Lo guardado no se borra, así que tus otros aparatos siguen igual.</p>';
+			    +'<p class="text-[10px] opacity-60 mt-2 leading-relaxed">Solo deja de sincronizar AQUÍ. Lo guardado no se borra, así que tus otros aparatos siguen igual.</p>'
+			    +'<button onclick="ixNubeBorrarServidor()" class="btn-option w-full" style="margin-top:8px;color:#ff453a;">🗑️ Borrar mi copia del servidor</button>';
 			}
 			if(document.readyState==='loading')
 			  document.addEventListener('DOMContentLoaded', ixNubePintar);
@@ -16245,6 +16271,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.0', fecha: '29 de septiembre de 2026', titulo:'Tu nube, bajo tu control', cambios: [
+			    '🗑️ Ya puedes borrar tu copia de la nube tú mismo: Configuración → Más → Sincronizar → «Borrar mi copia del servidor». Lo de tu aparato no se toca',
+			    '🖼️ Al compartir el enlace de IXClocK por WhatsApp o redes ya sale una imagen de portada (antes salía sin foto)',
+			    '⚡ Los iconos e imágenes se guardan en tu navegador, así que la app abre un poco más rápido al volver',
+			  ]},
 			  { v:'3.9', fecha: '29 de septiembre de 2026', titulo:'Más fácil sin ratón', cambios: [
 			    '⌨️ Si usas el teclado, el primer Tab te ofrece «Saltar al contenido» y te ahorra pasar por toda la barra de apps',
 			    '🔊 Los lectores de pantalla ya saben cómo se llama la pantalla de inicio, qué es la barra de apps y qué fondo vas a quitar',
