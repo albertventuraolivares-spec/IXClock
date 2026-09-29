@@ -48,12 +48,12 @@ const COORDS={ London:[51.5074,-0.1278], Londres:[51.5074,-0.1278], Tokio:[35.68
  await p.evaluate(()=>{ try{ ixCerrarBienvenida(); }catch(e){}; try{ localStorage.removeItem('ica_geo_v1'); _icaGeo={}; }catch(e){}; _icaWorldClocks=[]; openCompass(); });
  await p.waitForTimeout(300);
  // Sin ciudades
- await p.click('text=📍 Mis ciudades',{timeout:3000}).catch(()=>{});
+ await p.click('#compass-modal button[onclick="brujulaCiudades()"]',{timeout:3000}).catch(()=>{});
  await p.waitForTimeout(300);
  o.sinCiudades=await p.evaluate(()=>(document.getElementById('compass-ciudades')||{}).innerText||'');
  // Con Londres y Tokio
  await p.evaluate(()=>{ _icaWorldClocks=['Europe/London','Asia/Tokyo']; });
- await p.click('text=📍 Mis ciudades',{timeout:3000}).catch(()=>{});
+ await p.click('#compass-modal button[onclick="brujulaCiudades()"]',{timeout:3000}).catch(()=>{});
  await p.waitForTimeout(1200);
  const filas=()=>p.evaluate(()=>[].slice.call(document.querySelectorAll('#compass-ciudades .brj-fila')).map(f=>{ const fl=f.querySelector('.brj-flecha');
    const m=/rotate\(([\d.]+)deg\)/.exec(fl.style.transform||''); return { txt:f.innerText.replace(/\s+/g,' '), giro:m?+m[1]:null, rumbo:+fl.dataset.rumbo }; }));
@@ -69,7 +69,7 @@ const COORDS={ London:[51.5074,-0.1278], Londres:[51.5074,-0.1278], Tokio:[35.68
  // Sin permiso de ubicación
  await ctx.clearPermissions();
  await p.evaluate(()=>{ navigator.geolocation.getCurrentPosition=function(ok,err){ err && err({code:1}); }; });
- await p.click('text=📍 Mis ciudades',{timeout:3000}).catch(()=>{});
+ await p.click('#compass-modal button[onclick="brujulaCiudades()"]',{timeout:3000}).catch(()=>{});
  await p.waitForTimeout(300);
  o.sinPermiso=await p.evaluate(()=>(document.getElementById('compass-ciudades')||{}).innerText||'');
  await b.close(); srv.close();
