@@ -74,8 +74,6 @@ misma tanda (exportar en webm/mp4, en WAV y compartir), así que no se repite.
 Las manda de dos tandas. **Antes de tocar nada hay que comprobar una por una
 si ya existe**, como se hizo con la lista del 3.
 
-15. **IA más lista: que cree imágenes.** Hay que mirar qué proveedor hay puesto
-    (`ai_provider`) y si su API da imágenes.
 ### Lista del usuario (4 de septiembre, tanda de auditorias) — SIN verificar
 Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
@@ -178,6 +176,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **El asistente crea imágenes** (idea 15, 29 de sept). El modelo responde con
+  `[[IMAGEN prompt="…"]]` (nueva acción en `IXA_ACCIONES`) y `ixaPintarImagen`
+  pinta la imagen de Pollinations (`image.pollinations.ai`, el mismo servicio
+  gratis del texto, sin clave) en el chat: `img` creado por DOM con la
+  descripción como `alt` (nada de innerHTML: una descripción con código se queda
+  en texto), enlace para guardarla y aviso si no hay conexión. Anotado en
+  `privacidad.html` (y `pruebas/privacidad.js` lo exige).
+  - Probado con `pruebas/imagenia.js`: 10/10; con la versión anterior falla.
 - **IXBand exporta MIDI** (idea 32, 29 de sept; la 50 queda cubierta: la
   canción ya se exportaba a WAV y ahora también a MIDI). `ixMidiDeCancion()`
   escribe un SMF formato 1, 480 PPQ: pista de tempo (`_gbBpm`) y una por toma

@@ -19,6 +19,7 @@ const funciones=fs.readdirSync(ROOT+'/netlify/functions').map(f=>fs.readFileSync
 // Si el código contiene esto → la página tiene que nombrar aquello.
 const SERVICIOS=[
   [/api\.pollinations\.ai|text\.pollinations\.ai/, app,        /Pollinations/],
+  [/image\.pollinations\.ai/,                     app,        /imagen, la descripción se envía también a Pollinations/],
   [/api\.anthropic\.com/,                          app,        /Anthropic/],
   [/open-meteo\.com/,                              app,        /Open-Meteo/],
   [/tile\.openstreetmap\.org/,                     app,        /OpenStreetMap/],

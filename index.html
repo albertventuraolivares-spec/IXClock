@@ -12847,6 +12847,7 @@
 			  juegos, emulador, radio, musica, vpn, bench, nube, brujula, buscador, buscar)
 			- Fondo:       [[FONDO nombre="tokio"]]                       ("ponme un fondo de Tokio")
 			- Radio:       [[RADIO nombre="jazz"]]                        ("pon jazz")
+			- Imagen:      [[IMAGEN prompt="descripción en inglés, detallada"]] ("dibújame un gato astronauta")
 			Si no te piden hacer nada, no pongas ninguna etiqueta.
 			Responde de forma concisa y útil. No repitas la pregunta del usuario.`;
 
@@ -12964,6 +12965,14 @@
 			      try{ setWallpaper(w.id); }catch(e){ return null; }
 			      return '🖼️ Fondo cambiado a '+w.name;
 			    }},
+			  // Imágenes (idea 15): Pollinations, el mismo servicio gratis que ya
+			  // da el texto, también dibuja. Se pinta en el chat con un enlace para
+			  // bajarla; si no carga (sin conexión), lo dice en vez de un hueco.
+			  IMAGEN: { campos:['prompt'], hacer:function(a){
+			      const pr=String(a.prompt||'').trim().slice(0,300); if(!pr) return null;
+			      ixaPintarImagen(pr);
+			      return '🎨 '+_uiT('Imagen')+': '+pr;
+			    }},
 			  RADIO:  { campos:['nombre'], hacer:function(a){
 			      const n=(a.nombre||'').trim().toLowerCase(); if(!n) return null;
 			      const st=(typeof STATIONS!=='undefined'?STATIONS:[]).find(function(x){
@@ -12974,6 +12983,29 @@
 			      return '📻 Sonando: '+st.title;
 			    }}
 			};
+			function ixaUrlImagen(prompt){
+			  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(prompt)+'?width=768&height=768&nologo=true';
+			}
+			function ixaPintarImagen(prompt){
+			  const box=document.getElementById('ai-messages');
+			  if(!box) return null;
+			  const div=document.createElement('div');
+			  div.className='ai-msg bot ai-imagen';
+			  const img=document.createElement('img');
+			  img.src=ixaUrlImagen(prompt);
+			  img.alt=prompt;                       // es texto: alt no ejecuta nada
+			  img.loading='lazy';
+			  img.style.cssText='display:block;width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.06);object-fit:cover;';
+			  const pie=document.createElement('a');
+			  pie.href=img.src; pie.target='_blank'; pie.rel='noopener';
+			  pie.textContent='⬇️ '+_uiT('Abrir o guardar la imagen');
+			  pie.style.cssText='display:inline-block;margin-top:6px;font-size:12px;';
+			  img.onerror=function(){ div.textContent='⚠️ '+_uiT('No se pudo crear la imagen (¿sin conexión?)'); };
+			  div.appendChild(img); div.appendChild(pie);
+			  box.appendChild(div);
+			  box.scrollTop=box.scrollHeight;
+			  return div;
+			}
 			// Saca las etiquetas del texto y devuelve lo que hay que hacer.
 			function ixaExtraerAcciones(texto){
 			  const acciones=[];
@@ -16688,6 +16720,7 @@
 			    '📈 Calculadora → Divisas: debajo del resultado ves cómo ha ido el cambio en los últimos 30 días, con la subida o bajada',
 			    '🔔 «Avísame si 1 USD baja de 0,85 EUR»: pon un aviso de cambio y IXClocK te avisa cuando pase (lo mira al abrir la app y cada hora)',
 			    '🎹 IXBand exporta MIDI: el botón «🎹 MIDI» guarda tu canción nota a nota para abrirla y editarla en GarageBand, FL Studio, Logic…',
+			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
 			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
