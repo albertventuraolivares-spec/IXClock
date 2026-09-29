@@ -12,8 +12,8 @@
 // navegador sigue enterándose del título, la URL y los muros anti-bots, que
 // antes sacaba mirando dentro del iframe y ahora le cuenta la propia página.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
-const ROOT='/home/user/IXClock';
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
+const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const proxy=require(ROOT+'/netlify/functions/proxy.js');
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json','.txt':'text/plain','.xml':'application/xml','.mp4':'video/mp4'};
 
@@ -75,7 +75,7 @@ const PX='/.netlify/functions/proxy?url=';
  const r2=await proxy.handler({queryStringParameters:{url:'https://noexiste-ixclock-prueba.invalid/'}});
  o.csp502=(r2.headers||{})['Content-Security-Policy']||'';
 
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const ctx=await b.newContext({viewport:{width:1200,height:900}});
  const p=await ctx.newPage();
  const errs=[], mime=[];

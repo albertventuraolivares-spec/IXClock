@@ -16777,6 +16777,7 @@
 			  {id:'enfoque', name:'Modo Enfoque', icon:'🎯', fn:'ixAbrirEnfoque'},
 			  {id:'mesita', name:'Modo mesita', icon:'🌙', fn:'ixAbrirMesita'},
 			  {id:'avisos', name:'Avisos', icon:'🔔', fn:'ixAbrirAvisos'},
+			  {id:'coche', name:'Modo coche', icon:'🚗', fn:'ixAbrirCoche'},
 			];
 			let _recentApps=[]; // [{id,name,icon,ts}], más reciente primero
 			function _trackAppOpen(id){
@@ -16862,7 +16863,7 @@
 			    if(el && getComputedStyle(el).display!=='none'){ el.style.display='none'; n++; }
 			  });
 			  // Cada parada por separado: si una parte no esta cargada, no debe cortar el resto.
-			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','ixAvisosCerrar','emuTeardown']
+			  ['gbDrummerStop','gbSeqStop','gbSmartDrumsStop','gbLLStopAll','amapStopNav','gbVoiceStop','stopRinging','gbAutoplayStop','gbRemixRepeatStop','stopAudio','icaDormirCancelar','gbAfinadorParar','ixEnfoqueSalir','ixMesitaSalir','ixCocheSalir','ixAvisosCerrar','emuTeardown']
 			    .forEach(function(f){ try{ if(typeof window[f]==='function') window[f](); }catch(e){} });
 			  closeAppSwitcher();
 			  try{ history.replaceState(null,'',location.pathname); }catch(e){}
@@ -16946,6 +16947,12 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.7', fecha: '29 de septiembre de 2026', titulo:'Todo se conecta', cambios: [
+			    '🕐 Mapas → «Al reloj mundial»: busca cualquier sitio y añádelo a tu reloj mundial con su hora (Kioto → hora de Tokio)',
+			    '📋 IXBand: trae un estribillo (o cualquier sección) de otra de tus canciones con el botón 📋 de la barra de secciones',
+			    '📤 «Compartir mi día» (en Avisos): una imagen con la hora, el tiempo, tu próxima alarma y lo de hoy, lista para mandar por WhatsApp',
+			    '🚗 Nueva app «Modo coche»: la hora grande, tu próxima alarma y la radio con tres botones enormes (⏮ ⏯ ⏭) que pasan por tus emisoras favoritas. La pantalla no se apaga',
+			  ]},
 			  { v:'4.6', fecha: '29 de septiembre de 2026', titulo:'Tu voz, tu canción, tu día', cambios: [
 			    '🎨 El asistente ya dibuja: pídele «dibújame un gato astronauta» y la imagen sale en el chat, con un enlace para guardarla',
 			    '🎸 Despiértate con tu propia canción: al crear una alarma, elige una de tus canciones de IXBand. Suena sin internet y en bucle hasta que la apagues',
@@ -17864,7 +17871,33 @@
 			  const b='style="margin-top:6px;margin-right:4px;padding:5px 10px;border-radius:999px;border:none;background:#0a84ff;color:#fff;font-weight:700;font-size:11px;cursor:pointer;"';
 			  return '<b>'+escapeHtml(L0.nombre)+'</b><br>'
 			    +(L0.cc ? '<button class="amap-radio" onclick="amapRadioDeAqui()" '+b+'>📻 '+escapeHtml(_uiT('Radio de aquí'))+'</button>' : '')
-			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>';
+			    +'<button class="amap-nota" onclick="amapLugarANota()" '+b+'>📝 '+escapeHtml(_uiT('Guardar en una nota'))+'</button>'
+			    +'<button class="amap-reloj" onclick="amapAlReloj()" '+b+'>🕐 '+escapeHtml(_uiT('Al reloj mundial'))+'</button>';
+			}
+			/* Mapas → reloj mundial (idea 27). Un lugar no trae su zona horaria,
+			   así que se le pregunta a Open-Meteo (el mismo servicio del tiempo,
+			   sin clave) con timezone=auto. La ciudad que sale en el reloj es la
+			   de su zona: Kioto usa la hora de Tokio y así lo dice. */
+			async function amapAlReloj(){
+			  const L0=_amapLugar; if(!L0) return null;
+			  let tz='';
+			  try{
+			    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+L0.lat.toFixed(4)+'&longitude='+L0.lon.toFixed(4)+'&timezone=auto&current=temperature_2m');
+			    const d=await r.json();
+			    tz=String((d&&d.timezone)||'');
+			  }catch(e){ tz=''; }
+			  if(!tz || !_icaTzValida(tz)){ try{ ixToast('⚠️ '+_uiT('Sin conexión: no se pudo saber su hora')); }catch(e){} return null; }
+			  const ciudad=_icaNombreDeTz(tz);
+			  if(_icaWorldClocks.indexOf(tz)>=0){
+			    try{ ixToast('🕐 '+ciudad+' '+_uiT('ya está en tu reloj mundial')); }catch(e){}
+			    return tz;
+			  }
+			  icaPickCity(tz);
+			  let hora='';
+			  try{ hora=new Date().toLocaleTimeString('es',{timeZone:tz,hour:'2-digit',minute:'2-digit'}); }catch(e){}
+			  const mismo=_icaNorm(ciudad)===_icaNorm(String(L0.nombre).split(',')[0]);
+			  try{ ixToast('🕐 '+(mismo ? ciudad : L0.nombre.split(',')[0]+' → '+_uiT('hora de')+' '+ciudad)+(hora?' · '+hora:'')); }catch(e){}
+			  return tz;
 			}
 			function amapLugarANota(){
 			  const L0=_amapLugar; if(!L0) return null;
@@ -20975,6 +21008,60 @@
 			  _gbSecActiva=nueva.id; gbRenderTracks(); _gbGuardarPronto();
 			  _gbEstado('⧉ Sección duplicada con sus '+copias.length+' pista(s).');
 			}
+			/* ── TRAER UNA SECCIÓN DE OTRA CANCIÓN (idea 34) ──
+			   Duplicar sirve dentro de la misma canción; esto copia un estribillo
+			   (con sus pistas) desde cualquiera de Mis canciones a la que tienes
+			   abierta. Es una copia: cambiarla aquí no toca la otra canción.    */
+			function gbSecTraer(){
+			  gbCargarLista();
+			  const cs=_gbCanciones.filter(function(c){ return c && c.datos && c.id!==_gbCancionActual; });
+			  let ov=document.getElementById('gb-traer'); if(ov) ov.remove();
+			  ov=document.createElement('div');
+			  ov.id='gb-traer';
+			  ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','Traer una sección de otra canción');
+			  ov.style.cssText='position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px;';
+			  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+			  let h='<div style="width:min(440px,100%);max-height:80vh;overflow:auto;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:16px;padding:16px;color:var(--txt);">'
+			    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><b style="font-size:15px;">📋 Traer una sección</b>'
+			    +'<button onclick="document.getElementById(\'gb-traer\').remove()" aria-label="Cerrar" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:var(--txt);cursor:pointer;">✕</button></div>';
+			  if(!cs.length){
+			    h+='<div class="gb-traer-vacio" style="font-size:12px;opacity:.6;line-height:1.5;">No hay otras canciones en «Mis canciones». Guarda alguna con «💾 Guardar en Mis canciones» y podrás traer sus secciones aquí.</div>';
+			  } else {
+			    cs.forEach(function(c){
+			      const d=c.datos, secs=(Array.isArray(d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1',nombre:'A'}];
+			      const secDe=function(t){ return t.sec||secs[0].id; };
+			      h+='<div style="font-size:11px;font-weight:800;opacity:.6;margin:10px 0 6px;">🎵 '+escapeHtml(c.nombre||'Canción')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+			      secs.forEach(function(sec){
+			        const n=(d.takes||[]).filter(function(t){ return t && secDe(t)===sec.id; }).length;
+			        h+='<button class="gb-chip gb-traer-sec" onclick="gbSecTraerDe('+JSON.stringify(String(c.id)).replace(/"/g,'&quot;')+','+JSON.stringify(String(sec.id)).replace(/"/g,'&quot;')+')"'
+			          +(n?'':' disabled style="opacity:.4;"')+'>'+escapeHtml(sec.nombre||'?')+' <span style="opacity:.55;">'+n+'</span></button>';
+			      });
+			      h+='</div>';
+			    });
+			  }
+			  ov.innerHTML=h+'</div>';
+			  document.body.appendChild(ov);
+			}
+			function gbSecTraerDe(cid, sid){
+			  gbCargarLista();
+			  const c=_gbCanciones.find(function(x){ return String(x.id)===String(cid); });
+			  if(!c || !c.datos) return false;
+			  const d=c.datos, secs=(Array.isArray(d.secciones)&&d.secciones.length)?d.secciones:[{id:'s1',nombre:'A'}];
+			  const sec=secs.find(function(x){ return x.id===sid; });
+			  if(!sec) return false;
+			  const secDe=function(t){ return t.sec||secs[0].id; };
+			  const tomas=(d.takes||[]).filter(function(t){ return t && secDe(t)===sid && Array.isArray(t.events); });
+			  if(!tomas.length){ _gbEstado('Esa sección está vacía.'); return false; }
+			  gbPracticaParar(true);
+			  let id; do{ _gbSecSeq++; id='s'+_gbSecSeq; }while(_gbSecIdx(id)>=0);
+			  _gbSecciones.push({id:id, nombre:sec.nombre||_gbNombreSec(_gbSecciones.length)});
+			  tomas.forEach(function(t){ _gbTakes.push(Object.assign(_gbClonar(t), {sec:id})); });
+			  _gbSecActiva=id;
+			  const ov=document.getElementById('gb-traer'); if(ov) ov.remove();
+			  gbRenderTracks(); _gbGuardarPronto();
+			  _gbEstado('📋 «'+(sec.nombre||'')+'» traída de «'+(c.nombre||'')+'» con '+tomas.length+' pista(s).');
+			  return true;
+			}
 			function gbSecMover(dir){
 			  const i=_gbSecIdx(_gbSecActiva), j=i+dir;
 			  if(i<0 || j<0 || j>=_gbSecciones.length) return;
@@ -21584,6 +21671,7 @@
 			    +'<span style="width:10px;"></span>'
 			    +'<button class="gb-chip" onclick="gbSecNueva()" title="Añadir una sección nueva">＋</button>'
 			    +'<button class="gb-chip" onclick="gbSecDuplicar()" title="Duplicar esta sección con sus pistas">⧉</button>'
+			    +'<button class="gb-chip" onclick="gbSecTraer()" title="Traer una sección de otra de tus canciones" aria-label="Traer una sección de otra canción">📋</button>'
 			    +'<button class="gb-chip" onclick="gbSecRenombrar()" title="Cambiar el nombre de esta sección">✎</button>'
 			    +'<button class="gb-chip" onclick="gbSecMover(-1)" title="Mover antes"'+(secIdx<=0?' disabled style="opacity:.3;"':'')+'>‹</button>'
 			    +'<button class="gb-chip" onclick="gbSecMover(1)" title="Mover después"'+(secIdx>=_gbSecciones.length-1?' disabled style="opacity:.3;"':'')+'>›</button>'
@@ -23947,11 +24035,78 @@
 			    +l.map(function(x){ return '<div style="font-size:13px;line-height:1.55;">'+escapeHtml(x)+'</div>'; }).join('')
 			    +'</div>';
 			}
+			/* ── TARJETA DEL DÍA PARA COMPARTIR (idea 38) ──
+			   Una imagen con la hora, la fecha, el tiempo, la próxima alarma y lo
+			   de hoy, para mandarla por WhatsApp. Lee lo mismo que la franja de
+			   arriba (_frClima, _frAlarma, _frFest, _frEvento) y «Hoy en IXClocK»,
+			   así que no puede decir otra cosa. Se dibuja en un canvas, aquí:
+			   no sale nada del aparato hasta que TÚ la compartes.            */
+			function ixTarjetaDatos(){
+			  const n=new Date();
+			  let fecha='';
+			  try{ fecha=n.toLocaleDateString((typeof _uiLang!=='undefined'&&_uiLang)||'es',{weekday:'long', day:'numeric', month:'long'}); }catch(e){}
+			  const filas=[];
+			  const add=function(f){ try{ const d=f(); if(d) filas.push(d); }catch(e){} };
+			  add(function(){ const c=_frClima(); return c && (c.emoji+' '+c.texto); });
+			  add(function(){ const a=_frAlarma(); return a && ('⏰ '+a.texto); });
+			  add(function(){ const e=_frEvento(); return e && ('📅 '+(e.titulo||e.texto)); });
+			  add(function(){ const f=_frFest(); return f && (f.emoji+' '+(f.titulo||f.texto)); });
+			  add(function(){ const h=ixHoyResumen(); return h.enfoque.min>0 && ('🎯 '+_enfMinTexto(h.enfoque.min)+' '+_uiT('de enfoque')); });
+			  return { hora:String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'),
+			           fecha:fecha.charAt(0).toUpperCase()+fecha.slice(1), filas:filas.slice(0,5) };
+			}
+			function ixTarjetaCanvas(){
+			  const d=ixTarjetaDatos();
+			  const W=1080, H=1350, cv=document.createElement('canvas');
+			  cv.width=W; cv.height=H;
+			  const g=cv.getContext('2d');
+			  const fondo=g.createLinearGradient(0,0,W,H);
+			  fondo.addColorStop(0,'#0b1a3a'); fondo.addColorStop(.55,'#1d1446'); fondo.addColorStop(1,'#3a0f3f');
+			  g.fillStyle=fondo; g.fillRect(0,0,W,H);
+			  const luz=g.createRadialGradient(W*.8,H*.15,10,W*.8,H*.15,620);
+			  luz.addColorStop(0,'rgba(10,132,255,.45)'); luz.addColorStop(1,'rgba(10,132,255,0)');
+			  g.fillStyle=luz; g.fillRect(0,0,W,H);
+			  const fam='-apple-system, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif';
+			  g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle='#ffffff';
+			  g.font='200 300px '+fam; g.fillText(d.hora, W/2, 440);
+			  g.globalAlpha=.8; g.font='500 54px '+fam; g.fillText(d.fecha, W/2, 540); g.globalAlpha=1;
+			  let y=720;
+			  d.filas.forEach(function(t){
+			    g.fillStyle='rgba(255,255,255,.1)';
+			    const x=110, w=W-220, h=108, r=30;
+			    g.beginPath(); g.moveTo(x+r,y-74); g.arcTo(x+w,y-74,x+w,y+34,r); g.arcTo(x+w,y+34,x,y+34,r); g.arcTo(x,y+34,x,y-74,r); g.arcTo(x,y-74,x+w,y-74,r); g.closePath(); g.fill();
+			    g.fillStyle='#ffffff'; g.font='600 46px '+fam;
+			    let txt=t; while(g.measureText(txt).width>w-60 && txt.length>4) txt=txt.slice(0,-2)+'…';
+			    g.fillText(txt, W/2, y);
+			    y+=138;
+			  });
+			  g.globalAlpha=.55; g.font='600 34px '+fam; g.fillText('IXClocK · ixclockplus.netlify.app', W/2, H-70); g.globalAlpha=1;
+			  return cv;
+			}
+			async function ixCompartirDia(){
+			  const cv=ixTarjetaCanvas();
+			  const blob=await new Promise(function(r){ cv.toBlob(r,'image/png'); });
+			  if(!blob){ try{ ixToast('⚠️ '+_uiT('No se pudo crear la imagen')); }catch(e){} return null; }
+			  const f=new File([blob],'ixclock-hoy.png',{type:'image/png'});
+			  try{
+			    if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
+			      await navigator.share({ files:[f], title:_uiT('Mi día en IXClocK') });
+			      return 'compartida';
+			    }
+			  }catch(e){ if(e && e.name==='AbortError') return 'cancelada'; }
+			  // Sin «compartir» (ordenador): se descarga.
+			  const a=document.createElement('a');
+			  a.href=URL.createObjectURL(blob); a.download='ixclock-hoy.png';
+			  document.body.appendChild(a); a.click(); a.remove();
+			  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 30000);
+			  try{ ixToast('🖼️ '+_uiT('Tarjeta del día descargada')); }catch(e){}
+			  return 'descargada';
+			}
 			function ixAvisosPintar(){
 			  const caja=document.getElementById('ix-avisos-lista');
 			  if(!caja) return;
 			  const l=ixAvisosLeer();
-			  const hoy=ixHoyHtml();
+			  const hoy=ixHoyHtml()+'<button id="ix-compartir-dia" onclick="ixCompartirDia()" style="width:100%;margin-bottom:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;">📤 '+escapeHtml(_uiT('Compartir mi día'))+'</button>';
 			  if(!l.length){ caja.innerHTML=hoy+ixVacio('🔔','Sin avisos','Aquí quedarán tus alarmas, temporizadores y avisos del tiempo, para verlos aunque no estuvieras mirando.'); return; }
 			  caja.innerHTML=hoy+l.map(function(a){
 			    return '<div class="ix-aviso" style="padding:10px 12px;border-radius:12px;margin-bottom:6px;background:'+(a.leido?'rgba(255,255,255,.04)':'rgba(10,132,255,.14)')+';">'
@@ -24504,6 +24659,97 @@
 			  if(!document.hidden && ixEnfoqueAbierto()) _enfBucle();
 			});
 
+			/* ═════════════ MODO COCHE (idea 40) ═════════════
+			   Para llevar el móvil en el soporte: negro y blanco (se lee al sol y
+			   no deslumbra de noche), la hora grande, la próxima alarma y la radio
+			   con tres botones ENORMES (anterior, pausa, siguiente) que se aciertan
+			   sin mirar. Las emisoras que pasa son tus favoritas (★); sin
+			   favoritas, las de la lista. «Mapas» sale del modo y abre Mapas.
+			   La pantalla no se apaga mientras está abierto (Wake Lock).   */
+			let _cocheTic=null, _cocheWake=null;
+			function ixCocheAbierto(){ const o=document.getElementById('ix-coche'); return !!o && o.style.display!=='none'; }
+			function _cocheLista(){
+			  let favs=[];
+			  try{ favs=(_radioFavs||[]).filter(function(id){ return !!nombreDeEmisora(id); }); }catch(e){}
+			  if(favs.length) return favs;
+			  try{ return (STATIONS||[]).map(function(x){ return x.id; }); }catch(e){ return []; }
+			}
+			function ixCocheEmisora(dir){
+			  const l=_cocheLista(); if(!l.length) return null;
+			  let i=-1; try{ i=l.indexOf(currentStation); }catch(e){}
+			  const j = i<0 ? (dir>0?0:l.length-1) : (i+dir+l.length)%l.length;
+			  try{ setStation(l[j]); }catch(e){}
+			  _cochePintar();
+			  return l[j];
+			}
+			function ixCochePausa(){ try{ togglePlayPause(); }catch(e){} setTimeout(_cochePintar, 50); }
+			function _cochePintar(){
+			  if(!document.getElementById('ix-coche')) return;
+			  const n=new Date();
+			  const h=document.getElementById('ix-coche-hora');
+			  if(h) h.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+			  const a=document.getElementById('ix-coche-alarma');
+			  if(a){ let al=null; try{ al=_frAlarma(); }catch(e){} a.textContent = al ? '⏰ '+al.texto : ''; }
+			  const r=document.getElementById('ix-coche-radio');
+			  let sonando=false, nom=null;
+			  try{ sonando=!!isPlaying; }catch(e){}
+			  try{ nom=currentStation ? nombreDeEmisora(currentStation) : null; }catch(e){}
+			  if(r) r.textContent = nom ? '📻 '+nom : '📻 '+_uiT('Elige una emisora con ⏭');
+			  const pb=document.getElementById('ix-coche-pausa');
+			  if(pb){ pb.textContent = sonando ? '⏸' : '▶'; pb.setAttribute('aria-label', sonando ? _uiT('Pausar la radio') : _uiT('Poner la radio')); }
+			}
+			async function _cocheWakeOn(){
+			  try{ if(navigator.wakeLock) _cocheWake=await navigator.wakeLock.request('screen'); }catch(e){ _cocheWake=null; }
+			}
+			function ixAbrirCoche(){
+			  let ov=document.getElementById('ix-coche');
+			  if(!ov){
+			    ov=document.createElement('div');
+			    ov.id='ix-coche';
+			    ov.setAttribute('role','dialog'); ov.setAttribute('aria-label',_uiT('Modo coche'));
+			    ov.style.cssText='position:fixed;inset:0;z-index:2147482400;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));user-select:none;-webkit-user-select:none;';
+			    const gran='flex:1;min-height:96px;border-radius:24px;border:2px solid #fff;background:#111;color:#fff;font-size:44px;font-weight:800;cursor:pointer;';
+			    ov.innerHTML=''
+			      +'<div style="width:100%;display:flex;justify-content:space-between;gap:10px;">'
+			      +  '<button onclick="ixCocheSalir();openAppleMaps()" style="padding:14px 20px;border-radius:999px;border:2px solid #fff;background:#000;color:#fff;font-size:18px;font-weight:800;cursor:pointer;">🗺️ '+escapeHtml(_uiT('Mapas'))+'</button>'
+			      +  '<button onclick="ixCocheSalir()" aria-label="'+escapeHtml(_uiT('Salir del modo coche'))+'" style="width:56px;height:56px;border-radius:50%;border:2px solid #fff;background:#000;color:#fff;font-size:22px;cursor:pointer;">✕</button>'
+			      +'</div>'
+			      +'<div>'
+			      +  '<div id="ix-coche-hora" style="font-size:min(30vw,34vh);font-weight:300;line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums;"></div>'
+			      +  '<div id="ix-coche-alarma" style="font-size:min(5.5vw,4vh);font-weight:700;color:#ffd60a;margin-top:1.5vh;min-height:1.2em;"></div>'
+			      +'</div>'
+			      +'<div style="width:min(760px,100%);">'
+			      +  '<div id="ix-coche-radio" style="font-size:min(6vw,4.4vh);font-weight:800;margin-bottom:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>'
+			      +  '<div style="display:flex;gap:12px;">'
+			      +    '<button id="ix-coche-ant" onclick="ixCocheEmisora(-1)" aria-label="'+escapeHtml(_uiT('Emisora anterior'))+'" style="'+gran+'">⏮</button>'
+			      +    '<button id="ix-coche-pausa" onclick="ixCochePausa()" style="'+gran+'background:#fff;color:#000;">▶</button>'
+			      +    '<button id="ix-coche-sig" onclick="ixCocheEmisora(1)" aria-label="'+escapeHtml(_uiT('Emisora siguiente'))+'" style="'+gran+'">⏭</button>'
+			      +  '</div>'
+			      +'</div>';
+			    document.body.appendChild(ov);
+			  }
+			  ov.style.display='flex';
+			  _cochePintar();
+			  clearInterval(_cocheTic);
+			  _cocheTic=setInterval(_cochePintar, 1000);
+			  _cocheWakeOn();
+			  try{ _trackAppOpen('coche'); }catch(e){}
+			}
+			function ixCocheSalir(){
+			  const ov=document.getElementById('ix-coche');
+			  if(ov) ov.style.display='none';
+			  clearInterval(_cocheTic); _cocheTic=null;
+			  try{ if(_cocheWake){ _cocheWake.release(); _cocheWake=null; } }catch(e){}
+			}
+			document.addEventListener('keydown', function(e){
+			  if(e.key!=='Escape' || !ixCocheAbierto()) return;
+			  e.stopPropagation();
+			  ixCocheSalir();
+			}, true);
+			document.addEventListener('visibilitychange', function(){
+			  if(!document.hidden && ixCocheAbierto()){ _cocheWakeOn(); _cochePintar(); }
+			});
+
 			const IX_APPS = [
 			  { id:'ixband',   n:'IXBand',        icon:'🎸', d:'Estudio de música con instrumentos del mundo', open:'openGarageBand',
 			    assets:[] },
@@ -24523,6 +24769,7 @@
 			  { id:'buscar',   n:'Buscar en IXClocK', icon:'🔎', d:'Busca en todo: apps, ajustes, notas, ciudades, fondos y emisoras', open:'ixAbrirBusqueda', assets:[] },
 			  { id:'enfoque',  n:'Modo Enfoque',  icon:'🎯', d:'Pomodoro 25/5 a pantalla completa, con sonido de ambiente', open:'ixAbrirEnfoque', assets:[] },
 			  { id:'mesita',   n:'Modo mesita',   icon:'🌙', d:'Hora grande, tiempo y próxima alarma para dejar el móvil cargando de noche', open:'ixAbrirMesita', assets:[] },
+			  { id:'coche',    n:'Modo coche',    icon:'🚗', d:'Hora grande y la radio con botones enormes para llevar el móvil en el coche', open:'ixAbrirCoche', assets:[] },
 			  { id:'avisos',   n:'Avisos',        icon:'🔔', d:'Lo que te ha avisado IXClocK: alarmas, temporizadores y el tiempo de tus ciudades', open:'ixAbrirAvisos', assets:[] },
 			];
 			// Lo que necesita el armazón (tipografías e iconos) para verse bien sin conexión.

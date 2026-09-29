@@ -79,12 +79,8 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
-    mundial».
 **IXBand**:
 33. **Exportar pistas por separado**, no solo la mezcla.
-34. **Sección como plantilla entre canciones**: hoy se duplica dentro de la
-    misma canción; falta copiar un estribillo de una canción a otra.
 35. **Pista de voz por micrófono** mezclada con los instrumentos.
 36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
     por separado y nunca se cruzan. ⚠️ Mirado el 29 de sept y aparcado: casi
@@ -111,9 +107,6 @@ etiquetas Open Graph, HTTPS (lo pone Netlify), y ningún recurso `http://`
 nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31).
 
 **Pendiente de verdad, pequeño, en este orden:**
-74. **Pasar las pruebas en GitHub Actions** (`sh pruebas/todas.sh` en cada PR)
-    para que un fallo se vea antes de fusionar. Necesita Chromium de
-    Playwright en el runner. Mediano.
 - **NO aplica**: blog, página de precios, registro con contraseña, carrito,
   panel de administración, CMS, comparativas Stripe/Auth0/etc. (el cobro sigue
   en pausa), diagramas y «prompt maestro» (son texto del informe, no tareas).
@@ -150,12 +143,10 @@ Comprobado aquí:
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
     sitio guardado, reaprovechando el GPS que ya usa la navegación en vivo.
-40. **Modo Coche**: pantalla simplificada de alto contraste con el mapa en
-    navegación, la radio y la hora grande. Reaprovecha Mapas y Radio.
+40. ~~Modo Coche~~ hecho (ver Hecho). Falta: meter el mapa en navegación
+    DENTRO del modo coche (hoy «Mapas» sale del modo y abre Mapas).
     («Notas con recordatorio» se pidió aparte: es el punto 24, que ya incluye
     convertir una nota en alarma.)
-38. **Tarjeta del día compartible**: imagen con hora, clima y próxima alarma
-    para mandar por WhatsApp. Usa los mismos datos que la franja de resumen.
 
 **Ya cubiertas, no repetir**:
 - «Notificaciones reales en segundo plano» y «Modo Antes de salir» se pidieron
@@ -173,6 +164,35 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Las pruebas pasan en GitHub Actions** (idea 74, 29 de sept).
+  `.github/workflows/pruebas.yml` corre `sh pruebas/todas.sh` en cada PR (y a
+  mano): instala Playwright 1.56.1 + Chromium y se lo dice a las pruebas con
+  `IX_PW`, `IX_CHROME` e `IXROOT` (las 90 pruebas ya leen esas variables; en
+  esta máquina siguen usando las rutas de siempre). `todas.sh` sale con error
+  si algo falla dos veces, para que el PR salga en rojo. No despliega nada.
+- **Modo coche** (idea 40, 29 de sept). App 🚗 (`ixAbrirCoche`, también en el
+  conmutador y en «cerrar todas»): negro y blanco, hora grande, próxima alarma
+  (`_frAlarma`) y la radio con ⏮ ⏯ ⏭ de 96 px que recorren tus favoritas (o la
+  lista si no hay). Wake Lock mientras está abierto; Esc, ✕ o «Mapas» salen.
+  - Probado con `pruebas/coche.js` (móvil 390×844): 17/17; antes 2/17.
+- **Tarjeta del día para compartir** (idea 38, 29 de sept). Botón «📤
+  Compartir mi día» en Avisos: `ixTarjetaCanvas` dibuja 1080×1350 con hora,
+  fecha y las filas de la franja (`_frClima`, `_frAlarma`, `_frEvento`,
+  `_frFest`) + minutos de enfoque. Comparte el PNG con `navigator.share`
+  (archivos) o lo descarga; cancelar no descarga. Nada sale del aparato hasta
+  que lo compartes.
+  - Probado con `pruebas/tarjetadia.js`: 12/12; antes 1/12.
+- **Traer una sección de otra canción** (idea 34, 29 de sept). Botón 📋 en la
+  barra de secciones: `gbSecTraer` lista Mis canciones (menos la abierta) con
+  sus secciones y nº de pistas; `gbSecTraerDe` copia en profundidad las tomas
+  a una sección NUEVA (id libre, no pisa) al final y la abre. Vacías, apagadas.
+  - Probado con `pruebas/traerseccion.js`: 11/11; antes 2/11.
+- **Mapas → reloj mundial** (idea 27, 29 de sept). Botón «🕐 Al reloj mundial»
+  en la ficha del lugar: `amapAlReloj` pide la zona a Open-Meteo
+  (`timezone=auto`, ya nombrado en privacidad), la valida con `Intl` y la añade
+  con `icaPickCity`. Dice «Kioto → hora de Tokio · hh:mm»; sin red o con zona
+  rara avisa y no añade; no duplica.
+  - Probado con `pruebas/mapareloj.js`: 10/10; antes 1/10.
 - **Tarea en Modo Enfoque + «Hoy en IXClocK»** (idea 63, 29 de sept). Campo
   «¿En qué vas a trabajar?» (`_enfCfg.tarea`); cada sesión terminada se apunta
   con su tarea y debajo sale el reparto de hoy (`enfoqueResumen().tareas`). La

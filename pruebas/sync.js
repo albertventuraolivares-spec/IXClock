@@ -12,8 +12,8 @@
 //  · un código con Math.random no vale: si no hay crypto, no se genera;
 //  · «dejar de sincronizar» no borra los datos del otro aparato.
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
-const ROOT='/home/user/IXClock';
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
+const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json'};
 
 // ── El servidor: sirve la app Y hace de función de Netlify ──
@@ -72,7 +72,7 @@ async function aparato(b){
 }
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const o={};
 
  // ═══════════ APARATO 1: el «iPhone» ═══════════

@@ -10,7 +10,7 @@
 //    malo, sin nadie durmiendo: 07:00–10:00 y 18:00–23:00;
 //  · con Tokio, Londres y Los Ángeles no hay hora sin alguien durmiendo.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
 const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json'};
 const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]);if(f==='/')f='/index.html';
@@ -18,7 +18,7 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
  s.writeHead(200,{'content-type':MIME[path.extname(p)]||'application/octet-stream'});s.end(fs.readFileSync(p));}).listen(9277);
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const ctx=await b.newContext({viewport:{width:1200,height:900}, timezoneId:'America/Santo_Domingo', locale:'es-ES'});
  const p=await ctx.newPage();
  const errs=[]; p.on('pageerror',e=>errs.push(e.message.split('\n')[0]));

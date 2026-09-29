@@ -9,8 +9,8 @@
 //  · y sobre todo, que cuando falle DIGA POR QUÉ. «No me llegan los correos»
 //    sin más no hay por dónde cogerlo; lo útil es que ponga qué falta.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
-const ROOT='/home/user/IXClock';
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
+const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json'};
 
 // El servidor local hace de función de correo, y se le puede decir qué
@@ -36,7 +36,7 @@ const srv=http.createServer((q,s)=>{
 }).listen(9259);
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const p=await b.newPage({viewport:{width:1200,height:1000}});
  const errs=[]; p.on('pageerror',e=>errs.push(e.message.split('\n')[0]));
  await p.route(/^https?:\/\/(?!localhost)/,r=>r.abort());

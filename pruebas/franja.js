@@ -6,8 +6,8 @@
 // COINCIDA con el panel que tiene al lado: una franja que se contradiga con el
 // panel del clima es peor que no tener franja.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
-const ROOT='/home/user/IXClock';
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
+const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json'};
 const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]);if(f==='/')f='/index.html';
  const p=path.join(ROOT,f); if(!p.startsWith(ROOT)||!fs.existsSync(p)||fs.statSync(p).isDirectory()){s.writeHead(404);return s.end('nf');}
@@ -33,7 +33,7 @@ const txt = (p,id) => p.evaluate(i=>{ const e=document.getElementById(i);
   return e && getComputedStyle(e).display!=='none' ? e.innerText.replace(/\s+/g,' ').trim() : null; }, id);
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const ctx=await b.newContext({viewport:{width:1280,height:1000}});
  let p=await arranca(ctx);
  const o={};

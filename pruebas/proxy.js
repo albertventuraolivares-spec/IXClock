@@ -16,8 +16,8 @@
 // La prueba llama a la función DE VERDAD (no a una copia), coge el HTML que
 // devuelve, lo sirve en un navegador real y comprueba que no se ejecuta nada.
 const http=require('http');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
-const proxy=require('/home/user/IXClock/netlify/functions/proxy.js');
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
+const proxy=require((process.env.IXROOT||'/home/user/IXClock')+'/netlify/functions/proxy.js');
 
 // Un dominio que no existe: así el fetch falla y entramos por la rama del 502,
 // que es justo donde estaba el fallo.
@@ -44,7 +44,7 @@ const PAYLOADS=[
    s.end(cuerpo);
  }).listen(9255);
 
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const ejecutado=[];
  for(let i=0;i<PAYLOADS.length;i++){
    const p=await b.newPage();

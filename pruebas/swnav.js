@@ -6,7 +6,7 @@
 // vez de la app. Aquí se hace tal cual con un navegador real: se instala el
 // service worker, se visitan esas páginas, se corta la red y se abre la app.
 const http=require('http'),fs=require('fs'),path=require('path');
-const {chromium}=require('/opt/node22/lib/node_modules/playwright/index.js');
+const {chromium}=require(process.env.IX_PW||'/opt/node22/lib/node_modules/playwright/index.js');
 const ROOT=process.env.IXROOT||'/home/user/IXClock';
 const MIME={'.html':'text/html','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json','.js':'text/javascript','.webmanifest':'application/manifest+json','.jpg':'image/jpeg'};
 const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]);if(f==='/')f='/index.html';
@@ -18,7 +18,7 @@ const sockets=new Set(); srv.on('connection',c=>{ sockets.add(c); c.on('close',(
 const apagar=()=>new Promise(r=>{ srv.close(()=>r()); sockets.forEach(c=>c.destroy()); });
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+ const b=await chromium.launch({executablePath:process.env.IX_CHROME||'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
  const ctx=await b.newContext({viewport:{width:1000,height:800}});
  await ctx.route(/^https?:\/\/(?!localhost)/,r=>r.abort());
  const p=await ctx.newPage();
