@@ -65,13 +65,13 @@ const srv=http.createServer((q,s)=>{let f=decodeURIComponent(q.url.split('?')[0]
    localStorage.setItem('ica_alarms', JSON.stringify(_icaAlarms));
    window.__suena=[]; window.ringAlarm=function(a){ window.__suena.push(a.label); };
  });
- const cuenta=async(desde)=>{ await p.clock.setSystemTime(new Date(desde)); await p.clock.runFor(75*1000);
+ const cuenta=async(desde)=>{ await p.clock.setSystemTime(new Date(desde)); await p.clock.runFor(20*1000);
    return p.evaluate(()=>{ const r=window.__suena.slice(); window.__suena=[]; return r; }); };
- o.a09aqui   = await cuenta('2026-10-01T08:59:30-04:00');   // 9:00 aquí = 22:00 Tokio
- o.a20aqui   = await cuenta('2026-10-01T19:59:30-04:00');   // 20:00 aquí = 9:00 Tokio del día 2
- o.dia2a20   = await cuenta('2026-10-02T19:59:30-04:00');   // 9:00 Tokio del día 3
- o.dia3a09   = await cuenta('2026-10-03T08:59:30-04:00');   // día 3 aquí, 22:00 Tokio
- o.rota      = await cuenta('2026-10-03T09:59:30-04:00');   // zona inválida → hora de aquí
+ o.a09aqui   = await cuenta('2026-10-01T08:59:50-04:00');   // 9:00 aquí = 22:00 Tokio
+ o.a20aqui   = await cuenta('2026-10-01T19:59:50-04:00');   // 20:00 aquí = 9:00 Tokio del día 2
+ o.dia2a20   = await cuenta('2026-10-02T19:59:50-04:00');   // 9:00 Tokio del día 3
+ o.dia3a09   = await cuenta('2026-10-03T08:59:50-04:00');   // día 3 aquí, 22:00 Tokio
+ o.rota      = await cuenta('2026-10-03T09:59:50-04:00');   // zona inválida → hora de aquí
  await b.close(); srv.close();
 
  const n=(arr,l)=>arr.filter(x=>x===l).length;

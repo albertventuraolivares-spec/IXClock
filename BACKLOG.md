@@ -86,8 +86,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
     Pedida dos veces.
 25. **Modo Viaje**: al elegir ciudad en el reloj mundial, que el conversor de
     divisas cambie solo a su moneda y se cargue su clima.
-26. **Puente Mapas → Radio**: tocar un país en el mapa y «escuchar radio de
-    aquí», filtrando Radio Mundial por ese país.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
 **IXBand**:
@@ -110,7 +108,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
-48. **Adjuntar una ubicación de Mapas a una nota**, y al tocarla abrir la ruta.
 50. **Exportar las tomas de IXBand** (`_gbTakes`) a WAV/MP3: hoy solo se oyen
     dentro del estudio.
 
@@ -199,6 +196,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Mapas → Radio y Mapas → Notas** (ideas 26 y 48, 29 de sept). La búsqueda
+  pide `addressdetails=1` para el código de país; `_amapLugar` guarda el
+  último sitio y `_amapFichaLugar()` pinta la ficha con «📻 Radio de aquí»
+  (solo si hay país) y «📝 Guardar en una nota» (nombre + enlace OSM con las
+  coordenadas). `ixRadioDePais(cc)` abre Radio Mundial con
+  `&countrycode=XX`, reutilizable desde otras apps. Además: `alert()` →
+  `ixToast`, `.catch` sin conexión, y el nombre ya no sale con doble espacio.
+  `pruebas/mapaslugar.js` (Leaflet falso como en `pruebas/mapas.js`).
 - **FALLO service worker sin conexión** (29 de sept): la navegación guardaba
   CUALQUIER página como `./index.html` (también un 404 o `privacidad.html`),
   así que sin conexión se abría esa página en vez de la app. Ahora cada
