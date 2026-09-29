@@ -16534,6 +16534,8 @@
 			    '📝 «Guardar en una nota»: el lugar queda en una nota con su enlace para volver a él',
 			    '🛠️ Si Mapas no encuentra un sitio, o no hay conexión, ahora te lo dice con un aviso de la app (antes salía una ventanita del navegador, o nada)',
 			    '🔔 Nueva app «Avisos»: guarda tus últimos 50 avisos (alarmas, temporizadores, el tiempo de tus ciudades) para verlos aunque no estuvieras mirando',
+			    '🧭 Brújula → «📍 Mis ciudades»: la distancia y una flecha que apunta hacia cada ciudad de tu reloj mundial',
+			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
@@ -21075,6 +21077,8 @@
 			    <div id="compass-heading" style="font-size:2rem;font-weight:200;letter-spacing:-.02em;color:var(--txt);">0°</div>
 			    <div id="compass-dir" style="font-size:13px;font-weight:700;color:#ff453a;letter-spacing:.15em;">NORTE</div>
 			    <div style="font-size:10px;opacity:.55;text-align:center;">Requiere sensor de orientación del dispositivo</div>
+			    <div id="compass-ciudades" style="width:100%;display:flex;flex-direction:column;gap:4px;"></div>
+			    <button onclick="brujulaCiudades()" style="background:rgba(48,209,88,.16);border:1px solid rgba(48,209,88,.4);color:#30d158;padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📍 Mis ciudades</button>
 			    <button onclick="requestCompassPermission()" style="background:rgba(10,132,255,.2);border:1px solid rgba(10,132,255,.4);color:#0a84ff;padding:8px 16px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;width:100%;">Activar sensor</button>
 			  `;
 			  document.body.appendChild(modal);
@@ -21084,23 +21088,87 @@
 			  drawCompass(0);
 			  if(_compassOrient)return;
 			  const handler=e=>{
-			    const heading=e.webkitCompassHeading??e.alpha??0;
+			    // En iPhone, webkitCompassHeading ya es el rumbo. En Android, alpha
+			    // va al REVÉS (crece hacia el oeste): usarlo tal cual confundía este
+			    // con oeste. El rumbo es 360 − alpha.
+			    const heading=brujulaRumbo(e);
 			    _compassAngle=heading;
 			    drawCompass(heading);
 			    document.getElementById('compass-heading').textContent=Math.round(heading)+'°';
 			    const dirs=['NORTE','NNE','NE','ENE','ESTE','ESE','SE','SSE','SUR','SSO','SO','OSO','OESTE','ONO','NO','NNO'];
 			    document.getElementById('compass-dir').textContent=dirs[Math.round(heading/22.5)%16];
+			    _brujulaGirarFlechas();
 			  };
 			  window.addEventListener('deviceorientationabsolute',handler,true);
 			  window.addEventListener('deviceorientation',handler,true);
 			  _compassOrient=handler;
 			}
+			function brujulaRumbo(e){
+			  if(e && typeof e.webkitCompassHeading==='number') return e.webkitCompassHeading;
+			  if(e && typeof e.alpha==='number') return (360 - e.alpha) % 360;
+			  return 0;
+			}
 			function requestCompassPermission(){
-			  if(DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
-			    DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startCompass();}).catch(console.error);
+			  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+			    DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startCompass();}).catch(function(){});
 			  }else{
-			    alert(_uiT('Tu dispositivo no tiene sensor de orientación o ya está activo.'));
+			    try{ ixToast(_uiT('Tu dispositivo no tiene sensor de orientación o ya está activo.')); }catch(e){}
 			  }
+			}
+			/* ── La brújula apunta a tus ciudades (idea 58) ──
+			   Rumbo y distancia desde donde estás hasta cada ciudad de tu reloj
+			   mundial. Las coordenadas de las ciudades son las que ya se guardan
+			   para el tiempo (_icaCoords); la tuya se pide solo al tocar el botón.
+			   La flecha de cada ciudad gira con el móvil: apunta de verdad. */
+			let _brujulaDestinos=[];
+			function brujulaCalcular(lat1, lon1, lat2, lon2){
+			  const R=6371, rad=Math.PI/180;
+			  const f1=lat1*rad, f2=lat2*rad, dF=(lat2-lat1)*rad, dL=(lon2-lon1)*rad;
+			  const a=Math.sin(dF/2)*Math.sin(dF/2)+Math.cos(f1)*Math.cos(f2)*Math.sin(dL/2)*Math.sin(dL/2);
+			  const km=2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+			  const y=Math.sin(dL)*Math.cos(f2);
+			  const x=Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dL);
+			  const rumbo=(Math.atan2(y,x)/rad+360)%360;
+			  return { km:km, rumbo:rumbo };
+			}
+			function _brujulaGirarFlechas(){
+			  document.querySelectorAll('#compass-ciudades .brj-flecha').forEach(function(el){
+			    const r=parseFloat(el.dataset.rumbo)||0;
+			    el.style.transform='rotate('+(((r-_compassAngle)%360+360)%360)+'deg)';
+			  });
+			}
+			function _brujulaPintar(){
+			  const caja=document.getElementById('compass-ciudades');
+			  if(!caja) return;
+			  if(!_brujulaDestinos.length){ caja.innerHTML=''; return; }
+			  caja.innerHTML=_brujulaDestinos.map(function(d){
+			    return '<div class="brj-fila" style="display:flex;align-items:center;gap:8px;font-size:12px;">'
+			      +'<span class="brj-flecha" data-rumbo="'+d.rumbo.toFixed(1)+'" style="display:inline-block;width:18px;text-align:center;color:#30d158;font-weight:900;">↑</span>'
+			      +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(d.nombre)+'</span>'
+			      +'<span style="opacity:.6;font-variant-numeric:tabular-nums;">'+Math.round(d.km).toLocaleString('es')+' km</span></div>';
+			  }).join('');
+			  _brujulaGirarFlechas();
+			}
+			async function brujulaCiudades(){
+			  const caja=document.getElementById('compass-ciudades');
+			  const ciudades=((typeof _icaWorldClocks!=='undefined' && _icaWorldClocks) || []).filter(_icaTzValida);
+			  if(!ciudades.length){ if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">'+escapeHtml(_uiT('Añade ciudades en «Reloj mundial» y aquí verás hacia dónde quedan.'))+'</div>'; return 0; }
+			  if(!navigator.geolocation){ try{ ixToast(_uiT('Sin GPS')); }catch(e){} return 0; }
+			  if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">📍 …</div>';
+			  const pos=await new Promise(function(ok){ navigator.geolocation.getCurrentPosition(ok, function(){ ok(null); }, {timeout:10000, maximumAge:300000}); });
+			  if(!pos){ if(caja) caja.innerHTML='<div style="font-size:11px;opacity:.6;text-align:center;">'+escapeHtml(_uiT('Sin permiso de ubicación'))+'</div>'; return 0; }
+			  const yo={lat:pos.coords.latitude, lon:pos.coords.longitude};
+			  const destinos=[];
+			  for(const tz of ciudades){
+			    try{
+			      const c=await _icaCoords(tz);
+			      const r=brujulaCalcular(yo.lat, yo.lon, c.lat, c.lon);
+			      destinos.push({ nombre:_icaNombreDeTz(tz), km:r.km, rumbo:r.rumbo });
+			    }catch(e){}
+			  }
+			  _brujulaDestinos=destinos;
+			  _brujulaPintar();
+			  return destinos.length;
 			}
 			function drawCompass(heading){
 			  const canvas=document.getElementById('compass-canvas');if(!canvas)return;

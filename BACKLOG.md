@@ -113,8 +113,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
-58. **Brújula que apunta a tus ciudades**: rumbo y distancia usando las
-    coordenadas que el reloj mundial ya guarda.
 61. **Pista de IXBand como tono de alarma.**
 62. **Bucle de práctica en IXBand**: repetir una sección a tempo reducido y
     subirlo poco a poco.
@@ -195,6 +193,13 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Brújula a tus ciudades + FALLO este/oeste en Android** (idea 58, 29 de
+  sept). `brujulaRumbo(e)`: `webkitCompassHeading` (iPhone) o `360 − alpha`
+  (Android; antes se usaba `alpha` tal cual y la brújula iba al revés).
+  `brujulaCalcular` (haversine + rumbo inicial), «📍 Mis ciudades» pide la
+  ubicación SOLO al tocarlo y usa `_icaCoords` de cada ciudad del reloj
+  mundial; la flecha gira con `rumbo − _compassAngle`. `alert()` → toast.
+  `pruebas/brujula.js` (NY→Londres 5.570 km / 51°).
 - **Centro de avisos** (idea 44, 29 de sept). `ixNotificar` guarda cada
   aviso en `ix_avisos_v1` (50 como mucho, solo en el aparato, no se
   sincroniza) ANTES de mirar el permiso del navegador. App «🔔 Avisos»
