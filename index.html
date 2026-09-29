@@ -21393,13 +21393,43 @@
 			  try{ localStorage.setItem('ica_clima_v1',JSON.stringify(_icaClima)); }catch(e){}
 			  return _icaClima[tz];
 			}
+			/* Avisos del tiempo en tus ciudades (idea 57): tormenta, calor
+			   extremo, helada, lluvia o nieve fuertes. Se marca en la ciudad y se
+			   avisa UNA vez al día por ciudad y tipo: un aviso que se repite cada
+			   vez que abres el reloj acaba ignorándose. */
+			function icaAlertaClima(c){
+			  if(!c || typeof c.temp!=='number') return null;
+			  if([95,96,99].indexOf(c.code)>=0) return { tipo:'tormenta', txt:'⛈️ '+_uiT('Tormenta') };
+			  if(c.temp>=35)                    return { tipo:'calor',    txt:'🥵 '+_uiT('Calor extremo') };
+			  if(c.temp<=0)                     return { tipo:'helada',   txt:'🥶 '+_uiT('Helada') };
+			  if([65,67,82].indexOf(c.code)>=0) return { tipo:'lluvia',   txt:'🌧️ '+_uiT('Lluvia fuerte') };
+			  if([75,86].indexOf(c.code)>=0)    return { tipo:'nieve',    txt:'❄️ '+_uiT('Nevada fuerte') };
+			  return null;
+			}
+			const IX_ALERTA_CLIMA='ix_alerta_clima_v1';
+			function _icaAvisarClima(tz, c){
+			  const a=icaAlertaClima(c);
+			  if(!a) return false;
+			  const d=new Date(), hoy=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+			  let hechos={};
+			  try{ hechos=JSON.parse(localStorage.getItem(IX_ALERTA_CLIMA)||'{}')||{}; }catch(e){}
+			  const k=tz+'|'+a.tipo;
+			  if(hechos[k]===hoy) return false;
+			  hechos[k]=hoy;
+			  try{ localStorage.setItem(IX_ALERTA_CLIMA, JSON.stringify(hechos)); }catch(e){}
+			  const ciudad=_icaNombreDeTz(tz);
+			  try{ ixNotificar(a.txt+' '+_uiT('en')+' '+ciudad, c.temp+'°', 'clima-'+k); }catch(e){}
+			  try{ ixToast(a.txt+' '+_uiT('en')+' '+ciudad); }catch(e){}
+			  return true;
+			}
 			// Se pide en segundo plano: la hora tiene que salir ya, sin esperar a la red.
 			function icaCargarClimas(){
 			  _icaWorldClocks.forEach(function(tz){
 			    if(!_icaTzValida(tz)) return;
 			    icaClimaDe(tz).then(function(c){
 			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
-			      if(el) el.textContent=(ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°';
+			      if(el) el.textContent=_icaClimaTexto(tz);
+			      _icaAvisarClima(tz, c);
 			    }).catch(function(){
 			      const el=document.getElementById('ica-clima-'+_icaIdSeguro(tz));
 			      if(el) el.textContent='';   // sin internet, simplemente no se enseña
@@ -21460,7 +21490,9 @@
 			// dato de hace un rato que un hueco vacio mientras llega el nuevo.
 			function _icaClimaTexto(tz){
 			  const c=_icaClima[tz];
-			  return c ? ((ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°') : '';
+			  if(!c) return '';
+			  const a=icaAlertaClima(c);
+			  return (ICA_CLIMA_EMOJI[c.code]||'🌡️')+' '+c.temp+'°'+(a?' · '+a.txt:'');
 			}
 			/* ── COMPARADOR DE HORAS ──────────────────────────────────────────
 			   Para quedar con alguien de otra ciudad no basta con ver su hora
