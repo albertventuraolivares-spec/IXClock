@@ -69,8 +69,9 @@ const clave=d=>{ const x=new Date(); x.setHours(0,0,0,0); x.setDate(x.getDate()+
    return { anadido:/Examen de mates/.test(trasAnadir), borrado:!/Examen de mates/.test(trasBorrar) };
  }, clave(10));
 
- // El Año Nuevo que viene
+ // El Año Nuevo que viene (queda más allá de las 30 primeras: se piden todas)
  o.anoNuevo=await p.evaluate(()=>{
+   const mas=document.getElementById('fest-ver-mas'); if(mas) mas.click();
    const fila=[].slice.call(document.querySelectorAll('#events-box > div')).find(d=>/A[ñn]o Nuevo/i.test(d.innerText) && !/Chino/i.test(d.innerText));
    return fila ? fila.innerText.replace(/\s+/g,' ') : null;
  });

@@ -134,6 +134,13 @@ Comprobado aquí:
     que es un cambio grande: hacerlo app por app, midiendo con Lighthouse,
     empezando por las más pesadas. NOTA: aquí el servidor no comprime y la
     red externa está cortada; en Netlify saldrá algo mejor.
+    - 29 sept, primer paso: de 7.578 a ~5.530 elementos al abrir (fechas que
+      vienen: 30 + las tuyas y botón; Novedades: 3 versiones y botón). Probado
+      con `pruebas/ligero.js`. Lo siguiente más pesado: Radio (1.336, pero el
+      buscador cuenta con que estén pintadas) y Fondos (936, pestaña visible
+      por defecto).
+    - Segundo paso: los 248 estilos de reloj (760 elementos) se pintan al abrir
+      «Relojes», al filtrar o al buscar (`_asegurarClockGrid`). ~4.790 al abrir.
 82. **Pedir la ubicación al abrir** (Lighthouse «geolocation-on-start»): el
     tiempo la pide nada más cargar. Lo recomendado es pedirla al tocar un
     botón «📍 Usar mi ubicación» (y usarla sola si el permiso ya estaba
