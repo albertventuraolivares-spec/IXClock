@@ -166,49 +166,9 @@ nombre, `prefers-reduced-motion` existe, y el texto pálido se arregló (PR #31)
     Chromium de `/opt/pw-browsers`. Apuntar las puntuaciones reales en vez de
     fiarse del informe, y atacar lo que salga.
 
-73. **`Cache-Control`** para los estáticos (iconos, `tailwind.css`) en las
-    mismas `[[headers]]` de la idea 66. OJO: `index.html` NO debe llevar caché
-    larga, o las actualizaciones tardarían en llegar.
-
-**Del juego de Roblox, NO de este repo** (si los pide, van en ese proyecto):
-banco y oro, perros inteligentes, pases y precios en Robux, «¡Compra Oro
-Ahora!», misiones, y el logo.
-
-**NO aplica o necesita que decida el usuario (no hacer sin preguntar):**
-- Tienda, carrito, pasarela de pago, suscripciones: el cobro sigue **en pausa**
-  por decisión expresa del usuario.
-- Google Analytics / Matomo: implica aviso de privacidad y consentimiento.
-  Preguntarle antes.
-- «Sacar el CSS/JS a archivos aparte»: la app es un único `index.html` a
-  propósito; hacerlo sería la reescritura grande que prohíben las reglas.
-- Cookies seguras: la app no usa cookies. Formulario de contacto: ya existe el
-  muro de opiniones. Chat en vivo: necesitaría un servidor de soporte.
-- **Pases de Roblox y logo «estilo Canva»**: son de su proyecto de ROBLOX, no
-  de este repo. Si los pide, van en ese proyecto.
-
-### Tercer informe de auditoría (28 de sept) — YA VERIFICADO
-El segundo informe lo pegó dos veces, idéntico: ya estaba anotado arriba.
-Del tercero, comprobado en el código:
-- **Ya existe, no rehacer**: PWA (`manifest.webmanifest` + `sw.js`,
-  registrado), inicio con Google (`ixGoogle*`), avisos por correo, muro de
-  opiniones, sincronización entre aparatos.
-- **X-Frame-Options / `frame-ancestors`: no hay.** Va dentro de la idea 66.
-  Usar `SAMEORIGIN` (no `DENY`): la app tiene 2 `<iframe>` propios (navegador
-  y ventanas, líneas ~17396 y ~17875) que cargan webs de fuera y el proxy de
-  `/.netlify/functions/`. La cabecera solo impide que OTROS nos metan en un
-  iframe, no que nosotros enmarquemos, pero con `SAMEORIGIN` el proxy propio
-  sigue funcionando seguro.
-- **CI**: `.github/workflows/deploy.yml` NO hace pruebas: publica el repo
-  ENTERO en GitHub Pages en cada push a `main`. Dos consecuencias:
-  - La idea 70 (tapar `pruebas/`, `BACKLOG.md`…) solo arregla Netlify; en
-    GitHub Pages siguen visibles. Preguntar al usuario si usa esa copia; si
-    no, lo limpio es quitar ese workflow.
 74. **Pasar las pruebas en GitHub Actions** (`sh pruebas/todas.sh` en cada PR)
     para que un fallo se vea antes de fusionar. Necesita Chromium de
     Playwright en el runner. Mediano.
-75. **Selector de idioma**: ya existe un traductor de interfaz (`_uiT`, 2
-    idiomas) pero no hay forma visible de elegirlo. Poner el selector en
-    Configuración. Pequeño si solo es exponer lo que hay.
 - **NO aplica**: blog, página de precios, registro con contraseña, carrito,
   panel de administración, CMS, comparativas Stripe/Auth0/etc. (el cobro sigue
   en pausa), diagramas y «prompt maestro» (son texto del informe, no tareas).
@@ -228,11 +188,6 @@ Comprobado aquí:
     carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
     Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
     pasarla a obligatoria. Mediano y con riesgo de romper apps.
-78. **Botón «Borrar mi copia de la nube»** en la ficha de sincronizar
-    (método DELETE en `nube.mjs`). Hoy la política de privacidad dice
-    «escríbenos para borrarla», y para encontrarla habría que mandar el
-    código por correo, que es justo lo que se le dice al usuario que no haga.
-    Pequeño.
 
 **Otras**:
 39. **Recordatorios por ubicación en Mapas**: avisar al llegar o salir de un
@@ -260,6 +215,23 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Borrar la copia de la nube, imagen para compartir y caché** (ideas 78,
+  73 y 79 nueva, 29 de sept). `nube.mjs` acepta `DELETE ?codigo=` (quien
+  puede leerla puede borrarla) y la ficha de sincronizar tiene «Borrar mi
+  copia del servidor», que pregunta antes, no finge si el servidor falla y no
+  toca los datos del aparato; `privacidad.html` ya lo explica así.
+  `og:image` era «icon-512.png» a secas (WhatsApp/Facebook la necesitan
+  absoluta): ahora `og-image.jpg` 1200×630, 72 KB, hecha renderizando un HTML
+  con Playwright (no IA: los informes criticaban el «aspecto IA»), más
+  `og:url`, `og:image:alt` y `twitter:card`. Caché de una semana con
+  `stale-while-revalidate` para iconos, capturas y la imagen, con nombre
+  exacto en `for` (no está claro que Netlify acepte `/*.png`); `index.html`,
+  `sw.js` y `tailwind.css` sin caché a propósito. Pruebas:
+  `pruebas/nubeborrar.js` (14) y `pruebas/compartir.js` (15, sin el arreglo
+  3/15). Ambas aceptan `IXROOT` para probar en otra carpeta.
+- **Idea 75 (selector de idioma) ya existía**: `renderUILangButtons` en
+  Configuración (`#ui-lang-btns`) y el selector de la primera vez
+  (`_lrPickLang`). La comprobación del tercer informe buscó mal.
 - **Accesibilidad y SEO de inicio** (ideas 67, 68, 72 y 76, 29 de sept):
   enlace «Saltar al contenido» (lo primero que coge el Tab; OJO, va antes de
   `#top-dock`, que en el documento está ANTES de `<body>` y el navegador lo
