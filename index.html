@@ -16687,6 +16687,7 @@
 			  { v:'4.5', fecha: '29 de septiembre de 2026', titulo:'Divisas con memoria', cambios: [
 			    '📈 Calculadora → Divisas: debajo del resultado ves cómo ha ido el cambio en los últimos 30 días, con la subida o bajada',
 			    '🔔 «Avísame si 1 USD baja de 0,85 EUR»: pon un aviso de cambio y IXClocK te avisa cuando pase (lo mira al abrir la app y cada hora)',
+			    '🎹 IXBand exporta MIDI: el botón «🎹 MIDI» guarda tu canción nota a nota para abrirla y editarla en GarageBand, FL Studio, Logic…',
 			  ]},
 			  { v:'4.4', fecha: '29 de septiembre de 2026', titulo:'Mapas conectados', cambios: [
 			    '📻 Busca un sitio en Mapas y toca «Radio de aquí»: se abre Radio Mundial con las emisoras de ese país',
@@ -20761,6 +20762,93 @@
 			  _gbCabezal(off);
 			  return off;
 			}
+			/* ── EXPORTAR A MIDI (idea 32) ──
+			   IXBand guarda cada nota con su momento exacto, así que en vez de
+			   grabar el altavoz se puede escribir un .mid: se abre en GarageBand,
+			   FL Studio, Logic… con cada toma en su pista y se puede editar nota a
+			   nota. Mismo orden que «Toda la canción» (secciones una tras otra,
+			   con 400 ms de respiro) y las pistas silenciadas no van. La percusión
+			   va al canal 10 con los números estándar de General MIDI. Cada nota
+			   dura lo mismo porque IXBand no guarda cuándo se suelta la tecla. */
+			const GB_MIDI_PERC={ kick:36, snare:38, clap:39, hihat:42, openhat:46, crash:49, cowbell:56 };
+			function _gbMidiPrograma(nombre){
+			  const n=String(nombre||'').toLowerCase();
+			  if(/bass|bajo/.test(n)) return 33;
+			  if(/guitar|guitarra/.test(n)) return 25;
+			  if(/violin|viol|string|cuerda|cello/.test(n)) return 48;
+			  if(/flute|flauta/.test(n)) return 73;
+			  if(/synth|sinte|lead/.test(n)) return 81;
+			  if(/organ|órgano|organo/.test(n)) return 19;
+			  if(/trumpet|trompeta/.test(n)) return 56;
+			  if(/sax/.test(n)) return 65;
+			  if(/marimba/.test(n)) return 12;
+			  if(/harp|arpa/.test(n)) return 46;
+			  return 0;                               // piano
+			}
+			function _gbMidiNota(freq){
+			  const f=parseFloat(freq);
+			  if(!(f>0)) return 60;
+			  return Math.max(0, Math.min(127, Math.round(69+12*Math.log2(f/440))));
+			}
+			function ixMidiDeCancion(){
+			  const bpm=parseInt(_gbBpm)||120, PPQ=480;
+			  const tick=function(ms){ return Math.max(0, Math.round(ms*PPQ*bpm/60000)); };
+			  const pistas=[]; let off=0;
+			  _gbSecciones.forEach(function(sec){
+			    _gbTomasDe(sec.id).forEach(function(x){ if(_gbPistaSuena(x.t)) pistas.push({ t:x.t, off:off }); });
+			    const d=_gbDuracionSec(sec.id);
+			    if(d>0) off += d + 400;
+			  });
+			  if(!pistas.length) return null;
+			  const vlq=function(n){ const b=[n&0x7F]; n>>=7; while(n>0){ b.unshift((n&0x7F)|0x80); n>>=7; } return b; };
+			  const u32=function(n){ return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255]; };
+			  const txt=function(t){ return Array.from(new TextEncoder().encode(String(t).slice(0,60))); };
+			  const pista=function(eventos){                 // [{tick, bytes}] → MTrk
+			    eventos.sort(function(a,b){ return a.tick-b.tick || a.orden-b.orden; });
+			    let prev=0, datos=[];
+			    eventos.forEach(function(e){ datos=datos.concat(vlq(e.tick-prev), e.bytes); prev=e.tick; });
+			    datos=datos.concat([0,0xFF,0x2F,0]);
+			    return [0x4D,0x54,0x72,0x6B].concat(u32(datos.length), datos);
+			  };
+			  // Pista 0: tempo y compás
+			  const us=Math.round(60000000/bpm);
+			  const cab=[{tick:0,orden:0,bytes:[0xFF,0x03].concat(vlq(txt(_gbNombreCancion()||'IXBand').length), txt(_gbNombreCancion()||'IXBand'))},
+			             {tick:0,orden:0,bytes:[0xFF,0x51,3,(us>>16)&255,(us>>8)&255,us&255]},
+			             {tick:0,orden:0,bytes:[0xFF,0x58,4,4,2,24,8]}];
+			  const trozos=[pista(cab)];
+			  let canal=0;
+			  pistas.forEach(function(p){
+			    const melodico=canal===9 ? ++canal : canal;  // el 10 (índice 9) es de percusión
+			    canal=(melodico+1)%16;
+			    const ch=melodico%16;
+			    const ev=[{tick:0,orden:0,bytes:[0xFF,0x03].concat(vlq(txt(p.t.name).length), txt(p.t.name))},
+			              {tick:0,orden:0,bytes:[0xC0|ch, _gbMidiPrograma(p.t.name)]}];
+			    (p.t.events||[]).forEach(function(e){
+			      const perc=(e.type==='drum');
+			      const c=perc ? 9 : ch;
+			      const nota=perc ? (GB_MIDI_PERC[e.drumType]||45) : _gbMidiNota(e.freq);
+			      const vel=Math.max(1, Math.min(127, Math.round((typeof e.vel==='number' ? e.vel : 0.8)*127)));
+			      const t0=tick(p.off+(e.at||0)), t1=t0+tick(perc?120:260);
+			      ev.push({tick:t0, orden:2, bytes:[0x90|c, nota, vel]});
+			      ev.push({tick:t1, orden:1, bytes:[0x80|c, nota, 0]});   // en el mismo tick, apagar antes de encender
+			    });
+			    trozos.push(pista(ev));
+			  });
+			  const cabecera=[0x4D,0x54,0x68,0x64, 0,0,0,6, 0,1, (trozos.length>>8)&255, trozos.length&255, (PPQ>>8)&255, PPQ&255];
+			  return new Uint8Array([].concat.apply(cabecera, trozos));
+			}
+			function gbExportarMidi(){
+			  const datos=ixMidiDeCancion();
+			  if(!datos){ _gbEstado('No hay nada que exportar: guarda alguna toma primero.'); return null; }
+			  const nombre=(_gbNombreCancion()||'IXBand').replace(/[^\p{L}\p{N} _-]/gu,'').trim()||'IXBand';
+			  const blob=new Blob([datos],{type:'audio/midi'});
+			  const url=URL.createObjectURL(blob);
+			  const a=document.createElement('a'); a.href=url; a.download=nombre+'.mid';
+			  document.body.appendChild(a); a.click();
+			  setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} },4000);
+			  _gbEstado('✅ MIDI exportado: '+nombre+'.mid. Ábrelo en tu programa de música.');
+			  return blob;
+			}
 			/* ── EXPORTAR LA CANCIÓN a un archivo de audio ────────────────────
 			   Se graba la salida del maestro mientras suena la canción entera, o
 			   sea lo mismo que oyes, con su reverb y su compresor. Va en tiempo
@@ -21181,6 +21269,7 @@
 			    +'<button class="gb-chip" onclick="gbGuardarComo()" title="Guarda una copia en Mis canciones" style="font-weight:800;">💾 Guardar en Mis canciones</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion(\'wav\')" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Sin comprimir, para abrirla en un editor de audio. Pesa bastante más"')+'>⬇️ Exportar WAV</button>'
+			    +'<button class="gb-chip" onclick="gbExportarMidi()" title="Las notas en un archivo .mid para abrirlas en GarageBand, FL Studio, Logic…">🎹 MIDI</button>'
 			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
 			    +'<span style="font-size:10px;opacity:.55;align-self:center;margin-left:auto;">💾 Se guarda solo en este dispositivo</span>'

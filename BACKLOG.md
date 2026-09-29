@@ -84,9 +84,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
 **IXBand**:
-32. **Exportar MIDI de verdad**, no solo audio grabado. Hoy exporta webm/mp4/wav
-    «cocinado»; como IXBand ya modela cada nota con su tiempo exacto, seria
-    serializar eso en vez de grabar el altavoz — y así se abriría en un DAW.
 33. **Exportar pistas por separado**, no solo la mezcla.
 34. **Sección como plantilla entre canciones**: hoy se duplica dentro de la
     misma canción; falta copiar un estribillo de una canción a otra.
@@ -98,9 +95,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
-50. **Exportar las tomas de IXBand** (`_gbTakes`) a WAV/MP3: hoy solo se oyen
-    dentro del estudio.
-
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 56. **Notas de voz**, reusando el motor de audio de Radio e IXBand.
@@ -184,6 +178,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **IXBand exporta MIDI** (idea 32, 29 de sept; la 50 queda cubierta: la
+  canción ya se exportaba a WAV y ahora también a MIDI). `ixMidiDeCancion()`
+  escribe un SMF formato 1, 480 PPQ: pista de tempo (`_gbBpm`) y una por toma
+  que suena (`_gbPistaSuena`), en el orden de `gbPlayCancion` (secciones +
+  400 ms). Hz → nota con 69+12·log2(f/440), percusión al canal 10 con
+  `GB_MIDI_PERC` (GM), programa por nombre (`_gbMidiPrograma`). Duración fija
+  (260 ms, 120 la percusión): IXBand no guarda cuándo se suelta la tecla.
+  Botón «🎹 MIDI». `pruebas/midi.js` lee el .mid con un lector propio.
 - **Divisas: historial y avisos** (ideas 41 y 42, 29 de sept). Historial:
   Frankfurter (BCE, sin clave) `…/YYYY-MM-DD..?from=&to=`, guardado por día y
   par en `ix_cur_hist_v1`; SVG con línea, % y mín./máx. en `#currency-hist`;
