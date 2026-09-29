@@ -81,11 +81,6 @@ Llegaron en varios mensajes seguidos, algunas repetidas. Aqui van juntas y sin
 duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
-24. **Notas ancladas a una ciudad** del reloj mundial («qué llevar para Tokio»),
-    que salgan al abrir esa ciudad, y convertibles en alarma de un toque.
-    Pedida dos veces.
-25. **Modo Viaje**: al elegir ciudad en el reloj mundial, que el conversor de
-    divisas cambie solo a su moneda y se cargue su clima.
 27. **Mapas → reloj mundial**: al guardar un lugar, botón «Añadir al reloj
     mundial».
 **IXBand**:
@@ -193,6 +188,22 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Notas por ciudad** (idea 24, 29 de sept). Carpeta normal de Notas
+  «📍 Ciudad» (`ixCarpetaDeTz`): se busca, sincroniza y mueve como las demás.
+  Botón 📝 N en cada fila del reloj mundial (`ixAbrirNotasCiudad`): abre la
+  carpeta o crea la primera nota «Para Tokio:». `notasIcono(c)` quita el 📁
+  si la carpeta ya empieza por emoji. `pruebas/notasciudad.js`.
+- **Nota → alarma** (idea 83): botón ⏰ `#notes-alarma-btn` en el editor;
+  `notasAAlarma()` abre `_icaHojaAlarma(null)` con la primera línea (sin
+  casilla ni viñeta) de etiqueta y la hora de la nota si la hay
+  (`notasHoraEn`: 18:30, 7.30, 9h05; no 25:00). OJO: «precio 12.50» también
+  se lee como 12:50; se acepta porque la hoja se revisa antes de guardar.
+  `pruebas/notaalarma.js`.
+- **Modo Viaje** (idea 25, 29 de sept). `ixPaisDeTz` saca el país de la
+  bandera de `ICA_CITIES`, `IX_MONEDA_PAIS` lo pasa a moneda (solo las que
+  hay en `IX_CURRENCIES`; si no, no hay botón) y `ixViajeMoneda(tz)` abre la
+  calculadora en Divisas hacia esa moneda desde la que tenías (nunca «X → X»).
+  El clima de la ciudad ya salía en su fila. `pruebas/viaje.js`.
 - **Brújula a tus ciudades + FALLO este/oeste en Android** (idea 58, 29 de
   sept). `brujulaRumbo(e)`: `webkitCompassHeading` (iPhone) o `360 − alpha`
   (Android; antes se usaba `alpha` tal cual y la brújula iba al revés).

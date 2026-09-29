@@ -4817,6 +4817,7 @@
 					<div class="flex gap-1">
 						<button id="notes-fijar" onclick="notasFijarActual()" title="Fijar arriba" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">📌</button>
 						<button id="notes-carpeta-btn" onclick="notasHojaCarpeta()" title="Carpeta" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 Carpeta</button>
+						<button id="notes-alarma-btn" onclick="notasAAlarma()" title="Convertir en alarma" aria-label="Convertir la nota en alarma" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">⏰</button>
 						<button id="notes-lista-btn" onclick="notasCasilla()" title="Casilla" aria-label="Convertir la línea en casilla" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">☑</button>
 						<button id="notes-mode-text" onclick="notesSetMode('text')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:#ffd60a;color:#1c1c1e;">✍️ Texto</button>
 						<button id="notes-mode-draw" onclick="notesSetMode('draw')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold" style="background:rgba(255,255,255,.1);color:var(--txt);">🎨 Dibujar</button>
@@ -13844,6 +13845,9 @@
 			   nada, ni una nota metida en una carpeta que ya no existe.       */
 			let _notasCarpeta = null;          // null = todas
 			const NOTAS_SIN = '\u0000sin';     // marca interna de «sin carpeta»
+			// Una carpeta que ya empieza por su propio emoji («📍 Tokio») no lleva
+			// además el 📁: saldría «📁 📍 Tokio».
+			function notasIcono(c){ return /^\p{Extended_Pictographic}/u.test(String(c||'')) ? '' : '📁 '; }
 			function notasCarpetas(){
 			  const vistas = {};
 			  notes.forEach(function(n){ if(n && n.carpeta) vistas[n.carpeta]=1; });
@@ -13868,7 +13872,7 @@
 			  cs.forEach(function(c){
 			    const n=notes.filter(function(x){ return x.carpeta===c; }).length;
 			    h+='<button class="notas-chip'+(_notasCarpeta===c?' on':'')+'" onclick="notasIrCarpeta('
-			      +escapeHtml(JSON.stringify(c))+')" title="'+escapeHtml(c)+'">📁 '+escapeHtml(c)+' ('+n+')</button>';
+			      +escapeHtml(JSON.stringify(c))+')" title="'+escapeHtml(c)+'">'+notasIcono(c)+escapeHtml(c)+' ('+n+')</button>';
 			  });
 			  if(sueltas) h+='<button class="notas-chip'+(_notasCarpeta===NOTAS_SIN?' on':'')
 			    +'" onclick="notasIrCarpeta(NOTAS_SIN)">📄 '+_uiT('Sin carpeta')+' ('+sueltas+')</button>';
@@ -13927,7 +13931,7 @@
 			    row.onclick = ()=>notesOpen(n.id);
 			    row.innerHTML = '<div class="note-title">'+(n.fijada?'<span class="note-pin">📌 </span>':'')+escapeHtml(title)+'</div>'
 			      +'<div class="note-meta"><span>'+notesFormatDate(n.updatedAt||Date.now())+'</span>'
-			      +(n.carpeta && _notasCarpeta===null ? '<span>📁 '+escapeHtml(n.carpeta)+'</span>' : '')
+			      +(n.carpeta && _notasCarpeta===null ? '<span>'+notasIcono(n.carpeta)+escapeHtml(n.carpeta)+'</span>' : '')
 			      +(function(){ const pr=notasProgreso(n.content);
 			          return pr ? '<span>☑ '+pr.hechas+'/'+pr.total+'</span>' : ''; })()
 			      +(rest ? '<span class="note-snippet">'+escapeHtml(rest)+'</span>' : '')+'</div>';
@@ -13952,7 +13956,7 @@
 			    bf.style.color = on ? '#1c1c1e' : 'var(--txt)';
 			    bf.title = on ? 'Quitar de arriba' : 'Fijar arriba';
 			  }
-			  if(bc) bc.innerText = (n && n.carpeta) ? ('📁 '+n.carpeta) : '📁 Carpeta';
+			  if(bc) bc.innerText = (n && n.carpeta) ? (notasIcono(n.carpeta)+n.carpeta) : '📁 Carpeta';
 			}
 			// Mover a una carpeta. Sin prompt() del navegador: en el movil sale feo
 			// y no deja ver las carpetas que ya tienes.
@@ -13971,7 +13975,7 @@
 			    h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:12px;">';
 			    cs.forEach(function(c){
 			      h+='<button class="notas-chip'+(n.carpeta===c?' on':'')+'" onclick="notasMover('
-			        +escapeHtml(JSON.stringify(c))+')">📁 '+escapeHtml(c)+'</button>';
+			        +escapeHtml(JSON.stringify(c))+')">'+notasIcono(c)+escapeHtml(c)+'</button>';
 			    });
 			    h+='</div>';
 			  }
@@ -13997,7 +14001,7 @@
 			  saveNotes();
 			  notasCerrarHojaCarpeta();
 			  notasPintarBotones();
-			  try{ ixToast(carpeta?('📁 '+carpeta):'Fuera de la carpeta'); }catch(e){}
+			  try{ ixToast(carpeta?(notasIcono(carpeta)+carpeta):'Fuera de la carpeta'); }catch(e){}
 			}
 			function notasCrearCarpeta(){
 			  const inp=document.getElementById('notas-carpeta-nueva');
@@ -14130,6 +14134,31 @@
 			    try{ ta.setSelectionRange(pos+ins.length, pos+ins.length); }catch(err){}
 			  }
 			  notesAutoSave();
+			}
+			/* ── De nota a alarma de un toque (idea 83) ──
+			   «Llamar al médico a las 18:30»: la primera línea es la etiqueta y,
+			   si en la nota hay una hora (18:30, 7.30, 9 h), sale ya puesta en la
+			   hoja de la alarma. La hoja es la de siempre: se revisa y se guarda. */
+			function notasHoraEn(texto){
+			  const m=/(?:^|[^\d])([01]?\d|2[0-3])[:.h]([0-5]\d)(?!\d)/.exec(String(texto||''));
+			  return m ? { h:parseInt(m[1],10), m:parseInt(m[2],10) } : null;
+			}
+			function notasAAlarma(){
+			  const ta=document.getElementById('notes-textarea');
+			  const texto=ta ? ta.value : '';
+			  const primera=(String(texto).split('\n').map(function(l){ return l.replace(NOTAS_CASILLA,'$1$3').replace(/^\s*[-*•]\s+/,'').trim(); })
+			                 .find(function(l){ return l; }) || 'Alarma');
+			  const hora=notasHoraEn(texto);
+			  _icaHojaAlarma(null);
+			  const lab=document.getElementById('ica-alarm-label');
+			  if(lab) lab.value=primera.slice(0,40);
+			  if(hora){
+			    const h=document.getElementById('ica-alarm-h'), mi=document.getElementById('ica-alarm-m');
+			    if(h) h.value=String(hora.h).padStart(2,'0');
+			    if(mi) mi.value=String(hora.m).padStart(2,'0');
+			  }
+			  try{ _icaZonaAviso(); }catch(e){}
+			  return { etiqueta:primera.slice(0,40), hora:hora };
 			}
 			function notesUpdateWordCount(){
 			  const txt = document.getElementById('notes-textarea').value.trim();
@@ -16536,6 +16565,9 @@
 			    '🔔 Nueva app «Avisos»: guarda tus últimos 50 avisos (alarmas, temporizadores, el tiempo de tus ciudades) para verlos aunque no estuvieras mirando',
 			    '🧭 Brújula → «📍 Mis ciudades»: la distancia y una flecha que apunta hacia cada ciudad de tu reloj mundial',
 			    '🛠️ En Android la brújula confundía el este con el oeste. Arreglado',
+			    '💱 Modo Viaje: cada ciudad del reloj mundial tiene un botón con su moneda (💱 JPY, 💱 EUR…) que abre la calculadora ya convirtiendo a ella',
+			    '📝 Notas por ciudad: el botón 📝 de cada ciudad del reloj mundial abre sus notas («qué llevar a Tokio») o empieza la primera',
+			    '⏰ En una nota, el botón ⏰ la convierte en alarma: la primera línea es la etiqueta, y si la nota dice una hora («a las 18:30») ya sale puesta',
 			  ]},
 			  { v:'4.3', fecha: '29 de septiembre de 2026', titulo:'Radio a tu manera', cambios: [
 			    '🏷️ Tus emisoras favoritas pueden llevar etiqueta (😴 Dormir, 💼 Trabajar, 🏃 Deporte, 🚗 Coche): toca 🏷️ en la emisora y filtra arriba',
@@ -21650,6 +21682,64 @@
 			    });
 			  });
 			}
+			/* ── Modo Viaje (idea 25): de una ciudad a su moneda ──
+			   Cada ciudad de la lista lleva la bandera de su país; de la bandera
+			   sale el código del país y de ahí la moneda. Solo las que el
+			   conversor sabe convertir: si no, no se ofrece el botón. */
+			const IX_MONEDA_PAIS={AE:'AED',AR:'ARS',AT:'EUR',AU:'AUD',BE:'EUR',BO:'BOB',BR:'BRL',CA:'CAD',CH:'CHF',CL:'CLP',CN:'CNY',CO:'COP',CR:'CRC',CU:'CUP',CZ:'CZK',DE:'EUR',DK:'DKK',DO:'DOP',EC:'USD',EG:'EGP',ES:'EUR',FI:'EUR',FR:'EUR',GB:'GBP',GR:'EUR',GT:'GTQ',HK:'HKD',HN:'HNL',ID:'IDR',IE:'EUR',IL:'ILS',IN:'INR',IT:'EUR',JM:'JMD',JP:'JPY',KR:'KRW',MA:'MAD',MX:'MXN',MY:'MYR',NG:'NGN',NI:'NIO',NL:'EUR',NO:'NOK',NZ:'NZD',PA:'PAB',PE:'PEN',PH:'PHP',PL:'PLN',PR:'USD',PT:'EUR',PY:'PYG',RU:'RUB',SA:'SAR',SE:'SEK',SG:'SGD',SV:'USD',TH:'THB',TR:'TRY',US:'USD',UY:'UYU',VE:'VES',ZA:'ZAR'};
+			function ixPaisDeTz(tz){
+			  const c=ICA_CITIES.find(function(x){ return x[1]===tz; });
+			  if(!c || !c[2]) return '';
+			  const pts=Array.from(c[2]).map(function(ch){ return ch.codePointAt(0)-0x1F1E6+65; });
+			  if(pts.length!==2 || pts.some(function(n){ return n<65||n>90; })) return '';
+			  return String.fromCharCode(pts[0],pts[1]);
+			}
+			function ixMonedaDeTz(tz){
+			  const m=IX_MONEDA_PAIS[ixPaisDeTz(tz)]||null;
+			  return (m && typeof IX_CURRENCIES!=='undefined' && IX_CURRENCIES.some(function(c){ return c[0]===m; })) ? m : null;
+			}
+			function ixViajeMoneda(tz){
+			  const cur=ixMonedaDeTz(tz);
+			  if(!cur) return false;
+			  const panel=document.getElementById('calc-panel');
+			  if(panel && panel.style.opacity!=='1') toggleCalcPanel();
+			  const sel=document.getElementById('calc-mode'); if(sel) sel.value='currency';
+			  switchCalcMode('currency');
+			  initCurrencyCalc();
+			  const from=document.getElementById('currency-from'), to=document.getElementById('currency-to');
+			  if(!from || !to) return false;
+			  // Se convierte DESDE lo que ya tenías puesto; si justo era esa moneda,
+			  // desde la otra (o el dólar), para no quedarte con «JPY → JPY».
+			  if(from.value===cur) from.value=(to.value && to.value!==cur) ? to.value : (cur==='USD'?'EUR':'USD');
+			  to.value=cur;
+			  convertCurrency();
+			  return cur;
+			}
+			/* ── Notas de una ciudad (idea 24) ──
+			   «Qué llevar a Tokio»: las notas de una ciudad viven en la carpeta
+			   «📍 Tokio», que es una carpeta normal de Notas (se buscan, se
+			   sincronizan y se mueven igual que las demás). El reloj mundial
+			   enseña cuántas hay y las abre de un toque; si no hay ninguna,
+			   empieza la primera. */
+			function ixCarpetaDeTz(tz){ return '📍 '+_icaNombreDeTz(tz); }
+			function ixNotasDeCiudad(tz){
+			  const c=ixCarpetaDeTz(tz);
+			  try{ return notes.filter(function(n){ return n && n.carpeta===c; }).length; }catch(e){ return 0; }
+			}
+			function ixAbrirNotasCiudad(tz){
+			  const c=ixCarpetaDeTz(tz);
+			  try{ if(!notesPanelOpen) toggleNotesPanel(); }catch(e){}
+			  if(!ixNotasDeCiudad(tz)){
+			    const id='note-'+Date.now();
+			    notes.push({ id:id, content:_uiT('Para')+' '+_icaNombreDeTz(tz)+':\n', carpeta:c, updatedAt:Date.now() });
+			    saveNotes();
+			    notesOpen(id);
+			    return id;
+			  }
+			  try{ notesShowList(); }catch(e){}
+			  notasIrCarpeta(c);
+			  return c;
+			}
 			// Un id de HTML no puede llevar barras: America/New_York -> America-New_York
 			function _icaIdSeguro(tz){ return tz.replace(/[^A-Za-z0-9_-]/g,'-'); }
 			function icaRenderWorldClocks(){
@@ -21691,6 +21781,9 @@
 			      +'<div><div style="font-size:13px;opacity:.5;">Hoy <span id="ica-clima-'+_icaIdSeguro(tz)+'" style="margin-left:4px;">'+_icaClimaTexto(tz)+'</span></div><div style="font-size:17px;font-weight:500;">'+escapeHtml(city)+'</div></div>'
 			      +'<div style="display:flex;align-items:center;gap:10px;">'
 			      +  '<div style="font-size:3rem;font-weight:100;">'+h+':'+m+'<span style="font-size:1.2rem;opacity:.5;margin-left:4px;">'+ampm+'</span></div>'
+			      +  (function(){ const n=ixNotasDeCiudad(tz);
+			           return '<button class="ica-notas" onclick="ixAbrirNotasCiudad(&quot;'+tz+'&quot;)" title="Notas de esta ciudad" aria-label="Notas de '+escapeHtml(city)+(n?' ('+n+')':'')+'" style="background:rgba(255,214,10,.14);border:1px solid rgba(255,214,10,.4);color:#ffd60a;height:30px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;">📝'+(n?' '+n:'')+'</button>'; })()
+			      +  (ixMonedaDeTz(tz) ? '<button class="ica-moneda" onclick="ixViajeMoneda(&quot;'+tz+'&quot;)" title="Convertir a su moneda" aria-label="Convertir a '+ixMonedaDeTz(tz)+'" style="background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.4);color:#30d158;height:30px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;">💱 '+ixMonedaDeTz(tz)+'</button>' : '')
 			      +  '<button onclick="icaRemoveWorldClock(&quot;'+tz+'&quot;)" title="Quitar" style="background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.4);color:#ff8a80;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;">✕</button>'
 			      +'</div>'
 			      +'</div>';
