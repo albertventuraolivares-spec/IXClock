@@ -28,6 +28,7 @@ const SERVICIOS=[
   [/lingva/,                                       app,        /Lingva/],
   [/open\.er-api\.com/,                            app,        /open\.er-api\.com/],
   [/api\.frankfurter\.app/,                        app,        /Frankfurter/],
+  [/radio-browser\.info/,                         app,        /Radio-Browser/],
   [/accounts\.google\.com\/gsi/,                   app,        /Google/],
   [/api\.resend\.com/,                             funciones,  /Resend/],
   [/@netlify\/blobs/,                              funciones,  /Netlify/],

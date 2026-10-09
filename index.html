@@ -17052,6 +17052,10 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.11', fecha: '9 de octubre de 2026', titulo:'Busca emisoras de todo el mundo', cambios: [
+			    '🌍 Buscador (Ctrl+K): si escribes el nombre de una emisora, toca «Buscar en emisoras del mundo» y te salen las de cualquier país, listas para sonar. Solo se pregunta si lo tocas: lo que escribes en el buscador no sale de tu aparato por su cuenta',
+			    '🛠️ Al no encontrar nada, el buscador enseñaba mal lo que habías escrito si llevaba símbolos como el de «menor que»',
+			  ]},
 			  { v:'4.10', fecha: '29 de septiembre de 2026', titulo:'Canciones que viajan', cambios: [
 			    '🔗 IXBand → «🔗 Enlace»: comparte tu canción con un enlace. Quien lo abra la recibe en su IXBand, lista para escucharla y seguir tocando. La canción va dentro del enlace: no se sube a ningún sitio',
 			    '🖼️ Fondos → «🔗 Compartir este fondo»: manda tu fondo (de la galería o de YouTube) con un enlace. Quien lo abre lo ve puesto, con «Deshacer» por si prefiere el suyo',
@@ -25873,19 +25877,63 @@
 			  if(ov) ov.style.display='none';
 			  _ixBusqAbierto=false; _ixBusqRes=[];
 			}
+			/* Emisoras del catálogo mundial en el buscador (idea 11). Las 185 de la
+			   lista ya salen; esto añade las que coinciden en Radio-Browser (el
+			   mismo directorio que usa Radio Mundial).
+			   SOLO SI LO PIDES: este buscador también mira tus notas, así que lo
+			   que escribes no sale de tu aparato por su cuenta. Con 3 letras o más
+			   aparece la fila «🌍 Buscar … en emisoras del mundo»; al tocarla se
+			   pregunta, se guarda la respuesta y la búsqueda sigue abierta. */
+			const _ixRemoto={};
+			function _ixRemotoResultados(q){
+			  const k=_ixNorm(q);
+			  const r=_ixRemoto[k];
+			  if(r===undefined){
+			    if(k.length<3) return [];
+			    return [{ grupo:'Emisoras del mundo', icono:'🌍', titulo:'Buscar «'+String(q).trim().slice(0,40)+'» en emisoras del mundo',
+			      sub:'Se pregunta al directorio Radio-Browser', quedarse:true, ir:function(){ _ixRemotoPedir(q); } }];
+			  }
+			  if(r===null) return [{ grupo:'Emisoras del mundo', icono:'⏳', titulo:'Buscando en las emisoras del mundo…', sub:'', quedarse:true, ir:function(){} }];
+			  return r.map(function(rb){
+			    return { grupo:'Emisoras del mundo', icono:'🌍', titulo:String(rb.name||'Emisora').trim().slice(0,60),
+			      sub:[rb.country, rb.codec, rb.bitrate?rb.bitrate+' kbps':''].filter(Boolean).join(' · '),
+			      ir:function(){ playWorldStation(rb); } };
+			  });
+			}
+			async function _ixRemotoPedir(q){
+			  const k=_ixNorm(q);
+			  if(k.length<3 || _ixRemoto[k]!==undefined) return;
+			  _ixRemoto[k]=null;   // pedida: no se repite
+			  const repintar=function(){ const inp=document.getElementById('ix-busq-inp'); if(_ixBusqAbierto && inp && _ixNorm(inp.value)===k) ixPintarBusqueda(inp.value); };
+			  repintar();
+			  let d=null;
+			  try{ d=await rbFetch('/json/stations/search?name='+encodeURIComponent(q.trim())+'&limit=6&hidebroken=true&order=clickcount&reverse=true'); }catch(e){ d=null; }
+			  if(!Array.isArray(d)){
+			    delete _ixRemoto[k];   // sin conexión: se puede volver a intentar
+			    try{ ixToast('⚠️ '+_uiT('Sin conexión: no se pudo buscar en las emisoras del mundo')); }catch(e){}
+			  } else {
+			    _ixRemoto[k]=d.filter(function(x){ return x && (x.url_resolved||x.url) && x.name; }).slice(0,6);
+			  }
+			  repintar();
+			}
 			function ixPintarBusqueda(q){
 			  const caja=document.getElementById('ix-busq-res');
 			  if(!caja) return;
-			  _ixBusqRes=ixBuscarTodo(q);
+			  const locales=ixBuscarTodo(q);
+			  _ixBusqRes=locales.concat(_ixRemotoResultados(q||''));
 			  if(!(q||'').trim()){
 			    caja.innerHTML='<div style="padding:26px 16px;text-align:center;font-size:12px;opacity:.55;line-height:1.7;">Escribe para buscar en toda la app.<br>Apps, ajustes, notas, ciudades del reloj, alarmas, fondos, relojes y emisoras.</div>';
 			    return;
 			  }
 			  if(!_ixBusqRes.length){
-			    caja.innerHTML=ixVacio('🔎','Sin resultados','No hay nada en IXClocK que coincida con «'+escapeHtml(q)+'».');
+			    // ixVacio ya escapa el texto: escaparlo antes también hacía que
+			    // buscar «<b>» enseñara «&lt;b&gt;».
+			    caja.innerHTML=ixVacio('🔎','Sin resultados','No hay nada en IXClocK que coincida con «'+q+'».');
 			    return;
 			  }
-			  let html='', grupo='';
+			  // Nada en IXClocK pero sí la opción del mundo: se dice lo primero y
+			  // debajo se ofrece lo segundo.
+			  let html=locales.length ? '' : ixVacio('🔎','Sin resultados en IXClocK','No hay nada que coincida con «'+q+'».'), grupo='';
 			  _ixBusqRes.forEach(function(x,i){
 			    if(x.grupo!==grupo){
 			      grupo=x.grupo;
@@ -25914,6 +25962,8 @@
 			function ixBusquedaIr(i){
 			  const x=_ixBusqRes[i];
 			  if(!x) return;
+			  // «Buscar en emisoras del mundo» trabaja dentro del buscador: no lo cierra.
+			  if(x.quedarse){ try{ x.ir(); }catch(e){} return; }
 			  ixCerrarBusqueda();
 			  setTimeout(function(){ try{ x.ir(); }catch(e){} },60);
 			}
