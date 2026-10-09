@@ -160,15 +160,21 @@ Comprobado aquí:
   franja de resumen, que ya junta clima + siguiente alarma + festividad + luna.
 
 ### Otras
-11. **Catálogo remoto de emisoras** (tipo radio-browser) en el buscador. Ojo: NO
-   es que el buscador se deje emisoras — se comprobó que ya encuentra las 185
-   de `STATIONS`, porque están todas pintadas desde el arranque. Sería una
-   función nueva, no un arreglo.
 
 ---
 
 ## Hecho
 
+- **Emisoras del mundo en el buscador de IXClocK** (idea 11, 9 de oct). Con 3
+  letras o más sale la fila «🌍 Buscar … en emisoras del mundo»; al tocarla se
+  pregunta a Radio-Browser (`rbFetch`, el de Radio Mundial), el buscador sigue
+  abierto (`quedarse`) y salen hasta 6 emisoras que suenan con
+  `playWorldStation`. A PROPÓSITO no se pregunta al escribir: el buscador
+  también mira las notas y eso no debe salir del aparato. Sin conexión avisa y
+  deja reintentar. Radio-Browser ya se usaba sin estar en `privacidad.html`:
+  ahora está (y en `pruebas/privacidad.js`). De paso: «Sin resultados» escapaba
+  dos veces lo escrito (salía «&lt;b&gt;»).
+  - Probado con `pruebas/buscaradio.js`: 16/16; antes 1/16. `buscador.js` 34/34.
 - **Compartir un fondo por enlace** (29 de sept). «🔗 Compartir este fondo»
   en Fondos: `?fondo=<id>` (galería) o `?fondo=yt:ID` (YouTube); las fotos
   propias y el dinámico no (lo dice). Al abrirlo (`ixFondoDeEnlace`) se pone y
