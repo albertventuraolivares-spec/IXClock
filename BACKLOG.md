@@ -57,6 +57,18 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
 
 ## Pendiente
 
+> ⚠️ **NETLIFY NO PUBLICA DESDE EL 29 DE SEPT (visto el 9 de oct).** Producción
+> se quedó en la v4.8 (`ad7e6f0`, PR #59). Las v4.9, v4.10 y v4.11 (#60, #61,
+> #62) están fusionadas en `main` y sus *deploy previews* salen bien, pero
+> ningún despliegue de producción posterior pasa a ser el actual. Desde aquí no
+> se puede ver la lista de despliegues ni abrir el sitio (el proxy bloquea
+> netlify.app). Lo más probable: créditos del plan gratuito agotados o la
+> publicación automática parada. **Albert**: mira app.netlify.com → ixclockplus
+> → Deploys (aviso de «auto publishing» parado o despliegues fallidos/cancelados)
+> y Team → Usage/Billing. En cuanto se arregle, el siguiente despliegue publica
+> todo lo acumulado de golpe. No se forzó un despliegue manual a producción.
+
+
 ### Bugs y deuda
 1. **El emulador sigue sin poderse arrancar de punta a punta desde aquí**: la
    política de salida del entorno bloquea `cdn.emulatorjs.org` y
@@ -80,7 +92,6 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 
 **Unir cosas que ya existen pero no se hablan** (es el patron de casi todas):
 **IXBand**:
-33. **Exportar pistas por separado**, no solo la mezcla.
 35. **Pista de voz por micrófono** mezclada con los instrumentos.
 36. **Capturar un clip de la radio al Sampler**: las dos apps ya graban audio
     por separado y nunca se cruzan. ⚠️ Mirado el 29 de sept y aparcado: casi
@@ -92,6 +103,10 @@ duplicados. **Comprobar en el codigo antes de tocar nada.**
 46. **Descargar una zona del mapa** para usarla sin internet: hoy Mapas solo
     cachea 4 tiles de muestra, y la app entera se vende como «funciona sin
     internet».
+    ⛔ Mirado el 9 de oct: NO con las teselas de openstreetmap.org. Su
+    política de uso prohíbe la descarga masiva y que una app precargue zonas
+    para usarlas sin conexión. Haría falta otro proveedor de teselas que lo
+    permita por licencia (y suele ser de pago): decisión de Albert.
 **De los informes de auditoría del 5 de septiembre** (sin duplicados; varias
 llegaron repetidas y algunas ya estaban hechas):
 
@@ -165,6 +180,14 @@ Comprobado aquí:
 
 ## Hecho
 
+- **Pistas por separado en IXBand** (idea 33, 9 de oct). «🎚️ Pistas sueltas»:
+  `gbExportarPistas` graba una pista detrás de otra con la exportación de
+  siempre (`gbExportarCancion` acepta ahora un sufijo para el nombre),
+  silenciando las demás; cada archivo dura la canción entera para que encajen
+  al importarlos. Al acabar (o si falla) restaura mute/solo de todas. Con una
+  sola pista que suene, es la exportación normal. Si una grabación sale vacía
+  no se queda esperando.
+  - Probado con `pruebas/pistas.js` (grabación real): 12/12; antes 1/12.
 - **Emisoras del mundo en el buscador de IXClocK** (idea 11, 9 de oct). Con 3
   letras o más sale la fila «🌍 Buscar … en emisoras del mundo»; al tocarla se
   pregunta a Radio-Browser (`rbFetch`, el de Radio Mundial), el buscador sigue
@@ -1397,6 +1420,7 @@ Comprobado aquí:
 
 ## Ideas sin priorizar
 
-- Widgets de la pantalla de inicio reordenables arrastrando.
-- Modo claro además del oscuro.
-- Exportar lo grabado en IXBand como archivo de audio.
+- (9 oct) Las tres que había aquí ya estaban hechas: reordenar los paneles
+  de inicio (asas `.ix-asa`, `_ixPanelesCont`), modo claro (Ajustes →
+  Claro/Oscuro/Auto/Sol) y exportar IXBand a audio (`gbExportarCancion`, WebM y
+  WAV). Comprobado en el código.
