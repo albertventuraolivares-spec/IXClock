@@ -17052,6 +17052,9 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.12', fecha: '9 de octubre de 2026', titulo:'Pistas sueltas', cambios: [
+			    '🎚️ IXBand → «Pistas sueltas»: guarda cada pista en su propio archivo, todas del largo de la canción, para mezclarlas en GarageBand, FL Studio o el programa que uses',
+			  ]},
 			  { v:'4.11', fecha: '9 de octubre de 2026', titulo:'Busca emisoras de todo el mundo', cambios: [
 			    '🌍 Buscador (Ctrl+K): si escribes el nombre de una emisora, toca «Buscar en emisoras del mundo» y te salen las de cualquier país, listas para sonar. Solo se pregunta si lo tocas: lo que escribes en el buscador no sale de tu aparato por su cuenta',
 			    '🛠️ Al no encontrar nada, el buscador enseñaba mal lo que habías escrito si llevaba símbolos como el de «menor que»',
@@ -21611,7 +21614,7 @@
 			  }
 			  return new Blob([datos],{type:'audio/wav'});
 			}
-			function gbExportarCancion(formato){
+			function gbExportarCancion(formato, sufijo){
 			  if(_gbExportando){
 			    // Por toast y no en la linea de estado: ahi esta la cuenta atras
 			    // escribiendo cada medio segundo y el aviso se perderia al instante.
@@ -21644,7 +21647,8 @@
 			    _gbExportando=false;
 			    const blob=new Blob(trozos,{type:fmt[0]});
 			    if(!blob.size){ _gbEstado('⚠️ La grabación salió vacía.'); gbRenderTracks(); return; }
-			    const nombre=(_gbNombreCancion()||'IXBand').replace(/[^\p{L}\p{N} _-]/gu,'').trim()||'IXBand';
+			    let nombre=(_gbNombreCancion()||'IXBand').replace(/[^\p{L}\p{N} _-]/gu,'').trim()||'IXBand';
+			    if(sufijo) nombre+=' - '+String(sufijo).replace(/[^\p{L}\p{N} _-]/gu,'').trim();
 			    if(quiereWav){
 			      _gbEstado('⏳ Convirtiendo a WAV…');
 			      blob.arrayBuffer()
@@ -21691,6 +21695,59 @@
 			  })();
 			  setTimeout(function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} }, total);
 			  return true;
+			}
+			/* ── PISTAS POR SEPARADO (idea 33) ──
+			   Para mezclar en otro programa: un archivo por pista, cada uno con
+			   la canción ENTERA de largo (silencio donde esa pista no toca), así
+			   al importarlos todos empiezan a la vez y encajan solos. Se graba
+			   una pista detrás de otra con la misma exportación de siempre,
+			   silenciando las demás un momento; al acabar (o si algo falla)
+			   cada pista vuelve a quedar como estaba. Tarda lo que dura la
+			   canción por cada pista, y se dice cuánto falta. */
+			let _gbStems=null;
+			function _gbPistasQueSuenan(){
+			  return _gbTakes.map(function(t,i){ return {t:t, i:i}; }).filter(function(x){ return _gbPistaSuena(x.t) && x.t.events && x.t.events.length; });
+			}
+			async function gbExportarPistas(formato){
+			  if(_gbExportando || _gbStems){ try{ ixToast('Ya se está grabando; espera a que acabe.'); }catch(e){} return 0; }
+			  const lista=_gbPistasQueSuenan();
+			  if(!lista.length){ _gbEstado('No hay pistas que suenen: guarda alguna toma primero.'); return 0; }
+			  if(lista.length===1){ return gbExportarCancion(formato) ? 1 : 0; }
+			  const antes=_gbTakes.map(function(t){ return {muted:t.muted, solo:t.solo}; });
+			  const usados={};
+			  _gbStems={ total:lista.length, hecho:0 };
+			  let hechas=0;
+			  try{
+			    for(let k=0;k<lista.length;k++){
+			      const x=lista[k];
+			      _gbTakes.forEach(function(t,j){ t.muted = (j!==x.i); t.solo=false; });
+			      let nombre=String(x.t.name||'pista');
+			      usados[nombre]=(usados[nombre]||0)+1;
+			      if(usados[nombre]>1) nombre+=' '+usados[nombre];
+			      const previo=_gbUltimoExport;
+			      if(!gbExportarCancion(formato, (k+1)+' '+nombre)) break;
+			      _gbStems.hecho=k;
+			      // Espera a que acabe ESTA grabación (y su paso a WAV, si lo hay).
+			      // Si termina sin archivo (salió vacía), no se queda esperando.
+			      const ok=await new Promise(function(r){
+			        let parada=0;
+			        (function mira(){
+			          if(_gbUltimoExport!==previo) return r(true);
+			          if(!_gbExportando){ if(!parada) parada=Date.now(); else if(Date.now()-parada>15000) return r(false); }
+			          setTimeout(mira,200);
+			        })();
+			      });
+			      if(!ok) break;
+			      hechas++;
+			      try{ ixToast('🎚️ Pista '+(k+1)+' de '+lista.length+' lista: '+nombre); }catch(e){}
+			    }
+			  } finally {
+			    _gbTakes.forEach(function(t,j){ if(antes[j]){ t.muted=antes[j].muted; t.solo=antes[j].solo; } });
+			    _gbStems=null;
+			    gbRenderTracks();
+			  }
+			  _gbEstado(hechas===lista.length ? '✅ '+hechas+' pistas exportadas por separado. Búscalas en tus descargas.' : '⚠️ Se exportaron '+hechas+' de '+lista.length+' pistas.');
+			  return hechas;
 			}
 			// Compartir por el menu del sistema (WhatsApp, correo, Archivos...).
 			function gbPuedeCompartir(){
@@ -21994,6 +22051,7 @@
 			    +'<button class="gb-chip" onclick="gbExportarCancion()" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Graba la canción entera en un archivo de audio que puedes compartir"')+'>'+(_gbExportando?'⏺ Grabando…':'⬇️ Exportar audio')+'</button>'
 			    +'<button class="gb-chip" onclick="gbExportarCancion(\'wav\')" '+(_gbExportando?'disabled style="opacity:.5;"':'title="Sin comprimir, para abrirla en un editor de audio. Pesa bastante más"')+'>⬇️ Exportar WAV</button>'
 			    +'<button class="gb-chip" onclick="gbExportarMidi()" title="Las notas en un archivo .mid para abrirlas en GarageBand, FL Studio, Logic…">🎹 MIDI</button>'
+			    +'<button class="gb-chip" onclick="gbExportarPistas()" '+((_gbExportando||_gbStems)?'disabled style="opacity:.5;"':'title="Un archivo por pista, todos del largo de la canción, para mezclarlos en otro programa"')+'>🎚️ Pistas sueltas</button>'
 			    +'<button class="gb-chip" onclick="gbCompartirEnlace()" title="Un enlace con la canción dentro: quien lo abra la tiene en su IXBand">🔗 Enlace</button>'
 			    +(gbPuedeCompartir()?'<button class="gb-chip" onclick="gbCompartirCancion()" title="Mandarla por WhatsApp, correo…">📤 Compartir</button>':'')
 			    +'<button class="gb-chip" onclick="gbBorrarCancionGuardada()" title="Vacia lo que tienes ahora; lo de Mis canciones no se toca" style="color:#ff6961;">🗑️ Empezar de cero</button>'
