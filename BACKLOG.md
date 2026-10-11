@@ -21,7 +21,8 @@ aparte: `node pruebas/auditoria.js`, `pruebas/interaccion.js`, `pruebas/calidad.
   Fusionar a `main` es lo que dispara la publicación; el botón «Publish deploy»
   de Netlify es para las vistas previas de la PR. Una PR ya fusionada **no se
   reutiliza**: se abre una nueva.
-- **Hay una Routine que arranca una tanda cada 5 horas**
+- **APAGADA el 11 de oct** (la fecha de fin era el 1 de oct y fallaba por
+  límite de uso; Albert decide si se vuelve a encender). Era una Routine que arrancaba una tanda cada 5 horas
   (`trig_0175wmjMF5HUqvMc5yiuLZQD`, cron `10 1,6,11,16,20` UTC = 4:10 p.m.,
   9:10 p.m., 2:10 a.m., 7:10 a.m. y 12:10 p.m. hora del usuario, que va en
   UTC-4). Es lo que hace que no se salte ninguna ventana: el usuario pidió
@@ -136,12 +137,6 @@ Comprobado aquí:
   grandes se crean por JS, poco que ganar.
 - Meta título y descripción, HTTPS: ya estaban bien.
 - HSTS: `.app` entero está en la lista precargada, no hace falta cabecera.
-77. **CSP de scripts** (lo que quedó de la idea 66): primero en
-    `Content-Security-Policy-Report-Only` con la lista real de dominios que
-    carga la app (Tailwind, fuentes, Leaflet, EmulatorJS, hls.js, radios,
-    Google), mirar la consola en la suite y en `auditoria.js`, y solo entonces
-    pasarla a obligatoria. Mediano y con riesgo de romper apps.
-
 81. **Rendimiento (Lighthouse 31 en móvil)**: FCP 8,6 s, 7.585 elementos en
     el DOM, 24,7 s de trabajo del hilo principal con CPU ×4. Viene de que
     `index.html` (1,3 MB) monta TODAS las apps al cargar. Lo que de verdad
@@ -156,12 +151,6 @@ Comprobado aquí:
       por defecto).
     - Segundo paso: los 248 estilos de reloj (760 elementos) se pintan al abrir
       «Relojes», al filtrar o al buscar (`_asegurarClockGrid`). ~4.790 al abrir.
-82. **Pedir la ubicación al abrir** (Lighthouse «geolocation-on-start»): el
-    tiempo la pide nada más cargar. Lo recomendado es pedirla al tocar un
-    botón «📍 Usar mi ubicación» (y usarla sola si el permiso ya estaba
-    dado). Cambia lo que ve alguien nuevo (sin tiempo hasta que toque):
-    **PREGUNTAR AL USUARIO** antes.
-
 **Otras**:
 40. ~~Modo Coche~~ hecho (ver Hecho). Falta: meter el mapa en navegación
     DENTRO del modo coche (hoy «Mapas» sale del modo y abre Mapas).
@@ -180,6 +169,22 @@ Comprobado aquí:
 
 ## Hecho
 
+- **La ubicación se pide al tocar, no al abrir** (idea 82, 11 de oct;
+  lo eligió Albert). `ixUbicacionAlAbrir` mira `permissions.query`: si ya
+  estaba dado, `detectarUbicacion()` como siempre; si no, la tarjeta del clima
+  muestra «📍 Usar mi ubicación» y deja la temperatura en «—°» (antes salían
+  los 27° de ejemplo como si fueran de verdad). El botón se quita al llegar el
+  tiempo. `_ixLugaresVigilar` ya hacía lo mismo.
+  - Probado con `pruebas/ubicacion.js`: 12/12; con la llamada vieja, falla.
+- **CSP de scripts en modo informe** (idea 77, 11 de oct). En `netlify.toml`,
+  `Content-Security-Policy-Report-Only` con `script-src` 'self', inline,
+  eval, wasm, blob: y los CDN de hls.js, Leaflet, EmulatorJS y Google.
+  - Probado con `pruebas/csp.js`: 8/8 en informe y en obligatoria
+    (`IX_CSP_OBLIGATORIA=1`); quitando un CDN de la lista, falla.
+  - **Siguiente paso** (preguntar a Albert): tras unos días sin avisos en la
+    consola en uso real (abrir la web, F12 → Consola, buscar «Report Only»),
+    cambiar el nombre de la cabecera a `Content-Security-Policy`. Si se añade
+    un script de un dominio nuevo, hay que meterlo en la lista y en la prueba.
 - **Pistas por separado en IXBand** (idea 33, 9 de oct). «🎚️ Pistas sueltas»:
   `gbExportarPistas` graba una pista detrás de otra con la exportación de
   siempre (`gbExportarCancion` acepta ahora un sufijo para el nombre),

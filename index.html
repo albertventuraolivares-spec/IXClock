@@ -16494,12 +16494,37 @@
 			      document.getElementById('txt-ubicacion').textContent=city;
 			      await fetchWeatherData(lat,lon);
 			    }catch(e){document.getElementById('txt-ubicacion').textContent='Ubicación detectada';try{await fetchWeatherData(lat,lon);}catch(e2){}}
-			  },()=>{document.getElementById('txt-ubicacion').textContent='Sin permiso GPS';},{enableHighAccuracy:true,timeout:10000,maximumAge:300000});
+			  },()=>{document.getElementById('txt-ubicacion').textContent='Sin permiso GPS';const b=document.getElementById('clima-pedir-ubic');if(b)b.textContent='📍 '+_uiT('Usar mi ubicación');},{enableHighAccuracy:true,timeout:10000,maximumAge:300000});
+			}
+			// Idea 82: al abrir NO se pregunta por la ubicación. Si el permiso ya
+			// estaba dado se usa sola; si no, el clima espera a que toques
+			// «📍 Usar mi ubicación», que es cuando se entiende para qué la quiere.
+			async function ixUbicacionAlAbrir(){
+			  let estado='prompt';
+			  try{ if(navigator.permissions) estado=(await navigator.permissions.query({name:'geolocation'})).state; }catch(e){}
+			  if(estado==='granted'){ window.detectarUbicacion(); return; }
+			  const lbl=document.getElementById('txt-ubicacion');
+			  if(lbl) lbl.textContent=_uiT(estado==='denied'?'Sin permiso GPS':'Ubicación sin activar');
+			  // Sin esto se veían los «27° Cielo Despejado» de ejemplo como si fueran de verdad.
+			  const t=document.getElementById('curr-temp'); if(t) t.textContent='—°';
+			  const d=document.getElementById('curr-weather-desc'); if(d) d.textContent=_uiT('Tu tiempo, al tocar 📍');
+			  const ic=document.getElementById('curr-weather-icon'); if(ic) ic.textContent='📍';
+			  const tarjeta=document.querySelector('[data-panel="clima"]');
+			  if(tarjeta && !document.getElementById('clima-pedir-ubic')){
+			    const b=document.createElement('button');
+			    b.id='clima-pedir-ubic'; b.type='button';
+			    b.textContent='📍 '+_uiT('Usar mi ubicación');
+			    b.style.cssText='width:100%;margin:0 0 12px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(10,132,255,.25);color:inherit;font-weight:700;font-size:12px;cursor:pointer;';
+			    b.onclick=function(){ b.textContent='📍 …'; window.detectarUbicacion(); };
+			    const fila=tarjeta.querySelector('.flex.items-center.gap-5');
+			    if(fila && fila.nextSibling) tarjeta.insertBefore(b, fila.nextSibling); else tarjeta.appendChild(b);
+			  }
 			}
 			async function fetchWeatherData(lat,lon){
 			  const url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,relativehumidity_2m,pressure_msl,cloud_cover&hourly=temperature_2m,precipitation_probability,uv_index&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&timezone=auto&forecast_days=1';
 			  const res=await fetch(url);const d=await res.json();
 			  const cur=d.current,daily=d.daily,hourly=d.hourly;
+			  const _pedirUbic=document.getElementById('clima-pedir-ubic'); if(_pedirUbic) _pedirUbic.remove();
 			  const wDesc={0:'Cielo Despejado',1:'Casi Despejado',2:'Parcialmente Nublado',3:'Nublado',45:'Niebla',51:'Llovizna',61:'Lluvia Leve',63:'Lluvia',65:'Lluvia Fuerte',71:'Nevada',80:'Chubascos',81:'Chubascos',95:'Tormenta',99:'Tormenta Severa'};
 			  const wIcon={0:'wb_sunny',1:'partly_cloudy_day',2:'partly_cloudy_day',3:'cloud',45:'foggy',51:'grain',61:'rainy',63:'rainy',65:'rainy',71:'ac_unit',80:'thunderstorm',95:'thunderstorm',99:'thunderstorm'};
 			  const wEmoji={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',80:'🌦️',95:'⛈️',99:'⛈️'};
@@ -17042,7 +17067,7 @@
 			updateClockAndDate();
 			generateHourlyForecast();
 			renderizarFeriados();
-			detectarUbicacion();
+			ixUbicacionAlAbrir();
 			updateMoonPhase();
 			loadAlarms();
 			loadNotes();
@@ -17052,6 +17077,11 @@
 			   REGLA: cada vez que se agregue, quite o arregle algo en IXClock,
 			   se añade una entrada nueva ARRIBA con su fecha. */
 			const IX_CHANGELOG = [
+			  { v:'4.13', fecha: '11 de octubre de 2026', titulo:'La ubicación, cuando tú digas', cambios: [
+			    '📍 El clima ya no te pide la ubicación nada más entrar: toca «📍 Usar mi ubicación» cuando quieras verlo. Si ya le habías dado permiso, sigue saliendo solo, como siempre',
+			    '🛠️ Sin ubicación, el clima enseñaba «27° Cielo despejado» de ejemplo como si fuera de verdad. Ahora deja el hueco hasta que llegue tu tiempo',
+			    '🔒 La web vigila qué scripts se cargan y desde dónde (de momento solo avisa, no bloquea nada)',
+			  ]},
 			  { v:'4.12', fecha: '9 de octubre de 2026', titulo:'Pistas sueltas', cambios: [
 			    '🎚️ IXBand → «Pistas sueltas»: guarda cada pista en su propio archivo, todas del largo de la canción, para mezclarlas en GarageBand, FL Studio o el programa que uses',
 			  ]},
