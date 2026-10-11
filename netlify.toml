@@ -13,9 +13,16 @@
 #   micrófono, pantalla completa y lo demás siguen como estaban.
 # - Sin HSTS: todo el dominio .app ya está en la lista precargada de los
 #   navegadores, así que solo va por HTTPS de todas formas.
-# La CSP completa (qué scripts se pueden cargar) NO va aquí todavía: la app
-# carga cosas de muchos sitios y una lista mal hecha la rompería. Las páginas
-# del proxy llevan su propia CSP aislada, que es donde el riesgo era real.
+# Qué scripts se pueden cargar (idea 77), de momento SOLO EN MODO INFORME
+# (Report-Only): no bloquea nada, solo avisa en la consola del navegador de lo
+# que bloquearía. Lista: los CDN de hls.js, Leaflet y EmulatorJS (con sus
+# espejos) y el botón de Google. 'unsafe-inline' y 'unsafe-eval' hacen falta
+# porque la app tiene scripts y onclick en línea, y la calculadora gráfica usa
+# `new Function`; blob: y wasm son del emulador. Aun así corta lo importante:
+# que algo inyectado cargue un script de un dominio cualquiera. Cuando se haya
+# visto que no avisa de nada en uso real, se cambia el nombre de la cabecera a
+# Content-Security-Policy y pasa a ser obligatoria (prueba: pruebas/csp.js).
+# Las páginas del proxy llevan su propia CSP aislada aparte.
 [[headers]]
   for = "/*"
   [headers.values]
@@ -23,6 +30,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "SAMEORIGIN"
     Content-Security-Policy = "frame-ancestors 'self'; object-src 'none'"
+    Content-Security-Policy-Report-Only = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net https://unpkg.com https://cdn.emulatorjs.org https://accounts.google.com; base-uri 'self'"
     Permissions-Policy = "usb=(), serial=(), bluetooth=(), hid=(), payment=(), browsing-topics=()"
 
 # Caché de los estáticos (idea 73). Sin esto Netlify manda «max-age=0» y el
